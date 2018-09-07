@@ -1,8 +1,14 @@
 class Person:
-    def __init__(self, initial_risk_factors):
-        self._risk_factor_at_time = [
-            initial_risk_factors,
-        ]
+    """Person is using risk factors and demographics based off NHANES"""
+    
+    def __init__(self, age, gender, race_ethnicity, sbp, dbp, a1c, hdl, chol):
+        self._gender = gender
+        self._race_ethnicity = race_ethnicity
 
-    def get_current_risk_factors(self):
-        return self._risk_factor_at_time[-1]
+        self._age = [age]
+        self._sbp = [sbp]
+        self._dbp  = [dbp]
+        self._a1c = [a1c]
+        self._hdl = [hdl]
+        self._chol = [chol]
+
