@@ -17,8 +17,8 @@ def build_people_using_nhanes_for_sampling(nhanes, n, random_seed = None):
 class NHANESDirectSamplePopulation(Population):
     """ Simple base class to sample with replacement from 2015/2016 NHANES """
 
-    def __init__(self, n=10000):
+    def __init__(self, n=10000, random_seed=None):
         nhanes = pd.read_stata("mcm/nhanes2015-2016Combined.dta")
-        super().__init__(build_people_using_nhanes_for_sampling(nhanes, n))
+        super().__init__(build_people_using_nhanes_for_sampling(nhanes, n, random_seed=random_seed))
         self.n = n
 
