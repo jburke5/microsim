@@ -1,6 +1,5 @@
 from mcm.person import Person
 import pandas as pd
-import os
 
 
 class Population:
@@ -26,3 +25,13 @@ class NHANESDirectSamplePopulation(Population):
         super().__init__(build_people_using_nhanes_for_sampling(
             nhanes, n, random_seed=random_seed))
         self.n = n
+
+    def advance(self, years):
+        for year in range(1, years):
+            for person in self._people:
+                person.advanceRiskFactors()
+                person.advanceOutcomes()
+            self.applyRecalibrationStandards()
+
+    def applyRecalibrationStandards(self):
+        pass
