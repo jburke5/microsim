@@ -180,3 +180,6 @@ tags
 # Persistent undo
 [._]*.un~
 
+
+### User-added Ignores
+.vscode/*
