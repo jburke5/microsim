@@ -1,4 +1,7 @@
 from mcm.person import Person
+from mcm.linear_risk_factor_model import LinearRiskFactorModel
+from statsmodels.regression.linear_model import OLSResults
+
 import pandas as pd
 
 
@@ -25,11 +28,19 @@ class NHANESDirectSamplePopulation(Population):
         super().__init__(build_people_using_nhanes_for_sampling(
             nhanes, n, random_seed=random_seed))
         self.n = n
+        self._initializeRiskModels()
+
+    def _initializeRiskModels(self):
+        self._risk_model_repository = {}
+        sbpModelResults = OLSResults.load(
+            "/Users/burke/Documents/research/bpCog/nhanes/meanSBPModel.pickle")
+        self._risk_model_repository['sbp'] = LinearRiskFactorModel(
+            'sbp', sbpModelResults.params, sbpModelResults.bse)
 
     def advance(self, years):
         for year in range(1, years):
             for person in self._people:
-                person.advanceRiskFactors()
+                person.advanceRiskFactors(self._risk_model_repository)
                 person.advanceOutcomes()
             self.applyRecalibrationStandards()
 
