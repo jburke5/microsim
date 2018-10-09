@@ -21,7 +21,7 @@ class LinearRiskFactorModel:
             'dbp': params['dbp'],
             'a1c': params['a1c'],
             'hdl': params['hdl'],
-            'chol': params['chol'],
+            'tot_chol': params['tot_chol'],
             'intercept': params['Intercept'],
         }
         self._ses = {
@@ -35,7 +35,7 @@ class LinearRiskFactorModel:
             'dbp': ses['dbp'],
             'a1c': ses['a1c'],
             'hdl': ses['hdl'],
-            'chol': ses['chol'],
+            'tot_chol': ses['tot_chol'],
             'intercept': ses['Intercept'],
         }
 
@@ -50,7 +50,7 @@ class LinearRiskFactorModel:
         linear_pred += dbp * self.getCoefficentFromParams('dbp')
         linear_pred += a1c * self.getCoefficentFromParams('a1c')
         linear_pred += hdl * self.getCoefficentFromParams('hdl')
-        linear_pred += chol * self.getCoefficentFromParams('chol')
+        linear_pred += chol * self.getCoefficentFromParams('tot_chol')
         linear_pred += self.getCoefficentFromParams('intercept')
 
         if (race_ethnicity == 2):
