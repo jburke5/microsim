@@ -34,7 +34,7 @@ class Person:
         next_sbp = self.getNextRiskFactor("sbp", risk_model_repository)
         self._sbp.append(next_sbp)
 
-        next_dbp = self._dbp[-1]
+        next_dbp = self.getNextRiskFactor("dbp", risk_model_repository)
         self._dbp.append(next_dbp)
 
         next_a1c = self._a1c[-1]

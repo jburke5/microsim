@@ -61,4 +61,10 @@ class LinearRiskFactorModel:
             linear_pred += self.getCoefficentFromParams('raceEth4')
         elif (race_ethnicity == 5):
             linear_pred += self.getCoefficentFromParams('raceEth5')
+
+        return self.transformLinearPredictor(linear_pred)
+
+    '''A stub method so that sub-classes can override to transform the risks '''
+
+    def transformLinearPredictor(self, linear_pred):
         return linear_pred
