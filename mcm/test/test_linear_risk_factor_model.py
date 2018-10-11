@@ -45,10 +45,11 @@ class TestLinearRiskFactorModel(unittest.TestCase):
 
         self._risk_model_repository = {
             'sbp': LinearRiskFactorModel('sbp', params=params, ses=ses),
+            'dbp': LinearRiskFactorModel('dbp', params=params, ses=ses),
         }
 
     def test_sbp_model(self):
-        self._test_person.advanceRiskFactors(self._risk_model_repository)
+        self._test_person.advance_risk_factors(self._risk_model_repository)
         expectedSBP = 75 * 1 + 140 * 0.5 + 80
         self.assertEqual(expectedSBP, self._test_person._sbp[-1])
 

@@ -21,20 +21,20 @@ class Person:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-    def getNextRiskFactor(self, riskFactor, risk_model_repository):
+    def get_next_risk_factor(self, riskFactor, risk_model_repository):
         model = risk_model_repository.get(riskFactor)
         return model.estimateNextRisk(self._age[-1], self._gender, self._race_ethnicity,
                                       self._sbp[-1], self._dbp[-1], self._a1c[-1], self._hdl[-1],
                                       self._tot_chol[-1])
 
-    def advanceRiskFactors(self, risk_model_repository):
+    def advance_risk_factors(self, risk_model_repository):
         ''' dummy risk models for now — 90% of your prior risk + a random normal intercept
         with a mean slightly greater than 10% of the population mean '''
 
-        next_sbp = self.getNextRiskFactor("sbp", risk_model_repository)
+        next_sbp = self.get_next_risk_factor("sbp", risk_model_repository)
         self._sbp.append(next_sbp)
 
-        next_dbp = self.getNextRiskFactor("dbp", risk_model_repository)
+        next_dbp = self.get_next_risk_factor("dbp", risk_model_repository)
         self._dbp.append(next_dbp)
 
         next_a1c = self._a1c[-1]
@@ -48,7 +48,7 @@ class Person:
 
         self._age.append(self._age[-1]+1)
 
-    def advanceOutcomes(self):
+    def advance_outcomes(self):
         pass
 
     def __repr__(self):
