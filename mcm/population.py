@@ -35,7 +35,7 @@ class NHANESDirectSamplePopulation(Population):
     """ Simple base class to sample with replacement from 2015/2016 NHANES """
 
     def __init__(self, n, year, random_seed=None):
-        nhanes = pd.read_stata("mcm/fullyImputedDataset.dta")
+        nhanes = pd.read_stata("mcm/data/fullyImputedDataset.dta")
         nhanes = nhanes.loc[nhanes.year == year]
         super().__init__(build_people_using_nhanes_for_sampling(
             nhanes, n, random_seed=random_seed))
@@ -45,9 +45,9 @@ class NHANESDirectSamplePopulation(Population):
     def _initializeRiskModels(self):
         self._risk_model_repository = {}
         sbpModelResults = OLSResults.load(
-            "/Users/burke/Documents/research/bpCog/nhanes/logSBPModel.pickle")
+            "mcm/data/logSBPModel.pickle")
         dbpModelResults = OLSResults.load(
-            "/Users/burke/Documents/research/bpCog/nhanes/meanDBPModel.pickle")
+            "mcm/data/meanDBPModel.pickle")
         self._risk_model_repository['sbp'] = LogLinearRiskFactorModel(
             'sbp', sbpModelResults.params, sbpModelResults.bse)
         self._risk_model_repository['dbp'] = LinearRiskFactorModel(
