@@ -23,9 +23,9 @@ class Person:
 
     def get_next_risk_factor(self, riskFactor, risk_model_repository):
         model = risk_model_repository.get(riskFactor)
-        return model.estimateNextRisk(self._age[-1], self._gender, self._race_ethnicity,
-                                      self._sbp[-1], self._dbp[-1], self._a1c[-1], self._hdl[-1],
-                                      self._tot_chol[-1])
+        return model.estimate_next_risk(self._age[-1], self._gender, self._race_ethnicity,
+                                        self._sbp[-1], self._dbp[-1], self._a1c[-1], self._hdl[-1],
+                                        self._tot_chol[-1])
 
     def advance_risk_factors(self, risk_model_repository):
         ''' dummy risk models for now — 90% of your prior risk + a random normal intercept
