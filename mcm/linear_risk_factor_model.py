@@ -39,32 +39,32 @@ class LinearRiskFactorModel:
             'intercept': ses['Intercept'],
         }
 
-    def getCoefficentFromParams(self, param):
+    def get_coefficent_from_params(self, param):
         return np.random.normal(self._params[param], self._ses[param])
 
-    def estimateNextRisk(self, age, gender, race_ethnicity, sbp, dbp, a1c, hdl, chol):
+    def estimate_next_risk(self, age, gender, race_ethnicity, sbp, dbp, a1c, hdl, chol):
         linear_pred = 0
-        linear_pred += age * self.getCoefficentFromParams('age')
-        linear_pred += gender * self.getCoefficentFromParams('gender')
-        linear_pred += sbp * self.getCoefficentFromParams('sbp')
-        linear_pred += dbp * self.getCoefficentFromParams('dbp')
-        linear_pred += a1c * self.getCoefficentFromParams('a1c')
-        linear_pred += hdl * self.getCoefficentFromParams('hdl')
-        linear_pred += chol * self.getCoefficentFromParams('tot_chol')
-        linear_pred += self.getCoefficentFromParams('intercept')
+        linear_pred += age * self.get_coefficent_from_params('age')
+        linear_pred += gender * self.get_coefficent_from_params('gender')
+        linear_pred += sbp * self.get_coefficent_from_params('sbp')
+        linear_pred += dbp * self.get_coefficent_from_params('dbp')
+        linear_pred += a1c * self.get_coefficent_from_params('a1c')
+        linear_pred += hdl * self.get_coefficent_from_params('hdl')
+        linear_pred += chol * self.get_coefficent_from_params('tot_chol')
+        linear_pred += self.get_coefficent_from_params('intercept')
 
         if (race_ethnicity == 2):
-            linear_pred += self.getCoefficentFromParams('raceEth2')
+            linear_pred += self.get_coefficent_from_params('raceEth2')
         elif (race_ethnicity == 3):
-            linear_pred += self.getCoefficentFromParams('raceEth3')
+            linear_pred += self.get_coefficent_from_params('raceEth3')
         elif (race_ethnicity == 4):
-            linear_pred += self.getCoefficentFromParams('raceEth4')
+            linear_pred += self.get_coefficent_from_params('raceEth4')
         elif (race_ethnicity == 5):
-            linear_pred += self.getCoefficentFromParams('raceEth5')
+            linear_pred += self.get_coefficent_from_params('raceEth5')
 
-        return self.transformLinearPredictor(linear_pred)
+        return self.transform_linear_predictor(linear_pred)
 
     '''A stub method so that sub-classes can override to transform the risks '''
 
-    def transformLinearPredictor(self, linear_pred):
+    def transform_linear_predictor(self, linear_pred):
         return linear_pred

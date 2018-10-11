@@ -3,5 +3,5 @@ from mcm.linear_risk_factor_model import LinearRiskFactorModel
 
 
 class LogLinearRiskFactorModel(LinearRiskFactorModel):
-    def transformLinearPredictor(self, linear_pred):
+    def transform_linear_predictor(self, linear_pred):
         return np.exp(linear_pred)
