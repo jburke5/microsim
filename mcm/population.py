@@ -40,9 +40,9 @@ class NHANESDirectSamplePopulation(Population):
         super().__init__(build_people_using_nhanes_for_sampling(
             nhanes, n, random_seed=random_seed))
         self.n = n
-        self._initializeRiskModels()
+        self._initialize_risk_models()
 
-    def _initializeRiskModels(self):
+    def _initialize_risk_models(self):
         self._risk_model_repository = {}
         sbpModelResults = OLSResults.load(
             "mcm/data/logSBPModel.pickle")
@@ -56,9 +56,9 @@ class NHANESDirectSamplePopulation(Population):
     def advance(self, years):
         for _ in range(years):
             for person in self._people:
-                person.advanceRiskFactors(self._risk_model_repository)
-                person.advanceOutcomes()
-            self.applyRecalibrationStandards()
+                person.advance_risk_factors(self._risk_model_repository)
+                person.advance_outcomes()
+            self.apply_recalibration_standards()
 
-    def applyRecalibrationStandards(self):
+    def apply_recalibration_standards(self):
         pass

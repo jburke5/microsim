@@ -8,7 +8,7 @@ class TestPopulation(unittest.TestCase):
     def setUp(self):
         self.test_n = 10000
         self.pandas_seed = 78483
-        full_nhanes = pd.read_stata("mcm/fullyImputedDataset.dta")
+        full_nhanes = pd.read_stata("mcm/data/fullyImputedDataset.dta")
         test_nhanes = full_nhanes.loc[full_nhanes.year == 2015]
         self.test_sample = test_nhanes.sample(
             self.test_n, weights=test_nhanes.WTINT2YR, random_state=self.pandas_seed, replace=True)
