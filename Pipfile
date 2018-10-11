@@ -14,3 +14,6 @@ ipython = "*"
 
 [requires]
 python_version = "3.6"
+
+[scripts]
+test = "python -m unittest discover mcm/test test_*.py"
