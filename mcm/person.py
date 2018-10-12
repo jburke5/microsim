@@ -1,4 +1,3 @@
-import numpy as np
 
 
 class Person:
@@ -30,22 +29,11 @@ class Person:
     def advance_risk_factors(self, risk_model_repository):
         ''' dummy risk models for now — 90% of your prior risk + a random normal intercept
         with a mean slightly greater than 10% of the population mean '''
-
-        next_sbp = self.get_next_risk_factor("sbp", risk_model_repository)
-        self._sbp.append(next_sbp)
-
-        next_dbp = self.get_next_risk_factor("dbp", risk_model_repository)
-        self._dbp.append(next_dbp)
-
-        next_a1c = self._a1c[-1]
-        self._a1c.append(next_a1c)
-
-        next_hdl = self._hdl[-1]
-        self._hdl.append(next_hdl)
-
-        next_tot_chol = self._tot_chol[-1]
-        self._tot_chol.append(next_tot_chol)
-
+        self._sbp.append(self.get_next_risk_factor("sbp", risk_model_repository))
+        self._dbp.append(self.get_next_risk_factor("dbp", risk_model_repository))
+        self._a1c.append(self.get_next_risk_factor("a1c", risk_model_repository))
+        self._hdl.append(self.get_next_risk_factor("hdl", risk_model_repository))
+        self._tot_chol.append(self.get_next_risk_factor("tot_chol", risk_model_repository))
         self._age.append(self._age[-1]+1)
 
     def advance_outcomes(self):
