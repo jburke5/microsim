@@ -8,7 +8,7 @@ class LinearRiskFactorModel:
     risk factors are maintained across time.
     """
 
-    def __init__(self, name, params, ses):
+    def __init__(self, name, params, ses, resids):
         # i'm sure there is a more elegant way to do this...
         self._params = {
             'age': params['age'],
@@ -38,6 +38,7 @@ class LinearRiskFactorModel:
             'tot_chol': ses['tot_chol'],
             'intercept': ses['Intercept'],
         }
+        self._resids = resids
 
     def get_coefficent_from_params(self, param):
         return np.random.normal(self._params[param], self._ses[param])
@@ -61,6 +62,8 @@ class LinearRiskFactorModel:
             linear_pred += self.get_coefficent_from_params('raceEth4')
         elif (race_ethnicity == 5):
             linear_pred += self.get_coefficent_from_params('raceEth5')
+
+        linear_pred += np.random.normal(self._resids.mean(), self._resids.std())
 
         return self.transform_linear_predictor(linear_pred)
 
