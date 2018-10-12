@@ -1,6 +1,6 @@
 from mcm.person import Person
-from mcm.linear_risk_factor_model import LinearRiskFactorModel
 from mcm.log_linear_risk_factor_model import LogLinearRiskFactorModel
+from mcm.linear_risk_factor_model import LinearRiskFactorModel
 from statsmodels.regression.linear_model import OLSResults
 
 import pandas as pd
@@ -42,16 +42,28 @@ class NHANESDirectSamplePopulation(Population):
         self.n = n
         self._initialize_risk_models()
 
+    def _initialize_linear_risk_model(self, referenceName, modelName, repository):
+        modelResults = OLSResults.load("mcm/data/" + modelName + ".pickle")
+        repository[referenceName] = LinearRiskFactorModel(
+            referenceName, modelResults.params, modelResults.bse, modelResults.resid)
+
+    def _initialize_log_linear_risk_model(self, referenceName, modelName, repository):
+        modelResults = OLSResults.load("mcm/data/" + modelName + ".pickle")
+        repository[referenceName] = LogLinearRiskFactorModel(
+            referenceName, modelResults.params, modelResults.bse, modelResults.resid)
+
     def _initialize_risk_models(self):
         self._risk_model_repository = {}
-        sbpModelResults = OLSResults.load(
-            "mcm/data/logSBPModel.pickle")
-        dbpModelResults = OLSResults.load(
-            "mcm/data/meanDBPModel.pickle")
-        self._risk_model_repository['sbp'] = LogLinearRiskFactorModel(
-            'sbp', sbpModelResults.params, sbpModelResults.bse)
-        self._risk_model_repository['dbp'] = LinearRiskFactorModel(
-            'dbp', dbpModelResults.params, dbpModelResults.bse)
+        self._initialize_linear_risk_model(
+            "hdl", "matchedHdlModel", self._risk_model_repository)
+        self._initialize_linear_risk_model(
+            "bmi", "matchedBmiModel", self._risk_model_repository)
+        self._initialize_linear_risk_model(
+            "tot_chol", "matchedTot_cholModel", self._risk_model_repository)
+        self._initialize_linear_risk_model(
+            "a1c", "matchedA1cModel", self._risk_model_repository)
+        self._initialize_log_linear_risk_model("sbp", "logSBPModel", self._risk_model_repository)
+        self._initialize_log_linear_risk_model("dbp", "logDBPModel", self._risk_model_repository)
 
     def advance(self, years):
         for _ in range(years):
