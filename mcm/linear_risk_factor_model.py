@@ -9,6 +9,7 @@ class LinearRiskFactorModel:
     """
 
     def __init__(self, name, params, ses, resids):
+
         # i'm sure there is a more elegant way to do this...
         self._params = {
             'age': params['age'],
@@ -17,11 +18,14 @@ class LinearRiskFactorModel:
             'raceEth3': params['raceEthnicity[T.3]'],
             'raceEth4': params['raceEthnicity[T.4]'],
             'raceEth5': params['raceEthnicity[T.5]'],
+            'smokingStatus1': params['smokingStatus[T.1]'],
+            'smokingStatus2': params['smokingStatus[T.2]'],
             'sbp': params['sbp'],
             'dbp': params['dbp'],
             'a1c': params['a1c'],
             'hdl': params['hdl'],
             'tot_chol': params['tot_chol'],
+            'bmi': params['bmi'],
             'intercept': params['Intercept'],
         }
         self._ses = {
@@ -31,11 +35,14 @@ class LinearRiskFactorModel:
             'raceEth3': ses['raceEthnicity[T.3]'],
             'raceEth4': ses['raceEthnicity[T.4]'],
             'raceEth5': ses['raceEthnicity[T.5]'],
+            'smokingStatus1': ses['smokingStatus[T.1]'],
+            'smokingStatus2': ses['smokingStatus[T.2]'],
             'sbp': ses['sbp'],
             'dbp': ses['dbp'],
             'a1c': ses['a1c'],
             'hdl': ses['hdl'],
             'tot_chol': ses['tot_chol'],
+            'bmi': ses['bmi'],
             'intercept': ses['Intercept'],
         }
         self._resids = resids
@@ -43,7 +50,8 @@ class LinearRiskFactorModel:
     def get_coefficent_from_params(self, param):
         return np.random.normal(self._params[param], self._ses[param])
 
-    def estimate_next_risk(self, age, gender, race_ethnicity, sbp, dbp, a1c, hdl, chol):
+    def estimate_next_risk(self, age, gender, race_ethnicity, sbp, dbp, a1c, hdl, chol,
+                           bmi, smoking_status):
         linear_pred = 0
         linear_pred += age * self.get_coefficent_from_params('age')
         linear_pred += gender * self.get_coefficent_from_params('gender')
@@ -52,6 +60,7 @@ class LinearRiskFactorModel:
         linear_pred += a1c * self.get_coefficent_from_params('a1c')
         linear_pred += hdl * self.get_coefficent_from_params('hdl')
         linear_pred += chol * self.get_coefficent_from_params('tot_chol')
+        linear_pred += bmi * self.get_coefficent_from_params('bmi')
         linear_pred += self.get_coefficent_from_params('intercept')
 
         if (race_ethnicity == 2):
@@ -62,6 +71,11 @@ class LinearRiskFactorModel:
             linear_pred += self.get_coefficent_from_params('raceEth4')
         elif (race_ethnicity == 5):
             linear_pred += self.get_coefficent_from_params('raceEth5')
+
+        if (smoking_status == 1):
+            linear_pred += self.get_coefficent_from_params('smokingStatus1')
+        elif (smoking_status == 2):
+            linear_pred += self.get_coefficent_from_params('smokingStatus2')
 
         linear_pred += np.random.normal(self._resids.mean(), self._resids.std())
 
