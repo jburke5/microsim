@@ -26,6 +26,8 @@ def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
             a1c=x.a1c,
             hdl=x.hdl,
             tot_chol=x.tot_chol,
+            bmi=x.bmi,
+            smoking_status=x.smokingStatus,
             dfIndex=x.index,
             diedBy2011=x.diedBy2011), axis=1)
     return people
@@ -62,6 +64,8 @@ class NHANESDirectSamplePopulation(Population):
             "tot_chol", "matchedTot_cholModel", self._risk_model_repository)
         self._initialize_linear_risk_model(
             "a1c", "matchedA1cModel", self._risk_model_repository)
+        self._initialize_linear_risk_model(
+            "bmi", "matchedBmiModel", self._risk_model_repository)
         self._initialize_log_linear_risk_model("sbp", "logSBPModel", self._risk_model_repository)
         self._initialize_log_linear_risk_model("dbp", "logDBPModel", self._risk_model_repository)
 
