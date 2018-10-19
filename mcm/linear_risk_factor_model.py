@@ -1,3 +1,4 @@
+from mcm.race_ethnicity import NHANESRaceEthnicity
 import numpy as np
 
 
@@ -64,13 +65,13 @@ class LinearRiskFactorModel:
         linear_pred += bmi * self.get_coefficent_from_params('bmi')
         linear_pred += self.get_coefficent_from_params('intercept')
 
-        if (race_ethnicity == 2):
+        if (race_ethnicity == NHANESRaceEthnicity.OTHER_HISPANIC):
             linear_pred += self.get_coefficent_from_params('raceEth2')
-        elif (race_ethnicity == 3):
+        elif (race_ethnicity == NHANESRaceEthnicity.NON_HISPANIC_WHITE):
             linear_pred += self.get_coefficent_from_params('raceEth3')
-        elif (race_ethnicity == 4):
+        elif (race_ethnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK):
             linear_pred += self.get_coefficent_from_params('raceEth4')
-        elif (race_ethnicity == 5):
+        elif (race_ethnicity == NHANESRaceEthnicity.OTHER):
             linear_pred += self.get_coefficent_from_params('raceEth5')
 
         if (smoking_status == 1):
