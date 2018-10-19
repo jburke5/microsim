@@ -1,4 +1,5 @@
 from mcm.race_ethnicity import NHANESRaceEthnicity
+from mcm.smoking_status import SmokingStatus
 import numpy as np
 
 
@@ -74,9 +75,9 @@ class LinearRiskFactorModel:
         elif (race_ethnicity == NHANESRaceEthnicity.OTHER):
             linear_pred += self.get_coefficent_from_params('raceEth5')
 
-        if (smoking_status == 1):
+        if (smoking_status == SmokingStatus.FORMER):
             linear_pred += self.get_coefficent_from_params('smokingStatus1')
-        elif (smoking_status == 2):
+        elif (smoking_status == SmokingStatus.CURRENT):
             linear_pred += self.get_coefficent_from_params('smokingStatus2')
 
         linear_pred += np.random.normal(self._resids.mean(), self._resids.std())

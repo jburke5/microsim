@@ -2,6 +2,7 @@ from mcm.person import Person
 from mcm.log_linear_risk_factor_model import LogLinearRiskFactorModel
 from mcm.linear_risk_factor_model import LinearRiskFactorModel
 from mcm.race_ethnicity import NHANESRaceEthnicity
+from mcm.smoking_status import SmokingStatus
 from statsmodels.regression.linear_model import OLSResults
 
 import pandas as pd
@@ -28,7 +29,7 @@ def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
             hdl=x.hdl,
             tot_chol=x.tot_chol,
             bmi=x.bmi,
-            smoking_status=x.smokingStatus,
+            smoking_status=SmokingStatus(int(x.smokingStatus)),
             dfIndex=x.index,
             diedBy2011=x.diedBy2011), axis=1)
     return people
