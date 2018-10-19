@@ -3,7 +3,6 @@
 class Person:
     """Person is using risk factors and demographics based off NHANES"""
 
-    # TODO: please remember to come back and make race and gender enums
     # TODO: probably should also add a view of the "most recent" version of risk factor values
     def __init__(self, age, gender, race_ethnicity, sbp, dbp, a1c, hdl, tot_chol, bmi,
                  smoking_status, **kwargs):
