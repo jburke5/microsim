@@ -9,8 +9,8 @@ class Person:
                  smoking_status, **kwargs):
 
         # building in manual bounds on extreme values
-        self._lowerBounds = {"sbp": 50}
-        self._upperBounds = {"sbp": 300}
+        self._lowerBounds = {"sbp": 60, "dbp": 20}
+        self._upperBounds = {"sbp": 300, "dbp": 180}
 
         self._gender = gender
         self._race_ethnicity = race_ethnicity
@@ -18,8 +18,8 @@ class Person:
         self._alive = [True]
 
         self._age = [age]
-        self._sbp = [sbp]
-        self._dbp = [dbp]
+        self._sbp = [self.apply_bounds("sbp", sbp)]
+        self._dbp = [self.apply_bounds("dbp", dbp)]
         self._a1c = [a1c]
         self._hdl = [hdl]
         self._tot_chol = [tot_chol]
@@ -36,6 +36,12 @@ class Person:
                                         self._tot_chol[-1], self._bmi[-1], self._smoking_status)
 
     def apply_bounds(self, varName, varValue):
+        """
+        Ensures that risk factor are within static prespecified bounds.
+
+        Other algorithms might be needed in the future to avoid pooling in the tails,
+        if there are many extreme risk factor results.
+        """
         if varName in self._upperBounds:
             upperBound = self._upperBounds[varName]
             varValue = varValue if varValue < upperBound else upperBound
@@ -45,13 +51,12 @@ class Person:
         return varValue
 
     def advance_risk_factors(self, risk_model_repository):
-        ''' dummy risk models for now — 90% of your prior risk + a random normal intercept
-        with a mean slightly greater than 10% of the population mean '''
-        sbp = self.get_next_risk_factor("sbp", risk_model_repository)
-        sbp = self.apply_bounds("sbp", sbp)
-        self._sbp.append(sbp)
 
-        self._dbp.append(self.get_next_risk_factor("dbp", risk_model_repository))
+        self._sbp.append(self.apply_bounds(
+            "sbp", self.get_next_risk_factor("sbp", risk_model_repository)))
+
+        self._dbp.append(self.apply_bounds(
+            "dbp", self.get_next_risk_factor("dbp", risk_model_repository)))
         self._a1c.append(self.get_next_risk_factor("a1c", risk_model_repository))
         self._hdl.append(self.get_next_risk_factor("hdl", risk_model_repository))
         self._tot_chol.append(self.get_next_risk_factor("tot_chol", risk_model_repository))

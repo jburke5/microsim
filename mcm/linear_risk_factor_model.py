@@ -45,6 +45,7 @@ class LinearRiskFactorModel:
             'bmi': ses['bmi'],
             'intercept': ses['Intercept'],
         }
+
         self._resids = resids
 
     def get_coefficent_from_params(self, param):
