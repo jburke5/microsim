@@ -3,6 +3,7 @@ from mcm.log_linear_risk_factor_model import LogLinearRiskFactorModel
 from mcm.linear_risk_factor_model import LinearRiskFactorModel
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
+from mcm.gender import NHANESGender
 from statsmodels.regression.linear_model import OLSResults
 
 import pandas as pd
@@ -21,7 +22,7 @@ def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
     people = repeated_sample.apply(
         lambda x: Person(
             age=x.age,
-            gender=x.gender,
+            gender=NHANESGender(int(x.gender)),
             race_ethnicity=NHANESRaceEthnicity(int(x.raceEthnicity)),
             sbp=x.meanSBP,
             dbp=x.meanDBP,
