@@ -28,6 +28,9 @@ class Person:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    def has_diabetes(self):
+        return sorted(self._a1c)[-1] >= 6.5
+
     def get_next_risk_factor(self, riskFactor, risk_model_repository):
         model = risk_model_repository.get(riskFactor)
         return model.estimate_next_risk(self._age[-1], self._gender, self._race_ethnicity,
@@ -63,7 +66,10 @@ class Person:
         self._age.append(self._age[-1]+1)
 
     def advance_outcomes(self):
-        pass
+        # do you have an event?
+        risk_factors
+
+        # if so, which event did you have?
 
     def __repr__(self):
         return (f"Person(age={self._age[-1]}, "
