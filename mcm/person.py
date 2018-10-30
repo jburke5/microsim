@@ -67,7 +67,7 @@ class Person:
 
     def advance_outcomes(self):
         # do you have an event?
-        risk_factors
+        pass
 
         # if so, which event did you have?
 
