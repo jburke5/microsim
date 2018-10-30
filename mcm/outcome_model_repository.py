@@ -1,5 +1,4 @@
 from mcm.outcome import Outcome
-from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.gender import NHANESGender
 from mcm.ascvd_outcome_model import ASCVDOutcomeModel
 
