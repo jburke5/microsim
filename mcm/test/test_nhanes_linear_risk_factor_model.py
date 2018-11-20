@@ -1,12 +1,7 @@
-from mcm.population import NHANESDirectSamplePopulation
-from mcm.nhanes_linear_risk_factor_model import NHANESLinearRiskFactorModel
 from mcm.person import Person
-from statsmodels.regression.linear_model import OLSResults
 from mcm.test.test_risk_model_repository import TestRiskModelRepository
 
 import unittest
-import pandas as pd
-import numpy as np
 
 
 class TestNHANESLinearRiskFactorModel(unittest.TestCase):

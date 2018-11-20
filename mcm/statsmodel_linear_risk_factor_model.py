@@ -12,8 +12,6 @@ class StatsModelLinearRiskFactorModel:
         self.log_transform = log_transform
 
     def get_modified_attribute_for_parameter_from_person(self, name, person):
-        stems = ["log", "mean"]
-
         returnParam = self.get_modified_parameter_for_person(name, person)
         if not isinstance(returnParam, list) and not isinstance(returnParam, np.ndarray):
             return returnParam
