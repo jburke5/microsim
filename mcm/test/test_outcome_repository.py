@@ -13,27 +13,27 @@ class TestOutcomeRepository(unittest.TestCase):
     def setUp(self):
         self._white_male = Person(
             age=55, gender=NHANESGender.MALE,
-            race_ethnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=120, dbp=80, a1c=6, hdl=50, tot_chol=213,
-            bmi=22, smoking_status=SmokingStatus.NEVER)
+            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
+            sbp=120, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
+            bmi=22, smokingStatus=SmokingStatus.NEVER)
 
         self._black_male = Person(
             age=55, gender=NHANESGender.MALE,
-            race_ethnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
-            sbp=120, dbp=80, a1c=6, hdl=50, tot_chol=200,
-            bmi=22, smoking_status=SmokingStatus.NEVER)
+            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
+            sbp=120, dbp=80, a1c=6, hdl=50, totChol=200, ldl=90, trig=150,
+            bmi=22, smokingStatus=SmokingStatus.NEVER)
 
         self._white_female = Person(
             age=55, gender=NHANESGender.FEMALE,
-            race_ethnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=120, dbp=80, a1c=6, hdl=50, tot_chol=213,
-            bmi=22, smoking_status=SmokingStatus.NEVER)
+            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
+            sbp=120, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
+            bmi=22, smokingStatus=SmokingStatus.NEVER)
 
         self._black_female = Person(
             age=55, gender=NHANESGender.FEMALE,
-            race_ethnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
-            sbp=120, dbp=80, a1c=6, hdl=50, tot_chol=213,
-            bmi=22, smoking_status=SmokingStatus.NEVER)
+            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
+            sbp=120, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
+            bmi=22, smokingStatus=SmokingStatus.NEVER)
 
         self._outcome_model_repository = OutcomeModelRepository()
 
@@ -50,7 +50,10 @@ class TestOutcomeRepository(unittest.TestCase):
     def test_calculate_risk_for_person(self):
         self.assertAlmostEqual(0.017654, self._outcome_model_repository.get_risk_for_person(
             self._black_female, Outcome.CARDIOVASCULAR, 10), delta=0.00001)
-        self.assertAlmostEqual(0.033756, self._outcome_model_repository.get_risk_for_person(
+        # note that the reference value here is the corrected version of the
+        # appendis table with the tot_chol/hdl ratio set to 4 for both the overall term and
+        # the race interaction term
+        self.assertAlmostEqual(.03476, self._outcome_model_repository.get_risk_for_person(
             self._black_male, Outcome.CARDIOVASCULAR, 10), delta=0.00001)
 
     if __name__ == "__main__":

@@ -39,20 +39,20 @@ class ASCVDOutcomeModel:
         xb += self._sbp_x_sbp * (person._sbp[-1] ** 2)
         xb += self._sbp * person._sbp[-1]
         xb += self._diabetes * person.has_diabetes()
-        xb += self._tot_chol_hdl_ratio * person._tot_chol[-1] / person._hdl[-1]
+        xb += self._tot_chol_hdl_ratio * person._totChol[-1] / person._hdl[-1]
         xb += self._age_x_sbp * person._age[-1] * person._sbp[-1]
 
-        if person._smoking_status == SmokingStatus.CURRENT:
+        if person._smokingStatus == SmokingStatus.CURRENT:
             xb += self._current_smoker
 
-        if person._race_ethnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
+        if person._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
             xb += self._black_race
             xb += self._age_x_black_race * person._age[-1]
             xb += self._sbp_x_black_race * person._sbp[-1]
             xb += self._black_race_x_diabetes * person.has_diabetes()
-            xb += self._black_race_x_tot_chol_hdl_ratio * person._tot_chol[-1] / person._hdl[-1]
+            xb += self._black_race_x_tot_chol_hdl_ratio * person._totChol[-1] / person._hdl[-1]
             xb += self._age_x_sbp_x_black_race * person._age[-1] * person._sbp[-1]
-            if (person._smoking_status == SmokingStatus.CURRENT):
+            if (person._smokingStatus == SmokingStatus.CURRENT):
                 xb += self._black_race_x_current_smoker
             # TODO : need to model treatment
             xb += self._sbp_x_black_race_x_treatment * person._sbp[-1] * 0
