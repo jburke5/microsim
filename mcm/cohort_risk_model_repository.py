@@ -1,7 +1,8 @@
+from mcm.regression_model import RegressionModel
 from mcm.risk_model_repository import RiskModelRepository
 from mcm.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
 
-from statsmodels.regression.linear_model import OLSResults
+import json
 
 
 class CohortRiskModelRepository(RiskModelRepository):
@@ -17,5 +18,9 @@ class CohortRiskModelRepository(RiskModelRepository):
         self._initialize_linear_risk_model("dbp", "logDBPCohortModel", log=True)
 
     def _initialize_linear_risk_model(self, referenceName, modelName, log=False):
-        model = OLSResults.load("mcm/data/" + modelName + ".pickle")
+        model_spec_path = "mcm/data/" + modelName + ".json"
+        with open(model_spec_path, 'r') as model_spec_file:
+            model_spec = json.load(model_spec_file)
+            model = RegressionModel(**model_spec)
+
         self._repository[referenceName] = StatsModelLinearRiskFactorModel(model, log)
