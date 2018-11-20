@@ -2,18 +2,18 @@ import json
 
 
 class RegressionModel:
-    def __init__(self, params, ses, residual_mean, residual_sd):
-        self._params = params
-        self._ses = ses
+    def __init__(self, parameters, standard_errors, residual_mean, residual_standard_deviation):
+        self._parameters = parameters
+        self._standard_errors = standard_errors
         self._residual_mean = residual_mean
-        self._residual_sd = residual_sd
+        self._residual_standard_deviation = residual_standard_deviation
 
     def to_json(self):
         model_spec = {
-            'params': self._params,
-            'ses': self._ses,
+            'parameters': self._parameters,
+            'standard_errors': self._standard_errors,
             'residual_mean': self._residual_mean,
-            'residual_sd': self._residual_sd,
+            'residual_standard_deviation': self._residual_standard_deviation,
         }
         return json.dumps(model_spec)
 
