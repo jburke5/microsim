@@ -21,6 +21,5 @@ class CohortRiskModelRepository(RiskModelRepository):
         model_spec_path = "mcm/data/" + modelName + ".json"
         with open(model_spec_path, 'r') as model_spec_file:
             model_spec = json.load(model_spec_file)
-            model = RegressionModel(**model_spec)
-
+        model = RegressionModel(**model_spec)
         self._repository[referenceName] = StatsModelLinearRiskFactorModel(model, log)
