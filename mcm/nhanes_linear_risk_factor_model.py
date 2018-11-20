@@ -1,9 +1,11 @@
-from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
+from mcm.race_ethnicity import NHANESRaceEthnicity
+
 import numpy as np
 
 
-class LinearRiskFactorModel:
+class NHANESLinearRiskFactorModel:
+
     """
     Predicts next risk factor for a Person by applying a linear regression. Every known risk factor
     on a Person should be included in a risk factor model to ensure that coerrelations between
@@ -26,7 +28,7 @@ class LinearRiskFactorModel:
             'dbp': params['dbp'],
             'a1c': params['a1c'],
             'hdl': params['hdl'],
-            'tot_chol': params['tot_chol'],
+            'totChol': params['totChol'],
             'bmi': params['bmi'],
             'intercept': params['Intercept'],
         }
@@ -43,7 +45,7 @@ class LinearRiskFactorModel:
             'dbp': ses['dbp'],
             'a1c': ses['a1c'],
             'hdl': ses['hdl'],
-            'tot_chol': ses['tot_chol'],
+            'totChol': ses['totChol'],
             'bmi': ses['bmi'],
             'intercept': ses['Intercept'],
         }
@@ -53,31 +55,30 @@ class LinearRiskFactorModel:
     def get_coefficent_from_params(self, param):
         return np.random.normal(self._params[param], self._ses[param])
 
-    def estimate_next_risk(self, age, gender, race_ethnicity, sbp, dbp, a1c, hdl, chol,
-                           bmi, smoking_status):
+    def estimate_next_risk(self, person):
         linear_pred = 0
-        linear_pred += age * self.get_coefficent_from_params('age')
-        linear_pred += gender * self.get_coefficent_from_params('gender')
-        linear_pred += sbp * self.get_coefficent_from_params('sbp')
-        linear_pred += dbp * self.get_coefficent_from_params('dbp')
-        linear_pred += a1c * self.get_coefficent_from_params('a1c')
-        linear_pred += hdl * self.get_coefficent_from_params('hdl')
-        linear_pred += chol * self.get_coefficent_from_params('tot_chol')
-        linear_pred += bmi * self.get_coefficent_from_params('bmi')
+        linear_pred += person._age[-1] * self.get_coefficent_from_params('age')
+        linear_pred += person._gender * self.get_coefficent_from_params('gender')
+        linear_pred += person._sbp[-1] * self.get_coefficent_from_params('sbp')
+        linear_pred += person._dbp[-1] * self.get_coefficent_from_params('dbp')
+        linear_pred += person._a1c[-1] * self.get_coefficent_from_params('a1c')
+        linear_pred += person._hdl[-1] * self.get_coefficent_from_params('hdl')
+        linear_pred += person._totChol[-1] * self.get_coefficent_from_params('totChol')
+        linear_pred += person._bmi[-1] * self.get_coefficent_from_params('bmi')
         linear_pred += self.get_coefficent_from_params('intercept')
 
-        if (race_ethnicity == NHANESRaceEthnicity.OTHER_HISPANIC):
+        if (person._raceEthnicity == NHANESRaceEthnicity.OTHER_HISPANIC):
             linear_pred += self.get_coefficent_from_params('raceEth2')
-        elif (race_ethnicity == NHANESRaceEthnicity.NON_HISPANIC_WHITE):
+        elif (person._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_WHITE):
             linear_pred += self.get_coefficent_from_params('raceEth3')
-        elif (race_ethnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK):
+        elif (person._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK):
             linear_pred += self.get_coefficent_from_params('raceEth4')
-        elif (race_ethnicity == NHANESRaceEthnicity.OTHER):
+        elif (person._raceEthnicity == NHANESRaceEthnicity.OTHER):
             linear_pred += self.get_coefficent_from_params('raceEth5')
 
-        if (smoking_status == SmokingStatus.FORMER):
+        if (person._smokingStatus == SmokingStatus.FORMER):
             linear_pred += self.get_coefficent_from_params('smokingStatus1')
-        elif (smoking_status == SmokingStatus.CURRENT):
+        elif (person._smokingStatus == SmokingStatus.CURRENT):
             linear_pred += self.get_coefficent_from_params('smokingStatus2')
 
         linear_pred += np.random.normal(self._resids.mean(), self._resids.std())
