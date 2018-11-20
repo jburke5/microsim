@@ -2,6 +2,7 @@ from mcm.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorMo
 from mcm.gender import NHANESGender
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
+from mcm.regression_model import RegressionModel
 
 
 from mcm.person import Person
@@ -19,7 +20,12 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
         sbp = age * 1.05 + np.random.normal(loc=40, scale=30, size=popSize)
         df = pd.DataFrame({'age': age, 'sbp': sbp})
         simpleModel = statsmodel.ols(formula="sbp ~ age", data=df)
-        self.simpleModelResult = simpleModel.fit()
+        self.simpleModelResultSM = simpleModel.fit()
+        self.simpleModelResult = RegressionModel(
+            self.simpleModelResultSM.params.to_dict(),
+            self.simpleModelResultSM.bse.to_dict(),
+            self.simpleModelResultSM.resid.mean(),
+            self.simpleModelResultSM.resid.std())
 
         self.person = Person(age=80, gender=NHANESGender.MALE,
                              raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE, sbp=120,
@@ -36,26 +42,47 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
         df2 = pd.DataFrame({'age': age, 'sbp': [person._sbp[-1] for person in self.people],
                             'meanSbp': [np.array(person._sbp).mean() for person in self.people]})
 
-        self.meanModelResult = statsmodel.ols(formula="sbp ~ age + meanSbp", data=df2).fit()
+        self.meanModelResultSM = statsmodel.ols(formula="sbp ~ age + meanSbp", data=df2).fit()
+        self.meanModelResult = RegressionModel(
+            self.meanModelResultSM.params.to_dict(),
+            self.meanModelResultSM.bse.to_dict(),
+            self.meanModelResultSM.resid.mean(),
+            self.meanModelResultSM.resid.std())
 
         df3 = pd.DataFrame({'age': age, 'sbp': [person._sbp[-1] for person in self.people],
                             'logMeanSbp':
                             [np.log(np.array(person._sbp).mean()) for person in self.people]})
 
-        self.logMeanModelResult = statsmodel.ols(formula="sbp ~ age + logMeanSbp", data=df3).fit()
+        self.logMeanModelResultSM = statsmodel.ols(
+            formula="sbp ~ age + logMeanSbp", data=df3).fit()
+        self.logMeanModelResult = RegressionModel(
+            self.logMeanModelResultSM.params.to_dict(),
+            self.logMeanModelResultSM.bse.to_dict(),
+            self.logMeanModelResultSM.resid.mean(),
+            self.logMeanModelResultSM.resid.std())
 
         race = np.random.randint(1, 5, size=popSize)
         df4 = pd.DataFrame({'age': age, 'sbp': sbp, 'raceEthnicity': race})
         df4.raceEthnicity = df4.raceEthnicity.astype('category')
-        self.raceModelResult = statsmodel.ols(
+        self.raceModelResultSM = statsmodel.ols(
             formula="sbp ~ age + raceEthnicity", data=df4).fit()
+        self.raceModelResult = RegressionModel(
+            self.raceModelResultSM.params.to_dict(),
+            self.raceModelResultSM.bse.to_dict(),
+            self.raceModelResultSM.resid.mean(),
+            self.raceModelResultSM.resid.std())
 
         dfMeanAndLag = pd.DataFrame({'age': age, 'sbp': [person._sbp[-1] for person in self.people],
                                      'meanSbp': [np.array(person._sbp).mean() for person in self.people],
                                      'lagSbp':  [person._sbp[-1] for person in self.people]})
 
-        self.meanLagModelResult = statsmodel.ols(
+        self.meanLagModelResultSM = statsmodel.ols(
             formula="sbp ~ age + meanSbp + lagSbp", data=dfMeanAndLag).fit()
+        self.meanLagModelResult = RegressionModel(
+            self.meanLagModelResultSM.params.to_dict(),
+            self.meanLagModelResultSM.bse.to_dict(),
+            self.meanLagModelResultSM.resid.mean(),
+            self.meanLagModelResultSM.resid.std())
 
     def advancePerson(self, person):
         person._age.append(person._age[-1]+1)
@@ -68,47 +95,47 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                            np.random.normal(loc=120, scale=20, size=1)[0])
 
     def testSimpleModel(self):
-        self.assertEqual(self.simpleModelResult.params['age'] * self.person._age[-1] +
-                         self.simpleModelResult.params['Intercept'],
+        self.assertEqual(self.simpleModelResultSM.params['age'] * self.person._age[-1] +
+                         self.simpleModelResultSM.params['Intercept'],
                          StatsModelLinearRiskFactorModel(
             self.simpleModelResult).estimate_next_risk(self.person))
 
     def testModelWithMeanParameter(self):
         testPerson = self.people[5]
 
-        self.assertAlmostEqual(self.meanModelResult.params['age'] * testPerson._age[-1] +
-                               self.meanModelResult.params['meanSbp'] *
+        self.assertAlmostEqual(self.meanModelResultSM.params['age'] * testPerson._age[-1] +
+                               self.meanModelResultSM.params['meanSbp'] *
                                np.array(testPerson._sbp).mean() +
-                               self.meanModelResult.params['Intercept'],
+                               self.meanModelResultSM.params['Intercept'],
                                StatsModelLinearRiskFactorModel(
             self.meanModelResult).estimate_next_risk(testPerson), 5)
 
     def testLagAndMean(self):
         testPerson = self.people[12]
 
-        self.assertAlmostEqual(self.meanLagModelResult.params['age'] * testPerson._age[-1] +
-                               self.meanLagModelResult.params['meanSbp'] *
+        self.assertAlmostEqual(self.meanLagModelResultSM.params['age'] * testPerson._age[-1] +
+                               self.meanLagModelResultSM.params['meanSbp'] *
                                np.array(testPerson._sbp).mean() +
-                               self.meanLagModelResult.params['lagSbp'] * testPerson._sbp[-1] +
-                               self.meanLagModelResult.params['Intercept'],
+                               self.meanLagModelResultSM.params['lagSbp'] * testPerson._sbp[-1] +
+                               self.meanLagModelResultSM.params['Intercept'],
                                StatsModelLinearRiskFactorModel(
             self.meanLagModelResult).estimate_next_risk(testPerson), 5)
 
     def testModelWithLogMeanParameter(self):
         testPerson = self.people[10]
-        self.assertAlmostEqual(self.logMeanModelResult.params['age'] * testPerson._age[-1] +
-                               self.logMeanModelResult.params['logMeanSbp'] *
+        self.assertAlmostEqual(self.logMeanModelResultSM.params['age'] * testPerson._age[-1] +
+                               self.logMeanModelResultSM.params['logMeanSbp'] *
                                np.log(np.array(testPerson._sbp).mean()) +
-                               self.logMeanModelResult.params['Intercept'],
+                               self.logMeanModelResultSM.params['Intercept'],
                                StatsModelLinearRiskFactorModel(
             self.logMeanModelResult).estimate_next_risk(testPerson), 5)
 
     def testModelWithCategoricalParameter(self):
         testPerson = self.people[21]
         testRace = testPerson._raceEthnicity
-        self.assertAlmostEqual(self.raceModelResult.params['age'] * testPerson._age[-1] +
-                               self.raceModelResult.params['raceEthnicity[T.' +
-                                                           str(int(testRace)) + ']'] +
-                               self.raceModelResult.params['Intercept'],
+        self.assertAlmostEqual(self.raceModelResultSM.params['age'] * testPerson._age[-1] +
+                               self.raceModelResultSM.params['raceEthnicity[T.' +
+                                                             str(int(testRace)) + ']'] +
+                               self.raceModelResultSM.params['Intercept'],
                                StatsModelLinearRiskFactorModel(
             self.raceModelResult).estimate_next_risk(testPerson), 5)
