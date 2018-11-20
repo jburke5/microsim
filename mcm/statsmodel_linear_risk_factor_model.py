@@ -1,14 +1,17 @@
 
 import numpy as np
 
+# TODO: this class needs to be renamed. its no longer interfacing with statsmodel
+# conceptually, what it does now is bridge the regression model and the person
+
 
 class StatsModelLinearRiskFactorModel:
 
-    def __init__(self, model, log_transform=False):
-        self.model = model
-        self.coeffs = self.model.params
-        self.ses = self.model.bse
-        self.resids = self.model.resid
+    def __init__(self, regression_model, log_transform=False):
+        self.parameters = regression_model._parameters
+        self.standard_errors = regression_model._standard_errors
+        self.residual_mean = regression_model._residual_mean
+        self.residual_standard_deviation = regression_model._residual_standard_deviation
         self.log_transform = log_transform
 
     def get_modified_attribute_for_parameter_from_person(self, name, person):
@@ -48,14 +51,15 @@ class StatsModelLinearRiskFactorModel:
 
     def estimate_next_risk(self, person):
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
-        linearPredictor = self.model.params['Intercept']
-        nonInterceptParams = self.model.params.drop('Intercept')
+        linearPredictor = self.parameters['Intercept']
+        nonInterceptParams = dict(self.parameters)
+        del nonInterceptParams['Intercept']
 
         # sort parametesr into categorical and non-categorial
         categoricalParams = {}
         nonCategoricalParams = {}
 
-        for coeff_name, coeff_val in nonInterceptParams.iteritems():
+        for coeff_name, coeff_val in nonInterceptParams.items():
             if "[" in coeff_name:
                 categoricalParams[coeff_name] = coeff_val
             else:
