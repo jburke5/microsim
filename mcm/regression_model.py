@@ -20,4 +20,4 @@ class RegressionModel:
     def write_json(self, filepath):
         with open(filepath, 'w') as model_spec_file:
             model_spec_json = self.to_json()
-            json.dump(model_spec_json, model_spec_file)
+            model_spec_file.write(model_spec_json)

@@ -18,7 +18,7 @@ class CohortRiskModelRepository(RiskModelRepository):
         self._initialize_linear_risk_model("dbp", "logDBPCohortModel", log=True)
 
     def _initialize_linear_risk_model(self, referenceName, modelName, log=False):
-        model_spec_path = "mcm/data/" + modelName + ".json"
+        model_spec_path = "mcm/data/" + modelName + "Spec.json"
         with open(model_spec_path, 'r') as model_spec_file:
             model_spec = json.load(model_spec_file)
         model = RegressionModel(**model_spec)
