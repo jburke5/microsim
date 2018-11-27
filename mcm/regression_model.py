@@ -16,8 +16,8 @@ class RegressionModel:
 
     def to_json(self):
         model_spec = {
-            'parameters': self._coefficients,
-            'standard_errors': self._coefficient_standard_errors,
+            'coefficients': self._coefficients,
+            'coefficient_standard_errors': self._coefficient_standard_errors,
             'residual_mean': self._residual_mean,
             'residual_standard_deviation': self._residual_standard_deviation,
         }
