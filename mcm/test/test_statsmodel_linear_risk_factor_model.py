@@ -72,7 +72,8 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
             self.raceModelResultSM.resid.mean(),
             self.raceModelResultSM.resid.std())
 
-        dfMeanAndLag = pd.DataFrame({'age': age, 'sbp': [person._sbp[-1] for person in self.people],
+        dfMeanAndLag = pd.DataFrame({'age': age,
+                                     'sbp': [person._sbp[-1] for person in self.people],
                                      'meanSbp': [np.array(person._sbp).mean() for person in self.people],
                                      'lagSbp':  [person._sbp[-1] for person in self.people]})
 
