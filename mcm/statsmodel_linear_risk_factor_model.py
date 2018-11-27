@@ -8,8 +8,8 @@ import numpy as np
 class StatsModelLinearRiskFactorModel:
 
     def __init__(self, regression_model, log_transform=False):
-        self.parameters = regression_model._parameters
-        self.standard_errors = regression_model._standard_errors
+        self.parameters = regression_model._coefficients
+        self.standard_errors = regression_model._coefficient_standard_errors
         self.residual_mean = regression_model._residual_mean
         self.residual_standard_deviation = regression_model._residual_standard_deviation
         self.log_transform = log_transform
@@ -25,9 +25,9 @@ class StatsModelLinearRiskFactorModel:
         return toLower[:1].lower() + toLower[1:]
 
     '''
-    This will apply an order of operations to the elements of the mdoel name. So, meanLogLagSbp would
-    take lagSBP, log it and take the mean. If the order of operations for the first elements matters,
-    they'll be appleid in order of which they are listed...
+    This will apply an order of operations to the elements of the mdoel name. So, meanLogLagSbp
+    would take lagSBP, log it and take the mean. If the order of operations for the first elements
+    matters,they'll be appleid in order of which they are listed...
     '''
 
     def get_modified_parameter_for_person(self, name, person):
