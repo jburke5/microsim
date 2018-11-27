@@ -3,6 +3,7 @@ from mcm.risk_model_repository import RiskModelRepository
 from mcm.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
 
 import json
+import os
 
 
 class CohortRiskModelRepository(RiskModelRepository):
@@ -18,7 +19,10 @@ class CohortRiskModelRepository(RiskModelRepository):
         self._initialize_linear_risk_model("dbp", "logDBPCohortModel", log=True)
 
     def _initialize_linear_risk_model(self, referenceName, modelName, log=False):
-        model_spec_path = "mcm/data/" + modelName + "Spec.json"
+        abs_module_path = os.path.abspath(os.path.dirname(__file__))
+        # TODO: need to get the "+" out of the path name
+        model_spec_path = os.path.normpath(os.path.join(abs_module_path, "./data/",
+                                                        modelName + "Spec.json"))
         with open(model_spec_path, 'r') as model_spec_file:
             model_spec = json.load(model_spec_file)
         model = RegressionModel(**model_spec)
