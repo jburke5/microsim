@@ -15,8 +15,8 @@ class CohortRiskModelRepository(RiskModelRepository):
         self._initialize_linear_risk_model("trig", "trigCohortModel")
         self._initialize_linear_risk_model("a1c", "a1cCohortModel")
         self._initialize_linear_risk_model("ldl", "ldlCohortModel")
-        self._initialize_linear_risk_model("sbp", "logSBPCohortModel", log=True)
-        self._initialize_linear_risk_model("dbp", "logDBPCohortModel", log=True)
+        self._initialize_linear_risk_model("sbp", "logSbpCohortModel", log=True)
+        self._initialize_linear_risk_model("dbp", "logDbpCohortModel", log=True)
 
     def _initialize_linear_risk_model(self, referenceName, modelName, log=False):
         abs_module_path = os.path.abspath(os.path.dirname(__file__))
