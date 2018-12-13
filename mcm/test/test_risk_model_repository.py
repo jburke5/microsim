@@ -57,7 +57,7 @@ class TestRiskModelRepository(RiskModelRepository):
                                                               resids=pd.Series(np.zeros(10)))
         self._repository['hdl'] = NHANESLinearRiskFactorModel('hdl', params=params, ses=ses,
                                                               resids=pd.Series(np.zeros(10)))
-        self._repository['totChol'] = NHANESLinearRiskFactorModel('totChol', params=params, ses=ses,
-                                                                  resids=pd.Series(np.zeros(10)))
+        self._repository['totChol'] = NHANESLinearRiskFactorModel(
+            'totChol', params=params, ses=ses, resids=pd.Series(np.zeros(10)))
         self._repository['bmi'] = NHANESLinearRiskFactorModel('bmi', params=params, ses=ses,
                                                               resids=pd.Series(np.zeros(10)))

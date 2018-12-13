@@ -18,12 +18,13 @@ class TestNHANESLinearRiskFactorModel(unittest.TestCase):
         self.assertEqual(expectedSBP, self._test_person._sbp[-1])
 
     def test_upper_bounds(self):
-        highBPPerson = Person(age=75, gender=0, raceEthnicity=1, sbp=500, ldl=90,  trig=150,
+        highBPPerson = Person(age=75, gender=0, raceEthnicity=1, sbp=500, ldl=90, trig=150,
                               dbp=80, a1c=6.5, hdl=50, totChol=210, bmi=22, smokingStatus=1)
         highBPPerson.advance_risk_factors(self._risk_model_repository)
         self.assertEqual(300, highBPPerson._sbp[-1])
 
-        # TODO : write more tests — check the categorical variables and ensure that all parameters are passed in or an error is thrown
+        # TODO : write more tests — check the categorical variables and ensure
+        # that all parameters are passed in or an error is thrown
 
 
 if __name__ == "__main__":
