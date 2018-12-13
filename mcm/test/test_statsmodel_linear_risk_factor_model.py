@@ -72,10 +72,12 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
             self.raceModelResultSM.resid.mean(),
             self.raceModelResultSM.resid.std())
 
-        dfMeanAndLag = pd.DataFrame({'age': age,
-                                     'sbp': [person._sbp[-1] for person in self.people],
-                                     'meanSbp': [np.array(person._sbp).mean() for person in self.people],
-                                     'lagSbp':  [person._sbp[-1] for person in self.people]})
+        dfMeanAndLag = pd.DataFrame({
+            'age': age,
+            'sbp': [person._sbp[-1] for person in self.people],
+            'meanSbp': [np.array(person._sbp).mean() for person in self.people],
+            'lagSbp': [person._sbp[-1] for person in self.people],
+        })
 
         self.meanLagModelResultSM = statsmodel.ols(
             formula="sbp ~ age + meanSbp + lagSbp", data=dfMeanAndLag).fit()
@@ -86,7 +88,7 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
             self.meanLagModelResultSM.resid.std())
 
     def advancePerson(self, person):
-        person._age.append(person._age[-1]+1)
+        person._age.append(person._age[-1] + 1)
         person._dbp.append(person._dbp[-1])
         person._a1c.append(person._a1c[-1])
         person._hdl.append(person._hdl[-1])
