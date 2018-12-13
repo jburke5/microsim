@@ -65,7 +65,7 @@ class Person:
         self._bmi.append(self.get_next_risk_factor("bmi", risk_model_repository))
         self._ldl.append(self.get_next_risk_factor("ldl", risk_model_repository))
         self._trig.append(self.get_next_risk_factor("trig", risk_model_repository))
-        self._age.append(self._age[-1]+1)
+        self._age.append(self._age[-1] + 1)
 
     def advance_outcomes(self):
         # do you have an event?

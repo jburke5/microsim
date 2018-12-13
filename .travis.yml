@@ -4,7 +4,8 @@ python:
 
 install:
   - pip install pipenv
-  - pipenv install
+  - pipenv install --dev
 
-script: 
+script:
+  - pipenv run lint
   - pipenv run test

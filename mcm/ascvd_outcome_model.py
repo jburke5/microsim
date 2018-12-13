@@ -10,7 +10,7 @@ class ASCVDOutcomeModel:
     def __init__(self, age, black_race, sbp_x_sbp, sbp, bp_treatment, diabetes, current_smoker,
                  tot_chol_hdl_ratio, age_x_black_race, sbp_x_treatment, sbp_x_black_race,
                  black_race_x_treatment, age_x_sbp, black_race_x_diabetes,
-                 black_race_x_current_smoker,  black_race_x_tot_chol_hdl_ratio,
+                 black_race_x_current_smoker, black_race_x_tot_chol_hdl_ratio,
                  sbp_x_black_race_x_treatment, age_x_sbp_x_black_race, intercept):
 
         self._age = age
@@ -65,4 +65,4 @@ class ASCVDOutcomeModel:
 
     # TODO : need to figure out how to account fo rtime...which may be trikcy
     def get_risk_for_person(self, person, years):
-        return 1/(1+np.exp(-1 * self.calc_linear_predictor(person)))
+        return 1 / (1 + np.exp(-1 * self.calc_linear_predictor(person)))
