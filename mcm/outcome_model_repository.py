@@ -15,7 +15,7 @@ class OutcomeModelRepository:
                 sbp_x_treatment=-0.003647, sbp_x_black_race=0.006208,
                 black_race_x_treatment=0.152968, age_x_sbp=-0.000153,
                 black_race_x_diabetes=0.115232,
-                black_race_x_current_smoker=-0.092231,  black_race_x_tot_chol_hdl_ratio=0.070498,
+                black_race_x_current_smoker=-0.092231, black_race_x_tot_chol_hdl_ratio=0.070498,
                 sbp_x_black_race_x_treatment=-0.000173, age_x_sbp_x_black_race=-0.000094,
                 intercept=-12.823110
             ),
@@ -26,7 +26,7 @@ class OutcomeModelRepository:
                 sbp_x_treatment=-0.014207, sbp_x_black_race=0.011609,
                 black_race_x_treatment=-0.119460, age_x_sbp=0.000025,
                 black_race_x_diabetes=-0.077214,
-                black_race_x_current_smoker=-0.226771,  black_race_x_tot_chol_hdl_ratio=-0.117749,
+                black_race_x_current_smoker=-0.226771, black_race_x_tot_chol_hdl_ratio=-0.117749,
                 sbp_x_black_race_x_treatment=0.004190, age_x_sbp_x_black_race=-0.000199,
                 intercept=-11.679980
             ),
