@@ -6,5 +6,6 @@ install:
   - pip install pipenv
   - pipenv install
 
-script: 
+script:
+  - pipenv run lint
   - pipenv run test
