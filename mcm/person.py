@@ -1,11 +1,28 @@
+from mcm.gender import NHANESGender
+from mcm.race_ethnicity import NHANESRaceEthnicity
+from mcm.smoking_status import SmokingStatus
 
 
 class Person:
     """Person is using risk factors and demographics based off NHANES"""
 
     # TODO: probably should also add a view of the "most recent" version of risk factor values
-    def __init__(self, age, gender, raceEthnicity, sbp, dbp, a1c, hdl, totChol, bmi, ldl, trig,
-                 smokingStatus, **kwargs):
+    def __init__(
+        self,
+        age: int,
+        gender: NHANESGender,
+        raceEthnicity: NHANESRaceEthnicity,
+        sbp: int,
+        dbp: int,
+        a1c: float,
+        hdl: int,
+        totChol: int,
+        bmi: float,
+        ldl: int,
+        trig: int,
+        smokingStatus: SmokingStatus,
+        **kwargs,
+    ) -> None:
 
         # building in manual bounds on extreme values
         self._lowerBounds = {"sbp": 60, "dbp": 20}
