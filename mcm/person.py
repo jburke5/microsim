@@ -70,10 +70,18 @@ class Person:
         return varValue
 
     def advance_year(self, risk_model_repository):
+        if self.is_dead():
+            raise RuntimeError("Person is dead. Can not advance year")
+
         self.advance_risk_factors(risk_model_repository)
         self.advance_outcomes()
 
+    def is_dead(self):
+        return not self._alive[-1]
+
     def advance_risk_factors(self, risk_model_repository):
+        if self.is_dead():
+            raise RuntimeError("Person is dead. Can not advance risk factors")
 
         self._sbp.append(self.apply_bounds(
             "sbp", self.get_next_risk_factor("sbp", risk_model_repository)))
@@ -89,10 +97,8 @@ class Person:
         self._age.append(self._age[-1] + 1)
 
     def advance_outcomes(self):
-        # do you have an event?
-        pass
-
-        # if so, which event did you have?
+        if self.is_dead():
+            raise RuntimeError("Person is dead. Can not advance outcomes")
 
     def __repr__(self):
         return (f"Person(age={self._age[-1]}, "
