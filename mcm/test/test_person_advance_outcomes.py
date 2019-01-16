@@ -3,8 +3,6 @@ from mcm.gender import NHANESGender
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 import unittest
-import pandas as pd
-import numpy as np
 
 
 class TestPersonAdvanceOutcomes(unittest.TestCase):
