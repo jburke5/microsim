@@ -69,6 +69,10 @@ class Person:
             varValue = varValue if varValue > lowerBound else lowerBound
         return varValue
 
+    def advance_year(self, risk_model_repository):
+        self.advance_risk_factors(risk_model_repository)
+        self.advance_outcomes()
+
     def advance_risk_factors(self, risk_model_repository):
 
         self._sbp.append(self.apply_bounds(
