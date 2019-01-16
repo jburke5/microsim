@@ -20,7 +20,6 @@ class CohortRiskModelRepository(RiskModelRepository):
 
     def _initialize_linear_risk_model(self, referenceName, modelName, log=False):
         abs_module_path = os.path.abspath(os.path.dirname(__file__))
-        # TODO: need to get the "+" out of the path name
         model_spec_path = os.path.normpath(os.path.join(abs_module_path, "./data/",
                                                         modelName + "Spec.json"))
         with open(model_spec_path, 'r') as model_spec_file:
