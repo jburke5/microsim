@@ -44,6 +44,10 @@ class Person:
         self._bmi = [bmi]
         # TODO : change smoking status into a factor that changes over time
         self._smokingStatus = smokingStatus
+
+        # TODO : need to implement storke and mi outcomes, will stub them out for now...
+        self._mi = 0
+        self._stroke = 0
         for k, v in kwargs.items():
             setattr(self, k, v)
 
