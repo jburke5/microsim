@@ -8,6 +8,9 @@ import numpy as np
 class StatsModelLinearRiskFactorModel:
 
     def __init__(self, regression_model, log_transform=False):
+        self.initialize_model_params(regression_model, log_transform)
+
+    def initialize_model_params(self, regression_model,  log_transform):
         self.parameters = regression_model._coefficients
         self.standard_errors = regression_model._coefficient_standard_errors
         self.residual_mean = regression_model._residual_mean
@@ -49,11 +52,15 @@ class StatsModelLinearRiskFactorModel:
         stripped_value = int(name[name.index("[T.") + len("[T."): name.index("]")])
         return (stripped_name, stripped_value)
 
+    def get_intercept(self):
+        return self.parameters['Intercept']
+
     def estimate_next_risk(self, person):
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
-        linearPredictor = self.parameters['Intercept']
+        linearPredictor = self.get_intercept()
         nonInterceptParams = dict(self.parameters)
-        del nonInterceptParams['Intercept']
+        if 'Intercept' in nonInterceptParams.keys():
+            del nonInterceptParams['Intercept']
 
         # sort parametesr into categorical and non-categorial
         categoricalParams = {}

@@ -1,6 +1,11 @@
 from mcm.outcome import Outcome
 from mcm.gender import NHANESGender
 from mcm.ascvd_outcome_model import ASCVDOutcomeModel
+from mcm.statsmodel_cox_model import StatsModelCoxModel
+from mcm.cox_regression_model import CoxRegressionModel
+
+import os
+import json
 
 
 class OutcomeModelRepository:
@@ -32,6 +37,8 @@ class OutcomeModelRepository:
             ),
 
         }
+        self._models[Outcome.MORTALITY] = {
+            "male": self.initialize_cox_model("nhanesMortalityModel")}
 
     def get_risk_for_person(self, person, outcome, years):
         return self.select_model_for_person(person, outcome).get_risk_for_person(person, years)
@@ -40,3 +47,12 @@ class OutcomeModelRepository:
         models_for_outcome = self._models[outcome]
         gender_stem = "male" if person._gender == NHANESGender.MALE else "female"
         return models_for_outcome[gender_stem]
+
+    # left off here — trying to load the cox model from where it ois saved...
+    def initialize_cox_model(self, modelName):
+        abs_module_path = os.path.abspath(os.path.dirname(__file__))
+        model_spec_path = os.path.normpath(os.path.join(abs_module_path, "./data/",
+                                                        modelName + "Spec.json"))
+        with open(model_spec_path, 'r') as model_spec_file:
+            model_spec = json.load(model_spec_file)
+        return StatsModelCoxModel(CoxRegressionModel(**model_spec))
