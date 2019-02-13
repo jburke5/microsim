@@ -12,11 +12,11 @@ class Population:
     """
     Unit of people subject to treatment program over time.
 
-    (WIP) THe basic idea is that this is a generic superclass which will manage a group of 
-    people. Tangible subclasses will be needed to actually assign assumptions for a given 
-    population. As it stands, this class doesn't do anything (other than potentially being 
-    useful for tests), because it isn't tied to tangible risk models. Ultimately it might 
-    turn into an abstract class... 
+    (WIP) THe basic idea is that this is a generic superclass which will manage a group of
+    people. Tangible subclasses will be needed to actually assign assumptions for a given
+    population. As it stands, this class doesn't do anything (other than potentially being
+    useful for tests), because it isn't tied to tangible risk models. Ultimately it might
+    turn into an abstract class...
     """
 
     def __init__(self, people):
