@@ -9,10 +9,28 @@ import pandas as pd
 
 
 class Population:
-    """Unit of people subject to treatment program over time."""
+    """
+    Unit of people subject to treatment program over time.
+
+    (WIP) THe basic idea is that this is a generic superclass which will manage a group of 
+    people. Tangible subclasses will be needed to actually assign assumptions for a given 
+    population. As it stands, this class doesn't do anything (other than potentially being 
+    useful for tests), because it isn't tied to tangible risk models. Ultimately it might 
+    turn into an abstract class... 
+    """
 
     def __init__(self, people):
         self._people = people
+        self._risk_model_repository = None
+
+    def advance(self, years):
+        for _ in range(years):
+            for person in self._people:
+                person.advance_year(self._risk_model_repository)
+            self.apply_recalibration_standards()
+
+    def apply_recalibration_standards(self):
+        pass
 
 
 def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
@@ -55,12 +73,3 @@ class NHANESDirectSamplePopulation(Population):
             self._risk_model_repository = NHANESRiskModelRepository()
         else:
             raise Exception('unknwon risk model repository type' + model_repository_type)
-
-    def advance(self, years):
-        for _ in range(years):
-            for person in self._people:
-                person.advance_year(self._risk_model_repository)
-            self.apply_recalibration_standards()
-
-    def apply_recalibration_standards(self):
-        pass
