@@ -26,7 +26,8 @@ class Population:
     def advance(self, years):
         for _ in range(years):
             for person in self._people:
-                person.advance_year(self._risk_model_repository)
+                if not person.is_dead():
+                    person.advance_year(self._risk_model_repository)
             self.apply_recalibration_standards()
 
     def apply_recalibration_standards(self):
