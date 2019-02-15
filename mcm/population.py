@@ -4,6 +4,7 @@ from mcm.smoking_status import SmokingStatus
 from mcm.gender import NHANESGender
 from mcm.cohort_risk_model_repository import CohortRiskModelRepository
 from mcm.nhanes_risk_model_repository import NHANESRiskModelRepository
+from mcm.outcome_model_repository import OutcomeModelRepository
 
 import pandas as pd
 
@@ -22,12 +23,14 @@ class Population:
     def __init__(self, people):
         self._people = people
         self._risk_model_repository = None
+        self._outcome_model_repository = None
 
     def advance(self, years):
         for _ in range(years):
             for person in self._people:
                 if not person.is_dead():
-                    person.advance_year(self._risk_model_repository)
+                    person.advance_year(self._risk_model_repository,
+                                        self._outcome_model_repository)
             self.apply_recalibration_standards()
 
     def apply_recalibration_standards(self):
@@ -66,6 +69,7 @@ class NHANESDirectSamplePopulation(Population):
             nhanes, n, random_seed=random_seed))
         self.n = n
         self._initialize_risk_models(model_reposistory_type)
+        self._outcome_model_repository = OutcomeModelRepository()
 
     def _initialize_risk_models(self, model_repository_type):
         if (model_repository_type == "cohort"):

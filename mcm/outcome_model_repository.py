@@ -37,16 +37,18 @@ class OutcomeModelRepository:
             ),
 
         }
-        self._models[Outcome.MORTALITY] = {
-            "male": self.initialize_cox_model("nhanesMortalityModel")}
+        self._models[Outcome.MORTALITY] = self.initialize_cox_model("nhanesMortalityModel")
 
     def get_risk_for_person(self, person, outcome, years):
         return self.select_model_for_person(person, outcome).get_risk_for_person(person, years)
 
     def select_model_for_person(self, person, outcome):
         models_for_outcome = self._models[outcome]
-        gender_stem = "male" if person._gender == NHANESGender.MALE else "female"
-        return models_for_outcome[gender_stem]
+        if outcome == Outcome.MORTALITY:
+            return models_for_outcome
+        elif outcome == Outcome.CARDIOVASCULAR:
+            gender_stem = "male" if person._gender == NHANESGender.MALE else "female"
+            return models_for_outcome[gender_stem]
 
     # left off here — trying to load the cox model from where it ois saved...
     def initialize_cox_model(self, modelName):
