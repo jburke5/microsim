@@ -1,6 +1,10 @@
 from mcm.gender import NHANESGender
+from mcm.outcome import Outcome
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
+
+import numpy as np
+import numpy.random as npRand
 
 
 class Person:
@@ -73,12 +77,14 @@ class Person:
             varValue = varValue if varValue > lowerBound else lowerBound
         return varValue
 
-    def advance_year(self, risk_model_repository):
+    def advance_year(self, risk_model_repository, outcome_model_repository):
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance year")
 
         self.advance_risk_factors(risk_model_repository)
-        self.advance_outcomes()
+        self.advance_outcomes(outcome_model_repository)
+        if not self.is_dead():
+            self._age.append(self._age[-1] + 1)
 
     def is_dead(self):
         return not self._alive[-1]
@@ -98,11 +104,14 @@ class Person:
         self._bmi.append(self.get_next_risk_factor("bmi", risk_model_repository))
         self._ldl.append(self.get_next_risk_factor("ldl", risk_model_repository))
         self._trig.append(self.get_next_risk_factor("trig", risk_model_repository))
-        self._age.append(self._age[-1] + 1)
 
-    def advance_outcomes(self):
+    def advance_outcomes(self, outcome_model_repository):
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance outcomes")
+
+        mortalityModel = outcome_model_repository.select_model_for_person(self, Outcome.MORTALITY)
+        if (npRand.uniform(size=1) < mortalityModel.estimate_next_risk(self)):
+            self._alive.append(False)
 
     def __repr__(self):
         return (f"Person(age={self._age[-1]}, "

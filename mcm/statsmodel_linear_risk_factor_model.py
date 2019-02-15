@@ -40,6 +40,12 @@ class StatsModelLinearRiskFactorModel:
         elif name.startswith("mean"):
             name = self.convert_first_letter_to_lower(name[len("mean"):])
             return np.array(self.get_modified_parameter_for_person(name, person)).mean()
+        elif name.startswith("square"):
+            name = self.convert_first_letter_to_lower(name[len("square"):])
+            return (self.get_modified_parameter_for_person(name, person))**2
+        elif name.startswith("base"):
+            name = self.convert_first_letter_to_lower(name[len("base"):])
+            return getattr(person, "_" + name)[0]
         # just strip lag prefixes
         elif name.startswith("lag"):
             name = self.convert_first_letter_to_lower(name[len("lag"):])
