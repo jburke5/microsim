@@ -3,7 +3,6 @@ from mcm.outcome import Outcome
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 
-import numpy as np
 import numpy.random as npRand
 
 
