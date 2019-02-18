@@ -1,7 +1,6 @@
 import unittest
 import os
 import json
-import numpy as np
 
 from mcm.person import Person
 from mcm.gender import NHANESGender
