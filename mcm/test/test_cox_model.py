@@ -26,7 +26,7 @@ class TestCoxModel(unittest.TestCase):
         self.model = StatsModelCoxModel(CoxRegressionModel(**model_spec))
 
     def test_single_linear_predictor(self):
-        self.assertAlmostEqual(0.008245026000825028 * np.exp(1.95740109),
+        self.assertAlmostEqual(0.0006064897336953675,
                                self.model.estimate_next_risk(self.imputed_dataset_first_person))
         # def test_single_linear_predictor_via_outcomes_repository(self):
 

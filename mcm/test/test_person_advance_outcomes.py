@@ -25,7 +25,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
     def test_dead_is_dead_advance_year(self):
         self.joe._alive[-1] = False
         with self.assertRaises(RuntimeError, msg="Person is dead. Can not advance year"):
-            self.joe.advance_year(None)
+            self.joe.advance_year(None, None)
 
     def test_dead_is_dead_advance_risk_factors(self):
         self.joe._alive[-1] = False
@@ -35,7 +35,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
     def test_dead_is_dead_advance_outcomes(self):
         self.joe._alive[-1] = False
         with self.assertRaises(RuntimeError, msg="Person is dead. Can not advance outcomes"):
-            self.joe.advance_outcomes()
+            self.joe.advance_outcomes(None)
 
 
 if __name__ == "__main__":
