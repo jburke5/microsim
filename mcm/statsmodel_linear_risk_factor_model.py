@@ -10,7 +10,7 @@ class StatsModelLinearRiskFactorModel:
     def __init__(self, regression_model, log_transform=False):
         self.initialize_model_params(regression_model, log_transform)
 
-    def initialize_model_params(self, regression_model,  log_transform):
+    def initialize_model_params(self, regression_model, log_transform):
         self.parameters = regression_model._coefficients
         self.standard_errors = regression_model._coefficient_standard_errors
         self.residual_mean = regression_model._residual_mean

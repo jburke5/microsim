@@ -26,7 +26,7 @@ class StatsModelCoxModel(StatsModelLinearRiskFactorModel):
             intervalStart**2 * self.one_year_quad_cumulative_hazard
         cumHazardOneIntervalEnd = intervalEnd * self.one_year_linear_cumulative_hazard + \
             intervalEnd**2 * self.one_year_quad_cumulative_hazard
-        return cumHazardOneIntervalEnd-cumHazardAtIntervalStart
+        return cumHazardOneIntervalEnd - cumHazardAtIntervalStart
 
     def get_cumulative_hazard(self, person):
         return self.get_cumulative_hazard_for_interval(len(person._age) - 1, len(person._age))

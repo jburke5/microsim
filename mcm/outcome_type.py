@@ -1,6 +1,6 @@
 from enum import Enum
 
 
-class Outcome(Enum):
+class OutcomeType(Enum):
     CARDIOVASCULAR = "cardiovascular"
     MORTALITY = "mortality"
