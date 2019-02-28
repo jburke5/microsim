@@ -107,6 +107,18 @@ class Person:
         self._ldl.append(self.get_next_risk_factor("ldl", risk_model_repository))
         self._trig.append(self.get_next_risk_factor("trig", risk_model_repository))
 
+    def _has_cvd_event(self, ascvdModel):
+        return npRand.uniform(size=1) < ascvdModel.estimate_next_risk(self)
+
+    def _has_mi(self, miProbability):
+        return npRand.uniform(size=1) < miProbability
+
+    def _has_fatal_mi(self, fatalMIProb):
+        return npRand.uniform(size=1) < fatalMIPRob
+
+    def _has_fatal_stroke(self, fatalStrokeProb):
+        return npRand.uniform(size=1) < fatalStrokeProb
+
     def advance_outcomes(self, outcome_model_repository):
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance outcomes")
@@ -118,9 +130,9 @@ class Person:
         ascvdModel = outcome_model_repository.select_model_for_person(
             self, OutcomeType.CARDIOVASCULAR)
         outcomesForThisYear = {}
-        if (npRand.uniform(size=1) < ascvdModel.estimate_next_risk(self)):
-            if (npRand.uniform(size=1) < miProbability):
-                if (npRand.uniform(size=1) < fatalMIPRob):
+        if self._has_cvd_event(ascvdModel):
+            if self._has_mi(miProbability):
+                if self._has_fatal_mi(fatalMIPRob):
                     outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {'name': 'MI', 'fatal': True}
                     self._alive.append(False)
                 else:
@@ -128,7 +140,7 @@ class Person:
                         'name': 'MI', 'fatal': False}
                 self._mi = 1
             else:
-                if (npRand.uniform(size=1) < fatalStrokeProb):
+                if self._has_fatal_stroke(fatalStrokeProb):
                     outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {
                         'name': 'Stroke', 'fatal': True}
                     self._alive.append(False)
