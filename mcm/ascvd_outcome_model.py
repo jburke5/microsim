@@ -66,3 +66,6 @@ class ASCVDOutcomeModel:
     # TODO : need to figure out how to account fo rtime...which may be trikcy
     def get_risk_for_person(self, person, years):
         return 1 / (1 + np.exp(-1 * self.calc_linear_predictor(person)))
+
+    def estimate_next_risk(self, person):
+        return self.get_risk_for_person(person, 1)

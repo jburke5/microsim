@@ -39,8 +39,8 @@ class OutcomeModelRepository:
         }
         self._models[OutcomeType.MORTALITY] = self.initialize_cox_model("nhanesMortalityModel")
 
-    def get_risk_for_person(self, person, outcome, years):
-        return self.select_model_for_person(person, outcome).get_risk_for_person(person, years)
+    def get_risk_for_person(self, person, outcome, years=1):
+        return self.select_model_for_person(person, outcome).estimate_next_risk(person)
 
     def select_model_for_person(self, person, outcome):
         models_for_outcome = self._models[outcome]

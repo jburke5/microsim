@@ -31,5 +31,5 @@ class StatsModelCoxModel(StatsModelLinearRiskFactorModel):
     def get_cumulative_hazard(self, person):
         return self.get_cumulative_hazard_for_interval(len(person._age) - 1, len(person._age))
 
-    def estimate_next_risk(self, person):
+    def get_risk_for_person(self, person, years):
         return self.get_cumulative_hazard(person) * np.exp(self.linear_predictor(person))

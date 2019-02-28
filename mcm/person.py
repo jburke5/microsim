@@ -107,31 +107,34 @@ class Person:
         self._ldl.append(self.get_next_risk_factor("ldl", risk_model_repository))
         self._trig.append(self.get_next_risk_factor("trig", risk_model_repository))
 
-    def _has_cvd_event(self, ascvdModel):
-        return npRand.uniform(size=1) < ascvdModel.estimate_next_risk(self)
+    def _has_cvd_event(self, ascvdProb):
+        return npRand.uniform(size=1) < ascvdProb
 
-    def _has_mi(self, miProbability):
-        return npRand.uniform(size=1) < miProbability
+    def _has_mi(self, miVsStrokeProbability):
+        return npRand.uniform(size=1) < miVsStrokeProbability
 
     def _has_fatal_mi(self, fatalMIProb):
-        return npRand.uniform(size=1) < fatalMIPRob
+        return npRand.uniform(size=1) < fatalMIProb
 
     def _has_fatal_stroke(self, fatalStrokeProb):
         return npRand.uniform(size=1) < fatalStrokeProb
 
-    def advance_outcomes(self, outcome_model_repository):
+    def advance_outcomes(
+            self,
+            outcome_model_repository,
+            miVsStrokeProbability=0.7,
+            fatalMIPRob=0.20,
+            fatalStrokeProb=0.20):
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance outcomes")
 
-        miProbability = 0.7
-        fatalMIPRob = 0.20
-        fatalStrokeProb = 0.20
-
-        ascvdModel = outcome_model_repository.select_model_for_person(
-            self, OutcomeType.CARDIOVASCULAR)
         outcomesForThisYear = {}
-        if self._has_cvd_event(ascvdModel):
-            if self._has_mi(miProbability):
+        if self._has_cvd_event(
+            outcome_model_repository.get_risk_for_person(
+                self,
+                OutcomeType.CARDIOVASCULAR,
+                years=1)):
+            if self._has_mi(miVsStrokeProbability):
                 if self._has_fatal_mi(fatalMIPRob):
                     outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {'name': 'MI', 'fatal': True}
                     self._alive.append(False)
@@ -151,9 +154,8 @@ class Person:
 
         # TODO: needs to be changed to represent NON cardiovascular mortality only
         if (not self.is_dead()):
-            mortalityModel = outcome_model_repository.select_model_for_person(
-                self, OutcomeType.MORTALITY)
-            if (npRand.uniform(size=1) < mortalityModel.estimate_next_risk(self)):
+            if (npRand.uniform(size=1) < outcome_model_repository.get_risk_for_person(
+                    OutcomeType.MORTALITY, self)):
                 self._alive.append(False)
 
     def __repr__(self):
