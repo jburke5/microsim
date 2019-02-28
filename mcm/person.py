@@ -1,5 +1,5 @@
 from mcm.gender import NHANESGender
-from mcm.outcome import Outcome
+from mcm.outcome_type import OutcomeType
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 
@@ -48,9 +48,10 @@ class Person:
         # TODO : change smoking status into a factor that changes over time
         self._smokingStatus = smokingStatus
 
-        # TODO : need to implement storke and mi outcomes, will stub them out for now...
-        self._mi = 0
-        self._stroke = 0
+        # TODO : initialize with prior stroke and mi
+        # outcomes is a list of dictionaries. for each year a dictionary of new
+        # outcomes will be added.
+        self._outcomes = [{}]
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -108,9 +109,36 @@ class Person:
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance outcomes")
 
-        mortalityModel = outcome_model_repository.select_model_for_person(self, Outcome.MORTALITY)
-        if (npRand.uniform(size=1) < mortalityModel.estimate_next_risk(self)):
-            self._alive.append(False)
+        miProbability = 0.7
+        fatalMIPRob = 0.20
+        fatalStrokeProb = 0.20
+
+        ascvdModel = outcome_model_repository.select_model_for_person(
+            self, OutcomeType.CARDIOVASCULAR)
+        outcomesForThisYear = {}
+        if (npRand.uniform(size=1) < ascvdModel.estimate_next_risk(self)):
+            if (npRand.uniform(size=1) < miProbability):
+                if (npRand.uniform(size=1) < fatalMIPRob):
+                    outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {'name': 'MI', 'fatal': True}
+                    self._alive.append(False)
+                else:
+                    outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {
+                        'name': 'MI', 'fatal': False}
+            else:
+                if (npRand.uniform(size=1) < fatalStrokeProb):
+                    outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {
+                        'name': 'Stroke', 'fatal': True}
+                    self._alive.append(False)
+                else:
+                    outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {
+                        'name': 'Stroke', 'fatal': False}
+
+        # TODO: needs to be changed to represent NON cardiovascular mortality only
+        if (not self.is_dead()):
+            mortalityModel = outcome_model_repository.select_model_for_person(
+                self, OutcomeType.MORTALITY)
+            if (npRand.uniform(size=1) < mortalityModel.estimate_next_risk(self)):
+                self._alive.append(False)
 
     def __repr__(self):
         return (f"Person(age={self._age[-1]}, "
