@@ -51,6 +51,8 @@ class Person:
         # TODO : initialize with prior stroke and mi
         # outcomes is a list of dictionaries. for each year a dictionary of new
         # outcomes will be added.
+        self._mi = 0
+        self._stroke = 0
         self._outcomes = [{}]
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -124,6 +126,7 @@ class Person:
                 else:
                     outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {
                         'name': 'MI', 'fatal': False}
+                self._mi = 1
             else:
                 if (npRand.uniform(size=1) < fatalStrokeProb):
                     outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {
@@ -132,6 +135,7 @@ class Person:
                 else:
                     outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {
                         'name': 'Stroke', 'fatal': False}
+                self._stroke = 1
 
         # TODO: needs to be changed to represent NON cardiovascular mortality only
         if (not self.is_dead()):
