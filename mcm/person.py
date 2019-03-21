@@ -49,15 +49,16 @@ class Person:
         self._bmi = [bmi]
         # TODO : change smoking status into a factor that changes over time
         self._smokingStatus = smokingStatus
-        
+
         # TODO: need to initialized with whether somebody had a prior stroke or MI
         # for prior events, ages should be initialized as -1 (meaning prior to simulation)
-        
-        # outcomes is a dictionary of arrays. each element in the dictionary represents a differnet outcome type
-        # each element in the array is a tuple representting the age of the patient at the time
-        # of an event (element zero). and the outcome (element one).
-        #  multiple events can be accounted for by having multiple elements in the array. 
-        self._outcomes = {OutcomeType.MI : [], OutcomeType.STROKE : []}
+
+        # outcomes is a dictionary of arrays. each element in the dictionary represents
+        # a differnet outcome type each element in the array is a tuple representting
+        # the age of the patient at the time of an event (element zero). and the outcome
+        # (element one).multiple events can be accounted for by having multiple
+        # elements in the array.
+        self._outcomes = {OutcomeType.MI: [], OutcomeType.STROKE: []}
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -131,7 +132,6 @@ class Person:
         self._ldl.append(self.get_next_risk_factor("ldl", risk_model_repository))
         self._trig.append(self.get_next_risk_factor("trig", risk_model_repository))
 
-
     def _has_cvd_event(self, ascvdProb):
         return npRand.uniform(size=1) < ascvdProb
 
@@ -153,7 +153,6 @@ class Person:
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance outcomes")
 
-        outcomesForThisYear = {}
         if self._has_cvd_event(
             outcome_model_repository.get_risk_for_person(
                 self,
@@ -161,21 +160,27 @@ class Person:
                 years=1)):
             if self._has_mi(miVsStrokeProbability):
                 if self._has_fatal_mi(fatalMIPRob):
-                    self._outcomes[OutcomeType.MI].append((self._age[-1], Outcome(OutcomeType.MI, True)))
+                    self._outcomes[OutcomeType.MI].append(
+                        (self._age[-1], Outcome(OutcomeType.MI, True)))
                     self._alive.append(False)
                 else:
-                    self._outcomes[OutcomeType.MI].append((self._age[-1], Outcome(OutcomeType.MI, False)))
+                    self._outcomes[OutcomeType.MI].append(
+                        (self._age[-1], Outcome(OutcomeType.MI, False)))
             else:
                 if self._has_fatal_stroke(fatalStrokeProb):
-                    self._outcomes[OutcomeType.STROKE].append((self._age[-1], Outcome(OutcomeType.STROKE, True)))
+                    self._outcomes[OutcomeType.STROKE].append(
+                        (self._age[-1], Outcome(OutcomeType.STROKE, True)))
                     self._alive.append(False)
                 else:
-                    self._outcomes[OutcomeType.STROKE].append((self._age[-1], Outcome(OutcomeType.STROKE, False)))
+                    self._outcomes[OutcomeType.STROKE].append(
+                        (self._age[-1], Outcome(OutcomeType.STROKE, False)))
 
         # TODO: needs to be changed to represent NON cardiovascular mortality only
         if (not self.is_dead()):
-            if (npRand.uniform(size=1) < outcome_model_repository.get_risk_for_person(self,
-                    OutcomeModelType.MORTALITY)):
+            if (
+                    npRand.uniform(size=1) <
+                    outcome_model_repository.get_risk_for_person(self, OutcomeModelType.MORTALITY)
+                    ):
                 self._alive.append(False)
 
     def __repr__(self):
