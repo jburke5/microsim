@@ -154,8 +154,8 @@ class Person:
 
         # TODO: needs to be changed to represent NON cardiovascular mortality only
         if (not self.is_dead()):
-            if (npRand.uniform(size=1) < outcome_model_repository.get_risk_for_person(
-                    OutcomeType.MORTALITY, self)):
+            if (npRand.uniform(size=1) < outcome_model_repository.get_risk_for_person(self,
+                    OutcomeType.MORTALITY)):
                 self._alive.append(False)
 
     def __repr__(self):
