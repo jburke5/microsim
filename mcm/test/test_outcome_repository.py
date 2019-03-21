@@ -1,6 +1,6 @@
 from mcm.gender import NHANESGender
 from mcm.person import Person
-from mcm.outcome_type import OutcomeType
+from mcm.outcome_model_type import OutcomeModelType
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 from mcm.outcome_model_repository import OutcomeModelRepository
@@ -39,22 +39,22 @@ class TestOutcomeRepository(unittest.TestCase):
 
     def test_get_model_for_person(self):
         self.assertEqual(0.106501, self._outcome_model_repository.select_model_for_person(
-            self._white_female, OutcomeType.CARDIOVASCULAR)._age)
+            self._white_female, OutcomeModelType.CARDIOVASCULAR)._age)
         self.assertEqual(0.106501, self._outcome_model_repository.select_model_for_person(
-            self._black_female, OutcomeType.CARDIOVASCULAR)._age)
+            self._black_female, OutcomeModelType.CARDIOVASCULAR)._age)
         self.assertEqual(0.064200, self._outcome_model_repository.select_model_for_person(
-            self._white_male, OutcomeType.CARDIOVASCULAR)._age)
+            self._white_male, OutcomeModelType.CARDIOVASCULAR)._age)
         self.assertEqual(0.064200, self._outcome_model_repository.select_model_for_person(
-            self._black_male, OutcomeType.CARDIOVASCULAR)._age)
+            self._black_male, OutcomeModelType.CARDIOVASCULAR)._age)
 
     def test_calculate_risk_for_person(self):
         self.assertAlmostEqual(0.017654, self._outcome_model_repository.get_risk_for_person(
-            self._black_female, OutcomeType.CARDIOVASCULAR, 10), delta=0.00001)
+            self._black_female, OutcomeModelType.CARDIOVASCULAR, 10), delta=0.00001)
         # note that the reference value here is the corrected version of the
         # appendis table with the tot_chol/hdl ratio set to 4 for both the overall term and
         # the race interaction term
         self.assertAlmostEqual(.03476, self._outcome_model_repository.get_risk_for_person(
-            self._black_male, OutcomeType.CARDIOVASCULAR, 10), delta=0.00001)
+            self._black_male, OutcomeModelType.CARDIOVASCULAR, 10), delta=0.00001)
 
     if __name__ == "__main__":
         unittest.main()
