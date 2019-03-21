@@ -61,6 +61,14 @@ class Person:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    @property
+    def _mi(self):
+        return len(self._outcomes[OutcomeType.MI]) > 0
+
+    @property
+    def _stroke(self):
+        return len(self._outcomes[OutcomeType.STROKE]) > 0
+
     def has_diabetes(self):
         return sorted(self._a1c)[-1] >= 6.5
 
@@ -122,6 +130,7 @@ class Person:
         self._bmi.append(self.get_next_risk_factor("bmi", risk_model_repository))
         self._ldl.append(self.get_next_risk_factor("ldl", risk_model_repository))
         self._trig.append(self.get_next_risk_factor("trig", risk_model_repository))
+
 
     def _has_cvd_event(self, ascvdProb):
         return npRand.uniform(size=1) < ascvdProb
