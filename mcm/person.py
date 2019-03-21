@@ -1,5 +1,5 @@
 from mcm.gender import NHANESGender
-from mcm.outcome_type import OutcomeType
+from mcm.outcome_model_type import OutcomeModelType
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 
@@ -53,7 +53,7 @@ class Person:
         # outcomes will be added.
         self._mi = 0
         self._stroke = 0
-        self._outcomes = [{}]
+        self._outcomes = {'mi' : [], 'stroke' : []}
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -132,30 +132,30 @@ class Person:
         if self._has_cvd_event(
             outcome_model_repository.get_risk_for_person(
                 self,
-                OutcomeType.CARDIOVASCULAR,
+                OutcomeModelType.CARDIOVASCULAR,
                 years=1)):
             if self._has_mi(miVsStrokeProbability):
                 if self._has_fatal_mi(fatalMIPRob):
-                    outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {'name': 'MI', 'fatal': True}
+                    outcomesForThisYear[OutcomeModelType.CARDIOVASCULAR] = {'name': 'MI', 'fatal': True}
                     self._alive.append(False)
                 else:
-                    outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {
+                    outcomesForThisYear[OutcomeModelType.CARDIOVASCULAR] = {
                         'name': 'MI', 'fatal': False}
                 self._mi = 1
             else:
                 if self._has_fatal_stroke(fatalStrokeProb):
-                    outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {
+                    outcomesForThisYear[OutcomeModelType.CARDIOVASCULAR] = {
                         'name': 'Stroke', 'fatal': True}
                     self._alive.append(False)
                 else:
-                    outcomesForThisYear[OutcomeType.CARDIOVASCULAR] = {
+                    outcomesForThisYear[OutcomeModelType.CARDIOVASCULAR] = {
                         'name': 'Stroke', 'fatal': False}
                 self._stroke = 1
 
         # TODO: needs to be changed to represent NON cardiovascular mortality only
         if (not self.is_dead()):
             if (npRand.uniform(size=1) < outcome_model_repository.get_risk_for_person(self,
-                    OutcomeType.MORTALITY)):
+                    OutcomeModelType.MORTALITY)):
                 self._alive.append(False)
 
     def __repr__(self):
