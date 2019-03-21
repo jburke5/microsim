@@ -77,9 +77,9 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             miVsStrokeProbability=1.0,
             fatalMIPRob=1.0,
             fatalStrokeProb=1.0)
-        self.assertEqual(1, self.joe._mi)
-        self.assertEqual(0, self.joe._stroke)
-        self.assertEqual(1, self.joe.is_dead())
+        self.assertTrue(self.joe.has_mi_during_simulation())
+        self.assertFalse(self.joe.has_stroke_during_simulation())
+        self.assertTrue(self.joe.is_dead())
 
     def test_advance_outcomes_fatal_stroke(self):
         self.joe.advance_outcomes(
@@ -87,9 +87,9 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             miVsStrokeProbability=0.0,
             fatalMIPRob=1.0,
             fatalStrokeProb=1.0)
-        self.assertEqual(0, self.joe._mi)
-        self.assertEqual(1, self.joe._stroke)
-        self.assertEqual(1, self.joe.is_dead())
+        self.assertFalse(self.joe.has_mi_during_simulation())
+        self.assertTrue(self.joe.has_stroke_during_simulation())
+        self.assertTrue(self.joe.is_dead())
 
     def test_advance_outcomes_nonfatal_mi(self):
         self.assertEqual(0, self.joe.is_dead())
@@ -98,8 +98,8 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             miVsStrokeProbability=1.0,
             fatalMIPRob=0.0,
             fatalStrokeProb=1.0)
-        self.assertEqual(1, self.joe._mi)
-        self.assertEqual(0, self.joe._stroke)
+        self.assertTrue(self.joe.has_mi_during_simulation())
+        self.assertFalse(self.joe.has_stroke_during_simulation())
 
     def test_advance_outcomes_nonfatal_stroke(self):
         self.joe.advance_outcomes(
@@ -107,8 +107,8 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             miVsStrokeProbability=0.0,
             fatalMIPRob=0.0,
             fatalStrokeProb=0.0)
-        self.assertEqual(0, self.joe._mi)
-        self.assertEqual(1, self.joe._stroke)
+        self.assertFalse(self.joe.has_mi_during_simulation())
+        self.assertTrue(self.joe.has_stroke_during_simulation())
 
 
 if __name__ == "__main__":
