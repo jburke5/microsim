@@ -2,6 +2,8 @@ from mcm.gender import NHANESGender
 from mcm.outcome_model_type import OutcomeModelType
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
+from mcm.outcome import OutcomeType
+from mcm.outcome import Outcome
 
 import numpy.random as npRand
 
@@ -47,13 +49,15 @@ class Person:
         self._bmi = [bmi]
         # TODO : change smoking status into a factor that changes over time
         self._smokingStatus = smokingStatus
-
-        # TODO : initialize with prior stroke and mi
-        # outcomes is a list of dictionaries. for each year a dictionary of new
-        # outcomes will be added.
-        self._mi = 0
-        self._stroke = 0
-        self._outcomes = {'mi' : [], 'stroke' : []}
+        
+        # TODO: need to initialized with whether somebody had a prior stroke or MI
+        # for prior events, ages should be initialized as -1 (meaning prior to simulation)
+        
+        # outcomes is a dictionary of arrays. each element in the dictionary represents a differnet outcome type
+        # each element in the array is a tuple representting the age of the patient at the time
+        # of an event (element zero). and the outcome (element one).
+        #  multiple events can be accounted for by having multiple elements in the array. 
+        self._outcomes = {OutcomeType.MI : [], OutcomeType.STROKE : []}
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -90,6 +94,18 @@ class Person:
 
     def is_dead(self):
         return not self._alive[-1]
+
+    def has_stroke_prior_to_simulation(self):
+        return any([ageAtEvent < 0 for ageAtEvent, _ in self._outcomes[OutcomeType.STROKE]])
+
+    def has_stroke_during_simulation(self):
+        return any([ageAtEvent >= 0 for ageAtEvent, _ in self._outcomes[OutcomeType.STROKE]])
+
+    def has_mi_prior_to_simulation(self):
+        return any([ageAtEvent < 0 for ageAtEvent, _ in self._outcomes[OutcomeType.MI]])
+
+    def has_mi_during_simulation(self):
+        return any([ageAtEvent >= 0 for ageAtEvent, _ in self._outcomes[OutcomeType.MI]])
 
     def advance_risk_factors(self, risk_model_repository):
         if self.is_dead():
@@ -136,21 +152,16 @@ class Person:
                 years=1)):
             if self._has_mi(miVsStrokeProbability):
                 if self._has_fatal_mi(fatalMIPRob):
-                    outcomesForThisYear[OutcomeModelType.CARDIOVASCULAR] = {'name': 'MI', 'fatal': True}
+                    self._outcomes[OutcomeType.MI].append((self._age[-1], Outcome(OutcomeType.MI, True)))
                     self._alive.append(False)
                 else:
-                    outcomesForThisYear[OutcomeModelType.CARDIOVASCULAR] = {
-                        'name': 'MI', 'fatal': False}
-                self._mi = 1
+                    self._outcomes[OutcomeType.MI].append((self._age[-1], Outcome(OutcomeType.MI, False)))
             else:
                 if self._has_fatal_stroke(fatalStrokeProb):
-                    outcomesForThisYear[OutcomeModelType.CARDIOVASCULAR] = {
-                        'name': 'Stroke', 'fatal': True}
+                    self._outcomes[OutcomeType.STROKE].append((self._age[-1], Outcome(OutcomeType.STROKE, True)))
                     self._alive.append(False)
                 else:
-                    outcomesForThisYear[OutcomeModelType.CARDIOVASCULAR] = {
-                        'name': 'Stroke', 'fatal': False}
-                self._stroke = 1
+                    self._outcomes[OutcomeType.STROKE].append((self._age[-1], Outcome(OutcomeType.STROKE, False)))
 
         # TODO: needs to be changed to represent NON cardiovascular mortality only
         if (not self.is_dead()):
