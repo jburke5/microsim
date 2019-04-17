@@ -74,7 +74,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
     def test_advance_outcomes_fatal_mi(self):
         self.joe.advance_outcomes(
             self._always_positive_repository,
-            miVsStrokeProbability=1.0,
+            manualStrokeMIProbability=1.0,
             fatalMIPRob=1.0,
             fatalStrokeProb=1.0)
         self.assertTrue(self.joe.has_mi_during_simulation())
@@ -84,7 +84,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
     def test_advance_outcomes_fatal_stroke(self):
         self.joe.advance_outcomes(
             self._always_positive_repository,
-            miVsStrokeProbability=0.0,
+            manualStrokeMIProbability=0.0,
             fatalMIPRob=1.0,
             fatalStrokeProb=1.0)
         self.assertFalse(self.joe.has_mi_during_simulation())
@@ -95,7 +95,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self.assertEqual(0, self.joe.is_dead())
         self.joe.advance_outcomes(
             self._always_positive_repository,
-            miVsStrokeProbability=1.0,
+            manualStrokeMIProbability=1.0,
             fatalMIPRob=0.0,
             fatalStrokeProb=1.0)
         self.assertTrue(self.joe.has_mi_during_simulation())
@@ -104,7 +104,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
     def test_advance_outcomes_nonfatal_stroke(self):
         self.joe.advance_outcomes(
             self._always_positive_repository,
-            miVsStrokeProbability=0.0,
+            manualStrokeMIProbability=0.0,
             fatalMIPRob=0.0,
             fatalStrokeProb=0.0)
         self.assertFalse(self.joe.has_mi_during_simulation())

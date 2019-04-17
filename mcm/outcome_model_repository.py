@@ -41,7 +41,7 @@ class OutcomeModelRepository:
             "nhanesMortalityModel")
 
     def get_risk_for_person(self, person, outcome, years=1):
-        return self.select_model_for_person(person, outcome).estimate_next_risk(person)
+        return self.select_model_for_person(person, outcome).get_risk_for_person(person, years)
 
     def select_model_for_person(self, person, outcome):
         models_for_outcome = self._models[outcome]
@@ -51,7 +51,6 @@ class OutcomeModelRepository:
             gender_stem = "male" if person._gender == NHANESGender.MALE else "female"
             return models_for_outcome[gender_stem]
 
-    # left off here — trying to load the cox model from where it ois saved...
     def initialize_cox_model(self, modelName):
         abs_module_path = os.path.abspath(os.path.dirname(__file__))
         model_spec_path = os.path.normpath(os.path.join(abs_module_path, "./data/",
