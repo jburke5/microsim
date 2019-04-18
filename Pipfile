@@ -8,6 +8,7 @@ numpy = "*"
 pandas = "*"
 statsmodels = "*"
 scipy = "*"
+patsy = ">=0.5.1"
 
 [dev-packages]
 "flake8" = "*"
