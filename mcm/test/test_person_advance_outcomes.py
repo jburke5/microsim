@@ -59,17 +59,17 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         with self.assertRaises(RuntimeError, msg="Person is dead. Can not advance outcomes"):
             self.joe.advance_outcomes(None)
 
-    def test_has_fatal_mi(self):
-        self.assertEqual(self.joe._has_fatal_mi(1.0), 1)
-        self.assertEqual(self.joe._has_fatal_mi(0.0), 0)
+    def test_will_have_fatal_mi(self):
+        self.assertEqual(self.joe._will_have_fatal_mi(1.0), 1)
+        self.assertEqual(self.joe._will_have_fatal_mi(0.0), 0)
 
-    def test_has_fatal_stroke(self):
-        self.assertEqual(self.joe._has_fatal_stroke(1.0), 1)
-        self.assertEqual(self.joe._has_fatal_stroke(0.0), 0)
+    def test_will_have_fatal_stroke(self):
+        self.assertEqual(self.joe._will_have_fatal_stroke(1.0), 1)
+        self.assertEqual(self.joe._will_have_fatal_stroke(0.0), 0)
 
     def test_has_mi_vs_stroke(self):
-        self.assertEqual(self.joe._has_mi(1.0), 1)
-        self.assertEqual(self.joe._has_mi(0.0), 0)
+        self.assertEqual(self.joe._will_have_mi(1.0), 1)
+        self.assertEqual(self.joe._will_have_mi(0.0), 0)
 
     def test_advance_outcomes_fatal_mi(self):
         self.joe.advance_outcomes(
