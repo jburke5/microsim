@@ -1,0 +1,16 @@
+{
+    // Prefix "python.(python|flake8|autopep8)Path" settings with path to program in virtualenv.
+    // Will likely be the path output by running following command from the root of the repository:
+    // echo "$(pipenv --venv)/bin"
+
+    "python.pythonPath": "python",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Path": "flake8",
+    "python.formatting.provider": "autopep8",
+    "python.formatting.autopep8Path": "autopep8",
+    "python.formatting.autopep8Args": ["--aggressive", "--aggressive"],
+    "python.unitTest.unittestEnabled": true,
+    "python.unitTest.unittestArgs": ["--start-directory", "./mcm/test", "--pattern", "test_*.py"],
+}
