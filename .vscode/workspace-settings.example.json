@@ -1,0 +1,12 @@
+{
+    "python.pythonPath": "${/path/to/}python",
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Path": "${/path/to/}flake8",
+    "python.formatting.provider": "autopep8",
+    "python.formatting.autopep8Path": "${/path/to/}autopep8",
+    "python.formatting.autopep8Args": ["--aggressive", "--aggressive"],
+    "python.unitTest.unittestEnabled": true,
+    "python.unitTest.unittestArgs": ["--start-directory", "./mcm/test", "--pattern", "test_*.py"],
+}
