@@ -116,10 +116,10 @@ class Person:
         return any([ageAtEvent >= 0 for ageAtEvent, _ in self._outcomes[OutcomeType.STROKE]])
 
     def has_fatal_stroke(self):
-        return any([stroke.fatal  for _, stroke in self._outcomes[OutcomeType.STROKE]])
+        return any([stroke.fatal for _, stroke in self._outcomes[OutcomeType.STROKE]])
 
     def has_fatal_mi(self):
-        return any([mi.fatal  for _, mi in self._outcomes[OutcomeType.MI]])
+        return any([mi.fatal for _, mi in self._outcomes[OutcomeType.MI]])
 
     def has_mi_prior_to_simulation(self):
         return any([ageAtEvent < 0 for ageAtEvent, _ in self._outcomes[OutcomeType.MI]])
@@ -146,17 +146,19 @@ class Person:
     def _will_have_cvd_event(self, ascvdProb):
         return npRand.uniform(size=1) < ascvdProb
 
-    def _will_have_mi(self, manualMIProb=-1):
+    def _will_have_mi(self, manualMIProb=None):
+        if manualMIProb is not None:
+            return manualMIProb
         # if no manual MI probabiliyt, estimate it from oru partitioned model
         abs_module_path = os.path.abspath(os.path.dirname(__file__))
         model_spec_path = os.path.normpath(os.path.join(abs_module_path,
-            "./data/StrokeMIPartitionModelSpec.json"))
+                                                        "./data/StrokeMIPartitionModelSpec.json"))
         with open(model_spec_path, 'r') as model_spec_file:
             model_spec = json.load(model_spec_file)
         strokePartitionModel = StatsModelLinearRiskFactorModel(RegressionModel(**model_spec))
         strokeProbability = scipySpecial.expit(strokePartitionModel.estimate_next_risk(self))
-        
-        return npRand.uniform(size=1) < ((1-strokeProbability) if manualMIProb==-1  else manualMIProb)
+
+        return npRand.uniform(size=1) < (1 - strokeProbability)
 
     def _will_have_fatal_mi(self, fatalMIProb):
         return npRand.uniform(size=1) < fatalMIProb
@@ -165,9 +167,12 @@ class Person:
         return npRand.uniform(size=1) < fatalStrokeProb
 
     # fatal stroke probability estimated from our meta-analysis of BASIC, NoMAS, GCNKSS, REGARDS
-    # fatal mi probability from: Wadhera, R. K., Joynt Maddox, K. E., Wang, Y., Shen, C., Bhatt, D. L., & Yeh, R. W. 
-    # (2018). Association Between 30-Day Episode Payments and Acute Myocardial Infarction Outcomes Among Medicare 
-    # Beneficiaries. Circ. Cardiovasc. Qual. Outcomes, 11(3), e46–9. http://doi.org/10.1161/CIRCOUTCOMES.117.004397
+    # fatal mi probability from: Wadhera, R. K., Joynt Maddox, K. E., Wang, Y., Shen, C., Bhatt,
+    # D. L., & Yeh, R. W.
+    # (2018). Association Between 30-Day Episode Payments and Acute Myocardial Infarction Outcomes
+    # Among Medicare
+    # Beneficiaries. Circ. Cardiovasc. Qual. Outcomes, 11(3), e46–9.
+    # http://doi.org/10.1161/CIRCOUTCOMES.117.004397
     def advance_outcomes(
             self,
             outcome_model_repository,
@@ -200,8 +205,11 @@ class Person:
                         (self._age[-1], Outcome(OutcomeType.STROKE, False)))
 
         if (not self.is_dead()):
-            if (npRand.uniform(size=1) < outcome_model_repository.get_risk_for_person(self,
-                                                                OutcomeModelType.MORTALITY)):
+            riskForPerson = outcome_model_repository.get_risk_for_person(
+                self,
+                OutcomeModelType.MORTALITY)
+
+            if (npRand.uniform(size=1) < riskForPerson):
                 self._alive.append(False)
 
     def __repr__(self):
