@@ -62,40 +62,54 @@ class Population:
         ageStandard['female'] = ageStandard['female'].replace({1: 0, 2: 1})
         ageStandard['ageGroup'] = ageStandard['raw'].str[16:18]
         ageStandard['ageGroup'] = ageStandard['ageGroup'].astype(int)
-        ageStandard['population'] = ageStandard['raw'].str[18:26]
-        ageStandard['population'] = ageStandard['population'].astype(int)
+        ageStandard['standardPopulation'] = ageStandard['raw'].str[18:26]
+        ageStandard['standardPopulation'] = ageStandard['standardPopulation'].astype(int)
         ageStandard['lowerAgeBound'] = (ageStandard.ageGroup - 1) * 5
         ageStandard['upperAgeBound'] = (ageStandard.ageGroup * 5) - 1
         ageStandard['lowerAgeBound'] = ageStandard['lowerAgeBound'].replace({-5: 0, 0: 1})
         ageStandard['upperAgeBound'] = ageStandard['upperAgeBound'].replace({-1: 0, 89: 150})
         ageStandardYear = ageStandard.loc[ageStandard.year == yearOfStandardizedPopulation]
         ageStandardGroupby = ageStandardYear[['female',
-                                              'population',
+                                              'standardPopulation',
                                               'lowerAgeBound',
                                               'upperAgeBound',
                                               'ageGroup']].groupby(['ageGroup',
                                                                     'female'])
         ageStandardHeaders = ageStandardGroupby.first()[['lowerAgeBound', 'upperAgeBound']]
-        ageStandardPopulation = ageStandardYear[['female', 'population', 'ageGroup']].groupby([
-            'ageGroup', 'female']).sum()
+        ageStandardHeaders['female'] = ageStandardHeaders.index.get_level_values(1)
+        ageStandardPopulation = ageStandardYear[['female', 'standardPopulation', 'ageGroup']]
+        ageStandardPopulation = ageStandardPopulation.groupby(['ageGroup', 'female']).sum()
         return ageStandardHeaders.join(ageStandardPopulation, how='inner')
 
-    def calculate_age_sex_standardized_incidence(
-            self, outcomeType, yearOfStandardizedPopulation=2016):
+    def build_age_sex_standardized_dataframe(self, outcomeType, yearOfStandardizedPopulation=2016):
         ageStandard = self.build_age_standard(yearOfStandardizedPopulation)
         ageStandard['outcomeCount'] = 0
+        ageStandard['simPopulation'] = 0
         for person in self._people:
             if len(person._outcomes[outcomeType]) > 0:
                 ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[-1]) &
-                                (ageStandard['upperAgeBound'] >= person._age[-1])),
+                                 (ageStandard['upperAgeBound'] >= person._age[-1]) &
+                                 (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
                                 'outcomeCount'] += 1
-        ageStandard['percentInGroup'] = ageStandard['population'] / \
-            (ageStandard['population'].sum())
+
+            ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[-1]) &
+                             (ageStandard['upperAgeBound'] >= person._age[-1]) &
+                             (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
+                            'simPopulation'] += 1
+
+        ageStandard['percentStandardPopInGroup'] = ageStandard['standardPopulation'] / \
+            (ageStandard['standardPopulation'].sum())
         ageStandard['ageSpecificRate'] = ageStandard['outcomeCount'] / \
-            ageStandard['population'] * 100000
+            ageStandard['simPopulation'] * 100000
         ageStandard['ageSpecificContribution'] = ageStandard['ageSpecificRate'] * \
-            ageStandard['percentInGroup']
-        return ageStandard['ageSpecificContribution'].sum()
+            ageStandard['percentStandardPopInGroup']
+        return ageStandard
+
+    def calculate_age_sex_standardized_incidence(
+            self, outcomeType, yearOfStandardizedPopulation=2016):
+
+        df = self.build_age_sex_standardized_dataframe(outcomeType, yearOfStandardizedPopulation)
+        return df['ageSpecificContribution'].sum()
 
 
 def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
