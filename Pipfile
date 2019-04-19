@@ -18,7 +18,7 @@ ipython = "*"
 python_version = "3.6"
 
 [scripts]
-test = "python -m unittest discover mcm/test test_*.py"
+test = "python -m unittest discover --start-directory ./mcm/test --pattern test_*.py"
 lint = "flake8"
 format = "autopep8 --in-place --recursive . --aggressive --aggressive"
 format-diff = "autopep8 --diff --recursive . --aggressive --aggressive"
