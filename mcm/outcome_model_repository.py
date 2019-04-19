@@ -37,6 +37,7 @@ class OutcomeModelRepository:
             ),
 
         }
+        # This represents non-cardiovascular mortality..
         self._models[OutcomeModelType.MORTALITY] = self.initialize_cox_model(
             "nhanesMortalityModel")
 

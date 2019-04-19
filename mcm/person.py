@@ -171,7 +171,7 @@ class Person:
     def advance_outcomes(
             self,
             outcome_model_repository,
-            manualStrokeMIProbability = -1,
+            manualStrokeMIProbability=-1,
             fatalMIPRob=0.13,
             fatalStrokeProb=0.15):
         if self.is_dead():
@@ -199,7 +199,6 @@ class Person:
                     self._outcomes[OutcomeType.STROKE].append(
                         (self._age[-1], Outcome(OutcomeType.STROKE, False)))
 
-        # TODO: needs to be changed to represent NON cardiovascular mortality only
         if (not self.is_dead()):
             if (npRand.uniform(size=1) < outcome_model_repository.get_risk_for_person(self,
                                                                 OutcomeModelType.MORTALITY)):
