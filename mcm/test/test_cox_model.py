@@ -26,6 +26,11 @@ class TestCoxModel(unittest.TestCase):
 
     def test_single_linear_predictor(self):
         # Baseline estimate derived in notebook — buildNHANESMortalityModel.
+        # only testing to 3 places because we approximate the cum hazard as oppossed
+        # as opposed to directly using it
+        self.assertAlmostEqual(
+            first=5.643399336621428, second=self.model.linear_predictor(
+                self.imputed_dataset_first_person), places=5)
         self.assertAlmostEqual(
             first=0.026717050685876643, second=self.model.get_risk_for_person(
                 self.imputed_dataset_first_person, 1), places=3)
