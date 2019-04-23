@@ -78,6 +78,9 @@ class Person:
     def has_diabetes(self):
         return sorted(self._a1c)[-1] >= 6.5
 
+    def years_in_simulation(self):
+        return len(self._age) - 1
+
     def get_next_risk_factor(self, riskFactor, risk_model_repository):
         model = risk_model_repository.get_model(riskFactor)
         return model.estimate_next_risk(self)
@@ -176,7 +179,7 @@ class Person:
     def advance_outcomes(
             self,
             outcome_model_repository,
-            manualStrokeMIProbability=-1,
+            manualStrokeMIProbability=None,
             fatalMIPRob=0.13,
             fatalStrokeProb=0.15):
         if self.is_dead():
