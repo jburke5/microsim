@@ -45,11 +45,8 @@ class Population:
     # refactorrtag: we should probably build a specific class that loads data files...
     def build_age_standard(self, yearOfStandardizedPopulation):
         if yearOfStandardizedPopulation in Population._ageStandards:
-            print("Returning age standard from cache for : " + str(yearOfStandardizedPopulation))
             return Population._ageStandards[yearOfStandardizedPopulation].copy()
         
-        print("Building age standard for : " + str(yearOfStandardizedPopulation))
-
         abs_module_path = os.path.abspath(os.path.dirname(__file__))
         model_spec_path = os.path.normpath(
             os.path.join(
