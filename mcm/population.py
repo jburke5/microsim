@@ -21,10 +21,14 @@ class Population:
     turn into an abstract class...
     """
 
+    _ageStandards = {}
+    
     def __init__(self, people):
         self._people = people
         self._risk_model_repository = None
         self._outcome_model_repository = None
+        self._ageStandards = {}
+        self._totalYearsAdvanced = 0
 
     def advance(self, years):
         for _ in range(years):
@@ -33,12 +37,19 @@ class Population:
                     person.advance_year(self._risk_model_repository,
                                         self._outcome_model_repository)
             self.apply_recalibration_standards()
+        self._totalYearsAdvanced += years
 
     def apply_recalibration_standards(self):
         pass
 
     # refactorrtag: we should probably build a specific class that loads data files...
     def build_age_standard(self, yearOfStandardizedPopulation):
+        if yearOfStandardizedPopulation in Population._ageStandards:
+            print("Returning age standard from cache for : " + str(yearOfStandardizedPopulation))
+            return Population._ageStandards[yearOfStandardizedPopulation].copy()
+        
+        print("Building age standard for : " + str(yearOfStandardizedPopulation))
+
         abs_module_path = os.path.abspath(os.path.dirname(__file__))
         model_spec_path = os.path.normpath(
             os.path.join(
@@ -79,37 +90,68 @@ class Population:
         ageStandardHeaders['female'] = ageStandardHeaders.index.get_level_values(1)
         ageStandardPopulation = ageStandardYear[['female', 'standardPopulation', 'ageGroup']]
         ageStandardPopulation = ageStandardPopulation.groupby(['ageGroup', 'female']).sum()
-        return ageStandardHeaders.join(ageStandardPopulation, how='inner')
+        ageStandardPopulation = ageStandardHeaders.join(ageStandardPopulation, how='inner')
+        # cache the age standard populations...they're not that big and it takes a while
+        # to build one
+        Population._ageStandards[yearOfStandardizedPopulation] = ageStandardPopulation
+        ageStandardPopulation['outcomeCount'] = 0
+        ageStandardPopulation['simPersonYears'] = 0
+
+        return ageStandardPopulation
+
+    def assign_incident_outcomes(self, ageStandard, outcomeType):
+        for person in self._people:
+            if len(person._outcomes[outcomeType]) > 0:
+                ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[0]) &
+                                 (ageStandard['upperAgeBound'] >= person._age[0]) &
+                                 (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
+                                'outcomeCount'] += 1
+            ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[0]) &
+                             (ageStandard['upperAgeBound'] >= person._age[0]) &
+                             (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
+                            'simPersonYears'] += person.years_in_simulation()
+        return ageStandard
 
     def build_age_sex_standardized_dataframe(self, outcomeType, yearOfStandardizedPopulation=2016):
         ageStandard = self.build_age_standard(yearOfStandardizedPopulation)
-        ageStandard['outcomeCount'] = 0
-        ageStandard['simPopulation'] = 0
-        for person in self._people:
-            if len(person._outcomes[outcomeType]) > 0:
-                ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[-1]) &
-                                 (ageStandard['upperAgeBound'] >= person._age[-1]) &
-                                 (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
-                                'outcomeCount'] += 1
-
-            ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[-1]) &
-                             (ageStandard['upperAgeBound'] >= person._age[-1]) &
-                             (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
-                            'simPopulation'] += 1
-
-        ageStandard['percentStandardPopInGroup'] = ageStandard['standardPopulation'] / \
-            (ageStandard['standardPopulation'].sum())
-        ageStandard['ageSpecificRate'] = ageStandard['outcomeCount'] / \
-            ageStandard['simPopulation'] * 100000
-        ageStandard['ageSpecificContribution'] = ageStandard['ageSpecificRate'] * \
-            ageStandard['percentStandardPopInGroup']
+        ageStandard = self.assign_incident_outcomes(ageStandard, outcomeType)
+        ageStandard = self.tabulate_age_specific_rates(ageStandard)
         return ageStandard
 
+    def tabulate_age_specific_rates(self, ageStandard):
+        ageStandard['percentStandardPopInGroup'] = ageStandard['standardPopulation'] / \
+            (ageStandard['standardPopulation'].sum())
+        ageStandard['ageSpecificRate'] = ageStandard['outcomeCount'] * 100000 / \
+            ageStandard['simPersonYears'] 
+        ageStandard['ageSpecificContribution'] = ageStandard['ageSpecificRate'] * \
+            ageStandard['percentStandardPopInGroup']
+        # should the < 18 group be included? not sure if they're included in formal incidence calcs
+        # we'll slightly underestimate if we include them because they're not in the sim pop...
+        #ageStandard = ageStandard.loc[ageStandard.lowerAgeBound >= 18]
+        return ageStandard
+
+    # return the age standardized # of events per 100,000 person years
     def calculate_age_sex_standardized_incidence(
             self, outcomeType, yearOfStandardizedPopulation=2016):
 
         df = self.build_age_sex_standardized_dataframe(outcomeType, yearOfStandardizedPopulation)
-        return df['ageSpecificContribution'].sum()
+        return (df['ageSpecificContribution'].sum(), df['outcomeCount'].sum(), df)
+
+    def calculate_age_sex_standardized_mortality(self, yearOfStandardizedPopulation=2016):
+        ageStandard = self.build_age_standard(yearOfStandardizedPopulation)
+
+        for person in self._people:
+            if person.is_dead():
+                ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[0]) &
+                                 (ageStandard['upperAgeBound'] >= person._age[0]) &
+                                 (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
+                                'outcomeCount'] += 1
+            ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[0]) &
+                             (ageStandard['upperAgeBound'] >= person._age[0]) &
+                             (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
+                            'simPersonYears'] += person.years_in_simulation()
+        ageStandard = self.tabulate_age_specific_rates(ageStandard)
+        return (ageStandard['ageSpecificContribution'].sum(), ageStandard['outcomeCount'].sum(), ageStandard)
 
 
 def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
@@ -130,7 +172,7 @@ def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
             bmi=x.bmi,
             smokingStatus=SmokingStatus(int(x.smokingStatus)),
             dfIndex=x.index,
-            diedBy2011=x.diedBy2011), axis=1)
+            diedBy2015=x.diedBy2015), axis=1)
     return people
 
 
