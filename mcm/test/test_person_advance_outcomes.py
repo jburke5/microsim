@@ -2,6 +2,7 @@ from mcm.person import Person
 from mcm.gender import NHANESGender
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.outcome_model_repository import OutcomeModelRepository
+from mcm.cv_outcome_determination import CVOutcomeDetermination
 
 from mcm.smoking_status import SmokingStatus
 import unittest
@@ -43,6 +44,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             SmokingStatus.NEVER)
         self._always_positive_repository = AlwaysPositiveOutcomeRepository()
         self._always_negative_repository = AlwaysNegativeOutcomeRepository()
+        self.cvDeterminer = CVOutcomeDetermination(self._always_positive_repository)
 
     def test_dead_is_dead_advance_year(self):
         self.joe._alive[-1] = False
@@ -60,53 +62,53 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             self.joe.advance_outcomes(None)
 
     def test_will_have_fatal_mi(self):
-        self.assertEqual(self.joe._will_have_fatal_mi(1.0), 1)
-        self.assertEqual(self.joe._will_have_fatal_mi(0.0), 0)
+        self.assertEqual(self.cvDeterminer._will_have_fatal_mi(1.0), 1)
+        self.assertEqual(self.cvDeterminer._will_have_fatal_mi( 0.0), 0)
 
     def test_will_have_fatal_stroke(self):
-        self.assertEqual(self.joe._will_have_fatal_stroke(1.0), 1)
-        self.assertEqual(self.joe._will_have_fatal_stroke(0.0), 0)
+        self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(1.0), 1)
+        self.assertEqual(self.cvDeterminer._will_have_fatal_stroke( 0.0), 0)
 
     def test_has_mi_vs_stroke(self):
-        self.assertEqual(self.joe._will_have_mi(1.0), 1)
-        self.assertEqual(self.joe._will_have_mi(0.0), 0)
+        self.assertEqual(self.cvDeterminer._will_have_mi(self.joe, 1.0), 1)
+        self.assertEqual(self.cvDeterminer._will_have_mi(self.joe, 0.0), 0)
 
     def test_advance_outcomes_fatal_mi(self):
-        self.joe.advance_outcomes(
-            self._always_positive_repository,
-            manualStrokeMIProbability=1.0,
-            fatalMIPRob=1.0,
-            fatalStrokeProb=1.0)
+        self._always_positive_repository.stroke_case_fatality = 1.0
+        self._always_positive_repository.mi_case_fatality = 1.0
+        self._always_positive_repository.manualStrokeMIProbability = 1.0
+
+        self.joe.advance_outcomes(self._always_positive_repository)
         self.assertTrue(self.joe.has_mi_during_simulation())
         self.assertFalse(self.joe.has_stroke_during_simulation())
         self.assertTrue(self.joe.is_dead())
 
     def test_advance_outcomes_fatal_stroke(self):
-        self.joe.advance_outcomes(
-            self._always_positive_repository,
-            manualStrokeMIProbability=0.0,
-            fatalMIPRob=1.0,
-            fatalStrokeProb=1.0)
+        self._always_positive_repository.stroke_case_fatality = 1.0
+        self._always_positive_repository.mi_case_fatality = 1.0
+        self._always_positive_repository.manualStrokeMIProbability = 0.0
+
+        self.joe.advance_outcomes(self._always_positive_repository)
         self.assertFalse(self.joe.has_mi_during_simulation())
         self.assertTrue(self.joe.has_stroke_during_simulation())
         self.assertTrue(self.joe.is_dead())
 
     def test_advance_outcomes_nonfatal_mi(self):
         self.assertEqual(0, self.joe.is_dead())
-        self.joe.advance_outcomes(
-            self._always_positive_repository,
-            manualStrokeMIProbability=1.0,
-            fatalMIPRob=0.0,
-            fatalStrokeProb=1.0)
+        self._always_positive_repository.stroke_case_fatality = 0.0
+        self._always_positive_repository.mi_case_fatality = 0.0
+        self._always_positive_repository.manualStrokeMIProbability = 1.0
+
+        self.joe.advance_outcomes(self._always_positive_repository)
         self.assertTrue(self.joe.has_mi_during_simulation())
         self.assertFalse(self.joe.has_stroke_during_simulation())
 
     def test_advance_outcomes_nonfatal_stroke(self):
-        self.joe.advance_outcomes(
-            self._always_positive_repository,
-            manualStrokeMIProbability=0.0,
-            fatalMIPRob=0.0,
-            fatalStrokeProb=0.0)
+        self._always_positive_repository.stroke_case_fatality = 0.0
+        self._always_positive_repository.mi_case_fatality = 0.0
+        self._always_positive_repository.manualStrokeMIProbability = 0.0
+        
+        self.joe.advance_outcomes(self._always_positive_repository)
         self.assertFalse(self.joe.has_mi_during_simulation())
         self.assertTrue(self.joe.has_stroke_during_simulation())
 

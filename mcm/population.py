@@ -22,7 +22,7 @@ class Population:
     """
 
     _ageStandards = {}
-    
+
     def __init__(self, people):
         self._people = people
         self._risk_model_repository = None
@@ -46,7 +46,7 @@ class Population:
     def build_age_standard(self, yearOfStandardizedPopulation):
         if yearOfStandardizedPopulation in Population._ageStandards:
             return Population._ageStandards[yearOfStandardizedPopulation].copy()
-        
+
         abs_module_path = os.path.abspath(os.path.dirname(__file__))
         model_spec_path = os.path.normpath(
             os.path.join(
@@ -119,12 +119,12 @@ class Population:
         ageStandard['percentStandardPopInGroup'] = ageStandard['standardPopulation'] / \
             (ageStandard['standardPopulation'].sum())
         ageStandard['ageSpecificRate'] = ageStandard['outcomeCount'] * 100000 / \
-            ageStandard['simPersonYears'] 
+            ageStandard['simPersonYears']
         ageStandard['ageSpecificContribution'] = ageStandard['ageSpecificRate'] * \
             ageStandard['percentStandardPopInGroup']
         # should the < 18 group be included? not sure if they're included in formal incidence calcs
         # we'll slightly underestimate if we include them because they're not in the sim pop...
-        #ageStandard = ageStandard.loc[ageStandard.lowerAgeBound >= 18]
+        # ageStandard = ageStandard.loc[ageStandard.lowerAgeBound >= 18]
         return ageStandard
 
     # return the age standardized # of events per 100,000 person years
@@ -148,7 +148,8 @@ class Population:
                              (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
                             'simPersonYears'] += person.years_in_simulation()
         ageStandard = self.tabulate_age_specific_rates(ageStandard)
-        return (ageStandard['ageSpecificContribution'].sum(), ageStandard['outcomeCount'].sum(), ageStandard)
+        return (ageStandard['ageSpecificContribution'].sum(),
+                ageStandard['outcomeCount'].sum(), ageStandard)
 
 
 def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):

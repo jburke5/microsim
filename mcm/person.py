@@ -3,14 +3,6 @@ from mcm.outcome_model_type import OutcomeModelType
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 from mcm.outcome import OutcomeType
-from mcm.outcome import Outcome
-from mcm.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
-from mcm.regression_model import RegressionModel
-
-import numpy.random as npRand
-import scipy.special as scipySpecial
-import os
-import json
 
 
 class Person:
@@ -146,74 +138,24 @@ class Person:
         self._ldl.append(self.get_next_risk_factor("ldl", risk_model_repository))
         self._trig.append(self.get_next_risk_factor("trig", risk_model_repository))
 
-    def _will_have_cvd_event(self, ascvdProb):
-        return npRand.uniform(size=1) < ascvdProb
-
-    def _will_have_mi(self, manualMIProb=None):
-        if manualMIProb is not None:
-            return manualMIProb
-        # if no manual MI probabiliyt, estimate it from oru partitioned model
-        abs_module_path = os.path.abspath(os.path.dirname(__file__))
-        model_spec_path = os.path.normpath(os.path.join(abs_module_path,
-                                                        "./data/StrokeMIPartitionModelSpec.json"))
-        with open(model_spec_path, 'r') as model_spec_file:
-            model_spec = json.load(model_spec_file)
-        strokePartitionModel = StatsModelLinearRiskFactorModel(RegressionModel(**model_spec))
-        strokeProbability = scipySpecial.expit(strokePartitionModel.estimate_next_risk(self))
-
-        return npRand.uniform(size=1) < (1 - strokeProbability)
-
-    def _will_have_fatal_mi(self, fatalMIProb):
-        return npRand.uniform(size=1) < fatalMIProb
-
-    def _will_have_fatal_stroke(self, fatalStrokeProb):
-        return npRand.uniform(size=1) < fatalStrokeProb
-
-    # fatal stroke probability estimated from our meta-analysis of BASIC, NoMAS, GCNKSS, REGARDS
-    # fatal mi probability from: Wadhera, R. K., Joynt Maddox, K. E., Wang, Y., Shen, C., Bhatt,
-    # D. L., & Yeh, R. W.
-    # (2018). Association Between 30-Day Episode Payments and Acute Myocardial Infarction Outcomes
-    # Among Medicare
-    # Beneficiaries. Circ. Cardiovasc. Qual. Outcomes, 11(3), e46–9.
-    # http://doi.org/10.1161/CIRCOUTCOMES.117.004397
     def advance_outcomes(
             self,
-            outcome_model_repository,
-            manualStrokeMIProbability=None,
-            fatalMIPRob=0.13,
-            fatalStrokeProb=0.15):
+            outcome_model_repository):
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance outcomes")
 
-        if self._will_have_cvd_event(
-            outcome_model_repository.get_risk_for_person(
-                self,
-                OutcomeModelType.CARDIOVASCULAR,
-                years=1)):
-            if self._will_have_mi(manualStrokeMIProbability):
-                if self._will_have_fatal_mi(fatalMIPRob):
-                    self._outcomes[OutcomeType.MI].append(
-                        (self._age[-1], Outcome(OutcomeType.MI, True)))
-                    self._alive.append(False)
-                else:
-                    self._outcomes[OutcomeType.MI].append(
-                        (self._age[-1], Outcome(OutcomeType.MI, False)))
-            else:
-                if self._will_have_fatal_stroke(fatalStrokeProb):
-                    self._outcomes[OutcomeType.STROKE].append(
-                        (self._age[-1], Outcome(OutcomeType.STROKE, True)))
-                    self._alive.append(False)
-                else:
-                    self._outcomes[OutcomeType.STROKE].append(
-                        (self._age[-1], Outcome(OutcomeType.STROKE, False)))
-
-        if (not self.is_dead()):
-            riskForPerson = outcome_model_repository.get_risk_for_person(
-                self,
-                OutcomeModelType.MORTALITY)
-
-            if (npRand.uniform(size=1) < riskForPerson):
+        # first determine if there is a cv event
+        cv_event = outcome_model_repository.assign_cv_outcome(self)
+        if cv_event is not None:
+            self._outcomes[cv_event.type].append((self._age[-1], cv_event))
+            if cv_event.fatal:
                 self._alive.append(False)
+
+        # if not dead...assess non CV mortality
+        if (not self.is_dead()):
+                non_cv_death = outcome_model_repository.assign_non_cv_mortality(self)
+                if (non_cv_death):
+                    self._alive.append(False)
 
     def __repr__(self):
         return (f"Person(age={self._age[-1]}, "
