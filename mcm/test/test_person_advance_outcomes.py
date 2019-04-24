@@ -3,9 +3,12 @@ from mcm.gender import NHANESGender
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.outcome_model_repository import OutcomeModelRepository
 from mcm.cv_outcome_determination import CVOutcomeDetermination
+from mcm.outcome import Outcome
+from mcm.outcome import OutcomeType
 
 from mcm.smoking_status import SmokingStatus
 import unittest
+import copy
 
 
 class AlwaysPositiveOutcomeRepository(OutcomeModelRepository):
@@ -62,12 +65,38 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             self.joe.advance_outcomes(None)
 
     def test_will_have_fatal_mi(self):
-        self.assertEqual(self.cvDeterminer._will_have_fatal_mi(1.0), 1)
-        self.assertEqual(self.cvDeterminer._will_have_fatal_mi( 0.0), 0)
+        self.assertEqual(self.cvDeterminer._will_have_fatal_mi(self.joe, 1.0), 1)
+        self.assertEqual(self.cvDeterminer._will_have_fatal_mi(self.joe, 0.0), 0)
+
+    def test_fatal_mi_secondary_prob(self):
+        self.cvDeterminer.mi_secondary_case_fatality = 1.0
+        self.cvDeterminer.mi_case_fatality = 0.0
+
+        joeClone = copy.deepcopy(self.joe)
+
+        self.assertEqual(self.cvDeterminer._will_have_fatal_mi(joeClone, 0.0), 0)
+
+        joeClone._outcomes[OutcomeType.MI] = (joeClone._age, Outcome(OutcomeType.MI, False))
+        # even though the passed fatality rate is zero, it shoudl be overriden by the
+        # secondary rate given that joeclone had a prior MI
+        self.assertEqual(self.cvDeterminer._will_have_fatal_mi(joeClone, 0.0), 1)
+
+    def test_fatal_stroke_secondary_prob(self):
+        self.cvDeterminer.stroke_secondary_case_fatality = 1.0
+        self.cvDeterminer.stroke_case_fatality = 0.0
+
+        joeClone = copy.deepcopy(self.joe)
+
+        self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(joeClone, 0.0), 0)
+
+        joeClone._outcomes[OutcomeType.STROKE] = (joeClone._age, Outcome(OutcomeType.STROKE, False))
+        # even though the passed fatality rate is zero, it shoudl be overriden by the
+        # secondary rate given that joeclone had a prior stroke
+        self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(joeClone, 0.0), 1)
 
     def test_will_have_fatal_stroke(self):
-        self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(1.0), 1)
-        self.assertEqual(self.cvDeterminer._will_have_fatal_stroke( 0.0), 0)
+        self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(self.joe, 1.0), 1)
+        self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(self.joe, 0.0), 0)
 
     def test_has_mi_vs_stroke(self):
         self.assertEqual(self.cvDeterminer._will_have_mi(self.joe, 1.0), 1)
@@ -107,7 +136,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self._always_positive_repository.stroke_case_fatality = 0.0
         self._always_positive_repository.mi_case_fatality = 0.0
         self._always_positive_repository.manualStrokeMIProbability = 0.0
-        
+
         self.joe.advance_outcomes(self._always_positive_repository)
         self.assertFalse(self.joe.has_mi_during_simulation())
         self.assertTrue(self.joe.has_stroke_during_simulation())
