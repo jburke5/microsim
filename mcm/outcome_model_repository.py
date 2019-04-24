@@ -20,10 +20,14 @@ class OutcomeModelRepository:
 
     def __init__(self):
         self.mi_case_fatality = CVOutcomeDetermination.default_mi_case_fatality
+        self.secondary_mi_case_fatality = CVOutcomeDetermination.default_secondary_mi_case_fatality
         self.stroke_case_fatality = CVOutcomeDetermination.default_stroke_case_fatality
+        self.secondary_stroke_case_fatality = CVOutcomeDetermination.default_secondary_stroke_case_fatality
         self.secondary_prevention_multiplier = CVOutcomeDetermination.default_secondary_prevention_multiplier
+        
         # variable used in testing to control whether a patient will have a stroke or mi
         self.manualStrokeMIProbability = None
+        
         self._models = {}
         self._models[OutcomeModelType.CARDIOVASCULAR] = {
             "female": ASCVDOutcomeModel(
@@ -77,6 +81,8 @@ class OutcomeModelRepository:
         outcomeDet = CVOutcomeDetermination(self,
                                             self.mi_case_fatality,
                                             self.stroke_case_fatality,
+                                            self.secondary_mi_case_fatality,
+                                            self.secondary_stroke_case_fatality,
                                             self.secondary_prevention_multiplier)
         return outcomeDet.assign_outcome_for_person(person, years, self.manualStrokeMIProbability)
 

@@ -1,8 +1,8 @@
 from mcm.gender import NHANESGender
-from mcm.outcome_model_type import OutcomeModelType
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 from mcm.outcome import OutcomeType
+from mcm.outcome import Outcome
 
 
 class Person:
@@ -23,6 +23,8 @@ class Person:
         ldl: int,
         trig: int,
         smokingStatus: SmokingStatus,
+        selfReportStrokeAge=None,
+        selfReportMIAge=None,
         **kwargs,
     ) -> None:
 
@@ -47,15 +49,17 @@ class Person:
         # TODO : change smoking status into a factor that changes over time
         self._smokingStatus = smokingStatus
 
-        # TODO: need to initialized with whether somebody had a prior stroke or MI
-        # for prior events, ages should be initialized as -1 (meaning prior to simulation)
-
         # outcomes is a dictionary of arrays. each element in the dictionary represents
         # a differnet outcome type each element in the array is a tuple representting
         # the age of the patient at the time of an event (element zero). and the outcome
         # (element one).multiple events can be accounted for by having multiple
         # elements in the array.
         self._outcomes = {OutcomeType.MI: [], OutcomeType.STROKE: []}
+
+        if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
+            self._outcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False)))
+        if selfReportMIAge is not None and selfReportStrokeAge > 1:
+            self._outcomes[OutcomeType.MI].append((-1, Outcome(OutcomeType.MI, False)))
         for k, v in kwargs.items():
             setattr(self, k, v)
 

@@ -169,6 +169,8 @@ def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
             totChol=x.tot_chol,
             bmi=x.bmi,
             smokingStatus=SmokingStatus(int(x.smokingStatus)),
+            selfReportStrokeAge=x.selfReportStrokeAge,
+            selfReportMIAge=x.selfReportMIAge,
             dfIndex=x.index,
             diedBy2015=x.diedBy2015), axis=1)
     return people

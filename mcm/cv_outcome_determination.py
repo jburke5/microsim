@@ -13,9 +13,10 @@ import json
 
 class CVOutcomeDetermination:
     default_mi_case_fatality = 0.13
+    default_secondary_mi_case_fatality = 0.13
     default_stroke_case_fatality = 0.15
+    default_secondary_stroke_case_fatality = 0.15
     default_secondary_prevention_multiplier = 1.0
-
 
     # fatal stroke probability estimated from our meta-analysis of BASIC, NoMAS, GCNKSS, REGARDS
     # fatal mi probability from: Wadhera, R. K., Joynt Maddox, K. E., Wang, Y., Shen, C., Bhatt,
@@ -24,13 +25,17 @@ class CVOutcomeDetermination:
     # Among Medicare
     # Beneficiaries. Circ. Cardiovasc. Qual. Outcomes, 11(3), e46–9.
     # http://doi.org/10.1161/CIRCOUTCOMES.117.004397
-    
+
     def __init__(self, outcome_model_repository,
                  mi_case_fatality=default_mi_case_fatality,
                  stroke_case_fatality=default_stroke_case_fatality,
+                 mi_secondary_case_fatality=default_secondary_mi_case_fatality,
+                 stroke_secondary_case_fatality=default_secondary_stroke_case_fatality,
                  secondary_prevention_multiplier=default_secondary_prevention_multiplier):
         self.mi_case_fatality = mi_case_fatality
+        self.mi_secondary_case_fatality = mi_secondary_case_fatality,
         self.stroke_case_fatality = stroke_case_fatality
+        self.stroke_secondary_case_fatality = stroke_secondary_case_fatality
         self.secondary_prevention_multiplier = secondary_prevention_multiplier
         self.outcome_model_repository = outcome_model_repository
 
@@ -51,26 +56,29 @@ class CVOutcomeDetermination:
 
         return npRand.uniform(size=1) < (1 - strokeProbability)
 
-    def _will_have_fatal_mi(self, fatalMIProb):
-        return npRand.uniform(size=1) < fatalMIProb
+    def _will_have_fatal_mi(self, person, fatalMIProb):
+        fatalProb = self.mi_secondary_case_fatality if person._mi else fatalMIProb
+        return npRand.uniform(size=1) < fatalProb
 
-    def _will_have_fatal_stroke(self, fatalStrokeProb):
-        return npRand.uniform(size=1) < fatalStrokeProb
+    def _will_have_fatal_stroke(self, person, fatalStrokeProb):
+        fatalProb = self.stroke_secondary_case_fatality if person._stroke else fatalStrokeProb
+        return npRand.uniform(size=1) < fatalProb
 
     def assign_outcome_for_person(self, person, years=1, manualStrokeMIProbability=None):
-        if self._will_have_cvd_event(
-                self.outcome_model_repository.get_risk_for_person(
-                person,
-                OutcomeModelType.CARDIOVASCULAR,
-                years=1)):
-            
+        cvRisk = self.outcome_model_repository.get_risk_for_person(person,
+                                                                   OutcomeModelType.CARDIOVASCULAR,
+                                                                   years=1)
+        if person._stroke or person._mi:
+            cvRisk = cvRisk * self.secondary_prevention_multiplier
+
+        if self._will_have_cvd_event(cvRisk):
             if self._will_have_mi(person, manualStrokeMIProbability):
-                if self._will_have_fatal_mi(self.mi_case_fatality):
+                if self._will_have_fatal_mi(person, self.mi_case_fatality):
                     return Outcome(OutcomeType.MI, True)
                 else:
                     return Outcome(OutcomeType.MI, False)
             else:
-                if self._will_have_fatal_stroke(self.stroke_case_fatality):
+                if self._will_have_fatal_stroke(person, self.stroke_case_fatality):
                     return Outcome(OutcomeType.STROKE, True)
                 else:
                     return Outcome(OutcomeType.STROKE, False)
