@@ -3,4 +3,4 @@ from enum import Enum
 
 class OutcomeModelType(Enum):
     CARDIOVASCULAR = "cardiovascular"
-    MORTALITY = "mortality"
+    NON_CV_MORTALITY = "mortality"
