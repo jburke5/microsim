@@ -44,7 +44,7 @@ class CVOutcomeDetermination:
 
     def _will_have_mi(self, person, manualMIProb=None):
         if manualMIProb is not None:
-            return manualMIProb
+            return npRand.uniform(size=1) < manualMIProb
         # if no manual MI probablity, estimate it from oru partitioned model
         abs_module_path = os.path.abspath(os.path.dirname(__file__))
         model_spec_path = os.path.normpath(os.path.join(abs_module_path,
