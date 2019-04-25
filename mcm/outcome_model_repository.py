@@ -24,10 +24,10 @@ class OutcomeModelRepository:
         self.stroke_case_fatality = CVOutcomeDetermination.default_stroke_case_fatality
         self.secondary_stroke_case_fatality = CVOutcomeDetermination.default_secondary_stroke_case_fatality
         self.secondary_prevention_multiplier = CVOutcomeDetermination.default_secondary_prevention_multiplier
-        
+
         # variable used in testing to control whether a patient will have a stroke or mi
         self.manualStrokeMIProbability = None
-        
+
         self._models = {}
         self._models[OutcomeModelType.CARDIOVASCULAR] = {
             "female": ASCVDOutcomeModel(
