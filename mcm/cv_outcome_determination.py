@@ -7,8 +7,6 @@ from mcm.regression_model import RegressionModel
 
 import numpy.random as npRand
 import scipy.special as scipySpecial
-import os
-import json
 
 
 class CVOutcomeDetermination:
