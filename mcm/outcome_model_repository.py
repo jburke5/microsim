@@ -70,21 +70,24 @@ class OutcomeModelRepository:
             return models_for_outcome[gender_stem]
 
     def initialize_cox_model(self, modelName):
+        model_spec = self.load_model_spec(modelName)
+        return StatsModelCoxModel(CoxRegressionModel(**model_spec))
+
+    def load_model_spec(self, modelName):
         abs_module_path = os.path.abspath(os.path.dirname(__file__))
         model_spec_path = os.path.normpath(os.path.join(abs_module_path, "./data/",
                                                         modelName + "Spec.json"))
         with open(model_spec_path, 'r') as model_spec_file:
             model_spec = json.load(model_spec_file)
-        return StatsModelCoxModel(CoxRegressionModel(**model_spec))
+        return model_spec
 
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
-        outcomeDet = CVOutcomeDetermination(self,
-                                            self.mi_case_fatality,
+        outcomeDet = CVOutcomeDetermination(self.mi_case_fatality,
                                             self.stroke_case_fatality,
                                             self.secondary_mi_case_fatality,
                                             self.secondary_stroke_case_fatality,
                                             self.secondary_prevention_multiplier)
-        return outcomeDet.assign_outcome_for_person(person, years, self.manualStrokeMIProbability)
+        return outcomeDet.assign_outcome_for_person(self, person, years, self.manualStrokeMIProbability)
 
     # Returns True if the model-based logic vs. the random comparison suggests death
     def assign_non_cv_mortality(self, person, years=1):

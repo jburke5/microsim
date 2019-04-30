@@ -26,7 +26,7 @@ class CVOutcomeDetermination:
     # Beneficiaries. Circ. Cardiovasc. Qual. Outcomes, 11(3), e46–9.
     # http://doi.org/10.1161/CIRCOUTCOMES.117.004397
 
-    def __init__(self, outcome_model_repository,
+    def __init__(self,
                  mi_case_fatality=default_mi_case_fatality,
                  stroke_case_fatality=default_stroke_case_fatality,
                  mi_secondary_case_fatality=default_secondary_mi_case_fatality,
@@ -37,20 +37,15 @@ class CVOutcomeDetermination:
         self.stroke_case_fatality = stroke_case_fatality
         self.stroke_secondary_case_fatality = stroke_secondary_case_fatality
         self.secondary_prevention_multiplier = secondary_prevention_multiplier
-        self.outcome_model_repository = outcome_model_repository
 
     def _will_have_cvd_event(self, ascvdProb):
         return npRand.uniform(size=1) < ascvdProb
 
-    def _will_have_mi(self, person, manualMIProb=None):
+    def _will_have_mi(self, person, outcome_model_repository, manualMIProb=None):
         if manualMIProb is not None:
             return npRand.uniform(size=1) < manualMIProb
         # if no manual MI probablity, estimate it from oru partitioned model
-        abs_module_path = os.path.abspath(os.path.dirname(__file__))
-        model_spec_path = os.path.normpath(os.path.join(abs_module_path,
-                                                        "./data/StrokeMIPartitionModelSpec.json"))
-        with open(model_spec_path, 'r') as model_spec_file:
-            model_spec = json.load(model_spec_file)
+        model_spec = outcome_model_repository.load_model_spec("StrokeMIPartitionModel")
         strokePartitionModel = StatsModelLinearRiskFactorModel(RegressionModel(**model_spec))
         strokeProbability = scipySpecial.expit(strokePartitionModel.estimate_next_risk(person))
 
@@ -64,15 +59,22 @@ class CVOutcomeDetermination:
         fatalProb = self.stroke_secondary_case_fatality if person._stroke else fatalStrokeProb
         return npRand.uniform(size=1) < fatalProb
 
-    def assign_outcome_for_person(self, person, years=1, manualStrokeMIProbability=None):
-        cvRisk = self.outcome_model_repository.get_risk_for_person(person,
-                                                                   OutcomeModelType.CARDIOVASCULAR,
-                                                                   years=1)
+    def assign_outcome_for_person(
+            self,
+            outcome_model_repository,
+            person,
+            years=1,
+            manualStrokeMIProbability=None):
+
+        cvRisk = outcome_model_repository.get_risk_for_person(person,
+                                                              OutcomeModelType.CARDIOVASCULAR,
+                                                              years=1)
+
         if person._stroke or person._mi:
             cvRisk = cvRisk * self.secondary_prevention_multiplier
 
         if self._will_have_cvd_event(cvRisk):
-            if self._will_have_mi(person, manualStrokeMIProbability):
+            if self._will_have_mi(person, outcome_model_repository, manualStrokeMIProbability):
                 if self._will_have_fatal_mi(person, self.mi_case_fatality):
                     return Outcome(OutcomeType.MI, True)
                 else:

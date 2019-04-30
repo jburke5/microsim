@@ -99,8 +99,8 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(self.joe, 0.0), 0)
 
     def test_has_mi_vs_stroke(self):
-        self.assertEqual(self.cvDeterminer._will_have_mi(self.joe, 1.0), 1)
-        self.assertEqual(self.cvDeterminer._will_have_mi(self.joe, 0.0), 0)
+        self.assertEqual(self.cvDeterminer._will_have_mi(self.joe, None, 1.0), 1)
+        self.assertEqual(self.cvDeterminer._will_have_mi(self.joe, None, 0.0), 0)
 
     def test_advance_outcomes_fatal_mi(self):
         self._always_positive_repository.stroke_case_fatality = 1.0
