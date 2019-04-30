@@ -93,12 +93,15 @@ class Population:
         Population._ageStandards[yearOfStandardizedPopulation] = ageStandardPopulation
         ageStandardPopulation['outcomeCount'] = 0
         ageStandardPopulation['simPersonYears'] = 0
+        ageStandardPopulation['simPeople'] = 0
 
         return ageStandardPopulation
 
-    def assign_incident_outcomes(self, ageStandard, outcomeType):
+    def assign_incident_outcomes(self, ageStandard, outcomeType, selector):
         for person in self._people:
-            if len(person._outcomes[outcomeType]) > 0:
+            if selector is not None and not selector.select(person):
+                continue
+            if person.has_outcome_during_simulation(outcomeType) > 0:
                 ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[0]) &
                                  (ageStandard['upperAgeBound'] >= person._age[0]) &
                                  (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
@@ -107,11 +110,16 @@ class Population:
                              (ageStandard['upperAgeBound'] >= person._age[0]) &
                              (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
                             'simPersonYears'] += person.years_in_simulation()
+            ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[0]) &
+                             (ageStandard['upperAgeBound'] >= person._age[0]) &
+                             (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
+                            'simPeople'] += 1
         return ageStandard
 
-    def build_age_sex_standardized_dataframe(self, outcomeType, yearOfStandardizedPopulation=2016):
+    def build_age_sex_standardized_dataframe(self, outcomeType, yearOfStandardizedPopulation,
+                                             selector):
         ageStandard = self.build_age_standard(yearOfStandardizedPopulation)
-        ageStandard = self.assign_incident_outcomes(ageStandard, outcomeType)
+        ageStandard = self.assign_incident_outcomes(ageStandard, outcomeType, selector)
         ageStandard = self.tabulate_age_specific_rates(ageStandard)
         return ageStandard
 
@@ -129,9 +137,10 @@ class Population:
 
     # return the age standardized # of events per 100,000 person years
     def calculate_age_sex_standardized_incidence(
-            self, outcomeType, yearOfStandardizedPopulation=2016):
+            self, outcomeType, yearOfStandardizedPopulation=2016, selector=None):
 
-        df = self.build_age_sex_standardized_dataframe(outcomeType, yearOfStandardizedPopulation)
+        df = self.build_age_sex_standardized_dataframe(outcomeType, yearOfStandardizedPopulation,
+                                                       selector)
         return (df['ageSpecificContribution'].sum(), df['outcomeCount'].sum(), df)
 
     def calculate_age_sex_standardized_mortality(self, yearOfStandardizedPopulation=2016):
@@ -174,6 +183,27 @@ def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
             dfIndex=x.index,
             diedBy2015=x.diedBy2015), axis=1)
     return people
+
+
+def get_people_current_state_as_dataframe(self):
+    return pd.DataFrame({'age': [person.age[-1] for person in self._people],
+                         'gender': [person.gender for person in self._people],
+                         'raceEthnicity': [person.raceEthnicity for person in self._people],
+                         'sbp': [person.sbp[-1] for person in self._people],
+                         'dbp': [person.dbp[-1] for person in self._people],
+                         'a1c': [person.a1c[-1] for person in self._people],
+                         'hdl': [person.hdl[-1] for person in self._people],
+                         'ldl': [person.ldl[-1] for person in self._people],
+                         'trig': [person.trig[-1] for person in self._people],
+                         'totChol': [person.totChol[-1] for person in self._people],
+                         'bmi': [person.bmi[-1] for person in self._people],
+                         'smokingStatus': [person.smokingStatus for person in self._people],
+                         'dead': [person.is_dead() for person in self._people],
+                         'miPriorToSim': [person.has_mi_prior_to_simulation() for person in self._people],
+                         'miInSim': [person.has_mi_during_simulation() for person in self._people],
+                         'strokePriorToSim': [person.has_stroke_prior_to_simulation() for person in self_people],
+                         'strokeInSim': [person.has_stroke_during_simulation() for person in self._people],
+                         'totalYearsInSim': [len(person.age) for person in self._people]})
 
 
 class NHANESDirectSamplePopulation(Population):

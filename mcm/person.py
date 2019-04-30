@@ -58,7 +58,7 @@ class Person:
 
         if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
             self._outcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False)))
-        if selfReportMIAge is not None and selfReportStrokeAge > 1:
+        if selfReportMIAge is not None and selfReportMIAge > 1:
             self._outcomes[OutcomeType.MI].append((-1, Outcome(OutcomeType.MI, False)))
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -108,11 +108,20 @@ class Person:
     def is_dead(self):
         return not self._alive[-1]
 
+    def has_outcome_prior_to_simulation(self, outcomeType):
+        return any([ageAtEvent < 0 for ageAtEvent, _ in self._outcomes[outcomeType]])
+
+    def has_outcome_during_simulation(self, outcomeType):
+        return any([ageAtEvent >= 0 for ageAtEvent, _ in self._outcomes[outcomeType]])
+
+    def has_outcome_at_any_time(self, outcomeType):
+        return len(self._outcomes[outcomeType]) > 0
+
     def has_stroke_prior_to_simulation(self):
-        return any([ageAtEvent < 0 for ageAtEvent, _ in self._outcomes[OutcomeType.STROKE]])
+        return self.has_outcome_prior_to_simulation(OutcomeType.STROKE)
 
     def has_stroke_during_simulation(self):
-        return any([ageAtEvent >= 0 for ageAtEvent, _ in self._outcomes[OutcomeType.STROKE]])
+        return self.has_outcome_during_simulation(OutcomeType.STROKE)
 
     def has_fatal_stroke(self):
         return any([stroke.fatal for _, stroke in self._outcomes[OutcomeType.STROKE]])
@@ -121,10 +130,10 @@ class Person:
         return any([mi.fatal for _, mi in self._outcomes[OutcomeType.MI]])
 
     def has_mi_prior_to_simulation(self):
-        return any([ageAtEvent < 0 for ageAtEvent, _ in self._outcomes[OutcomeType.MI]])
+        return self.has_outcome_prior_to_simulation(OutcomeType.MI)
 
     def has_mi_during_simulation(self):
-        return any([ageAtEvent >= 0 for ageAtEvent, _ in self._outcomes[OutcomeType.MI]])
+        return self.has_outcome_during_simulation(OutcomeType.MI)
 
     def advance_risk_factors(self, risk_model_repository):
         if self.is_dead():
