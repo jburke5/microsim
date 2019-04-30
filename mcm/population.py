@@ -97,10 +97,8 @@ class Population:
 
         return ageStandardPopulation
 
-    def assign_incident_outcomes(self, ageStandard, outcomeType, selector):
-        for person in self._people:
-            if selector is not None and not selector.select(person):
-                continue
+    def assign_incident_outcomes(self, ageStandard, outcomeType, selector=None):
+        for person in filter(selector, self._people):
             if person.has_outcome_during_simulation(outcomeType) > 0:
                 ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[0]) &
                                  (ageStandard['upperAgeBound'] >= person._age[0]) &
@@ -117,7 +115,7 @@ class Population:
         return ageStandard
 
     def build_age_sex_standardized_dataframe(self, outcomeType, yearOfStandardizedPopulation,
-                                             selector):
+                                             selector=None):
         ageStandard = self.build_age_standard(yearOfStandardizedPopulation)
         ageStandard = self.assign_incident_outcomes(ageStandard, outcomeType, selector)
         ageStandard = self.tabulate_age_specific_rates(ageStandard)
