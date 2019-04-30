@@ -160,6 +160,26 @@ class Population:
         return (ageStandard['ageSpecificContribution'].sum(),
                 ageStandard['outcomeCount'].sum(), ageStandard)
 
+    def get_people_current_state_as_dataframe(self):
+        return pd.DataFrame({'age': [person.age[-1] for person in self._people],
+                             'gender': [person.gender for person in self._people],
+                             'raceEthnicity': [person.raceEthnicity for person in self._people],
+                             'sbp': [person.sbp[-1] for person in self._people],
+                             'dbp': [person.dbp[-1] for person in self._people],
+                             'a1c': [person.a1c[-1] for person in self._people],
+                             'hdl': [person.hdl[-1] for person in self._people],
+                             'ldl': [person.ldl[-1] for person in self._people],
+                             'trig': [person.trig[-1] for person in self._people],
+                             'totChol': [person.totChol[-1] for person in self._people],
+                             'bmi': [person.bmi[-1] for person in self._people],
+                             'smokingStatus': [person.smokingStatus for person in self._people],
+                             'dead': [person.is_dead() for person in self._people],
+                             'miPriorToSim': [person.has_mi_prior_to_simulation() for person in self._people],
+                             'miInSim': [person.has_mi_during_simulation() for person in self._people],
+                             'strokePriorToSim': [person.has_stroke_prior_to_simulation() for person in self_people],
+                             'strokeInSim': [person.has_stroke_during_simulation() for person in self._people],
+                             'totalYearsInSim': [len(person.age) for person in self._people]})
+
 
 def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
     repeated_sample = nhanes.sample(
@@ -183,27 +203,6 @@ def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
             dfIndex=x.index,
             diedBy2015=x.diedBy2015), axis=1)
     return people
-
-
-def get_people_current_state_as_dataframe(self):
-    return pd.DataFrame({'age': [person.age[-1] for person in self._people],
-                         'gender': [person.gender for person in self._people],
-                         'raceEthnicity': [person.raceEthnicity for person in self._people],
-                         'sbp': [person.sbp[-1] for person in self._people],
-                         'dbp': [person.dbp[-1] for person in self._people],
-                         'a1c': [person.a1c[-1] for person in self._people],
-                         'hdl': [person.hdl[-1] for person in self._people],
-                         'ldl': [person.ldl[-1] for person in self._people],
-                         'trig': [person.trig[-1] for person in self._people],
-                         'totChol': [person.totChol[-1] for person in self._people],
-                         'bmi': [person.bmi[-1] for person in self._people],
-                         'smokingStatus': [person.smokingStatus for person in self._people],
-                         'dead': [person.is_dead() for person in self._people],
-                         'miPriorToSim': [person.has_mi_prior_to_simulation() for person in self._people],
-                         'miInSim': [person.has_mi_during_simulation() for person in self._people],
-                         'strokePriorToSim': [person.has_stroke_prior_to_simulation() for person in self_people],
-                         'strokeInSim': [person.has_stroke_during_simulation() for person in self._people],
-                         'totalYearsInSim': [len(person.age) for person in self._people]})
 
 
 class NHANESDirectSamplePopulation(Population):
