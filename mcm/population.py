@@ -8,6 +8,7 @@ from mcm.outcome_model_repository import OutcomeModelRepository
 
 import pandas as pd
 import os
+import copy
 
 
 class Population:
@@ -45,7 +46,7 @@ class Population:
     # refactorrtag: we should probably build a specific class that loads data files...
     def build_age_standard(self, yearOfStandardizedPopulation):
         if yearOfStandardizedPopulation in Population._ageStandards:
-            return Population._ageStandards[yearOfStandardizedPopulation].copy()
+            return copy.deepcopy(Population._ageStandards[yearOfStandardizedPopulation])
 
         abs_module_path = os.path.abspath(os.path.dirname(__file__))
         model_spec_path = os.path.normpath(
@@ -90,36 +91,13 @@ class Population:
         ageStandardPopulation = ageStandardHeaders.join(ageStandardPopulation, how='inner')
         # cache the age standard populations...they're not that big and it takes a while
         # to build one
-        Population._ageStandards[yearOfStandardizedPopulation] = ageStandardPopulation
         ageStandardPopulation['outcomeCount'] = 0
         ageStandardPopulation['simPersonYears'] = 0
         ageStandardPopulation['simPeople'] = 0
+        Population._ageStandards[yearOfStandardizedPopulation] = copy.deepcopy(
+            ageStandardPopulation)
 
         return ageStandardPopulation
-
-    def assign_incident_outcomes(self, ageStandard, outcomeType, selector=None):
-        for person in filter(selector, self._people):
-            if person.has_outcome_during_simulation(outcomeType) > 0:
-                ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[0]) &
-                                 (ageStandard['upperAgeBound'] >= person._age[0]) &
-                                 (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
-                                'outcomeCount'] += 1
-            ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[0]) &
-                             (ageStandard['upperAgeBound'] >= person._age[0]) &
-                             (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
-                            'simPersonYears'] += person.years_in_simulation()
-            ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[0]) &
-                             (ageStandard['upperAgeBound'] >= person._age[0]) &
-                             (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
-                            'simPeople'] += 1
-        return ageStandard
-
-    def build_age_sex_standardized_dataframe(self, outcomeType, yearOfStandardizedPopulation,
-                                             selector=None):
-        ageStandard = self.build_age_standard(yearOfStandardizedPopulation)
-        ageStandard = self.assign_incident_outcomes(ageStandard, outcomeType, selector)
-        ageStandard = self.tabulate_age_specific_rates(ageStandard)
-        return ageStandard
 
     def tabulate_age_specific_rates(self, ageStandard):
         ageStandard['percentStandardPopInGroup'] = ageStandard['standardPopulation'] / \
@@ -128,35 +106,77 @@ class Population:
             ageStandard['simPersonYears']
         ageStandard['ageSpecificContribution'] = ageStandard['ageSpecificRate'] * \
             ageStandard['percentStandardPopInGroup']
-        # should the < 18 group be included? not sure if they're included in formal incidence calcs
-        # we'll slightly underestimate if we include them because they're not in the sim pop...
-        # ageStandard = ageStandard.loc[ageStandard.lowerAgeBound >= 18]
         return ageStandard
 
     # return the age standardized # of events per 100,000 person years
-    def calculate_age_sex_standardized_incidence(
-            self, outcomeType, yearOfStandardizedPopulation=2016, selector=None):
+    def calculate_mean_age_sex_standardized_incidence(
+            self, outcomeType, yearOfStandardizedPopulation=2016, subPopulationSelector=None):
 
-        df = self.build_age_sex_standardized_dataframe(outcomeType, yearOfStandardizedPopulation,
-                                                       selector)
-        return (df['ageSpecificContribution'].sum(), df['outcomeCount'].sum(), df)
+        # the age selector picks the first outcome (_outcomes(outcomeTYpe)[0]) and the age is the
+        # first element within the returned tuple (the second [0])
+        events = self.calculate_mean_age_sex_standardized_event(
+            lambda x: x.has_outcome_during_simulation(outcomeType),
+            lambda x: x._outcomes[outcomeType][0][0] - x._age[0]+1,
+            yearOfStandardizedPopulation)
+        return (pd.Series([event[0] for event in events]).mean(),
+                pd.Series([event[1] for event in events]).sum())
 
-    def calculate_age_sex_standardized_mortality(self, yearOfStandardizedPopulation=2016):
+    def calculate_mean_age_sex_standardized_mortality(self, yearOfStandardizedPopulation=2016):
+        events = self.calculate_mean_age_sex_standardized_event(lambda x: x.is_dead(),
+                                                                lambda x: x.years_in_simulation(),
+                                                                yearOfStandardizedPopulation)
+        return pd.Series([event[0] for event in events]).mean()
+
+    def calculate_mean_age_sex_standardized_event(self, eventSelector, eventAgeIdentifier,
+                                                  yearOfStandardizedPopulation=2016):
+        # build a dataframe to represent the population
+        popDF = pd.DataFrame({"index": self._people.index,
+                              "baseAge": [person._age[0] for person in self._people],
+                              "female": [person._gender - 1 for person in self._people]
+                              })
+
+        eventsPerYear = []
+        # calculated standardized event rate for each year
+        for year in range(1, self._totalYearsAdvanced + 1):
+            eventVarName = 'event' + str(year)
+            ageVarName = 'age' + str(year)
+            popDF[ageVarName] = popDF['baseAge'] + year
+            popDF[eventVarName] = [eventSelector(person) and eventAgeIdentifier(
+                person) == year for person in self._people]
+            dfForAnnualEventCalc = popDF[[ageVarName, 'female', eventVarName]]
+            dfForAnnualEventCalc.rename(
+                columns={
+                    ageVarName: 'age',
+                    eventVarName: 'event'},
+                inplace=True)
+            eventsPerYear.append(
+                self.get_standardized_events_for_year(
+                    dfForAnnualEventCalc,
+                    yearOfStandardizedPopulation))
+
+        return eventsPerYear
+
+    def get_standardized_events_for_year(self, peopleDF, yearOfStandardizedPopulation):
         ageStandard = self.build_age_standard(yearOfStandardizedPopulation)
+        # limit to the years where there are people
+        # if the simulation runs for 50 years...there will be empty cells in all of the
+        # young person categories
+        ageStandard = ageStandard.loc[ageStandard.lowerAgeBound >= peopleDF.age.min()]
 
-        for person in self._people:
-            if person.is_dead():
-                ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[0]) &
-                                 (ageStandard['upperAgeBound'] >= person._age[0]) &
-                                 (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
-                                'outcomeCount'] += 1
-            ageStandard.loc[((ageStandard['lowerAgeBound'] <= person._age[0]) &
-                             (ageStandard['upperAgeBound'] >= person._age[0]) &
-                             (ageStandard['female'] == (person._gender == NHANESGender.FEMALE))),
-                            'simPersonYears'] += person.years_in_simulation()
+        # take the dataframe of peoplein teh population and tabnulate events relative
+        # to the age standard (max age is 85 in the age standard...)
+        peopleDF.loc[peopleDF['age'] > 85, 'age'] = 85
+        peopleDF['ageGroup'] = (peopleDF['age'] // 5) + 1
+        peopleDF['ageGroup'] = peopleDF['ageGroup'].astype(int)
+        # tabulate events by group
+        eventsByGroup = peopleDF.groupby(['ageGroup', 'female'])['event'].sum()
+        personYears = peopleDF.groupby(['ageGroup', 'female'])['age'].count()
+        # set those events on the age standard
+        ageStandard['outcomeCount'] = eventsByGroup
+        ageStandard['simPersonYears'] = personYears
+
         ageStandard = self.tabulate_age_specific_rates(ageStandard)
-        return (ageStandard['ageSpecificContribution'].sum(),
-                ageStandard['outcomeCount'].sum(), ageStandard)
+        return((ageStandard.ageSpecificContribution.sum(), ageStandard.outcomeCount.sum()))
 
     def get_people_current_state_as_dataframe(self):
         return pd.DataFrame({'age': [person._age[-1] for person in self._people],
@@ -176,7 +196,7 @@ class Population:
                              'miInSim': [person.has_mi_during_simulation() for person in self._people],
                              'strokePriorToSim': [person.has_stroke_prior_to_simulation() for person in self._people],
                              'strokeInSim': [person.has_stroke_during_simulation() for person in self._people],
-                             'totalYearsInSim': [len(person._age) for person in self._people]})
+                             'totalYearsInSim': [person.years_in_simulation() for person in self._people]})
 
 
 def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
