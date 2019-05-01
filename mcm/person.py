@@ -4,6 +4,8 @@ from mcm.smoking_status import SmokingStatus
 from mcm.outcome import OutcomeType
 from mcm.outcome import Outcome
 
+import math
+
 
 class Person:
     """Person is using risk factors and demographics based off NHANES"""
@@ -70,6 +72,10 @@ class Person:
     @property
     def _stroke(self):
         return len(self._outcomes[OutcomeType.STROKE]) > 0
+
+    def get_median_age(self):
+        medianYear = math.floor(len(self._age)/2)
+        return self._age[medianYear]
 
     def has_diabetes(self):
         return sorted(self._a1c)[-1] >= 6.5
