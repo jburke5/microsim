@@ -110,14 +110,17 @@ class Population:
 
     # return the age standardized # of events per 100,000 person years
     def calculate_mean_age_sex_standardized_incidence(
-            self, outcomeType, yearOfStandardizedPopulation=2016, subPopulationSelector=None):
+            self, outcomeType, yearOfStandardizedPopulation=2016,
+            subPopulationSelector=None, subPopulationDFSelector=None):
 
         # the age selector picks the first outcome (_outcomes(outcomeTYpe)[0]) and the age is the
         # first element within the returned tuple (the second [0])
         events = self.calculate_mean_age_sex_standardized_event(
             lambda x: x.has_outcome_during_simulation(outcomeType),
-            lambda x: x._outcomes[outcomeType][0][0] - x._age[0]+1,
-            yearOfStandardizedPopulation)
+            lambda x: x._outcomes[outcomeType][0][0] - x._age[0] + 1,
+            yearOfStandardizedPopulation,
+            subPopulationSelector,
+            subPopulationDFSelector)
         return (pd.Series([event[0] for event in events]).mean(),
                 pd.Series([event[1] for event in events]).sum())
 
@@ -128,12 +131,12 @@ class Population:
         return pd.Series([event[0] for event in events]).mean()
 
     def calculate_mean_age_sex_standardized_event(self, eventSelector, eventAgeIdentifier,
-                                                  yearOfStandardizedPopulation=2016):
+                                                  yearOfStandardizedPopulation=2016,
+                                                  subPopulationSelector=None,
+                                                  subPopulationDFSelector=None):
         # build a dataframe to represent the population
-        popDF = pd.DataFrame({"index": self._people.index,
-                              "baseAge": [person._age[0] for person in self._people],
-                              "female": [person._gender - 1 for person in self._people]
-                              })
+        popDF = self.get_people_current_state_as_dataframe()
+        popDF['female'] = popDF['gender'] - 1
 
         eventsPerYear = []
         # calculated standardized event rate for each year
@@ -141,8 +144,11 @@ class Population:
             eventVarName = 'event' + str(year)
             ageVarName = 'age' + str(year)
             popDF[ageVarName] = popDF['baseAge'] + year
+            if subPopulationDFSelector is not None:
+                popDF['subpopFilter'] = popDF.apply(subPopulationDFSelector, axis='columns')
+                popDF = popDF.loc[popDF.subpopFilter]
             popDF[eventVarName] = [eventSelector(person) and eventAgeIdentifier(
-                person) == year for person in self._people]
+                person) == year for person in filter(subPopulationSelector, self._people)]
             dfForAnnualEventCalc = popDF[[ageVarName, 'female', eventVarName]]
             dfForAnnualEventCalc.rename(
                 columns={
@@ -180,6 +186,7 @@ class Population:
 
     def get_people_current_state_as_dataframe(self):
         return pd.DataFrame({'age': [person._age[-1] for person in self._people],
+                             'baseAge': [person._age[0] for person in self._people],
                              'gender': [person._gender for person in self._people],
                              'raceEthnicity': [person._raceEthnicity for person in self._people],
                              'sbp': [person._sbp[-1] for person in self._people],
