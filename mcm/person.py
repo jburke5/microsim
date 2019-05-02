@@ -57,10 +57,14 @@ class Person:
         # (element one).multiple events can be accounted for by having multiple
         # elements in the array.
         self._outcomes = {OutcomeType.MI: [], OutcomeType.STROKE: []}
+        self._selfReportStrokePriorToSim = 0
+        self._selfReportMIPriorToSim = 0
 
         if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
+            self._selfReportStrokePriorToSim = 1 
             self._outcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False)))
         if selfReportMIAge is not None and selfReportMIAge > 1:
+            self._selfReportMIPriorToSim = 1 
             self._outcomes[OutcomeType.MI].append((-1, Outcome(OutcomeType.MI, False)))
         for k, v in kwargs.items():
             setattr(self, k, v)

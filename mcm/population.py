@@ -146,7 +146,7 @@ class Population:
             popDF[ageVarName] = popDF['baseAge'] + year
             if subPopulationDFSelector is not None:
                 popDF['subpopFilter'] = popDF.apply(subPopulationDFSelector, axis='columns')
-                popDF = popDF.loc[popDF.subpopFilter]
+                popDF = popDF.loc[popDF.subpopFilter == 1]
             popDF[eventVarName] = [eventSelector(person) and eventAgeIdentifier(
                 person) == year for person in filter(subPopulationSelector, self._people)]
             dfForAnnualEventCalc = popDF[[ageVarName, 'female', eventVarName]]
@@ -199,9 +199,9 @@ class Population:
                              'bmi': [person._bmi[-1] for person in self._people],
                              'smokingStatus': [person._smokingStatus for person in self._people],
                              'dead': [person.is_dead() for person in self._people],
-                             'miPriorToSim': [person.has_mi_prior_to_simulation() for person in self._people],
+                             'miPriorToSim': [person._selfReportMIPriorToSim for person in self._people],
                              'miInSim': [person.has_mi_during_simulation() for person in self._people],
-                             'strokePriorToSim': [person.has_stroke_prior_to_simulation() for person in self._people],
+                             'strokePriorToSim': [person._selfReportStrokePriorToSim for person in self._people],
                              'strokeInSim': [person.has_stroke_during_simulation() for person in self._people],
                              'totalYearsInSim': [person.years_in_simulation() for person in self._people]})
 
