@@ -61,10 +61,10 @@ class Person:
         self._selfReportMIPriorToSim = 0
 
         if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
-            self._selfReportStrokePriorToSim = 1 
+            self._selfReportStrokePriorToSim = 1
             self._outcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False)))
         if selfReportMIAge is not None and selfReportMIAge > 1:
-            self._selfReportMIPriorToSim = 1 
+            self._selfReportMIPriorToSim = 1
             self._outcomes[OutcomeType.MI].append((-1, Outcome(OutcomeType.MI, False)))
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -78,7 +78,7 @@ class Person:
         return len(self._outcomes[OutcomeType.STROKE]) > 0
 
     def get_median_age(self):
-        medianYear = math.floor(len(self._age)/2)
+        medianYear = math.floor(len(self._age) / 2)
         return self._age[medianYear]
 
     def has_diabetes(self):
@@ -176,9 +176,9 @@ class Person:
 
         # if not dead...assess non CV mortality
         if (not self.is_dead()):
-                non_cv_death = outcome_model_repository.assign_non_cv_mortality(self)
-                if (non_cv_death):
-                    self._alive.append(False)
+            non_cv_death = outcome_model_repository.assign_non_cv_mortality(self)
+            if (non_cv_death):
+                self._alive.append(False)
 
     def __repr__(self):
         return (f"Person(age={self._age[-1]}, "
