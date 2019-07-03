@@ -2,13 +2,17 @@ from mcm.person import Person
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 from mcm.gender import NHANESGender
+from mcm.education import Education
 from mcm.cohort_risk_model_repository import CohortRiskModelRepository
 from mcm.nhanes_risk_model_repository import NHANESRiskModelRepository
 from mcm.outcome_model_repository import OutcomeModelRepository
+from mcm.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFactorModel
+from mcm.regression_model import RegressionModel
 
 import pandas as pd
 import os
 import copy
+import json
 
 
 class Population:
@@ -206,9 +210,20 @@ class Population:
                              'totalYearsInSim': [person.years_in_simulation() for person in self._people]})
 
 
+def initializeAFib(person):
+    abs_module_path = os.path.abspath(os.path.dirname(__file__))
+    model_spec_path = os.path.normpath(os.path.join(abs_module_path, "./data/",
+                                                        "BaselineAFibModel" + "Spec.json"))
+    with open(model_spec_path, 'r') as model_spec_file:
+        model_spec = json.load(model_spec_file)
+    model = RegressionModel(**model_spec)
+    statsModel = StatsModelLogisticRiskFactorModel(model)
+    return statsModel.estimate_next_risk(person)
+
+
 def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
     repeated_sample = nhanes.sample(
-        n, weights=nhanes.WTINT2YR, random_state=random_seed, replace=True)
+        n, weights=nhanes.WTINT2YR, random_state=random_seed, replace=True)    
     people = repeated_sample.apply(
         lambda x: Person(
             age=x.age,
@@ -222,7 +237,11 @@ def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
             trig=x.trig,
             totChol=x.tot_chol,
             bmi=x.bmi,
+            waist=x.waist,
+            anyPhysicalActivity=x.anyPhysicalActivity,
             smokingStatus=SmokingStatus(int(x.smokingStatus)),
+            education=Education(int(x.education)),
+            initializeAfib=initializeAFib,
             selfReportStrokeAge=x.selfReportStrokeAge,
             selfReportMIAge=x.selfReportMIAge,
             dfIndex=x.index,

@@ -5,10 +5,15 @@ from mcm.outcome_model_repository import OutcomeModelRepository
 from mcm.cv_outcome_determination import CVOutcomeDetermination
 from mcm.outcome import Outcome
 from mcm.outcome import OutcomeType
+from mcm.education import Education
 
 from mcm.smoking_status import SmokingStatus
 import unittest
 import copy
+
+
+def initializeAFib(person):
+    return None
 
 
 class AlwaysPositiveOutcomeRepository(OutcomeModelRepository):
@@ -44,7 +49,11 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             25,
             90,
             150,
-            SmokingStatus.NEVER)
+            45,
+            0,
+            Education.COLLEGEGRADUATE,
+            SmokingStatus.NEVER,
+            initializeAFib)
         self._always_positive_repository = AlwaysPositiveOutcomeRepository()
         self._always_negative_repository = AlwaysNegativeOutcomeRepository()
         self.cvDeterminer = CVOutcomeDetermination(self._always_positive_repository)
@@ -89,7 +98,8 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
 
         self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(joeClone, 0.0), 0)
 
-        joeClone._outcomes[OutcomeType.STROKE] = (joeClone._age, Outcome(OutcomeType.STROKE, False))
+        joeClone._outcomes[OutcomeType.STROKE] = (
+            joeClone._age, Outcome(OutcomeType.STROKE, False))
         # even though the passed fatality rate is zero, it shoudl be overriden by the
         # secondary rate given that joeclone had a prior stroke
         self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(joeClone, 0.0), 1)

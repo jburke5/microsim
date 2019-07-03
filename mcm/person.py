@@ -1,16 +1,21 @@
+from typing import Callable
+import math
 from mcm.gender import NHANESGender
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 from mcm.outcome import OutcomeType
 from mcm.outcome import Outcome
-
-import math
+from mcm.education import Education
 
 
 class Person:
     """Person is using risk factors and demographics based off NHANES"""
 
     # TODO: probably should also add a view of the "most recent" version of risk factor values
+
+    # LEFT OFF HERE: pass in an initializer that uses a model to set
+    # the person's baseline a. fib status
+
     def __init__(
         self,
         age: int,
@@ -24,7 +29,11 @@ class Person:
         bmi: float,
         ldl: int,
         trig: int,
+        waist: int,    # Waist circumference in cm
+        anyPhysicalActivity: int,
+        education: Education,
         smokingStatus: SmokingStatus,
+        initializeAfib: Callable,
         selfReportStrokeAge=None,
         selfReportMIAge=None,
         **kwargs,
@@ -48,8 +57,11 @@ class Person:
         self._trig = [trig]
         self._totChol = [totChol]
         self._bmi = [bmi]
+        self._waist = [waist]
+        self._anyPhysicalActivity = [anyPhysicalActivity]
         # TODO : change smoking status into a factor that changes over time
         self._smokingStatus = smokingStatus
+        self._education = education
 
         # outcomes is a dictionary of arrays. each element in the dictionary represents
         # a differnet outcome type each element in the array is a tuple representting
@@ -68,6 +80,8 @@ class Person:
             self._outcomes[OutcomeType.MI].append((-1, Outcome(OutcomeType.MI, False)))
         for k, v in kwargs.items():
             setattr(self, k, v)
+        if initializeAfib is not None:
+            self._afib = initializeAfib(self)
 
     @property
     def _mi(self):

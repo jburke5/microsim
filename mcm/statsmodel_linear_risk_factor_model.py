@@ -91,4 +91,5 @@ class StatsModelLinearRiskFactorModel:
 
         if (self.log_transform):
             linearPredictor = np.exp(linearPredictor)
+        
         return linearPredictor
