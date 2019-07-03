@@ -213,7 +213,7 @@ class Population:
 def initializeAFib(person):
     abs_module_path = os.path.abspath(os.path.dirname(__file__))
     model_spec_path = os.path.normpath(os.path.join(abs_module_path, "./data/",
-                                                        "BaselineAFibModel" + "Spec.json"))
+                                                    "BaselineAFibModel" + "Spec.json"))
     with open(model_spec_path, 'r') as model_spec_file:
         model_spec = json.load(model_spec_file)
     model = RegressionModel(**model_spec)
@@ -223,7 +223,7 @@ def initializeAFib(person):
 
 def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
     repeated_sample = nhanes.sample(
-        n, weights=nhanes.WTINT2YR, random_state=random_seed, replace=True)    
+        n, weights=nhanes.WTINT2YR, random_state=random_seed, replace=True)
     people = repeated_sample.apply(
         lambda x: Person(
             age=x.age,
@@ -241,6 +241,9 @@ def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
             anyPhysicalActivity=x.anyPhysicalActivity,
             smokingStatus=SmokingStatus(int(x.smokingStatus)),
             education=Education(int(x.education)),
+            antiHypertensiveCount=x.antiHypertensive,
+            statin=x.statin,
+            otherLipidLoweringMedicationCount=x.otherLipidLowering,
             initializeAfib=initializeAFib,
             selfReportStrokeAge=x.selfReportStrokeAge,
             selfReportMIAge=x.selfReportMIAge,

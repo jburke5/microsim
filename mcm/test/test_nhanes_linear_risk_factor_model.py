@@ -15,7 +15,8 @@ class TestNHANESLinearRiskFactorModel(unittest.TestCase):
             age=75, gender=0, raceEthnicity=1, sbp=140, dbp=80, a1c=6.5, hdl=50, totChol=210,
             ldl=90, trig=150, bmi=22, waist=50, anyPhysicalActivity=0,
             education=Education.COLLEGEGRADUATE,
-            smokingStatus=1, initializeAfib=initializeAfib)
+            smokingStatus=1, antiHypertensiveCount=0,
+            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._risk_model_repository = TestRiskModelRepository()
 
@@ -28,7 +29,9 @@ class TestNHANESLinearRiskFactorModel(unittest.TestCase):
         highBPPerson = Person(age=75, gender=0, raceEthnicity=1, sbp=500, ldl=90, trig=150,
                               dbp=80, a1c=6.5, hdl=50, totChol=210, bmi=22, waist=50,
                               anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-                              smokingStatus=1, initializeAfib=initializeAfib)
+                              smokingStatus=1, antiHypertensiveCount=0,
+                              statin=0, otherLipidLoweringMedicationCount=0, 
+                              initializeAfib=initializeAfib)
         highBPPerson.advance_risk_factors(self._risk_model_repository)
         self.assertEqual(300, highBPPerson._sbp[-1])
 

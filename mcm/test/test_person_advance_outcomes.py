@@ -53,6 +53,9 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             0,
             Education.COLLEGEGRADUATE,
             SmokingStatus.NEVER,
+            0,
+            0,
+            0,
             initializeAFib)
         self._always_positive_repository = AlwaysPositiveOutcomeRepository()
         self._always_negative_repository = AlwaysNegativeOutcomeRepository()

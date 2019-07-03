@@ -21,7 +21,7 @@ class TestCoxModel(unittest.TestCase):
                                                    NHANESRaceEthnicity.NON_HISPANIC_WHITE,
                                                    144.667, 52.6667, 9.5, 34, 191, 30.05,
                                                    110.0, 128, 45, 0, Education.COLLEGEGRADUATE,
-                                                   SmokingStatus.FORMER,
+                                                   SmokingStatus.FORMER, 0, 0, 0,
                                                    initializeAFib)
 
         abs_module_path = os.path.abspath(os.path.dirname(__file__))

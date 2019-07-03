@@ -21,28 +21,32 @@ class TestOutcomeRepository(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=120, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, initializeAfib=initializeAfib)
+            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._black_male = Person(
             age=55, gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
             sbp=120, dbp=80, a1c=6, hdl=50, totChol=200, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, initializeAfib=initializeAfib)
+            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_female = Person(
             age=55, gender=NHANESGender.FEMALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=120, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, initializeAfib=initializeAfib)
+            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._black_female = Person(
             age=55, gender=NHANESGender.FEMALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
             sbp=120, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, initializeAfib=initializeAfib)
+            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._outcome_model_repository = OutcomeModelRepository()
 
