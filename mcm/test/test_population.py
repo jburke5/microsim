@@ -4,6 +4,7 @@ from mcm.person import Person
 from mcm.gender import NHANESGender
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
+from mcm.education import Education
 
 import unittest
 import pandas as pd
@@ -29,7 +30,12 @@ class TestPopulation(unittest.TestCase):
             np.mean(test_ages), self.test_sample.age.mean(), delta=0.000001)
 
 
+def initializeAFib(person):
+    return None
+
+
 class TestPopulationAdvanceOutcomes(unittest.TestCase):
+
     def setUp(self):
         self.joe = Person(
             42,
@@ -43,7 +49,15 @@ class TestPopulationAdvanceOutcomes(unittest.TestCase):
             25,
             90,
             150,
-            SmokingStatus.NEVER)
+            70,
+            0,
+            Education.COLLEGEGRADUATE,
+            SmokingStatus.NEVER,
+            initializeAFib,
+            selfReportStrokeAge=None,
+            selfReportMIAge=None,
+            dfIndex=1,
+            diedBy2015=0)
 
     def test_dont_advance_dead_people_in_population(self):
         self.dummy_population = Population([self.joe])

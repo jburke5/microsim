@@ -1,14 +1,21 @@
 from mcm.person import Person
+from mcm.education import Education
 from mcm.test.test_risk_model_repository import TestRiskModelRepository
 
 import unittest
+
+
+def initializeAfib(person):
+    return None
 
 
 class TestNHANESLinearRiskFactorModel(unittest.TestCase):
     def setUp(self):
         self._test_person = Person(
             age=75, gender=0, raceEthnicity=1, sbp=140, dbp=80, a1c=6.5, hdl=50, totChol=210,
-            ldl=90, trig=150, bmi=22, smokingStatus=1)
+            ldl=90, trig=150, bmi=22, waist=50, anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=1, initializeAfib=initializeAfib)
 
         self._risk_model_repository = TestRiskModelRepository()
 
@@ -19,7 +26,9 @@ class TestNHANESLinearRiskFactorModel(unittest.TestCase):
 
     def test_upper_bounds(self):
         highBPPerson = Person(age=75, gender=0, raceEthnicity=1, sbp=500, ldl=90, trig=150,
-                              dbp=80, a1c=6.5, hdl=50, totChol=210, bmi=22, smokingStatus=1)
+                              dbp=80, a1c=6.5, hdl=50, totChol=210, bmi=22, waist=50,
+                              anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
+                              smokingStatus=1, initializeAfib=initializeAfib)
         highBPPerson.advance_risk_factors(self._risk_model_repository)
         self.assertEqual(300, highBPPerson._sbp[-1])
 

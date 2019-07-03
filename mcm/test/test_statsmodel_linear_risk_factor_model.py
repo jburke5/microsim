@@ -3,6 +3,7 @@ from mcm.gender import NHANESGender
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 from mcm.regression_model import RegressionModel
+from mcm.education import Education
 
 
 from mcm.person import Person
@@ -13,7 +14,12 @@ import numpy as np
 import statsmodels.formula.api as statsmodel
 
 
+def initializeAfib(person):
+    return None
+
+
 class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
+
     def setUp(self):
         popSize = 100
         age = np.random.normal(loc=70, scale=20, size=popSize)
@@ -30,12 +36,16 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
         self.person = Person(age=80, gender=NHANESGender.MALE,
                              raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE, sbp=120,
                              dbp=80, a1c=5.5, hdl=50, totChol=200, bmi=27, ldl=90, trig=150,
-                             smokingStatus=SmokingStatus.NEVER)
+                             waist=70, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
+                             smokingStatus=SmokingStatus.NEVER, initializeAfib=initializeAfib)
 
         self.people = [Person(age=80, gender=NHANESGender.MALE,
                               raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
                               sbp=bpinstance, dbp=80, a1c=5.5, hdl=50, totChol=200, bmi=27, ldl=90,
-                              smokingStatus=SmokingStatus.NEVER, trig=150) for bpinstance in sbp]
+                              trig=150, waist=70, anyPhysicalActivity=0,
+                              education=Education.COLLEGEGRADUATE,
+                              smokingStatus=SmokingStatus.NEVER, initializeAfib=initializeAfib)
+                       for bpinstance in sbp]
         for person in self.people:
             self.advancePerson(person)
 

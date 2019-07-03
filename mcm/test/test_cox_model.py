@@ -8,6 +8,11 @@ from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 from mcm.cox_regression_model import CoxRegressionModel
 from mcm.statsmodel_cox_model import StatsModelCoxModel
+from mcm.education import Education
+
+
+def initializeAFib(person):
+    return None
 
 
 class TestCoxModel(unittest.TestCase):
@@ -15,7 +20,9 @@ class TestCoxModel(unittest.TestCase):
         self.imputed_dataset_first_person = Person(71, NHANESGender.MALE,
                                                    NHANESRaceEthnicity.NON_HISPANIC_WHITE,
                                                    144.667, 52.6667, 9.5, 34, 191, 30.05,
-                                                   110.0, 128, SmokingStatus.FORMER)
+                                                   110.0, 128, 45, 0, Education.COLLEGEGRADUATE,
+                                                   SmokingStatus.FORMER,
+                                                   initializeAFib)
 
         abs_module_path = os.path.abspath(os.path.dirname(__file__))
         model_spec_path = os.path.normpath(os.path.join(

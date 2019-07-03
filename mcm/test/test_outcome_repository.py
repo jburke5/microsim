@@ -4,8 +4,13 @@ from mcm.outcome_model_type import OutcomeModelType
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 from mcm.outcome_model_repository import OutcomeModelRepository
+from mcm.education import Education
 
 import unittest
+
+
+def initializeAfib(person):
+    return None
 
 
 class TestOutcomeRepository(unittest.TestCase):
@@ -15,25 +20,29 @@ class TestOutcomeRepository(unittest.TestCase):
             age=55, gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=120, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, smokingStatus=SmokingStatus.NEVER)
+            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER, initializeAfib=initializeAfib)
 
         self._black_male = Person(
             age=55, gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
             sbp=120, dbp=80, a1c=6, hdl=50, totChol=200, ldl=90, trig=150,
-            bmi=22, smokingStatus=SmokingStatus.NEVER)
+            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER, initializeAfib=initializeAfib)
 
         self._white_female = Person(
             age=55, gender=NHANESGender.FEMALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=120, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, smokingStatus=SmokingStatus.NEVER)
+            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER, initializeAfib=initializeAfib)
 
         self._black_female = Person(
             age=55, gender=NHANESGender.FEMALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
             sbp=120, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, smokingStatus=SmokingStatus.NEVER)
+            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER, initializeAfib=initializeAfib)
 
         self._outcome_model_repository = OutcomeModelRepository()
 
