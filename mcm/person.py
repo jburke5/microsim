@@ -33,6 +33,9 @@ class Person:
         anyPhysicalActivity: int,
         education: Education,
         smokingStatus: SmokingStatus,
+        antiHypertensiveCount: int,
+        statin: int,
+        otherLipidLoweringMedicationCount: int,
         initializeAfib: Callable,
         selfReportStrokeAge=None,
         selfReportMIAge=None,
@@ -59,9 +62,12 @@ class Person:
         self._bmi = [bmi]
         self._waist = [waist]
         self._anyPhysicalActivity = [anyPhysicalActivity]
+        self._education = education
         # TODO : change smoking status into a factor that changes over time
         self._smokingStatus = smokingStatus
-        self._education = education
+        self._antiHypertensiveCount = [antiHypertensiveCount]
+        self._statin = [statin]
+        self._otherLipidLoweringMedicationCount = [otherLipidLoweringMedicationCount]
 
         # outcomes is a dictionary of arrays. each element in the dictionary represents
         # a differnet outcome type each element in the array is a tuple representting

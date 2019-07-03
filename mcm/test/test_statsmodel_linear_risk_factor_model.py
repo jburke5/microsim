@@ -37,14 +37,18 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                              raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE, sbp=120,
                              dbp=80, a1c=5.5, hdl=50, totChol=200, bmi=27, ldl=90, trig=150,
                              waist=70, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-                             smokingStatus=SmokingStatus.NEVER, initializeAfib=initializeAfib)
+                             smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+                             statin=0, otherLipidLoweringMedicationCount=0,
+                             initializeAfib=initializeAfib)
 
         self.people = [Person(age=80, gender=NHANESGender.MALE,
                               raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
                               sbp=bpinstance, dbp=80, a1c=5.5, hdl=50, totChol=200, bmi=27, ldl=90,
                               trig=150, waist=70, anyPhysicalActivity=0,
                               education=Education.COLLEGEGRADUATE,
-                              smokingStatus=SmokingStatus.NEVER, initializeAfib=initializeAfib)
+                              smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+                              statin=0, otherLipidLoweringMedicationCount=0,
+                              initializeAfib=initializeAfib)
                        for bpinstance in sbp]
         for person in self.people:
             self.advancePerson(person)
