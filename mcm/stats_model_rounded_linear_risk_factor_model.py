@@ -7,5 +7,6 @@ class StatsModelRoundedLinearRiskFactorModel(StatsModelLinearRiskFactorModel):
 
     # apply inverse logit to the linear predictor
     def estimate_next_risk(self, person):
-        linearRisk = round(super(StatsModelRoundedLinearRiskFactorModel, self).estimate_next_risk(person))
-        return linearRisk if linearRisk > 0 else 0
+        linearRisk = super(StatsModelRoundedLinearRiskFactorModel, self).estimate_next_risk(person)
+        riskWithResidual = round(linearRisk + self.draw_from_residual_distribution())
+        return riskWithResidual if riskWithResidual > 0 else 0
