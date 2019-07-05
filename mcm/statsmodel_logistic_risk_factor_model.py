@@ -1,8 +1,6 @@
 from mcm.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
 
 import numpy as np
-import scipy.special as special
-
 
 class StatsModelLogisticRiskFactorModel(StatsModelLinearRiskFactorModel):
     def __init__(self, regression_model, log_transform=False):

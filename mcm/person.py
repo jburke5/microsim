@@ -87,7 +87,7 @@ class Person:
         for k, v in kwargs.items():
             setattr(self, k, v)
         if initializeAfib is not None:
-            self._afib = initializeAfib(self)
+            self._afib = [initializeAfib(self)]
 
     @property
     def _mi(self):
@@ -180,6 +180,11 @@ class Person:
         self._bmi.append(self.get_next_risk_factor("bmi", risk_model_repository))
         self._ldl.append(self.get_next_risk_factor("ldl", risk_model_repository))
         self._trig.append(self.get_next_risk_factor("trig", risk_model_repository))
+        self._waist.append(self.get_next_risk_factor("waist", risk_model_repository))
+        self._anyPhysicalActivity.append(self.get_next_risk_factor("anyPhysicalActivity", risk_model_repository))
+        self._afib.append(self.get_next_risk_factor("afib", risk_model_repository))
+        self._antiHypertensiveCount.append(self.get_next_risk_factor("antiHypertensiveCount", risk_model_repository))
+        self._statin.append(self.get_next_risk_factor("statin", risk_model_repository))
 
     def advance_outcomes(
             self,

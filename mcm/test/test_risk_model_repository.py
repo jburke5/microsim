@@ -61,3 +61,13 @@ class TestRiskModelRepository(RiskModelRepository):
             'totChol', params=params, ses=ses, resids=pd.Series(np.zeros(10)))
         self._repository['bmi'] = NHANESLinearRiskFactorModel('bmi', params=params, ses=ses,
                                                               resids=pd.Series(np.zeros(10)))
+        self._repository['waist'] = NHANESLinearRiskFactorModel('waist', params=params, ses=ses,
+                                                              resids=pd.Series(np.zeros(10)))
+        self._repository['anyPhysicalActivity'] = NHANESLinearRiskFactorModel('waist', params=params, ses=ses,
+                                                              resids=pd.Series(np.zeros(10)))
+        self._repository['statin'] = NHANESLinearRiskFactorModel('statin', params=params, ses=ses,
+                                                              resids=pd.Series(np.zeros(10)))
+        self._repository['antiHypertensiveCount'] = NHANESLinearRiskFactorModel('antiHypertensiveCount', params=params, ses=ses,
+                                                              resids=pd.Series(np.zeros(10)))
+        self._repository['afib'] = NHANESLinearRiskFactorModel('afib', params=params, ses=ses,
+                                                              resids=pd.Series(np.zeros(10)))
