@@ -5,7 +5,7 @@ class StatsModelLinearProbabilityRiskFactorModel(StatsModelLinearRiskFactorModel
     def __init__(self, regression_model):
         super(StatsModelLinearProbabilityRiskFactorModel, self).__init__(regression_model, False)
 
-    # apply inverse logit to the linear predictor
     def estimate_next_risk(self, person):
         linearRisk = super(StatsModelLinearProbabilityRiskFactorModel, self).estimate_next_risk(person)
-        return linearRisk > 0.5
+        riskWithResidual = linearRisk + self.draw_from_residual_distribution()
+        return riskWithResidual > 0.5

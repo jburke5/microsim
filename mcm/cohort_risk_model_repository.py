@@ -18,7 +18,6 @@ class CohortRiskModelRepository(RiskModelRepository):
         self._initialize_linear_risk_model("a1c", "a1cCohortModel")
         self._initialize_linear_risk_model("ldl", "ldlCohortModel")
         self._initialize_linear_risk_model("waist", "waistCohortModel")
-        # left off here...
         self._initialize_linear_probability_risk_model("anyPhysicalActivity", "anyPhysicalActivityCohortModel")
         self._initialize_linear_probability_risk_model("afib", "afibCohortModel")
         self._initialize_linear_probability_risk_model("statin", "statinCohortModel")
