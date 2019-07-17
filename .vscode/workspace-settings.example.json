@@ -1,7 +1,13 @@
 {
-    // Prefix "python.(python|flake8|autopep8)Path" settings with path to program in virtualenv.
-    // Will likely be the path output by running following command from the root of the repository:
-    // echo "$(pipenv --venv)/bin"
+    /*
+    Prefix "python.(python|flake8|autopep8)Path" settings with path to program in virtualenv. If
+    using poetry, will be the Virtualenv Path plus a `/bin` suffix returned from the following
+    command:
+
+    ```sh
+    poetry debug:info
+    ```
+    */
 
     "python.pythonPath": "python",
     "python.linting.enabled": true,
