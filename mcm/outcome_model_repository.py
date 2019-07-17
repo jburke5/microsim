@@ -87,7 +87,8 @@ class OutcomeModelRepository:
                                             self.secondary_mi_case_fatality,
                                             self.secondary_stroke_case_fatality,
                                             self.secondary_prevention_multiplier)
-        return outcomeDet.assign_outcome_for_person(self, person, years, self.manualStrokeMIProbability)
+        return outcomeDet.assign_outcome_for_person(
+            self, person, years, self.manualStrokeMIProbability)
 
     # Returns True if the model-based logic vs. the random comparison suggests death
     def assign_non_cv_mortality(self, person, years=1):

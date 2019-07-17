@@ -18,7 +18,10 @@ class StatsModelLinearRiskFactorModel:
         self.log_transform = log_transform
 
     def draw_from_residual_distribution(self):
-        return np.random.normal(loc=self.residual_mean, scale=self.residual_standard_deviation, size=1)[0]
+        return np.random.normal(
+            loc=self.residual_mean,
+            scale=self.residual_standard_deviation,
+            size=1)[0]
 
     def get_modified_attribute_for_parameter_from_person(self, name, person):
         returnParam = self.get_modified_parameter_for_person(name, person)
@@ -94,5 +97,5 @@ class StatsModelLinearRiskFactorModel:
 
         if (self.log_transform):
             linearPredictor = np.exp(linearPredictor)
-        
+
         return linearPredictor
