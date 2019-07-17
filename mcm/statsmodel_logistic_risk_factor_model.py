@@ -2,6 +2,7 @@ from mcm.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorMo
 
 import numpy as np
 
+
 class StatsModelLogisticRiskFactorModel(StatsModelLinearRiskFactorModel):
     def __init__(self, regression_model, log_transform=False):
         super(StatsModelLogisticRiskFactorModel, self).__init__(regression_model, log_transform)
