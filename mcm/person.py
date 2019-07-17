@@ -13,9 +13,6 @@ class Person:
 
     # TODO: probably should also add a view of the "most recent" version of risk factor values
 
-    # LEFT OFF HERE: pass in an initializer that uses a model to set
-    # the person's baseline a. fib status
-
     def __init__(
         self,
         age: int,
