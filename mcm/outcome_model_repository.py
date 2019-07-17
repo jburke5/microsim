@@ -4,6 +4,7 @@ from mcm.ascvd_outcome_model import ASCVDOutcomeModel
 from mcm.statsmodel_cox_model import StatsModelCoxModel
 from mcm.cox_regression_model import CoxRegressionModel
 from mcm.cv_outcome_determination import CVOutcomeDetermination
+from mcm.data_loader import load_model_spec
 
 import numpy.random as npRand
 import os
@@ -70,16 +71,8 @@ class OutcomeModelRepository:
             return models_for_outcome[gender_stem]
 
     def initialize_cox_model(self, modelName):
-        model_spec = self.load_model_spec(modelName)
+        model_spec = load_model_spec(modelName)
         return StatsModelCoxModel(CoxRegressionModel(**model_spec))
-
-    def load_model_spec(self, modelName):
-        abs_module_path = os.path.abspath(os.path.dirname(__file__))
-        model_spec_path = os.path.normpath(os.path.join(abs_module_path, "./data/",
-                                                        modelName + "Spec.json"))
-        with open(model_spec_path, 'r') as model_spec_file:
-            model_spec = json.load(model_spec_file)
-        return model_spec
 
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
         outcomeDet = CVOutcomeDetermination(self.mi_case_fatality,

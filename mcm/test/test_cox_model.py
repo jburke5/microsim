@@ -9,6 +9,7 @@ from mcm.smoking_status import SmokingStatus
 from mcm.cox_regression_model import CoxRegressionModel
 from mcm.statsmodel_cox_model import StatsModelCoxModel
 from mcm.education import Education
+from mcm.data_loader import load_model_spec
 
 
 def initializeAFib(person):
@@ -24,11 +25,7 @@ class TestCoxModel(unittest.TestCase):
                                                    SmokingStatus.FORMER, 0, 0, 0,
                                                    initializeAFib)
 
-        abs_module_path = os.path.abspath(os.path.dirname(__file__))
-        model_spec_path = os.path.normpath(os.path.join(
-            abs_module_path, "../data/", "nhanesMortalityModelSpec.json"))
-        with open(model_spec_path, 'r') as model_spec_file:
-            model_spec = json.load(model_spec_file)
+        model_spec = load_model_spec("nhanesMortalityModel")
         self.model = StatsModelCoxModel(CoxRegressionModel(**model_spec))
 
     def test_single_linear_predictor(self):

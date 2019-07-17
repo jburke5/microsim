@@ -7,12 +7,11 @@ from mcm.cohort_risk_model_repository import CohortRiskModelRepository
 from mcm.nhanes_risk_model_repository import NHANESRiskModelRepository
 from mcm.outcome_model_repository import OutcomeModelRepository
 from mcm.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFactorModel
-from mcm.regression_model import RegressionModel
+from mcm.data_loader import load_regression_model, get_absolute_datafile_path
 
 import pandas as pd
 import os
 import copy
-import json
 
 
 class Population:
@@ -52,14 +51,8 @@ class Population:
         if yearOfStandardizedPopulation in Population._ageStandards:
             return copy.deepcopy(Population._ageStandards[yearOfStandardizedPopulation])
 
-        abs_module_path = os.path.abspath(os.path.dirname(__file__))
-        model_spec_path = os.path.normpath(
-            os.path.join(
-                abs_module_path,
-                "./data/",
-                "us.1969_2017.19ages.adjusted.txt"))
-
-        ageStandard = pd.read_csv(model_spec_path, header=0, names=['raw'])
+        datafile_path = get_absolute_datafile_path("us.1969_2017.19ages.adjusted.txt")
+        ageStandard = pd.read_csv(datafile_path, header=0, names=['raw'])
         # https://seer.cancer.gov/popdata/popdic.html
         ageStandard['year'] = ageStandard['raw'].str[0:4]
         ageStandard['year'] = ageStandard.year.astype(int)
@@ -211,12 +204,7 @@ class Population:
 
 
 def initializeAFib(person):
-    abs_module_path = os.path.abspath(os.path.dirname(__file__))
-    model_spec_path = os.path.normpath(os.path.join(abs_module_path, "./data/",
-                                                    "BaselineAFibModel" + "Spec.json"))
-    with open(model_spec_path, 'r') as model_spec_file:
-        model_spec = json.load(model_spec_file)
-    model = RegressionModel(**model_spec)
+    model = load_regression_model("BaselineAFibModel")
     statsModel = StatsModelLogisticRiskFactorModel(model)
     return statsModel.estimate_next_risk(person)
 
