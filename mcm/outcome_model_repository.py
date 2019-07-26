@@ -7,8 +7,7 @@ from mcm.cv_outcome_determination import CVOutcomeDetermination
 from mcm.data_loader import load_model_spec
 
 import numpy.random as npRand
-import os
-import json
+
 
 
 # This object is currently serving two purposes.

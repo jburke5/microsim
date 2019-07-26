@@ -3,6 +3,7 @@ from mcm.outcome_model_type import OutcomeModelType
 from mcm.outcome import Outcome
 from mcm.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
 from mcm.regression_model import RegressionModel
+from mcm.data_loader import load_model_spec
 
 
 import numpy.random as npRand
@@ -43,7 +44,7 @@ class CVOutcomeDetermination:
         if manualMIProb is not None:
             return npRand.uniform(size=1) < manualMIProb
         # if no manual MI probablity, estimate it from oru partitioned model
-        model_spec = outcome_model_repository.load_model_spec("StrokeMIPartitionModel")
+        model_spec = load_model_spec("StrokeMIPartitionModel")
         strokePartitionModel = StatsModelLinearRiskFactorModel(RegressionModel(**model_spec))
         strokeProbability = scipySpecial.expit(strokePartitionModel.estimate_next_risk(person))
 
