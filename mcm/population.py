@@ -10,7 +10,6 @@ from mcm.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFact
 from mcm.data_loader import load_regression_model, get_absolute_datafile_path
 
 import pandas as pd
-import os
 import copy
 
 
@@ -42,6 +41,10 @@ class Population:
                                         self._outcome_model_repository)
             self.apply_recalibration_standards()
         self._totalYearsAdvanced += years
+
+    def set_bp_treatment_strategy(self, bpTreatmentStrategy):
+        for person in self._people:
+            person._bpTreatmentStrategy = bpTreatmentStrategy
 
     def apply_recalibration_standards(self):
         pass

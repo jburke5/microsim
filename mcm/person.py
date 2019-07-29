@@ -85,6 +85,8 @@ class Person:
             setattr(self, k, v)
         if initializeAfib is not None:
             self._afib = [initializeAfib(self)]
+        
+        self._bpTreatmentStrategy = None
 
     @property
     def _mi(self):
@@ -166,6 +168,12 @@ class Person:
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance risk factors")
 
+        defaultBpTreatmentCount = self.get_next_risk_factor("antiHypertensiveCount", risk_model_repository)
+        self._antiHypertensiveCount.append(defaultBpTreatmentCount)
+
+        if self._bpTreatmentStrategy is not None:
+            self._bpTreatmentStrategy(self)
+
         self._sbp.append(self.apply_bounds(
             "sbp", self.get_next_risk_factor("sbp", risk_model_repository)))
 
@@ -183,10 +191,6 @@ class Person:
                 "anyPhysicalActivity",
                 risk_model_repository))
         self._afib.append(self.get_next_risk_factor("afib", risk_model_repository))
-        self._antiHypertensiveCount.append(
-            self.get_next_risk_factor(
-                "antiHypertensiveCount",
-                risk_model_repository))
         self._statin.append(self.get_next_risk_factor("statin", risk_model_repository))
 
     def advance_outcomes(

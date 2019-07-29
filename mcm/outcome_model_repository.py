@@ -9,7 +9,6 @@ from mcm.data_loader import load_model_spec
 import numpy.random as npRand
 
 
-
 # This object is currently serving two purposes.
 # First, it is (as its name implies), a repository fo routcome models
 # Second, it is the gateway into logic around signing outcomes.
