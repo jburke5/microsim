@@ -34,6 +34,8 @@ class ASCVDOutcomeModel:
         self._intercept = intercept
 
     def calc_linear_predictor(self, person):
+        anyBpTreatment = person._antiHypertensiveCount[-1] > 0
+        
         xb = self._intercept
         xb += self._age * person._age[-1]
         xb += self._sbp_x_sbp * (person._sbp[-1] ** 2)
@@ -54,13 +56,11 @@ class ASCVDOutcomeModel:
             xb += self._age_x_sbp_x_black_race * person._age[-1] * person._sbp[-1]
             if (person._smokingStatus == SmokingStatus.CURRENT):
                 xb += self._black_race_x_current_smoker
-            # TODO : need to model treatment
-            xb += self._sbp_x_black_race_x_treatment * person._sbp[-1] * 0
-            xb += self._black_race_x_treatment * 0
+            xb += self._sbp_x_black_race_x_treatment * person._sbp[-1] * anyBpTreatment
+            xb += self._black_race_x_treatment * anyBpTreatment
 
-        # TODO: need to model BP treatment
         xb += self._bp_treatment * 0
-        xb += self._sbp_x_treatment * person._sbp[-1] * 0
+        xb += self._sbp_x_treatment * person._sbp[-1] * anyBpTreatment
         return xb
 
     # TODO : need to figure out how to account fo rtime...which may be trikcy

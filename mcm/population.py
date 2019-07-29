@@ -243,14 +243,20 @@ def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
 class NHANESDirectSamplePopulation(Population):
     """ Simple base class to sample with replacement from 2015/2016 NHANES """
 
-    def __init__(self, n, year, model_reposistory_type="cohort", random_seed=None):
+    def __init__(self, n, year, generate_new_people=True, model_reposistory_type="cohort", random_seed=None):
         nhanes = pd.read_stata("mcm/data/fullyImputedDataset.dta")
         nhanes = nhanes.loc[nhanes.year == year]
         super().__init__(build_people_using_nhanes_for_sampling(
             nhanes, n, random_seed=random_seed))
         self.n = n
+        self.year = year
         self._initialize_risk_models(model_reposistory_type)
         self._outcome_model_repository = OutcomeModelRepository()
+    
+    def copy(self):
+        newPop = NHANESDirectSamplePopulation(self.n, self.year, False)
+        newPop._people = self._people.copy(deep=True)
+        return newPop
 
     def _initialize_risk_models(self, model_repository_type):
         if (model_repository_type == "cohort"):
