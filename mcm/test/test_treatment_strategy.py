@@ -50,22 +50,21 @@ class TestTreatmentStrategy(unittest.TestCase):
         self._risk_model_repository._repository['antiHypertensiveCount']._params['sbp'] = 0
         self._risk_model_repository._repository['antiHypertensiveCount']._params['intercept'] = 0
 
-
-
-    def addABPMed(person):
-        person._antiHypertensiveCount[-1] = person._antiHypertensiveCount[-1] + 1
-        person._sbp[-1] = person._sbp[-1] - 5
-        person._dbp[-1] = person._dbp[-1] - 3
-        return person
+    def add_a_single_blood_pressure_medication_strategy(person):
+        return {'_antiHypertensiveCount': 1}, {'_sbp': -5, '_dbp': -3}
 
     def testSimpleBPTreatmentStrategy(self):
+        self._test_person.advance_treatment(self._risk_model_repository)
         self._test_person.advance_risk_factors(self._risk_model_repository)
+
         self.assertEqual(self.baselineSBP, self._test_person._sbp[1])
         self.assertEqual(self.baselineDBP, self._test_person._dbp[1])
         self.assertEqual(0, self._test_person._antiHypertensiveCount[1])
 
-        self._test_person._bpTreatmentStrategy = TestTreatmentStrategy.addABPMed
-        self._test_person.advance_risk_factors(self._risk_model_repository)
+        self._test_person._bpTreatmentStrategy = TestTreatmentStrategy.add_a_single_blood_pressure_medication_strategy
+
+        risk_factor_modifications = self._test_person.advance_treatment(self._risk_model_repository)
+        self._test_person.advance_risk_factors(self._risk_model_repository, risk_factor_modifications)
 
         self.assertEqual(self.baselineSBP - 5, self._test_person._sbp[2])
         self.assertEqual(self.baselineDBP - 3, self._test_person._dbp[2])
