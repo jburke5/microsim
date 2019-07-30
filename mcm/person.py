@@ -85,7 +85,7 @@ class Person:
             setattr(self, k, v)
         if initializeAfib is not None:
             self._afib = [initializeAfib(self)]
-        
+
         self._bpTreatmentStrategy = None
 
     @property
@@ -129,7 +129,8 @@ class Person:
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance year")
 
-        self.advance_risk_factors(risk_model_repository)
+        risk_factor_modifications = self.advance_treatment(risk_model_repository)
+        self.advance_risk_factors(risk_model_repository, risk_factor_modifications)
         self.advance_outcomes(outcome_model_repository)
         if not self.is_dead():
             self._age.append(self._age[-1] + 1)
@@ -164,15 +165,28 @@ class Person:
     def has_mi_during_simulation(self):
         return self.has_outcome_during_simulation(OutcomeType.MI)
 
-    def advance_risk_factors(self, risk_model_repository):
-        if self.is_dead():
-            raise RuntimeError("Person is dead. Can not advance risk factors")
-
-        defaultBpTreatmentCount = self.get_next_risk_factor("antiHypertensiveCount", risk_model_repository)
-        self._antiHypertensiveCount.append(defaultBpTreatmentCount)
+    def advance_treatment(self, risk_model_repository):
+        new_antihypertensive_count = self.get_next_risk_factor(
+            "antiHypertensiveCount",
+            risk_model_repository
+        )
+        self._antiHypertensiveCount.append(new_antihypertensive_count)
 
         if self._bpTreatmentStrategy is not None:
-            self._bpTreatmentStrategy(self)
+            treatment_modifications, risk_factor_modifications = self._bpTreatmentStrategy(self)
+            self.apply_linear_modifications(treatment_modifications)
+        else:
+            risk_factor_modifications = None
+        return risk_factor_modifications
+
+    def apply_linear_modifications(self, modifications):
+        for key, value in modifications.items():
+            attribute_value = getattr(self, key)
+            attribute_value[-1] = attribute_value[-1] + value
+
+    def advance_risk_factors(self, risk_model_repository, risk_factor_modifications=None):
+        if self.is_dead():
+            raise RuntimeError("Person is dead. Can not advance risk factors")
 
         self._sbp.append(self.apply_bounds(
             "sbp", self.get_next_risk_factor("sbp", risk_model_repository)))
@@ -192,6 +206,9 @@ class Person:
                 risk_model_repository))
         self._afib.append(self.get_next_risk_factor("afib", risk_model_repository))
         self._statin.append(self.get_next_risk_factor("statin", risk_model_repository))
+
+        if risk_factor_modifications is not None:
+            self.apply_linear_modifications(risk_factor_modifications)
 
     def advance_outcomes(
             self,
