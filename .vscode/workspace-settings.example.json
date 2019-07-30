@@ -1,8 +1,8 @@
 {
     /*
-    Prefix "python.(python|flake8|autopep8)Path" settings with path to program in virtualenv. If
-    using poetry, will be the Virtualenv Path plus a `/bin` suffix returned from the following
-    command:
+    For the "python.(python|flake8|autopep8)Path" settings, prefix them with the path to the
+    virtualenv bin directory. If using poetry, will be the Virtualenv Path returned from the
+    following command plus a `/bin` suffix:
 
     ```sh
     poetry debug:info
