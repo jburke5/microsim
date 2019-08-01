@@ -11,6 +11,7 @@ from mcm.data_loader import load_regression_model, get_absolute_datafile_path
 
 import pandas as pd
 import copy
+import multiprocessing as mp
 
 
 class Population:
@@ -36,11 +37,25 @@ class Population:
     def advance(self, years):
         for _ in range(years):
             for person in self._people:
-                if not person.is_dead():
-                    person.advance_year(self._risk_model_repository,
-                                        self._outcome_model_repository)
+                self.advance_person(person)
             self.apply_recalibration_standards()
         self._totalYearsAdvanced += years
+
+    def advance_person(self, person):
+        if not person.is_dead():
+            person.advance_year(self._risk_model_repository,
+                                self._outcome_model_repository)
+        return person
+
+    def advance_multi_process(self, years):
+        for i in range(years):
+            print(i)
+            with mp.Pool(12) as pool:
+                self._people = pd.Series(pool.map(self.advance_person, self._people))
+            # with concurrent.futures.ProcessPoolExecutor(max_workers=12) as executor:
+            # executor.map(self.advance_person, self._people)
+            self.apply_recalibration_standards()
+            self._totalYearsAdvanced += years
 
     def set_bp_treatment_strategy(self, bpTreatmentStrategy):
         for person in self._people:
@@ -102,8 +117,8 @@ class Population:
     def tabulate_age_specific_rates(self, ageStandard):
         ageStandard['percentStandardPopInGroup'] = ageStandard['standardPopulation'] / \
             (ageStandard['standardPopulation'].sum())
-        ageStandard['ageSpecificRate'] = ageStandard['outcomeCount'] * 100000 / \
-            ageStandard['simPersonYears']
+        ageStandard['ageSpecificRate'] = ageStandard['outcomeCount'] * \
+            100000 / ageStandard['simPersonYears']
         ageStandard['ageSpecificContribution'] = ageStandard['ageSpecificRate'] * \
             ageStandard['percentStandardPopInGroup']
         return ageStandard
@@ -246,7 +261,13 @@ def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
 class NHANESDirectSamplePopulation(Population):
     """ Simple base class to sample with replacement from 2015/2016 NHANES """
 
-    def __init__(self, n, year, generate_new_people=True, model_reposistory_type="cohort", random_seed=None):
+    def __init__(
+            self,
+            n,
+            year,
+            generate_new_people=True,
+            model_reposistory_type="cohort",
+            random_seed=None):
         nhanes = pd.read_stata("mcm/data/fullyImputedDataset.dta")
         nhanes = nhanes.loc[nhanes.year == year]
         super().__init__(build_people_using_nhanes_for_sampling(
@@ -255,7 +276,7 @@ class NHANESDirectSamplePopulation(Population):
         self.year = year
         self._initialize_risk_models(model_reposistory_type)
         self._outcome_model_repository = OutcomeModelRepository()
-    
+
     def copy(self):
         newPop = NHANESDirectSamplePopulation(self.n, self.year, False)
         newPop._people = self._people.copy(deep=True)
