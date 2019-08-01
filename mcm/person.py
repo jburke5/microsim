@@ -100,6 +100,14 @@ class Person:
         medianYear = math.floor(len(self._age) / 2)
         return self._age[medianYear]
 
+    def allhat_candidate(self, wave):
+        return (self._age[wave] > 55) and \
+            (self._sbp[wave > 140 and self._sbp[wave] < 180]) and \
+            (self._dbp[wave] > 90 and self._dbp[wave] < 110) and \
+            (self._smokingStatus == SmokingStatus.CURRENT or self._a1c[wave] > 6.5 or
+             self.has_stroke_prior_to_simulation() or self.has_mi_prior_to_simulation or
+             self._hdl[wave] < 35)
+
     def has_diabetes(self):
         return sorted(self._a1c)[-1] >= 6.5
 
@@ -126,11 +134,12 @@ class Person:
         return varValue
 
     def advance_year(self, risk_model_repository, outcome_model_repository):
+        #print(f"advance_year on person, age: {self._age[0]} sbp : {self._sbp[0]}")
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance year")
 
-        risk_factor_modifications = self.advance_treatment(risk_model_repository)
-        self.advance_risk_factors(risk_model_repository, risk_factor_modifications)
+        self.advance_risk_factors(risk_model_repository)
+        self.advance_treatment(risk_model_repository)
         self.advance_outcomes(outcome_model_repository)
         if not self.is_dead():
             self._age.append(self._age[-1] + 1)
@@ -175,16 +184,17 @@ class Person:
         if self._bpTreatmentStrategy is not None:
             treatment_modifications, risk_factor_modifications = self._bpTreatmentStrategy(self)
             self.apply_linear_modifications(treatment_modifications)
-        else:
-            risk_factor_modifications = None
-        return risk_factor_modifications
+            self.apply_linear_modifications(risk_factor_modifications)
+            # simple starting assumption...a treatment is applied once and has a persistent effect
+            # so, the treastment strategy is nulled out after being applied
+            self._bpTreatmentStrategy = None
 
     def apply_linear_modifications(self, modifications):
         for key, value in modifications.items():
             attribute_value = getattr(self, key)
             attribute_value[-1] = attribute_value[-1] + value
 
-    def advance_risk_factors(self, risk_model_repository, risk_factor_modifications=None):
+    def advance_risk_factors(self, risk_model_repository):
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance risk factors")
 
@@ -206,9 +216,6 @@ class Person:
                 risk_model_repository))
         self._afib.append(self.get_next_risk_factor("afib", risk_model_repository))
         self._statin.append(self.get_next_risk_factor("statin", risk_model_repository))
-
-        if risk_factor_modifications is not None:
-            self.apply_linear_modifications(risk_factor_modifications)
 
     def advance_outcomes(
             self,

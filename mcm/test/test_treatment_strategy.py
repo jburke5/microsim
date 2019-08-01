@@ -63,8 +63,8 @@ class TestTreatmentStrategy(unittest.TestCase):
 
         self._test_person._bpTreatmentStrategy = TestTreatmentStrategy.add_a_single_blood_pressure_medication_strategy
 
-        risk_factor_modifications = self._test_person.advance_treatment(self._risk_model_repository)
-        self._test_person.advance_risk_factors(self._risk_model_repository, risk_factor_modifications)
+        self._test_person.advance_treatment(self._risk_model_repository)
+        self._test_person.advance_risk_factors(self._risk_model_repository)
 
         self.assertEqual(self.baselineSBP - 5, self._test_person._sbp[2])
         self.assertEqual(self.baselineDBP - 3, self._test_person._dbp[2])
