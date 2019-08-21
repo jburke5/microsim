@@ -1,14 +1,10 @@
 {
     /*
-    For the "python.(python|flake8|autopep8)Path" settings, prefix them with the path to the
-    virtualenv bin directory. If using poetry, will be the Virtualenv Path returned from the
-    following command plus a `/bin` suffix:
-
-    ```sh
-    poetry debug:info
-    ```
+    Prefix the "python.(python|flake8|autopep8)Path" settings with the path to the virtualenv bin
+    directory. Using Poetry version 1.0 or later, this will be path returned by running the
+    following command from the root of the repository:
+    echo "$(poetry env info --path)/bin"
     */
-
     "python.pythonPath": "python",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": false,
