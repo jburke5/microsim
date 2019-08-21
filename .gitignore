@@ -183,4 +183,4 @@ tags
 
 ### User-added Ignores
 .vscode/*
-!.vscode/workspace-settings.example.json
+!.vscode/settings.example.json
