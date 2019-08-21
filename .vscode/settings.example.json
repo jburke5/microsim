@@ -1,5 +1,8 @@
 {
     /*
+    Copy this file to `settings.json` under the `.vscode` directory at the root of the repository
+    to use as a starting point for your workspace settings.
+
     Prefix the "python.(python|flake8|autopep8)Path" settings with the path to the virtualenv bin
     directory. Using Poetry version 1.0 or later, this will be path returned by running the
     following command from the root of the repository:
