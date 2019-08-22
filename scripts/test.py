@@ -9,7 +9,7 @@ def main():
         "discover",
         "--start-directory",
         "./mcm/test",
-        "pattern",
+        "--pattern",
         "test_*.py"
     ]
     proc = subprocess.run(args)
