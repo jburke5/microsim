@@ -1,5 +1,6 @@
 from typing import Callable
 import math
+import random
 from mcm.gender import NHANESGender
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
@@ -134,7 +135,7 @@ class Person:
         return varValue
 
     def advance_year(self, risk_model_repository, outcome_model_repository):
-        #print(f"advance_year on person, age: {self._age[0]} sbp : {self._sbp[0]}")
+        # print(f"advance_year on person, age: {self._age[0]} sbp : {self._sbp[0]}")
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance year")
 
@@ -161,6 +162,22 @@ class Person:
 
     def has_stroke_during_simulation(self):
         return self.has_outcome_during_simulation(OutcomeType.STROKE)
+
+    def has_stroke_during_wave(self, wave):
+        return (len(self._age) > wave and
+                len(self._outcomes[OutcomeType.STROKE]) != 0 and
+                self.has_outcome_at_age(OutcomeType.STROKE, self._age[wave]))
+
+    def has_mi_during_wave(self, wave):
+        return (len(self._age) > wave and
+                len(self._outcomes[OutcomeType.MI]) != 0 and
+                self.has_outcome_at_age(OutcomeType.MI, self._age[wave]))
+
+    def has_outcome_at_age(self, type, age):
+        for outcome_tuple in self._outcomes[type]:
+            if outcome_tuple[0] == age:
+                return True
+        return False
 
     def has_fatal_stroke(self):
         return any([stroke.fatal for _, stroke in self._outcomes[OutcomeType.STROKE]])
@@ -216,6 +233,36 @@ class Person:
                 risk_model_repository))
         self._afib.append(self.get_next_risk_factor("afib", risk_model_repository))
         self._statin.append(self.get_next_risk_factor("statin", risk_model_repository))
+
+    
+    # redraw from models to pick new risk factors for person
+    def slightly_randomly_modify_baseline_risk_factors(self, risk_model_repository):
+        if (len(self._age) > 1):
+            raise RuntimeError("Can not reset risk factors after advancing person in time")
+
+        return Person(age=self._age[0] + random.randint(-2, 2),
+                      gender=self._gender,
+                      raceEthnicity=self._raceEthnicity,
+                      sbp=self.get_next_risk_factor("sbp", risk_model_repository),
+                      dbp=self.get_next_risk_factor("dbp", risk_model_repository),
+                      a1c=self.get_next_risk_factor("a1c", risk_model_repository),
+                      hdl=self.get_next_risk_factor("hdl", risk_model_repository),
+                      totChol=self.get_next_risk_factor("totChol", risk_model_repository),
+                      bmi=self.get_next_risk_factor("bmi", risk_model_repository),
+                      ldl=self.get_next_risk_factor("ldl", risk_model_repository),
+                      trig=self.get_next_risk_factor("trig", risk_model_repository),
+                      waist=self.get_next_risk_factor("waist", risk_model_repository),
+                      anyPhysicalActivity=self.get_next_risk_factor(
+                          "anyPhysicalActivity", risk_model_repository),
+                      education=self._education,
+                      smokingStatus=self._smokingStatus,
+                      antiHypertensiveCount=self.get_next_risk_factor(
+                          "antiHypertensiveCount", risk_model_repository),
+                      statin=self.get_next_risk_factor("statin", risk_model_repository),
+                      otherLipidLoweringMedicationCount=self._otherLipidLoweringMedicationCount,
+                      initializeAfib=(lambda _: False),
+                      selfReportStrokeAge=50 if self._outcomes[OutcomeType.STROKE] is not None else None,
+                      selfReportMIAge=50 if self._outcomes[OutcomeType.MI] is not None else None)
 
     def advance_outcomes(
             self,
