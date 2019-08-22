@@ -1,8 +1,13 @@
 {
-    // Prefix "python.(python|flake8|autopep8)Path" settings with path to program in virtualenv.
-    // Will likely be the path output by running following command from the root of the repository:
-    // echo "$(pipenv --venv)/bin"
+    /*
+    Copy this file to `settings.json` under the `.vscode` directory at the root of the repository
+    to use as a starting point for your workspace settings.
 
+    Prefix the "python.(python|flake8|autopep8)Path" settings with the path to the virtualenv bin
+    directory. Using Poetry version 1.0 or later, this will be path returned by running the
+    following command from the root of the repository:
+    echo "$(poetry env info --path)/bin"
+    */
     "python.pythonPath": "python",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": false,
