@@ -212,6 +212,13 @@ class Population:
                              'trig': [person._trig[-1] for person in self._people],
                              'totChol': [person._totChol[-1] for person in self._people],
                              'bmi': [person._bmi[-1] for person in self._people],
+                             'anyPhysicalActivity': [person._anyPhysicalActivity[-1] for person in self._people],
+                             'education': [person._education.value for person in self._people],
+                             'aFib': [person._afib[-1] for person in self._people],
+                             'antiHypertensive': [person._antiHypertensiveCount[-1] for person in self._people],
+                             'statin': [person._statin[-1] for person in self._people],
+                             'otherLipidLoweringMedicationCount': [person._otherLipidLoweringMedicationCount[-1] for person in self._people],
+                             'waist': [person._waist[-1] for person in self._people],
                              'smokingStatus': [person._smokingStatus for person in self._people],
                              'dead': [person.is_dead() for person in self._people],
                              'miPriorToSim': [person._selfReportMIPriorToSim for person in self._people],
@@ -220,6 +227,29 @@ class Population:
                              'strokeInSim': [person.has_stroke_during_simulation() for person in self._people],
                              'totalYearsInSim': [person.years_in_simulation() for person in self._people]})
 
+    def get_people_initial_state_as_dataframe(self):
+        return pd.DataFrame({'age': [person._age[0] for person in self._people],
+                             'gender': [person._gender for person in self._people],
+                             'raceEthnicity': [person._raceEthnicity for person in self._people],
+                             'sbp': [person._sbp[0] for person in self._people],
+                             'dbp': [person._dbp[0] for person in self._people],
+                             'a1c': [person._a1c[0] for person in self._people],
+                             'hdl': [person._hdl[0] for person in self._people],
+                             'ldl': [person._ldl[0] for person in self._people],
+                             'trig': [person._trig[0] for person in self._people],
+                             'totChol': [person._totChol[0] for person in self._people],
+                             'bmi': [person._bmi[0] for person in self._people],
+                             'anyPhysicalActivity': [person._anyPhysicalActivity[0] for person in self._people],
+                             'education': [person._education.value for person in self._people],
+                             'aFib': [person._afib[0] for person in self._people],
+                             'antiHypertensive': [person._antiHypertensiveCount[0] for person in self._people],
+                             'statin': [person._statin[0] for person in self._people],
+                             'otherLipidLoweringMedicationCount': [person._otherLipidLoweringMedicationCount[0] for person in self._people],
+                             'waist': [person._waist[0] for person in self._people],
+                             'smokingStatus': [person._smokingStatus for person in self._people],
+                             'miPriorToSim': [person._selfReportMIPriorToSim for person in self._people],
+                             'strokePriorToSim': [person._selfReportStrokePriorToSim for person in self._people]})
+
 
 def initializeAFib(person):
     model = load_regression_model("BaselineAFibModel")
@@ -227,34 +257,43 @@ def initializeAFib(person):
     return statsModel.estimate_next_risk(person)
 
 
-def build_people_using_nhanes_for_sampling(nhanes, n, random_seed=None):
+def build_person(x):
+    return Person(
+        age=x.age,
+        gender=NHANESGender(int(x.gender)),
+        raceEthnicity=NHANESRaceEthnicity(int(x.raceEthnicity)),
+        sbp=x.meanSBP,
+        dbp=x.meanDBP,
+        a1c=x.a1c,
+        hdl=x.hdl,
+        ldl=x.ldl,
+        trig=x.trig,
+        totChol=x.tot_chol,
+        bmi=x.bmi,
+        waist=x.waist,
+        anyPhysicalActivity=x.anyPhysicalActivity,
+        smokingStatus=SmokingStatus(int(x.smokingStatus)),
+        education=Education(int(x.education)),
+        antiHypertensiveCount=x.antiHypertensive,
+        statin=x.statin,
+        otherLipidLoweringMedicationCount=x.otherLipidLowering,
+        initializeAfib=initializeAFib,
+        selfReportStrokeAge=x.selfReportStrokeAge,
+        selfReportMIAge=x.selfReportMIAge,
+        dfIndex=x.index,
+        diedBy2015=x.diedBy2015)
+
+
+def build_people_using_nhanes_for_sampling(nhanes, n, filter=None, random_seed=None):
     repeated_sample = nhanes.sample(
-        n, weights=nhanes.WTINT2YR, random_state=random_seed, replace=True)
-    people = repeated_sample.apply(
-        lambda x: Person(
-            age=x.age,
-            gender=NHANESGender(int(x.gender)),
-            raceEthnicity=NHANESRaceEthnicity(int(x.raceEthnicity)),
-            sbp=x.meanSBP,
-            dbp=x.meanDBP,
-            a1c=x.a1c,
-            hdl=x.hdl,
-            ldl=x.ldl,
-            trig=x.trig,
-            totChol=x.tot_chol,
-            bmi=x.bmi,
-            waist=x.waist,
-            anyPhysicalActivity=x.anyPhysicalActivity,
-            smokingStatus=SmokingStatus(int(x.smokingStatus)),
-            education=Education(int(x.education)),
-            antiHypertensiveCount=x.antiHypertensive,
-            statin=x.statin,
-            otherLipidLoweringMedicationCount=x.otherLipidLowering,
-            initializeAfib=initializeAFib,
-            selfReportStrokeAge=x.selfReportStrokeAge,
-            selfReportMIAge=x.selfReportMIAge,
-            dfIndex=x.index,
-            diedBy2015=x.diedBy2015), axis=1)
+        n,
+        weights=nhanes.WTINT2YR,
+        random_state=random_seed,
+        replace=True)
+    people = repeated_sample.apply(build_person, axis=1)
+    if filter is not None:
+        people = people.loc[people.apply(filter)]
+
     return people
 
 
@@ -265,13 +304,14 @@ class NHANESDirectSamplePopulation(Population):
             self,
             n,
             year,
+            filter=None,
             generate_new_people=True,
             model_reposistory_type="cohort",
             random_seed=None):
         nhanes = pd.read_stata("mcm/data/fullyImputedDataset.dta")
         nhanes = nhanes.loc[nhanes.year == year]
         super().__init__(build_people_using_nhanes_for_sampling(
-            nhanes, n, random_seed=random_seed))
+            nhanes, n, filter=filter, random_seed=random_seed))
         self.n = n
         self.year = year
         self._initialize_risk_models(model_reposistory_type)
