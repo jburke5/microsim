@@ -1,11 +1,11 @@
 language: python
 python:
-  - '3.6'
+  - '3.7'
 
 install:
-  - pip install pipenv
-  - pipenv install --dev
+  - pip install poetry
+  - poetry install
 
 script:
-  - pipenv run lint || (echo -n)
-  - pipenv run test
+  - poetry run lint || (echo -n)
+  - poetry run test
