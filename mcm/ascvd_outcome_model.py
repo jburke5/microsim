@@ -35,7 +35,6 @@ class ASCVDOutcomeModel:
 
     def calc_linear_predictor(self, person):
         anyBpTreatment = person._antiHypertensiveCount[-1] > 0
-        
         xb = self._intercept
         xb += self._age * person._age[-1]
         xb += self._sbp_x_sbp * (person._sbp[-1] ** 2)

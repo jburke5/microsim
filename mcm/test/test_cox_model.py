@@ -1,6 +1,4 @@
 import unittest
-import os
-import json
 
 from mcm.person import Person
 from mcm.gender import NHANESGender

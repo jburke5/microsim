@@ -1,10 +1,7 @@
 import unittest
-import pandas as pd
-import numpy as np
 
 from mcm.person import Person
 from mcm.education import Education
-from mcm.nhanes_linear_risk_factor_model import NHANESLinearRiskFactorModel
 from mcm.test.test_risk_model_repository import TestRiskModelRepository
 
 
@@ -51,7 +48,7 @@ class TestTreatmentStrategy(unittest.TestCase):
         self._risk_model_repository._repository['antiHypertensiveCount']._params['intercept'] = 0
 
     def add_a_single_blood_pressure_medication_strategy(person):
-        return {'_antiHypertensiveCount': 1}, {'_sbp': -5, '_dbp': -3}
+        return {'_antiHypertensiveCount': 1}, {'_sbp': -5, '_dbp': -3}, {}
 
     def testSimpleBPTreatmentStrategy(self):
         self._test_person.advance_treatment(self._risk_model_repository)

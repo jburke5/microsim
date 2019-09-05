@@ -4,9 +4,6 @@ from mcm.stats_model_linear_probability_risk_factor_model import StatsModelLinea
 from mcm.stats_model_rounded_linear_risk_factor_model import StatsModelRoundedLinearRiskFactorModel
 from mcm.data_loader import load_regression_model
 
-import json
-import os
-
 
 class CohortRiskModelRepository(RiskModelRepository):
     def __init__(self):

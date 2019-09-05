@@ -12,8 +12,6 @@ from mcm.education import Education
 class Person:
     """Person is using risk factors and demographics based off NHANES"""
 
-    # TODO: probably should also add a view of the "most recent" version of risk factor values
-
     def __init__(
         self,
         age: int,
@@ -76,6 +74,7 @@ class Person:
         self._selfReportStrokePriorToSim = 0
         self._selfReportMIPriorToSim = 0
 
+        # convert ages of eventgs into
         if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
             self._selfReportStrokePriorToSim = 1
             self._outcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False)))
@@ -191,15 +190,19 @@ class Person:
     def has_mi_during_simulation(self):
         return self.has_outcome_during_simulation(OutcomeType.MI)
 
+    def rollback_most_recent_event(self, outcomeType):
+        self._outcomes[outcomeType].pop()
+
     def advance_treatment(self, risk_model_repository):
-        new_antihypertensive_count = self.get_next_risk_factor(
-            "antiHypertensiveCount",
-            risk_model_repository
-        )
-        self._antiHypertensiveCount.append(new_antihypertensive_count)
+        if (risk_model_repository is not None):
+            new_antihypertensive_count = self.get_next_risk_factor(
+                "antiHypertensiveCount",
+                risk_model_repository
+            )
+            self._antiHypertensiveCount.append(new_antihypertensive_count)
 
         if self._bpTreatmentStrategy is not None:
-            treatment_modifications, risk_factor_modifications = self._bpTreatmentStrategy(self)
+            treatment_modifications, risk_factor_modifications, recalibration_standards = self._bpTreatmentStrategy(self)
             self.apply_linear_modifications(treatment_modifications)
             self.apply_linear_modifications(risk_factor_modifications)
             # simple starting assumption...a treatment is applied once and has a persistent effect
@@ -234,8 +237,8 @@ class Person:
         self._afib.append(self.get_next_risk_factor("afib", risk_model_repository))
         self._statin.append(self.get_next_risk_factor("statin", risk_model_repository))
 
-    
     # redraw from models to pick new risk factors for person
+
     def slightly_randomly_modify_baseline_risk_factors(self, risk_model_repository):
         if (len(self._age) > 1):
             raise RuntimeError("Can not reset risk factors after advancing person in time")
@@ -277,7 +280,7 @@ class Person:
             if cv_event.fatal:
                 self._alive.append(False)
 
-        # if not dead...assess non CV mortality
+        # if not dead from the CV event...assess non CV mortality
         if (not self.is_dead()):
             non_cv_death = outcome_model_repository.assign_non_cv_mortality(self)
             if (non_cv_death):
