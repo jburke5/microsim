@@ -44,11 +44,15 @@ class CVOutcomeDetermination:
         if manualMIProb is not None:
             return npRand.uniform(size=1) < manualMIProb
         # if no manual MI probablity, estimate it from oru partitioned model
+        strokeProbability = self.get_stroke_probability(person)
+
+        return npRand.uniform(size=1) < (1 - strokeProbability)
+
+    def get_stroke_probability(self, person):
         model_spec = load_model_spec("StrokeMIPartitionModel")
         strokePartitionModel = StatsModelLinearRiskFactorModel(RegressionModel(**model_spec))
         strokeProbability = scipySpecial.expit(strokePartitionModel.estimate_next_risk(person))
-
-        return npRand.uniform(size=1) < (1 - strokeProbability)
+        return strokeProbability
 
     def _will_have_fatal_mi(self, person, fatalMIProb):
         fatalProb = self.mi_secondary_case_fatality if person._mi else fatalMIProb

@@ -8,9 +8,13 @@ from mcm.nhanes_risk_model_repository import NHANESRiskModelRepository
 from mcm.outcome_model_repository import OutcomeModelRepository
 from mcm.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFactorModel
 from mcm.data_loader import load_regression_model, get_absolute_datafile_path
+from mcm.outcome_model_type import OutcomeModelType
+from mcm.cv_outcome_determination import CVOutcomeDetermination
+from mcm.outcome import OutcomeType
 
 import pandas as pd
 import copy
+import random
 import multiprocessing as mp
 
 
@@ -33,13 +37,14 @@ class Population:
         self._outcome_model_repository = None
         self._ageStandards = {}
         self._totalYearsAdvanced = 0
+        self._bpTreatmentStrategy = None
 
     def advance(self, years):
-        for _ in range(years):
+        for yearIndex in range(years):
             for person in self._people:
                 self.advance_person(person)
             self.apply_recalibration_standards()
-        self._totalYearsAdvanced += years
+        self._totalYearsAdvanced += years + 1
 
     def advance_person(self, person):
         if not person.is_dead():
@@ -58,13 +63,100 @@ class Population:
             self._totalYearsAdvanced += years
 
     def set_bp_treatment_strategy(self, bpTreatmentStrategy):
+        self._bpTreatmentStrategy = bpTreatmentStrategy
         for person in self._people:
             person._bpTreatmentStrategy = bpTreatmentStrategy
 
     def apply_recalibration_standards(self):
-        pass
+        # treatment_standard is a dictionary of outcome types and effect sizees
+        if (self._bpTreatmentStrategy is not None):
+            self.recalibrate_bp_treatment()
+
+    def recalibrate_bp_treatment(self):
+        treatment_change_standard, effect_of_treatment_standard, treatment_outcome_standard = self._bpTreatmentStrategy(
+            self)
+        # estimate risk for the baseline patients in our sample
+        baselineCombinedRisks = pd.Series([self._outcome_model_repository.get_risk_for_person(
+            person, OutcomeModelType.CARDIOVASCULAR, 1) for _, person in self._people.iteritems()])
+        strokeProbabilities = pd.Series([CVOutcomeDetermination().get_stroke_probability(
+            person) for _, person in self._people.iteritems()])
+        strokeRisks = baselineCombinedRisks * strokeProbabilities
+        miRisks = baselineCombinedRisks * (1-strokeProbabilities)
+        # chagne their parameter by the magnitude fo the efect of treamtent standard
+        for _, person in self._people.iteritems():
+            person._sbp[-1] = person._sbp[-1] + effect_of_treatment_standard['_sbp']
+            person._dbp[-1] = person._sbp[-1] + effect_of_treatment_standard['_dbp']
+
+        # estimate risk
+        treatedCombinedRisks = pd.Series([self._outcome_model_repository.get_risk_for_person(
+            person, OutcomeModelType.CARDIOVASCULAR, 1) for _, person in self._people.iteritems()])
+        treatedStrokeProbabilities = pd.Series(
+            [CVOutcomeDetermination().get_stroke_probability(person) for _, person in self._people.iteritems()])
+        treatedStrokeRisks = treatedCombinedRisks * treatedStrokeProbabilities
+        treatedMIRisks = treatedCombinedRisks * (1-treatedStrokeProbabilities)
+
+        # use the delta between that effect and the calibration standard to recalibrate the pop.
+        modelEstimatedStrokeRR = treatedStrokeRisks.mean()/strokeRisks.mean()
+        # if negative, the model estimated too many events, if positive, too few
+        strokeDelta = modelEstimatedStrokeRR - treatment_outcome_standard[OutcomeType.STROKE]
+
+        # roll back the treatment effect...
+        for _, person in self._people.iteritems():
+            person._sbp[-1] = person._sbp[-1] - effect_of_treatment_standard['_sbp']
+            person._dbp[-1] = person._sbp[-1] - effect_of_treatment_standard['_dbp']
+
+        numberStrokesToChange = strokeDelta * len(self._people)
+        if strokeDelta < 0:
+            strokesInMostRecentWave = self.get_events_in_most_recent_wave(OutcomeType.STROKE)
+            print (f"strokes in most recent wave: {len(strokesInMostRecentWave)} number to change: {numberStrokesToChange}")
+            indices = random.sample(range(len(strokesInMostRecentWave)), int(round(numberStrokesToChange*-1)))
+            for i in indices:
+                strokesInMostRecentWave[i].rollback_most_recent_event(OutcomeType.STROKE)
+        else:
+            pass
+            # get non-strokes as a list
+            # randomly select N indices
+            # create stroke events
+
+        print(f"effect size of treatment: {modelEstimatedStrokeRR}")
+        print(f"difference between target and actual effect size: {strokeDelta}")
+        print(f" # of strokes after reversal: {len(self.get_events_in_most_recent_wave(OutcomeType.STROKE))}")
+
+
+    def get_events_in_most_recent_wave(self, eventType):
+        peopleWithEvents = []
+        for _, person in self._people.iteritems():
+            if person.has_outcome_at_age(eventType, person._age[-1]):
+                peopleWithEvents.append(person)
+        return peopleWithEvents
+
+    def generate_starting_mean_patient(self):
+        df = self.get_people_initial_state_as_dataframe()
+        return Person(age=int(round(df.age.mean())),
+                      gender=NHANESGender(df.gender.mode()),
+                      raceEthnicity=NHANESRaceEthnicity(df.raceEthnicity.mode()),
+                      sbp=df.sbp.mean(),
+                      dbp=df.dbp.mean(),
+                      a1c=df.a1c.mean(),
+                      hdl=df.hdl.mean(),
+                      totChol=df.totChol.mean(),
+                      bmi=df.bmi.mean(),
+                      ldl=df.ldl.mean(),
+                      trig=df.trig.mean(),
+                      waist=df.waist.mean(),
+                      anyPhysicalActivity=df.anyPhysicalActivity.mode(),
+                      education=Education(df.education.mode()),
+                      smokingStatus=SmokingStatus(df.smokingStatus.mode()),
+                      antiHypertensiveCount=int(round(df.antiHypetensiveCount().mean())),
+                      statin=df.statin.mode(),
+                      otherLipidLoweringMedicationCount=int(
+                          round(df.otherLipidLoweringMedicationCount.mean())),
+                      initializeAfib=(lambda _: False),
+                      selfReportStrokeAge=None,
+                      selfReportMIAge=None)
 
     # refactorrtag: we should probably build a specific class that loads data files...
+
     def build_age_standard(self, yearOfStandardizedPopulation):
         if yearOfStandardizedPopulation in Population._ageStandards:
             return copy.deepcopy(Population._ageStandards[yearOfStandardizedPopulation])
