@@ -32,6 +32,14 @@ class TestOutcomeRepository(unittest.TestCase):
             smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
+        self._black_treated_male = Person(
+            age=55, gender=NHANESGender.MALE,
+            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
+            sbp=120, dbp=80, a1c=6, hdl=50, totChol=200, ldl=90, trig=150,
+            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=1,
+            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+
         self._white_female = Person(
             age=55, gender=NHANESGender.FEMALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
@@ -68,6 +76,11 @@ class TestOutcomeRepository(unittest.TestCase):
         # the race interaction term
         self.assertAlmostEqual(.03476, self._outcome_model_repository.get_risk_for_person(
             self._black_male, OutcomeModelType.CARDIOVASCULAR, 10), delta=0.00001)
+
+    # details of risk worked out in example_treated_ascvd_scenario.xlsx
+    def test_calculate_risk_for_treated_person(self):
+        self.assertAlmostEqual(0.069810753, self._outcome_model_repository.get_risk_for_person(
+            self._black_treated_male, OutcomeModelType.CARDIOVASCULAR, 10), delta=0.00001)
 
     if __name__ == "__main__":
         unittest.main()

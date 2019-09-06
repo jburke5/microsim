@@ -58,7 +58,7 @@ class ASCVDOutcomeModel:
             xb += self._sbp_x_black_race_x_treatment * person._sbp[-1] * anyBpTreatment
             xb += self._black_race_x_treatment * anyBpTreatment
 
-        xb += self._bp_treatment * 0
+        xb += self._bp_treatment * anyBpTreatment
         xb += self._sbp_x_treatment * person._sbp[-1] * anyBpTreatment
         return xb
 

@@ -10,7 +10,7 @@ from mcm.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFact
 from mcm.data_loader import load_regression_model, get_absolute_datafile_path
 from mcm.outcome_model_type import OutcomeModelType
 from mcm.cv_outcome_determination import CVOutcomeDetermination
-from mcm.outcome import OutcomeType
+from mcm.outcome import Outcome, OutcomeType
 
 import pandas as pd
 import copy
@@ -70,58 +70,104 @@ class Population:
     def apply_recalibration_standards(self):
         # treatment_standard is a dictionary of outcome types and effect sizees
         if (self._bpTreatmentStrategy is not None):
-            self.recalibrate_bp_treatment()
+            _, _, treatment_outcome_standard = self._bpTreatmentStrategy(self)
+            if (treatment_outcome_standard is not None):
+                self.recalibrate_bp_treatment()
+
+    # should the estiamted treatment effect be based on the number of events in the population
+    # (i.e. # events treated / # of events untreated)
+    # of should it be based on teh predicted reisks
+    # the problem with the first approach is that its going to depend a lot on small sample sizes...
+    # and we don't necessarily want to take out that random error...that random error reflects
+    # genuine uncertainty.
+    # so, i thikn it should be based on the model-predicted risks...
 
     def recalibrate_bp_treatment(self):
         treatment_change_standard, effect_of_treatment_standard, treatment_outcome_standard = self._bpTreatmentStrategy(
             self)
         # estimate risk for the baseline patients in our sample
-        baselineCombinedRisks = pd.Series([self._outcome_model_repository.get_risk_for_person(
-            person, OutcomeModelType.CARDIOVASCULAR, 1) for _, person in self._people.iteritems()])
-        strokeProbabilities = pd.Series([CVOutcomeDetermination().get_stroke_probability(
-            person) for _, person in self._people.iteritems()])
-        strokeRisks = baselineCombinedRisks * strokeProbabilities
-        miRisks = baselineCombinedRisks * (1-strokeProbabilities)
-        # chagne their parameter by the magnitude fo the efect of treamtent standard
+        baselineCombinedRisks, strokeProbabilities, strokeRisks, miRisks = self.estimate_risks()
+
+        # apply a treamtent effect.
+        # redtag: would like to apply to this to a deeply cloned population, but i can't get that to work
+        # so, for now, applying it to the actual population and then rolling the effect back later.
         for _, person in self._people.iteritems():
             person._sbp[-1] = person._sbp[-1] + effect_of_treatment_standard['_sbp']
-            person._dbp[-1] = person._sbp[-1] + effect_of_treatment_standard['_dbp']
+            person._dbp[-1] = person._dbp[-1] + effect_of_treatment_standard['_dbp']
 
-        # estimate risk
-        treatedCombinedRisks = pd.Series([self._outcome_model_repository.get_risk_for_person(
-            person, OutcomeModelType.CARDIOVASCULAR, 1) for _, person in self._people.iteritems()])
-        treatedStrokeProbabilities = pd.Series(
-            [CVOutcomeDetermination().get_stroke_probability(person) for _, person in self._people.iteritems()])
-        treatedStrokeRisks = treatedCombinedRisks * treatedStrokeProbabilities
-        treatedMIRisks = treatedCombinedRisks * (1-treatedStrokeProbabilities)
+        # estimate risk after applying the treamtent effect
+        treatedCombinedRisks, treatedStrokeProbabilities, treatedStrokeRisks, treatedMIRisks = self.estimate_risks()
 
         # use the delta between that effect and the calibration standard to recalibrate the pop.
         modelEstimatedStrokeRR = treatedStrokeRisks.mean()/strokeRisks.mean()
-        # if negative, the model estimated too many events, if positive, too few
-        strokeDelta = modelEstimatedStrokeRR - treatment_outcome_standard[OutcomeType.STROKE]
+        modelEstimatedMIRR = treatedMIRisks.mean()/miRisks.mean()
 
         # roll back the treatment effect...
         for _, person in self._people.iteritems():
             person._sbp[-1] = person._sbp[-1] - effect_of_treatment_standard['_sbp']
-            person._dbp[-1] = person._sbp[-1] - effect_of_treatment_standard['_dbp']
+            person._dbp[-1] = person._dbp[-1] - effect_of_treatment_standard['_dbp']
 
-        numberStrokesToChange = strokeDelta * len(self._people)
-        if strokeDelta < 0:
-            strokesInMostRecentWave = self.get_events_in_most_recent_wave(OutcomeType.STROKE)
-            print (f"strokes in most recent wave: {len(strokesInMostRecentWave)} number to change: {numberStrokesToChange}")
-            indices = random.sample(range(len(strokesInMostRecentWave)), int(round(numberStrokesToChange*-1)))
-            for i in indices:
-                strokesInMostRecentWave[i].rollback_most_recent_event(OutcomeType.STROKE)
-        else:
-            pass
+        if OutcomeType.STROKE in treatment_outcome_standard:
+            strokeDelta = modelEstimatedStrokeRR - treatment_outcome_standard[OutcomeType.STROKE]
+            print(f"model estimated Stroke RR: {modelEstimatedStrokeRR} delta: {strokeDelta}")
+            numberOfEventStatusesToChange = abs(int(round(strokeDelta * len(self._people))))
+            strokesForPeople = [person.has_outcome_at_age(
+                OutcomeType.STROKE, person._age[-1]) for _, person in self._people.iteritems()]
+            nonEventStatusForPeople = [not item for item in strokesForPeople]
+            # key assumption: "treatment" is applied to a population as opposed to individuals weithin a population
+            # analyses can be setup either way...build two populations and then set different treamtents
+            # or build a ur-population adn then set different treamtents within them
+            # this is, i thikn, the first time where a coding decision is tied to one of those structure.
+            # it would not, i think, be hard to change. but, just spelling it out here.
+
+            # if negative, the model estimated too few events, if positive, too many
+            if strokeDelta < 0:
+                # selected a weighted number (number of event statuses to change amongst those without an event to switch status)
+                print(f"number of non events: {len(self._people.loc[nonEventStatusForPeople])}")
+                print(f"number to change: {numberOfEventStatusesToChange}")
+                print(f"length of weights: {len(pd.Series(strokeRisks).loc[nonEventStatusForPeople])}")
+                print(f"mean of weights: {pd.Series(strokeRisks).loc[nonEventStatusForPeople].mean()}")
+                print(f"sum of weights: {pd.Series(strokeRisks).loc[nonEventStatusForPeople].sum()}")
+                new_strokes = self._people.loc[nonEventStatusForPeople].sample(n=numberOfEventStatusesToChange,
+                                                                               replace=False,
+                                                                               weights=pd.Series(strokeRisks).loc[nonEventStatusForPeople].values)
+                for i, stroke in new_strokes.iteritems():
+                    stroke.add_outcome_event(
+                        Outcome(OutcomeType.STROKE, CVOutcomeDetermination()._will_have_fatal_stroke(stroke)))
+            else:
+                pass
             # get non-strokes as a list
             # randomly select N indices
             # create stroke events
+        if OutcomeType.MI in treatment_outcome_standard:
+            miDelta = modelEstimatedMIRR - treatment_outcome_standard[OutcomeType.MI]
+            print(f"model estimated MI RR: {modelEstimatedMIRR} delta: {miDelta}")
+            numberMIsToChange = miDelta * len(self._people)
+            if miDelta < 0:
+                misInMostRecentWave = self.get_events_in_most_recent_wave(OutcomeType.MI)
+                indices = random.sample(range(len(misInMostRecentWave)),
+                                        int(round(numberMIsToChange*-1)))
+                for i in indices:
+                    misInMostRecentWave[i].rollback_most_recent_event(OutcomeType.MI)
+            else:
+                pass
 
-        print(f"effect size of treatment: {modelEstimatedStrokeRR}")
-        print(f"difference between target and actual effect size: {strokeDelta}")
-        print(f" # of strokes after reversal: {len(self.get_events_in_most_recent_wave(OutcomeType.STROKE))}")
+    def estimate_risks(self):
+        combinedRisks = pd.Series([self._outcome_model_repository.get_risk_for_person(
+            person, OutcomeModelType.CARDIOVASCULAR, 1) for _, person in self._people.iteritems()])
+        strokeProbabilities = pd.Series(
+            [CVOutcomeDetermination().get_stroke_probability(person) for _, person in self._people.iteritems()])
+        strokeRisks = combinedRisks * strokeProbabilities
+        miRisks = combinedRisks * (1-strokeProbabilities)
+        return combinedRisks, strokeProbabilities, strokeRisks, miRisks
 
+        # get non-strokes as a list
+        # randomly select N indices
+        # create stroke events
+
+        #print(f"effect size of treatment: {modelEstimatedStrokeRR}")
+        #print(f"difference between target and actual effect size: {strokeDelta}")
+        # print(f" # of strokes after reversal: {len(self.get_events_in_most_recent_wave(OutcomeType.STROKE))}")
 
     def get_events_in_most_recent_wave(self, eventType):
         peopleWithEvents = []
