@@ -54,7 +54,7 @@ class Population:
 
     def advance_multi_process(self, years):
         for i in range(years):
-            print(i)
+            print(f"processing year: {i})
             with mp.Pool(12) as pool:
                 self._people = pd.Series(pool.map(self.advance_person, self._people))
             # with concurrent.futures.ProcessPoolExecutor(max_workers=12) as executor:
@@ -98,59 +98,16 @@ class Population:
         # estimate risk after applying the treamtent effect
         treatedCombinedRisks, treatedStrokeProbabilities, treatedStrokeRisks, treatedMIRisks = self.estimate_risks()
 
-        # use the delta between that effect and the calibration standard to recalibrate the pop.
-        modelEstimatedStrokeRR = treatedStrokeRisks.mean()/strokeRisks.mean()
-        modelEstimatedMIRR = treatedMIRisks.mean()/miRisks.mean()
-
-        # roll back the treatment effect...
+        # hacktag related to above — roll back the treatment effect...
         for _, person in self._people.iteritems():
             person._sbp[-1] = person._sbp[-1] - effect_of_treatment_standard['_sbp']
             person._dbp[-1] = person._dbp[-1] - effect_of_treatment_standard['_dbp']
 
-        if OutcomeType.STROKE in treatment_outcome_standard:
-            strokeDelta = modelEstimatedStrokeRR - treatment_outcome_standard[OutcomeType.STROKE]
-            print(f"model estimated Stroke RR: {modelEstimatedStrokeRR} delta: {strokeDelta}")
-            numberOfEventStatusesToChange = abs(int(round(strokeDelta * len(self._people))))
-            strokesForPeople = [person.has_outcome_at_age(
-                OutcomeType.STROKE, person._age[-1]) for _, person in self._people.iteritems()]
-            nonEventStatusForPeople = [not item for item in strokesForPeople]
-            # key assumption: "treatment" is applied to a population as opposed to individuals weithin a population
-            # analyses can be setup either way...build two populations and then set different treamtents
-            # or build a ur-population adn then set different treamtents within them
-            # this is, i thikn, the first time where a coding decision is tied to one of those structure.
-            # it would not, i think, be hard to change. but, just spelling it out here.
+        self.create_and_rollback_events_to_correct_calibration(treatment_outcome_standard, treatedStrokeRisks, strokeRisks, OutcomeType.STROKE,
+                                                               will_have_fatal_stroke)
 
-            # if negative, the model estimated too few events, if positive, too many
-            if strokeDelta < 0:
-                # selected a weighted number (number of event statuses to change amongst those without an event to switch status)
-                print(f"number of non events: {len(self._people.loc[nonEventStatusForPeople])}")
-                print(f"number to change: {numberOfEventStatusesToChange}")
-                print(f"length of weights: {len(pd.Series(strokeRisks).loc[nonEventStatusForPeople])}")
-                print(f"mean of weights: {pd.Series(strokeRisks).loc[nonEventStatusForPeople].mean()}")
-                print(f"sum of weights: {pd.Series(strokeRisks).loc[nonEventStatusForPeople].sum()}")
-                new_strokes = self._people.loc[nonEventStatusForPeople].sample(n=numberOfEventStatusesToChange,
-                                                                               replace=False,
-                                                                               weights=pd.Series(strokeRisks).loc[nonEventStatusForPeople].values)
-                for i, stroke in new_strokes.iteritems():
-                    stroke.add_outcome_event(
-                        Outcome(OutcomeType.STROKE, CVOutcomeDetermination()._will_have_fatal_stroke(stroke)))
-            else:
-                pass
-            # get non-strokes as a list
-            # randomly select N indices
-            # create stroke events
-        if OutcomeType.MI in treatment_outcome_standard:
-            miDelta = modelEstimatedMIRR - treatment_outcome_standard[OutcomeType.MI]
-            print(f"model estimated MI RR: {modelEstimatedMIRR} delta: {miDelta}")
-            numberMIsToChange = miDelta * len(self._people)
-            if miDelta < 0:
-                misInMostRecentWave = self.get_events_in_most_recent_wave(OutcomeType.MI)
-                indices = random.sample(range(len(misInMostRecentWave)),
-                                        int(round(numberMIsToChange*-1)))
-                for i in indices:
-                    misInMostRecentWave[i].rollback_most_recent_event(OutcomeType.MI)
-            else:
-                pass
+        self.create_and_rollback_events_to_correct_calibration(treatment_outcome_standard, treatedMIRisks, miRisks, OutcomeType.MI,
+                                                               will_have_fatal_mi)
 
     def estimate_risks(self):
         combinedRisks = pd.Series([self._outcome_model_repository.get_risk_for_person(
@@ -161,13 +118,35 @@ class Population:
         miRisks = combinedRisks * (1-strokeProbabilities)
         return combinedRisks, strokeProbabilities, strokeRisks, miRisks
 
-        # get non-strokes as a list
-        # randomly select N indices
-        # create stroke events
+    def create_and_rollback_events_to_correct_calibration(self, treatment_outcome_standard, treatedRisks, untreatedRisks, outcomeType, fatalityDetermination):
+        modelEstimatedRR = treatedRisks.mean()/untreatedRisks.mean()
+        if outcomeType in treatment_outcome_standard:
+            # use the delta between that effect and the calibration standard to recalibrate the pop.
+            delta = modelEstimatedRR - treatment_outcome_standard[outcomeType]
+            numberOfEventStatusesToChange = abs(int(round(delta * len(self._people))))
+            eventsForPeople = [person.has_outcome_at_age(
+                outcomeType, person._age[-1]) for _, person in self._people.iteritems()]
+            nonEventsForPeople = [not item for item in eventsForPeople]
+            # key assumption: "treatment" is applied to a population as opposed to individuals weithin a population
+            # analyses can be setup either way...build two populations and then set different treamtents
+            # or build a ur-population adn then set different treamtents within them
+            # this is, i thikn, the first time where a coding decision is tied to one of those structure.
+            # it would not, i think, be hard to change. but, just spelling it out here.
 
-        #print(f"effect size of treatment: {modelEstimatedStrokeRR}")
-        #print(f"difference between target and actual effect size: {strokeDelta}")
-        # print(f" # of strokes after reversal: {len(self.get_events_in_most_recent_wave(OutcomeType.STROKE))}")
+            # if negative, the model estimated too many events, if positive, too few
+            if delta > 0:
+                new_events = self._people.loc[nonEventsForPeople].sample(n=numberOfEventStatusesToChange,
+                                                                         replace=False,
+                                                                         weights=pd.Series(untreatedRisks).loc[nonEventsForPeople].values)
+                for i, event in new_events.iteritems():
+                    event.add_outcome_event(Outcome(outcomeType, fatalityDetermination(event)))
+
+            else:
+                events_to_rollback = self._people.loc[eventsForPeople].sample(n=numberOfEventStatusesToChange,
+                                                                              replace=False,
+                                                                              weights=pd.Series(untreatedRisks).loc[eventsForPeople].values)
+                for i, event in events_to_rollback.iteritems():
+                    event.rollback_most_recent_event(outcomeType)
 
     def get_events_in_most_recent_wave(self, eventType):
         peopleWithEvents = []
@@ -387,6 +366,14 @@ class Population:
                              'smokingStatus': [person._smokingStatus for person in self._people],
                              'miPriorToSim': [person._selfReportMIPriorToSim for person in self._people],
                              'strokePriorToSim': [person._selfReportStrokePriorToSim for person in self._people]})
+
+
+def will_have_fatal_stroke(person):
+    return CVOutcomeDetermination()._will_have_fatal_stroke(person)
+
+
+def will_have_fatal_mi(person):
+    return CVOutcomeDetermination()._will_have_fatal_mi(person)
 
 
 def initializeAFib(person):
