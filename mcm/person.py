@@ -276,15 +276,18 @@ class Person:
         # first determine if there is a cv event
         cv_event = outcome_model_repository.assign_cv_outcome(self)
         if cv_event is not None:
-            self._outcomes[cv_event.type].append((self._age[-1], cv_event))
-            if cv_event.fatal:
-                self._alive.append(False)
+            self.add_outcome_event(cv_event)
 
         # if not dead from the CV event...assess non CV mortality
         if (not self.is_dead()):
             non_cv_death = outcome_model_repository.assign_non_cv_mortality(self)
             if (non_cv_death):
                 self._alive.append(False)
+
+    def add_outcome_event(self, cv_event):
+        self._outcomes[cv_event.type].append((self._age[-1], cv_event))
+        if cv_event.fatal:
+            self._alive.append(False)
 
     def __repr__(self):
         return (f"Person(age={self._age[-1]}, "

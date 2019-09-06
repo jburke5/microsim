@@ -54,11 +54,13 @@ class CVOutcomeDetermination:
         strokeProbability = scipySpecial.expit(strokePartitionModel.estimate_next_risk(person))
         return strokeProbability
 
-    def _will_have_fatal_mi(self, person, fatalMIProb):
+    def _will_have_fatal_mi(self, person, overrideMIProb=None):
+        fatalMIProb = overrideMIProb if overrideMIProb is not None else self.mi_case_fatality
         fatalProb = self.mi_secondary_case_fatality if person._mi else fatalMIProb
         return npRand.uniform(size=1) < fatalProb
 
-    def _will_have_fatal_stroke(self, person, fatalStrokeProb):
+    def _will_have_fatal_stroke(self, person, overrideStrokeProb=None):
+        fatalStrokeProb = overrideStrokeProb if overrideStrokeProb is not None else self.stroke_case_fatality
         fatalProb = self.stroke_secondary_case_fatality if person._stroke else fatalStrokeProb
         return npRand.uniform(size=1) < fatalProb
 
@@ -78,12 +80,12 @@ class CVOutcomeDetermination:
 
         if self._will_have_cvd_event(cvRisk):
             if self._will_have_mi(person, outcome_model_repository, manualStrokeMIProbability):
-                if self._will_have_fatal_mi(person, self.mi_case_fatality):
+                if self._will_have_fatal_mi(person):
                     return Outcome(OutcomeType.MI, True)
                 else:
                     return Outcome(OutcomeType.MI, False)
             else:
-                if self._will_have_fatal_stroke(person, self.stroke_case_fatality):
+                if self._will_have_fatal_stroke(person):
                     return Outcome(OutcomeType.STROKE, True)
                 else:
                     return Outcome(OutcomeType.STROKE, False)
