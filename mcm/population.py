@@ -54,7 +54,7 @@ class Population:
 
     def advance_multi_process(self, years):
         for i in range(years):
-            print(f"processing year: {i})
+            print(f"processing year: {i}")
             with mp.Pool(12) as pool:
                 self._people = pd.Series(pool.map(self.advance_person, self._people))
             # with concurrent.futures.ProcessPoolExecutor(max_workers=12) as executor:
@@ -104,10 +104,10 @@ class Population:
             person._dbp[-1] = person._dbp[-1] - effect_of_treatment_standard['_dbp']
 
         self.create_and_rollback_events_to_correct_calibration(treatment_outcome_standard, treatedStrokeRisks, strokeRisks, OutcomeType.STROKE,
-                                                               will_have_fatal_stroke)
+                                                               CVOutcomeDetermination()._will_have_fatal_stroke)
 
         self.create_and_rollback_events_to_correct_calibration(treatment_outcome_standard, treatedMIRisks, miRisks, OutcomeType.MI,
-                                                               will_have_fatal_mi)
+                                                               CVOutcomeDetermination()._will_have_fatal_mi)
 
     def estimate_risks(self):
         combinedRisks = pd.Series([self._outcome_model_repository.get_risk_for_person(
@@ -366,14 +366,6 @@ class Population:
                              'smokingStatus': [person._smokingStatus for person in self._people],
                              'miPriorToSim': [person._selfReportMIPriorToSim for person in self._people],
                              'strokePriorToSim': [person._selfReportStrokePriorToSim for person in self._people]})
-
-
-def will_have_fatal_stroke(person):
-    return CVOutcomeDetermination()._will_have_fatal_stroke(person)
-
-
-def will_have_fatal_mi(person):
-    return CVOutcomeDetermination()._will_have_fatal_mi(person)
 
 
 def initializeAFib(person):
