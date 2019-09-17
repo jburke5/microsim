@@ -1,12 +1,13 @@
-from typing import Callable
 import math
 import random
+
+from typing import Callable
+
+from mcm.education import Education
 from mcm.gender import NHANESGender
+from mcm.outcome import Outcome, OutcomeType
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
-from mcm.outcome import OutcomeType
-from mcm.outcome import Outcome
-from mcm.education import Education
 
 
 class Person:
@@ -74,7 +75,7 @@ class Person:
         self._selfReportStrokePriorToSim = 0
         self._selfReportMIPriorToSim = 0
 
-        # convert ages of eventgs into
+        # convert events for events prior to simulation
         if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
             self._selfReportStrokePriorToSim = 1
             self._outcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False)))
@@ -87,6 +88,28 @@ class Person:
             self._afib = [initializeAfib(self)]
 
         self._bpTreatmentStrategy = None
+
+    def reset_to_baseline(self):
+        self._alive = [True]
+        self._age = [self._age[0]]
+        self._sbp = [self._sbp[0]]
+        self._dbp = [self._dbp[0]]
+        self._a1c = [self._a1c[0]]
+        self._hdl = [self._hdl[0]]
+        self._ldl = [self._ldl[0]]
+        self._trig = [self._trig[0]]
+        self._totChol = [self._totChol[0]]
+        self._bmi = [self._bmi[0]]
+        self._waist = [self._waist[0]]
+        self._anyPhysicalActivity = [self._anyPhysicalActivity[0]]
+        self._antiHypertensiveCount = [self._antiHypertensiveCount[0]]
+        self._statin = [self._statin[0]]
+        self._otherLipidLoweringMedicationCount = [self._otherLipidLoweringMedicationCount[0]]
+        self._bpTreatmentStrategy = None
+
+        # iterate through outcomes and remove those that occured after the simulation started
+        for type, outcomes_for_type in self._outcomes.items():
+            self._outcomes[type] = list(filter(lambda outcome: outcome[0] < self._age[0], outcomes_for_type))
 
     @property
     def _mi(self):
@@ -147,6 +170,9 @@ class Person:
     def is_dead(self):
         return not self._alive[-1]
 
+    def currently_alive(self, currentYear):
+        return self._alive[-1] or self._alive[currentYear]
+
     def has_outcome_prior_to_simulation(self, outcomeType):
         return any([ageAtEvent < 0 for ageAtEvent, _ in self._outcomes[outcomeType]])
 
@@ -190,8 +216,21 @@ class Person:
     def has_mi_during_simulation(self):
         return self.has_outcome_during_simulation(OutcomeType.MI)
 
+    # should only occur immediately after an event is created — we can't roll back the subsequent implicaitons of an event.
     def rollback_most_recent_event(self, outcomeType):
-        self._outcomes[outcomeType].pop()
+        # get rid of the outcome event...
+        outcomes_for_type = list(self._outcomes[outcomeType])
+        outcome_rolled_back = self._outcomes[outcomeType].pop()
+        if self._age[-1]-1 != outcome_rolled_back[0]:
+            print(self)
+            print(self._age)
+            print(outcomes_for_type)
+            raise Exception(
+                f'# of outcomes: {len(outcomes_for_type)} while trying to rollback event at age {outcome_rolled_back[0]}, but current age is {self._age[-1]-1 } - can not roll back if age has changed')
+
+        # and, if it was fatal, reset the person to being alive.
+        if (outcome_rolled_back)[1].fatal:
+            self.alive[-1] = True
 
     def advance_treatment(self, risk_model_repository):
         if (risk_model_repository is not None):
@@ -202,7 +241,8 @@ class Person:
             self._antiHypertensiveCount.append(new_antihypertensive_count)
 
         if self._bpTreatmentStrategy is not None:
-            treatment_modifications, risk_factor_modifications, recalibration_standards = self._bpTreatmentStrategy(self)
+            treatment_modifications, risk_factor_modifications, recalibration_standards = self._bpTreatmentStrategy(
+                self)
             self.apply_linear_modifications(treatment_modifications)
             self.apply_linear_modifications(risk_factor_modifications)
             # simple starting assumption...a treatment is applied once and has a persistent effect
@@ -284,6 +324,7 @@ class Person:
             if (non_cv_death):
                 self._alive.append(False)
 
+    
     def add_outcome_event(self, cv_event):
         self._outcomes[cv_event.type].append((self._age[-1], cv_event))
         if cv_event.fatal:

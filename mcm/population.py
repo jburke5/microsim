@@ -14,7 +14,6 @@ from mcm.outcome import Outcome, OutcomeType
 
 import pandas as pd
 import copy
-import random
 import multiprocessing as mp
 
 
@@ -36,15 +35,26 @@ class Population:
         self._risk_model_repository = None
         self._outcome_model_repository = None
         self._ageStandards = {}
+        # luciana tag: discuss with luciana...want to keep track of the sim wave htat is currently running, while running
+        # and also the total number of years advanced...need to think about how to do this is a way that will be safe
+        # this approach has major risks if you forget to update one of these variables
+        self._totalYearsAdvanced = 0
+        self._currentYear = 0
+        self._bpTreatmentStrategy = None
+
+    def reset_to_baseline(self):
         self._totalYearsAdvanced = 0
         self._bpTreatmentStrategy = None
+        for person in self._people:
+            person.reset_to_baseline()
 
     def advance(self, years):
         for yearIndex in range(years):
+            self._currentYear += 1
             for person in self._people:
                 self.advance_person(person)
             self.apply_recalibration_standards()
-        self._totalYearsAdvanced += years + 1
+            self._totalYearsAdvanced += 1
 
     def advance_person(self, person):
         if not person.is_dead():
@@ -54,13 +64,14 @@ class Population:
 
     def advance_multi_process(self, years):
         for i in range(years):
+            self._currentYear += 1
             print(f"processing year: {i}")
             with mp.Pool(12) as pool:
                 self._people = pd.Series(pool.map(self.advance_person, self._people))
             # with concurrent.futures.ProcessPoolExecutor(max_workers=12) as executor:
             # executor.map(self.advance_person, self._people)
             self.apply_recalibration_standards()
-            self._totalYearsAdvanced += years
+            self._totalYearsAdvanced += 1
 
     def set_bp_treatment_strategy(self, bpTreatmentStrategy):
         self._bpTreatmentStrategy = bpTreatmentStrategy
@@ -85,68 +96,114 @@ class Population:
     def recalibrate_bp_treatment(self):
         treatment_change_standard, effect_of_treatment_standard, treatment_outcome_standard = self._bpTreatmentStrategy(
             self)
-        # estimate risk for the baseline patients in our sample
-        baselineCombinedRisks, strokeProbabilities, strokeRisks, miRisks = self.estimate_risks()
+        # estimate risk for the people alive at the start of the wave
+        recalibration_pop = self.get_people_alive_at_the_start_of_the_last_wave()
+        baselineCombinedRisks, strokeProbabilities, strokeRisks, miRisks = self.estimate_risks(
+            recalibration_pop)
 
         # apply a treamtent effect.
         # redtag: would like to apply to this to a deeply cloned population, but i can't get that to work
         # so, for now, applying it to the actual population and then rolling the effect back later.
-        for _, person in self._people.iteritems():
+        for _, person in recalibration_pop.iteritems():
             person._sbp[-1] = person._sbp[-1] + effect_of_treatment_standard['_sbp']
             person._dbp[-1] = person._dbp[-1] + effect_of_treatment_standard['_dbp']
 
         # estimate risk after applying the treamtent effect
-        treatedCombinedRisks, treatedStrokeProbabilities, treatedStrokeRisks, treatedMIRisks = self.estimate_risks()
+        treatedCombinedRisks, treatedStrokeProbabilities, treatedStrokeRisks, treatedMIRisks = self.estimate_risks(
+            recalibration_pop)
 
         # hacktag related to above — roll back the treatment effect...
-        for _, person in self._people.iteritems():
+        for _, person in recalibration_pop.iteritems():
             person._sbp[-1] = person._sbp[-1] - effect_of_treatment_standard['_sbp']
             person._dbp[-1] = person._dbp[-1] - effect_of_treatment_standard['_dbp']
 
-        self.create_and_rollback_events_to_correct_calibration(treatment_outcome_standard, treatedStrokeRisks, strokeRisks, OutcomeType.STROKE,
-                                                               CVOutcomeDetermination()._will_have_fatal_stroke)
+        # recalibrate stroke
+        self.create_or_rollback_events_to_correct_calibration(treatment_outcome_standard,
+                                                              treatedStrokeRisks,
+                                                              strokeRisks,
+                                                              OutcomeType.STROKE,
+                                                              CVOutcomeDetermination()._will_have_fatal_stroke,
+                                                              recalibration_pop)
 
-        self.create_and_rollback_events_to_correct_calibration(treatment_outcome_standard, treatedMIRisks, miRisks, OutcomeType.MI,
-                                                               CVOutcomeDetermination()._will_have_fatal_mi)
+        # recalibrate MI
+        self.create_or_rollback_events_to_correct_calibration(treatment_outcome_standard,
+                                                              treatedMIRisks,
+                                                              miRisks,
+                                                              OutcomeType.MI,
+                                                              CVOutcomeDetermination()._will_have_fatal_mi,
+                                                              recalibration_pop)
 
-    def estimate_risks(self):
+    def estimate_risks(self, recalibration_pop):
         combinedRisks = pd.Series([self._outcome_model_repository.get_risk_for_person(
-            person, OutcomeModelType.CARDIOVASCULAR, 1) for _, person in self._people.iteritems()])
+            person, OutcomeModelType.CARDIOVASCULAR, 1) for _, person in recalibration_pop.iteritems()])
         strokeProbabilities = pd.Series(
-            [CVOutcomeDetermination().get_stroke_probability(person) for _, person in self._people.iteritems()])
+            [CVOutcomeDetermination().get_stroke_probability(person) for _, person in recalibration_pop.iteritems()])
         strokeRisks = combinedRisks * strokeProbabilities
         miRisks = combinedRisks * (1-strokeProbabilities)
         return combinedRisks, strokeProbabilities, strokeRisks, miRisks
 
-    def create_and_rollback_events_to_correct_calibration(self, treatment_outcome_standard, treatedRisks, untreatedRisks, outcomeType, fatalityDetermination):
+    def create_or_rollback_events_to_correct_calibration(self,
+                                                         treatment_outcome_standard,
+                                                         treatedRisks,
+                                                         untreatedRisks,
+                                                         outcomeType,
+                                                         fatalityDetermination,
+                                                         recalibration_pop):
         modelEstimatedRR = treatedRisks.mean()/untreatedRisks.mean()
-        if outcomeType in treatment_outcome_standard:
-            # use the delta between that effect and the calibration standard to recalibrate the pop.
-            delta = modelEstimatedRR - treatment_outcome_standard[outcomeType]
-            numberOfEventStatusesToChange = abs(int(round(delta * len(self._people))))
-            eventsForPeople = [person.has_outcome_at_age(
-                outcomeType, person._age[-1]) for _, person in self._people.iteritems()]
-            nonEventsForPeople = [not item for item in eventsForPeople]
-            # key assumption: "treatment" is applied to a population as opposed to individuals weithin a population
-            # analyses can be setup either way...build two populations and then set different treamtents
-            # or build a ur-population adn then set different treamtents within them
-            # this is, i thikn, the first time where a coding decision is tied to one of those structure.
-            # it would not, i think, be hard to change. but, just spelling it out here.
+        print(f"treated risks: {treatedRisks.mean()}, untreated risks: {untreatedRisks.mean()}")
+        # use the delta between that effect and the calibration standard to recalibrate the pop.
+        delta = modelEstimatedRR - treatment_outcome_standard[outcomeType]
+        print(f"delta: {delta}, treated risks: {treatedRisks.mean()}, untreated risks: {untreatedRisks.mean()}")
+        # note: the person._age[-1] -1 captures the person's age during the prior wave (when they could have had an vent
+        # not at the end  of the wafe (when their age is increased...need to think about a cleaner way to refer to that event
+        # ))
+        eventsForPeople = [person.has_outcome_at_age(
+            outcomeType, person._age[-1]-1) for _, person in recalibration_pop.iteritems()]
 
-            # if negative, the model estimated too many events, if positive, too few
-            if delta > 0:
-                new_events = self._people.loc[nonEventsForPeople].sample(n=numberOfEventStatusesToChange,
-                                                                         replace=False,
-                                                                         weights=pd.Series(untreatedRisks).loc[nonEventsForPeople].values)
+        numberOfEventStatusesToChange = abs(
+            int(round(delta * untreatedRisks.mean()*len(recalibration_pop))))
+        nonEventsForPeople = [not item for item in eventsForPeople]
+        # key assumption: "treatment" is applied to a population as opposed to individuals within a population
+        # analyses can be setup either way...build two populations and then set different treatments
+        # or build a ur-population adn then set different treamtents within them
+        # this is, i thikn, the first time where a coding decision is tied to one of those structure.
+        # it would not, i think, be hard to change. but, just spelling it out here.
+
+        # if negative, the model estimated too many events, if positive, too few
+        print(f" delta: {delta}, # of events to change: {numberOfEventStatusesToChange} # of events: {pd.Series(eventsForPeople).sum()} # of non events: {pd.Series(nonEventsForPeople).sum()}")
+        if delta < 0:
+            if numberOfEventStatusesToChange > 0:
+                new_events = recalibration_pop.loc[nonEventsForPeople].sample(n=numberOfEventStatusesToChange,
+                                                                            replace=False,
+                                                                            weights=pd.Series(untreatedRisks).loc[nonEventsForPeople].values)
                 for i, event in new_events.iteritems():
                     event.add_outcome_event(Outcome(outcomeType, fatalityDetermination(event)))
 
-            else:
-                events_to_rollback = self._people.loc[eventsForPeople].sample(n=numberOfEventStatusesToChange,
-                                                                              replace=False,
-                                                                              weights=pd.Series(untreatedRisks).loc[eventsForPeople].values)
+        # redtag - two problems here...1. rolling back events in people that may not have events
+        # 2. probably usign the wrong weights...need to roll back inversely proportionately to the likeliood of an event, riht?
+
+        elif delta > 0:
+            if numberOfEventStatusesToChange > pd.Series(eventsForPeople).sum():
+                numberOfEventStatusesToChange = pd.Series(eventsForPeople).sum()
+            if numberOfEventStatusesToChange > 0:
+                events_to_rollback = recalibration_pop.loc[eventsForPeople].sample(n=numberOfEventStatusesToChange,
+                                                                                replace=False,
+                                                                                weights=pd.Series(1-untreatedRisks).loc[eventsForPeople].values)
                 for i, event in events_to_rollback.iteritems():
                     event.rollback_most_recent_event(outcomeType)
+
+    def get_people_alive_at_the_start_of_the_last_wave(self):
+        peopleAlive = []
+        for person in self._people:
+            if person.currently_alive(self._currentYear):
+                peopleAlive.append(person)
+        return pd.Series(peopleAlive)
+
+    def get_people_that_are_currently_alive(self):
+        return pd.Series([not person.is_dead() for _, person in self._people.iteritems()])
+
+    def get_number_of_patients_currently_alive(self):
+        self.get_people_that_are_currently_alive.sum()
 
     def get_events_in_most_recent_wave(self, eventType):
         peopleWithEvents = []
