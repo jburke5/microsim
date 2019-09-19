@@ -44,6 +44,7 @@ class Population:
 
     def reset_to_baseline(self):
         self._totalYearsAdvanced = 0
+        self._currentYear = 0
         self._bpTreatmentStrategy = None
         for person in self._people:
             person.reset_to_baseline()
@@ -97,7 +98,7 @@ class Population:
         treatment_change_standard, effect_of_treatment_standard, treatment_outcome_standard = self._bpTreatmentStrategy(
             self)
         # estimate risk for the people alive at the start of the wave
-        recalibration_pop = self.get_people_alive_at_the_start_of_the_last_wave()
+        recalibration_pop = self.get_people_alive_at_the_start_of_the_current_wave()
         baselineCombinedRisks, strokeProbabilities, strokeRisks, miRisks = self.estimate_risks(
             recalibration_pop)
 
@@ -138,8 +139,16 @@ class Population:
             person, OutcomeModelType.CARDIOVASCULAR, 1) for _, person in recalibration_pop.iteritems()])
         strokeProbabilities = pd.Series(
             [CVOutcomeDetermination().get_stroke_probability(person) for _, person in recalibration_pop.iteritems()])
-        strokeRisks = combinedRisks * strokeProbabilities
-        miRisks = combinedRisks * (1-strokeProbabilities)
+        nonCVMortality = pd.Series([self._outcome_model_repository.get_risk_for_person(
+            person, OutcomeModelType.NON_CV_MORTALITY) for _, person in recalibration_pop.iteritems()])
+
+        # we want to estiamte the # of people that would have a stroke/MI after we account for mortality...
+        # so, these are weighted by their likelihood of survival
+        # people that are very likely to die for non-stroke/MI reasons, get weighted down...
+        # we could just do this at the mean level (i.e. up-weight the absolute risk difference, after taking 
+        # out mean mortality risk, but i think this will get us a slightly more accurate poulation)
+        strokeRisks = combinedRisks * strokeProbabilities /(1-nonCVMortality)
+        miRisks = combinedRisks * (1-strokeProbabilities) / (1-nonCVMortality)
         return combinedRisks, strokeProbabilities, strokeRisks, miRisks
 
     def create_or_rollback_events_to_correct_calibration(self,
@@ -150,10 +159,8 @@ class Population:
                                                          fatalityDetermination,
                                                          recalibration_pop):
         modelEstimatedRR = treatedRisks.mean()/untreatedRisks.mean()
-        print(f"treated risks: {treatedRisks.mean()}, untreated risks: {untreatedRisks.mean()}")
         # use the delta between that effect and the calibration standard to recalibrate the pop.
         delta = modelEstimatedRR - treatment_outcome_standard[outcomeType]
-        print(f"delta: {delta}, treated risks: {treatedRisks.mean()}, untreated risks: {untreatedRisks.mean()}")
         # note: the person._age[-1] -1 captures the person's age during the prior wave (when they could have had an vent
         # not at the end  of the wafe (when their age is increased...need to think about a cleaner way to refer to that event
         # ))
@@ -171,6 +178,7 @@ class Population:
 
         # if negative, the model estimated too many events, if positive, too few
         print(f" delta: {delta}, # of events to change: {numberOfEventStatusesToChange} # of events: {pd.Series(eventsForPeople).sum()} # of non events: {pd.Series(nonEventsForPeople).sum()}")
+        print(f" of events untreated : {pd.Series(eventsForPeople).sum()} # of events treated: {pd.Series(eventsForPeople).sum()*modelEstimatedRR} delta events: {pd.Series(eventsForPeople).sum()-pd.Series(eventsForPeople).sum()*modelEstimatedRR}")
         if delta < 0:
             if numberOfEventStatusesToChange > 0:
                 new_events = recalibration_pop.loc[nonEventsForPeople].sample(n=numberOfEventStatusesToChange,
@@ -192,10 +200,10 @@ class Population:
                 for i, event in events_to_rollback.iteritems():
                     event.rollback_most_recent_event(outcomeType)
 
-    def get_people_alive_at_the_start_of_the_last_wave(self):
+    def get_people_alive_at_the_start_of_the_current_wave(self):
         peopleAlive = []
         for person in self._people:
-            if person.currently_alive(self._currentYear):
+            if person.alive_at_start_of_wave(self._currentYear):
                 peopleAlive.append(person)
         return pd.Series(peopleAlive)
 
