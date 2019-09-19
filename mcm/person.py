@@ -109,7 +109,8 @@ class Person:
 
         # iterate through outcomes and remove those that occured after the simulation started
         for type, outcomes_for_type in self._outcomes.items():
-            self._outcomes[type] = list(filter(lambda outcome: outcome[0] < self._age[0], outcomes_for_type))
+            self._outcomes[type] = list(
+                filter(lambda outcome: outcome[0] < self._age[0], outcomes_for_type))
 
     @property
     def _mi(self):
@@ -166,12 +167,27 @@ class Person:
         self.advance_outcomes(outcome_model_repository)
         if not self.is_dead():
             self._age.append(self._age[-1] + 1)
+            self._alive.append(True)
 
     def is_dead(self):
         return not self._alive[-1]
 
-    def currently_alive(self, currentYear):
-        return self._alive[-1] or self._alive[currentYear]
+    # this method is trying to enable simple logic in the popuation.
+    # when the population asks, "who is alive at a given time point?" it can't merely check
+    # the index on person._alive, because people who died prior to that time will not have an index
+    # in alive at that time.
+
+    def alive_at_start_of_wave(self, activeWave):
+        if (self._alive[-1]) and (activeWave > (len(self._age) - 1)):
+            raise Exception(
+                f"Trying to find status for a wave: {activeWave} beyond current wave: {len(self._age)-1}")
+
+        # we always know, regardless of what wave is being inquired about, that a person who was once dead
+        # is still dead
+        if (self.is_dead()) and (activeWave > len(self._alive) - 1):
+            return False
+        else:
+            return self._alive[activeWave]
 
     def has_outcome_prior_to_simulation(self, outcomeType):
         return any([ageAtEvent < 0 for ageAtEvent, _ in self._outcomes[outcomeType]])
@@ -324,7 +340,6 @@ class Person:
             if (non_cv_death):
                 self._alive.append(False)
 
-    
     def add_outcome_event(self, cv_event):
         self._outcomes[cv_event.type].append((self._age[-1], cv_event))
         if cv_event.fatal:
