@@ -38,24 +38,24 @@ class Population:
         # luciana tag: discuss with luciana...want to keep track of the sim wave htat is currently running, while running
         # and also the total number of years advanced...need to think about how to do this is a way that will be safe
         # this approach has major risks if you forget to update one of these variables
-        self._totalYearsAdvanced = 0
-        self._currentYear = 0
+        self._totalWavesAdvanced = 0
+        self._currentWave = 0
         self._bpTreatmentStrategy = None
 
     def reset_to_baseline(self):
-        self._totalYearsAdvanced = 0
-        self._currentYear = 0
+        self._totalWavesAdvanced = 0
+        self._currentWave = 0
         self._bpTreatmentStrategy = None
         for person in self._people:
             person.reset_to_baseline()
 
     def advance(self, years):
         for yearIndex in range(years):
-            self._currentYear += 1
+            self._currentWave += 1
             for person in self._people:
                 self.advance_person(person)
             self.apply_recalibration_standards()
-            self._totalYearsAdvanced += 1
+            self._totalWavesAdvanced += 1
 
     def advance_person(self, person):
         if not person.is_dead():
@@ -65,14 +65,14 @@ class Population:
 
     def advance_multi_process(self, years):
         for i in range(years):
-            self._currentYear += 1
+            self._currentWave += 1
             print(f"processing year: {i}")
             with mp.Pool(12) as pool:
                 self._people = pd.Series(pool.map(self.advance_person, self._people))
             # with concurrent.futures.ProcessPoolExecutor(max_workers=12) as executor:
             # executor.map(self.advance_person, self._people)
             self.apply_recalibration_standards()
-            self._totalYearsAdvanced += 1
+            self._totalWavesAdvanced += 1
 
     def set_bp_treatment_strategy(self, bpTreatmentStrategy):
         self._bpTreatmentStrategy = bpTreatmentStrategy
@@ -99,19 +99,17 @@ class Population:
             self)
         # estimate risk for the people alive at the start of the wave
         recalibration_pop = self.get_people_alive_at_the_start_of_the_current_wave()
-        baselineCombinedRisks, strokeProbabilities, strokeRisks, miRisks = self.estimate_risks(
-            recalibration_pop)
+        treatedStrokeRisks, treatedMIRisks = self.estimate_risks(recalibration_pop)
 
-        # apply a treamtent effect.
+        # rollback the treatment effect.
         # redtag: would like to apply to this to a deeply cloned population, but i can't get that to work
         # so, for now, applying it to the actual population and then rolling the effect back later.
         for _, person in recalibration_pop.iteritems():
-            person._sbp[-1] = person._sbp[-1] + effect_of_treatment_standard['_sbp']
-            person._dbp[-1] = person._dbp[-1] + effect_of_treatment_standard['_dbp']
+            person._sbp[-1] = person._sbp[-1] - effect_of_treatment_standard['_sbp']
+            person._dbp[-1] = person._dbp[-1] - effect_of_treatment_standard['_dbp']
 
         # estimate risk after applying the treamtent effect
-        treatedCombinedRisks, treatedStrokeProbabilities, treatedStrokeRisks, treatedMIRisks = self.estimate_risks(
-            recalibration_pop)
+        untreatedStrokeRisks, untreatedMIRisks = self.estimate_risks(recalibration_pop)
 
         # hacktag related to above — roll back the treatment effect...
         for _, person in recalibration_pop.iteritems():
@@ -121,7 +119,7 @@ class Population:
         # recalibrate stroke
         self.create_or_rollback_events_to_correct_calibration(treatment_outcome_standard,
                                                               treatedStrokeRisks,
-                                                              strokeRisks,
+                                                              untreatedStrokeRisks,
                                                               OutcomeType.STROKE,
                                                               CVOutcomeDetermination()._will_have_fatal_stroke,
                                                               recalibration_pop)
@@ -129,7 +127,7 @@ class Population:
         # recalibrate MI
         self.create_or_rollback_events_to_correct_calibration(treatment_outcome_standard,
                                                               treatedMIRisks,
-                                                              miRisks,
+                                                              untreatedMIRisks,
                                                               OutcomeType.MI,
                                                               CVOutcomeDetermination()._will_have_fatal_mi,
                                                               recalibration_pop)
@@ -149,7 +147,7 @@ class Population:
         # out mean mortality risk, but i think this will get us a slightly more accurate poulation)
         strokeRisks = combinedRisks * strokeProbabilities /(1-nonCVMortality)
         miRisks = combinedRisks * (1-strokeProbabilities) / (1-nonCVMortality)
-        return combinedRisks, strokeProbabilities, strokeRisks, miRisks
+        return strokeRisks, miRisks
 
     def create_or_rollback_events_to_correct_calibration(self,
                                                          treatment_outcome_standard,
@@ -164,11 +162,13 @@ class Population:
         # note: the person._age[-1] -1 captures the person's age during the prior wave (when they could have had an vent
         # not at the end  of the wafe (when their age is increased...need to think about a cleaner way to refer to that event
         # ))
-        eventsForPeople = [person.has_outcome_at_age(
-            outcomeType, person._age[-1]-1) for _, person in recalibration_pop.iteritems()]
+        eventsForPeople = [person.has_outcome_during_wave(self._currentWave, outcomeType) for _, person in recalibration_pop.iteritems()]
+#        numberOfEventStatusesToChange = abs(
+#           int(round(delta * untreatedRisks.mean()*len(recalibration_pop)/modelEstimatedRR)))
+
 
         numberOfEventStatusesToChange = abs(
-            int(round(delta * untreatedRisks.mean()*len(recalibration_pop))))
+           int(round(delta * pd.Series(eventsForPeople).sum()/modelEstimatedRR)))
         nonEventsForPeople = [not item for item in eventsForPeople]
         # key assumption: "treatment" is applied to a population as opposed to individuals within a population
         # analyses can be setup either way...build two populations and then set different treatments
@@ -177,8 +177,9 @@ class Population:
         # it would not, i think, be hard to change. but, just spelling it out here.
 
         # if negative, the model estimated too many events, if positive, too few
-        print(f" delta: {delta}, # of events to change: {numberOfEventStatusesToChange} # of events: {pd.Series(eventsForPeople).sum()} # of non events: {pd.Series(nonEventsForPeople).sum()}")
-        print(f" of events untreated : {pd.Series(eventsForPeople).sum()} # of events treated: {pd.Series(eventsForPeople).sum()*modelEstimatedRR} delta events: {pd.Series(eventsForPeople).sum()-pd.Series(eventsForPeople).sum()*modelEstimatedRR}")
+        print(f"RR: {modelEstimatedRR:.2f}, # of events untreated estimated: {round(untreatedRisks.mean()*len(recalibration_pop)):.2f}")
+        print(f" delta: {delta:.2f}, # of events to change: {numberOfEventStatusesToChange} # of events: {pd.Series(eventsForPeople).sum()} # of non events: {pd.Series(nonEventsForPeople).sum()}")
+        print(f" of events untreated : {pd.Series(eventsForPeople).sum()/modelEstimatedRR:.2f} # of events treated: {pd.Series(eventsForPeople).sum():.2f} delta events: {pd.Series(eventsForPeople).sum()/modelEstimatedRR-pd.Series(eventsForPeople).sum():.2f}")
         if delta < 0:
             if numberOfEventStatusesToChange > 0:
                 new_events = recalibration_pop.loc[nonEventsForPeople].sample(n=numberOfEventStatusesToChange,
@@ -199,11 +200,13 @@ class Population:
                                                                                 weights=pd.Series(1-untreatedRisks).loc[eventsForPeople].values)
                 for i, event in events_to_rollback.iteritems():
                     event.rollback_most_recent_event(outcomeType)
+        print(f"events after recalibration 2 : {pd.Series([person.has_stroke_during_wave(self._currentWave) for _, person in recalibration_pop.iteritems()]).sum()}")
+        print(f"events after recalibration 3 : {pd.Series([person.has_stroke_during_wave(self._currentWave) for _, person in self._people.iteritems()]).sum()}")
 
     def get_people_alive_at_the_start_of_the_current_wave(self):
         peopleAlive = []
         for person in self._people:
-            if person.alive_at_start_of_wave(self._currentYear):
+            if person.alive_at_start_of_wave(self._currentWave):
                 peopleAlive.append(person)
         return pd.Series(peopleAlive)
 
@@ -337,7 +340,7 @@ class Population:
 
         eventsPerYear = []
         # calculated standardized event rate for each year
-        for year in range(1, self._totalYearsAdvanced + 1):
+        for year in range(1, self._totalWavesAdvanced + 1):
             eventVarName = 'event' + str(year)
             ageVarName = 'age' + str(year)
             popDF[ageVarName] = popDF['baseAge'] + year
