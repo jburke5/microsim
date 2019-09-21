@@ -9,6 +9,18 @@ from mcm.outcome import Outcome, OutcomeType
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 
+# luciana-tag...lne thing that tripped me up was probable non clear communication regarding "waves"
+# so, i'm going to spell it out here and try to make the code consistent.
+# a patient starts in teh simulation prior to a wave with their baseline attribute statuses(i.e subscript [0])
+# wave "1" refers to the transition from subscript[0] to subscript[1]
+# wave "2" the transition from subscript[1] to subscript[2]
+# thus, the pateint's status at the start of wave 1 is represented by subscript[0]
+# and the patient status at the end of wave 1 is represtened by subscript[1]
+# if a patient has an event during a wave, that means they will not have the status at the start of the wave
+# and they will have the status at the end of the wave.
+# so, if a patient has an event during wave 1, their status would be Negatve at subscript[0] and
+# Positive at subscript[1]
+
 
 class Person:
     """Person is using risk factors and demographics based off NHANES"""
@@ -124,13 +136,13 @@ class Person:
         medianYear = math.floor(len(self._age) / 2)
         return self._age[medianYear]
 
-    def allhat_candidate(self, wave):
-        return (self._age[wave] > 55) and \
-            (self._sbp[wave > 140 and self._sbp[wave] < 180]) and \
-            (self._dbp[wave] > 90 and self._dbp[wave] < 110) and \
-            (self._smokingStatus == SmokingStatus.CURRENT or self._a1c[wave] > 6.5 or
+    def allhat_candidate(self, end_of_wave_num):
+        return (self._age[end_of_wave_num] > 55) and \
+            (self._sbp[end_of_wave_num > 140 and self._sbp[end_of_wave_num] < 180]) and \
+            (self._dbp[end_of_wave_num] > 90 and self._dbp[end_of_wave_num] < 110) and \
+            (self._smokingStatus == SmokingStatus.CURRENT or self._a1c[end_of_wave_num] > 6.5 or
              self.has_stroke_prior_to_simulation() or self.has_mi_prior_to_simulation or
-             self._hdl[wave] < 35)
+             self._hdl[end_of_wave_num] < 35)
 
     def has_diabetes(self):
         return sorted(self._a1c)[-1] >= 6.5
@@ -177,17 +189,18 @@ class Person:
     # the index on person._alive, because people who died prior to that time will not have an index
     # in alive at that time.
 
-    def alive_at_start_of_wave(self, activeWave):
-        if (self._alive[-1]) and (activeWave > (len(self._age) - 1)):
+    def alive_at_start_of_wave(self, start_wave_num):
+        if (self._alive[-1]) and (start_wave_num > (len(self._age))):
             raise Exception(
-                f"Trying to find status for a wave: {activeWave} beyond current wave: {len(self._age)-1}")
+                f"Trying to find status for a wave: {start_wave_num} beyond current wave: {len(self._age)}")
 
         # we always know, regardless of what wave is being inquired about, that a person who was once dead
         # is still dead
-        if (self.is_dead()) and (activeWave > len(self._alive) - 1):
+        if (self.is_dead()) and (start_wave_num > len(self._alive) - 1):
             return False
         else:
-            return self._alive[activeWave]
+            # this returns whether one was alive at the start of a given wave (i.e. the end of theprior wave)
+            return self._alive[start_wave_num-1]
 
     def has_outcome_prior_to_simulation(self, outcomeType):
         return any([ageAtEvent < 0 for ageAtEvent, _ in self._outcomes[outcomeType]])
@@ -205,14 +218,19 @@ class Person:
         return self.has_outcome_during_simulation(OutcomeType.STROKE)
 
     def has_stroke_during_wave(self, wave):
-        return (len(self._age) > wave and
-                len(self._outcomes[OutcomeType.STROKE]) != 0 and
-                self.has_outcome_at_age(OutcomeType.STROKE, self._age[wave]))
+        return self.has_outcome_during_wave(wave, OutcomeType.STROKE)
 
     def has_mi_during_wave(self, wave):
-        return (len(self._age) > wave and
-                len(self._outcomes[OutcomeType.MI]) != 0 and
-                self.has_outcome_at_age(OutcomeType.MI, self._age[wave]))
+        return self.has_outcome_during_wave(wave, OutcomeType.MI)
+
+    def has_outcome_during_wave(self, wave, outcomeType):
+        if (wave <= 0) or (self._alive[-1] and wave > len(self._age)-1):
+            raise Exception(
+                f"Can not have an event in a wave before 1 or after last wave ({len(self._age)-1}) for person")
+        elif (not self._alive[-1]) and (wave > len(self._age)):
+            return False
+        return (len(self._outcomes[outcomeType]) != 0 and
+                self.has_outcome_at_age(outcomeType, self._age[wave-1]))
 
     def has_outcome_at_age(self, type, age):
         for outcome_tuple in self._outcomes[type]:
@@ -235,22 +253,28 @@ class Person:
     # should only occur immediately after an event is created — we can't roll back the subsequent implicaitons of an event.
     def rollback_most_recent_event(self, outcomeType):
         # get rid of the outcome event...
-        outcomes_for_type = list(self._outcomes[outcomeType])
-        outcome_rolled_back = self._outcomes[outcomeType].pop()
-        if self._age[-1]-1 != outcome_rolled_back[0]:
+        outcomes_for_type=list(self._outcomes[outcomeType])
+        outcome_rolled_back=self._outcomes[outcomeType].pop()
+        # if the patient died during the wave, then their age didn't advance and their event would be at their
+        # age at teh start of the wave.
+        rollbackAge=self._age[-1]-1 if self._alive[-1] else self._age[-1]
+        if rollbackAge != outcome_rolled_back[0]:
             print(self)
             print(self._age)
+            print(self._age)
+            print(self.is_dead())
             print(outcomes_for_type)
             raise Exception(
-                f'# of outcomes: {len(outcomes_for_type)} while trying to rollback event at age {outcome_rolled_back[0]}, but current age is {self._age[-1]-1 } - can not roll back if age has changed')
+                f'# of outcomes: {len(outcomes_for_type)} while trying to rollback event at age {outcome_rolled_back[0]}, but current age is {rollbackAge} - can not roll back if age has changed')
 
         # and, if it was fatal, reset the person to being alive.
         if (outcome_rolled_back)[1].fatal:
-            self.alive[-1] = True
+            self._alive[-1]=True
+            self._age.append(self._age[-1]+1)
 
     def advance_treatment(self, risk_model_repository):
         if (risk_model_repository is not None):
-            new_antihypertensive_count = self.get_next_risk_factor(
+            new_antihypertensive_count=self.get_next_risk_factor(
                 "antiHypertensiveCount",
                 risk_model_repository
             )
@@ -349,13 +373,13 @@ class Person:
         return (f"Person(age={self._age[-1]}, "
                 f"gender={self._gender}, "
                 f"race/eth={self._raceEthnicity}, "
-                f"sbp={self._sbp[-1]}, "
-                f"dbp={self._dbp[-1]}, "
-                f"a1c={self._a1c[-1]}, "
-                f"hdl={self._hdl[-1]}, "
-                f"totChol={self._totChol[-1]}, "
-                f"bmi={self._bmi[-1]}, "
-                f"ldl={self._ldl[-1]}, "
-                f"trig={self._trig[-1]}, "
+                f"sbp={self._sbp[-1]:.1f}, "
+                f"dbp={self._dbp[-1]:.1f}, "
+                f"a1c={self._a1c[-1]:.1f}, "
+                f"hdl={self._hdl[-1]:.1f}, "
+                f"totChol={self._totChol[-1]:.1f}, "
+                f"bmi={self._bmi[-1]:.1f}, "
+                f"ldl={self._ldl[-1]:.1f}, "
+                f"trig={self._trig[-1]:.1f}, "
                 f"smoking={self._smokingStatus}"
                 f")")

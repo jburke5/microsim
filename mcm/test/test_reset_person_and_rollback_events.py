@@ -14,15 +14,30 @@ def initializeAfib(arg):
     return False
 
 
-class AlwaysStrokeeOutcomeRepository(OutcomeModelRepository):
+class AlwaysFatalStrokeOutcomeRepository(OutcomeModelRepository):
     def __init__(self):
-        super(AlwaysStrokeeOutcomeRepository, self).__init__()
+        super(AlwaysFatalStrokeOutcomeRepository, self).__init__()
 
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
         return Outcome(OutcomeType.STROKE, True)
 
+    def assign_non_cv_mortality(self, person):
+        return False
 
-class TestResetPerson(unittest.TestCase):
+
+class AlwaysNonFatalStrokeOutcomeRepository(OutcomeModelRepository):
+    def __init__(self):
+        super(AlwaysNonFatalStrokeOutcomeRepository, self).__init__()
+
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+        return Outcome(OutcomeType.STROKE, False)
+
+    def assign_non_cv_mortality(self, person):
+        return False
+
+
+
+class TestResetPersonAndRollBackEvents(unittest.TestCase):
     def setUp(self):
         self.baseAge = 55
         self.baseSBP = 120
@@ -43,9 +58,9 @@ class TestResetPerson(unittest.TestCase):
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib,
             selfReportStrokeAge=50)
 
-        self._white_male.advance_year(TestRiskModelRepository(), AlwaysStrokeeOutcomeRepository())
+        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository())
         self._baseline_stroke_person.advance_year(TestRiskModelRepository(),
-                                                  AlwaysStrokeeOutcomeRepository())
+                                                  AlwaysFatalStrokeOutcomeRepository())
 
     def testResetBasicAttributes(self):
         self.assertEqual(2, len(self._white_male._dbp))
@@ -70,3 +85,28 @@ class TestResetPerson(unittest.TestCase):
         self.assertEqual(2, len(self._baseline_stroke_person._outcomes[OutcomeType.STROKE]))
         self._baseline_stroke_person.reset_to_baseline()
         self.assertEqual(1, len(self._baseline_stroke_person._outcomes[OutcomeType.STROKE]))
+
+    def testRollbackNonFatalEvent(self):
+        self.assertEqual(False, self._white_male.has_stroke_prior_to_simulation())
+        self.assertEqual(True, self._white_male.has_stroke_during_simulation())
+        self.assertEqual(True, self._white_male.has_stroke_during_wave(1))
+
+        self._white_male.rollback_most_recent_event(OutcomeType.STROKE)
+
+        self.assertEqual(False, self._white_male.has_stroke_prior_to_simulation())
+        self.assertEqual(False, self._white_male.has_stroke_during_wave(1))
+        self.assertEqual(False, self._white_male.has_stroke_during_simulation())
+
+    def testRollbackFatalEvent(self):
+        self.assertEqual(True, self._baseline_stroke_person.has_stroke_during_simulation())
+        self.assertEqual(True, self._baseline_stroke_person.has_stroke_prior_to_simulation())
+        self.assertEqual(True, self._baseline_stroke_person.has_stroke_during_wave(1))
+        self.assertEqual(True, self._baseline_stroke_person.is_dead())
+
+        self._baseline_stroke_person.rollback_most_recent_event(OutcomeType.STROKE)
+
+        self.assertEqual(True, self._baseline_stroke_person.has_stroke_prior_to_simulation())
+        self.assertEqual(False, self._baseline_stroke_person.has_stroke_during_wave(1))
+        self.assertEqual(False, self._baseline_stroke_person.has_stroke_during_simulation())
+        self.assertEqual(False, self._baseline_stroke_person.is_dead())
+        self.assertEqual(self.baseAge+1, self._baseline_stroke_person._age[-1])
