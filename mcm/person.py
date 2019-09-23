@@ -1,5 +1,5 @@
 import math
-import random
+import numpy.random as npRand
 
 from typing import Callable
 
@@ -323,7 +323,7 @@ class Person:
         if (len(self._age) > 1):
             raise RuntimeError("Can not reset risk factors after advancing person in time")
 
-        return Person(age=self._age[0] + random.randint(-2, 2),
+        return Person(age=self._age[0] + npRand.randint(-2, 2),
                       gender=self._gender,
                       raceEthnicity=self._raceEthnicity,
                       sbp=self.get_next_risk_factor("sbp", risk_model_repository),
@@ -433,3 +433,7 @@ class Person:
         if not other._alive == self._alive:
             return False
         return other._outcomes == self._outcomes
+
+    def __deepcopy__(self):
+        # implement me here...
+
