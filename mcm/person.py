@@ -253,11 +253,11 @@ class Person:
     # should only occur immediately after an event is created — we can't roll back the subsequent implicaitons of an event.
     def rollback_most_recent_event(self, outcomeType):
         # get rid of the outcome event...
-        outcomes_for_type=list(self._outcomes[outcomeType])
-        outcome_rolled_back=self._outcomes[outcomeType].pop()
+        outcomes_for_type = list(self._outcomes[outcomeType])
+        outcome_rolled_back = self._outcomes[outcomeType].pop()
         # if the patient died during the wave, then their age didn't advance and their event would be at their
         # age at teh start of the wave.
-        rollbackAge=self._age[-1]-1 if self._alive[-1] else self._age[-1]
+        rollbackAge = self._age[-1]-1 if self._alive[-1] else self._age[-1]
         if rollbackAge != outcome_rolled_back[0]:
             print(self)
             print(self._age)
@@ -269,12 +269,12 @@ class Person:
 
         # and, if it was fatal, reset the person to being alive.
         if (outcome_rolled_back)[1].fatal:
-            self._alive[-1]=True
+            self._alive[-1] = True
             self._age.append(self._age[-1]+1)
 
     def advance_treatment(self, risk_model_repository):
         if (risk_model_repository is not None):
-            new_antihypertensive_count=self.get_next_risk_factor(
+            new_antihypertensive_count = self.get_next_risk_factor(
                 "antiHypertensiveCount",
                 risk_model_repository
             )
@@ -383,3 +383,53 @@ class Person:
                 f"trig={self._trig[-1]:.1f}, "
                 f"smoking={self._smokingStatus}"
                 f")")
+
+    def __ne__(self, obj):
+        return not self == obj
+
+    # luciana tag...the nice part about this method is that its highly transparent
+    # the not so nice part is that if we add an attribute you have to add it here...
+    def __eq__(self, other):
+        if not isinstance(other, Person):
+            return NotImplemented
+        if not other._age == self._age:
+            return False
+        if not other._gender == self._gender:
+            return False
+        if not other._raceEthnicity == self._raceEthnicity:
+            return False
+        if not other._sbp == self._sbp:
+            return False
+        if not other._dbp == self._dbp:
+            return False
+        if not other._a1c == self._a1c:
+            return False
+        if not other._hdl == self._hdl:
+            return False
+        if not other._totChol == self._totChol:
+            return False
+        if not other._bmi == self._bmi:
+            return False
+        if not other._ldl == self._ldl:
+            return False
+        if not other._trig == self._trig:
+            return False
+        if not other._waist == self._waist:
+            return False
+        if not other._anyPhysicalActivity == self._anyPhysicalActivity:
+            return False
+        if not other._education == self._education:
+            return False
+        if not other._smokingStatus == self._smokingStatus:
+            return False
+        if not other._antiHypertensiveCount == self._antiHypertensiveCount:
+            return False
+        if not other._statin == self._statin:
+            return False
+        if not other._otherLipidLoweringMedicationCount == self._otherLipidLoweringMedicationCount:
+            return False
+        if not other._afib == self._afib:
+            return False
+        if not other._alive == self._alive:
+            return False
+        return other._outcomes == self._outcomes

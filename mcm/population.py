@@ -113,8 +113,8 @@ class Population:
 
         # hacktag related to above — roll back the treatment effect...
         for _, person in recalibration_pop.iteritems():
-            person._sbp[-1] = person._sbp[-1] - effect_of_treatment_standard['_sbp']
-            person._dbp[-1] = person._dbp[-1] - effect_of_treatment_standard['_dbp']
+            person._sbp[-1] = person._sbp[-1] + effect_of_treatment_standard['_sbp']
+            person._dbp[-1] = person._dbp[-1] + effect_of_treatment_standard['_dbp']
 
         # recalibrate stroke
         self.create_or_rollback_events_to_correct_calibration(treatment_outcome_standard,
@@ -145,8 +145,8 @@ class Population:
         # people that are very likely to die for non-stroke/MI reasons, get weighted down...
         # we could just do this at the mean level (i.e. up-weight the absolute risk difference, after taking 
         # out mean mortality risk, but i think this will get us a slightly more accurate poulation)
-        strokeRisks = combinedRisks * strokeProbabilities /(1-nonCVMortality)
-        miRisks = combinedRisks * (1-strokeProbabilities) / (1-nonCVMortality)
+        strokeRisks = combinedRisks * strokeProbabilities #/(1-nonCVMortality)
+        miRisks = combinedRisks * (1-strokeProbabilities) #/ (1-nonCVMortality)
         return strokeRisks, miRisks
 
     def create_or_rollback_events_to_correct_calibration(self,
@@ -177,6 +177,7 @@ class Population:
         # it would not, i think, be hard to change. but, just spelling it out here.
 
         # if negative, the model estimated too many events, if positive, too few
+        print(f"untreated risks sum: {untreatedRisks.sum()}")
         print(f"RR: {modelEstimatedRR:.2f}, # of events untreated estimated: {round(untreatedRisks.mean()*len(recalibration_pop)):.2f}")
         print(f" delta: {delta:.2f}, # of events to change: {numberOfEventStatusesToChange} # of events: {pd.Series(eventsForPeople).sum()} # of non events: {pd.Series(nonEventsForPeople).sum()}")
         print(f" of events untreated : {pd.Series(eventsForPeople).sum()/modelEstimatedRR:.2f} # of events treated: {pd.Series(eventsForPeople).sum():.2f} delta events: {pd.Series(eventsForPeople).sum()/modelEstimatedRR-pd.Series(eventsForPeople).sum():.2f}")
