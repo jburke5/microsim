@@ -1,4 +1,5 @@
 import math
+import copy
 import numpy.random as npRand
 
 from typing import Callable
@@ -98,6 +99,8 @@ class Person:
             setattr(self, k, v)
         if initializeAfib is not None:
             self._afib = [initializeAfib(self)]
+        else:
+            self._afib = [False]
 
         self._bpTreatmentStrategy = None
 
@@ -434,6 +437,38 @@ class Person:
             return False
         return other._outcomes == self._outcomes
 
-    def __deepcopy__(self):
-        # implement me here...
+    # luciana tag...there is almost definitely a better way to do this..
+    def __deepcopy__(self, memo):
+        selfCopy = Person(age=0, gender=None, raceEthnicity=None, sbp=0, dbp=0, a1c=0, hdl=0, totChol=0,
+                          bmi=0, ldl=0, trig=0, waist=0, anyPhysicalActivity=0, education=None,
+                          smokingStatus=None, antiHypertensiveCount=0, statin=0, otherLipidLoweringMedicationCount=0,
+                          initializeAfib=None)
+        selfCopy._lowerBounds = self._lowerBounds
+        selfCopy._upperBounds = self._upperBounds
+        selfCopy._gender = copy.deepcopy(self._gender)
+        selfCopy._raceEthnicity = copy.deepcopy(self._raceEthnicity)
+        selfCopy._alive = copy.deepcopy(self._alive)
+        selfCopy._age = copy.deepcopy(self._age)
+        selfCopy._sbp = copy.deepcopy(self._sbp)
+        selfCopy._dbp = copy.deepcopy(self._dbp)
+        selfCopy._a1c = copy.deepcopy(self._a1c)
+        selfCopy._hdl = copy.deepcopy(self._hdl)
+        selfCopy._ldl = copy.deepcopy(self._ldl)
+        selfCopy._trig = copy.deepcopy(self._trig)
+        selfCopy._totChol = copy.deepcopy(self._totChol)
+        selfCopy._waist = copy.deepcopy(self._waist)
+        selfCopy._bmi = copy.deepcopy(self._bmi)
+        selfCopy._anyPhysicalActivity = copy.deepcopy(self._anyPhysicalActivity)
+        selfCopy._education = copy.deepcopy(self._education)
+        selfCopy._smokingStatus = copy.deepcopy(self._smokingStatus)
+        selfCopy._antiHypertensiveCount = copy.deepcopy(self._antiHypertensiveCount)
+        selfCopy._statin = copy.deepcopy(self._statin)
+        selfCopy._otherLipidLoweringMedicationCount = copy.deepcopy(
+            self._otherLipidLoweringMedicationCount)
+        selfCopy._outcomes = copy.deepcopy(self._outcomes)
+        selfCopy._selfReportStrokePriorToSim = copy.deepcopy(self._selfReportStrokePriorToSim)
+        selfCopy._selfReportMIPriorToSim = copy.deepcopy(self._selfReportMIPriorToSim)
+        selfCopy._afib = self._afib
+        selfCopy._bpTreatmentStrategy = self._bpTreatmentStrategy
 
+        return selfCopy
