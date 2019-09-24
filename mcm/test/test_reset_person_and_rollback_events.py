@@ -1,4 +1,5 @@
 import unittest
+import copy
 
 from mcm.person import Person
 from mcm.test.test_risk_model_repository import TestRiskModelRepository
@@ -373,4 +374,14 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
         self.assertNotEqual(self._white_male, self._white_male_copy_paste)
         self._white_male_copy_paste.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository())
         self.assertEqual(self._white_male_copy_paste, self._white_male)
+
+    def testDeepCopy(self):
+        self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
+        self._white_male.advance_year(TestRiskModelRepository(), NothingHappensRepository())
+        self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
+        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository())
+        self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
+        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository())
+        self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
+
  
