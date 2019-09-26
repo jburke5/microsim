@@ -66,14 +66,20 @@ class Population:
                                 self._outcome_model_repository)
         return person
 
+    def advance_people(self, people):
+        return people.apply(self.advance_person)
+
     def advance_multi_process(self, years):
+        num_of_processes = 8
         for i in range(years):
             self._currentWave += 1
             print(f"processing year: {i}")
-            with mp.Pool(12) as pool:
-                self._people = pd.Series(pool.map(self.advance_person, self._people))
-            # with concurrent.futures.ProcessPoolExecutor(max_workers=12) as executor:
-            # executor.map(self.advance_person, self._people)
+            data_split = np.array_split(self._people, num_of_processes)
+            pool = mp.Pool(num_of_processes)
+            self._people = pd.concat(pool.map(self.advance_people, data_split))
+            pool.close()
+            pool.join()
+
             self.apply_recalibration_standards()
             self._totalWavesAdvanced += 1
 
