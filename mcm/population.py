@@ -15,6 +15,8 @@ from mcm.outcome import Outcome, OutcomeType
 import pandas as pd
 import copy
 import multiprocessing as mp
+import numpy as np
+from functools import partial
 
 
 class Population:
@@ -51,6 +53,7 @@ class Population:
 
     def advance(self, years):
         for yearIndex in range(years):
+            print(f"processing year: {yearIndex}")
             self._currentWave += 1
             for person in self._people:
                 self.advance_person(person)
@@ -107,6 +110,8 @@ class Population:
         for _, person in recalibration_pop.iteritems():
             person._sbp[-1] = person._sbp[-1] - effect_of_treatment_standard['_sbp']
             person._dbp[-1] = person._dbp[-1] - effect_of_treatment_standard['_dbp']
+            person._antiHypertensiveCount[-1] = person._antiHypertensiveCount[-1] - \
+                treatment_change_standard['_antiHypertensiveCount']
 
         # estimate risk after applying the treamtent effect
         untreatedStrokeRisks, untreatedMIRisks = self.estimate_risks(recalibration_pop)
@@ -115,6 +120,8 @@ class Population:
         for _, person in recalibration_pop.iteritems():
             person._sbp[-1] = person._sbp[-1] + effect_of_treatment_standard['_sbp']
             person._dbp[-1] = person._dbp[-1] + effect_of_treatment_standard['_dbp']
+            person._antiHypertensiveCount[-1] = person._antiHypertensiveCount[-1] + \
+                treatment_change_standard['_antiHypertensiveCount']
 
         # recalibrate stroke
         self.create_or_rollback_events_to_correct_calibration(treatment_outcome_standard,
@@ -143,10 +150,10 @@ class Population:
         # we want to estiamte the # of people that would have a stroke/MI after we account for mortality...
         # so, these are weighted by their likelihood of survival
         # people that are very likely to die for non-stroke/MI reasons, get weighted down...
-        # we could just do this at the mean level (i.e. up-weight the absolute risk difference, after taking 
+        # we could just do this at the mean level (i.e. up-weight the absolute risk difference, after taking
         # out mean mortality risk, but i think this will get us a slightly more accurate poulation)
-        strokeRisks = combinedRisks * strokeProbabilities #/(1-nonCVMortality)
-        miRisks = combinedRisks * (1-strokeProbabilities) #/ (1-nonCVMortality)
+        strokeRisks = combinedRisks * strokeProbabilities  # /(1-nonCVMortality)
+        miRisks = combinedRisks * (1-strokeProbabilities)  # / (1-nonCVMortality)
         return strokeRisks, miRisks
 
     def create_or_rollback_events_to_correct_calibration(self,
@@ -162,13 +169,13 @@ class Population:
         # note: the person._age[-1] -1 captures the person's age during the prior wave (when they could have had an vent
         # not at the end  of the wafe (when their age is increased...need to think about a cleaner way to refer to that event
         # ))
-        eventsForPeople = [person.has_outcome_during_wave(self._currentWave, outcomeType) for _, person in recalibration_pop.iteritems()]
+        eventsForPeople = [person.has_outcome_during_wave(
+            self._currentWave, outcomeType) for _, person in recalibration_pop.iteritems()]
 #        numberOfEventStatusesToChange = abs(
 #           int(round(delta * untreatedRisks.mean()*len(recalibration_pop)/modelEstimatedRR)))
 
-
         numberOfEventStatusesToChange = abs(
-           int(round(delta * pd.Series(eventsForPeople).sum()/modelEstimatedRR)))
+            int(round(delta * pd.Series(eventsForPeople).sum()/modelEstimatedRR)))
         nonEventsForPeople = [not item for item in eventsForPeople]
         # key assumption: "treatment" is applied to a population as opposed to individuals within a population
         # analyses can be setup either way...build two populations and then set different treatments
@@ -178,14 +185,15 @@ class Population:
 
         # if negative, the model estimated too many events, if positive, too few
         print(f"untreated risks sum: {untreatedRisks.sum()}")
+        print(f"treated risks sum: {treatedRisks.sum()}")
         print(f"RR: {modelEstimatedRR:.2f}, # of events untreated estimated: {round(untreatedRisks.mean()*len(recalibration_pop)):.2f}")
         print(f" delta: {delta:.2f}, # of events to change: {numberOfEventStatusesToChange} # of events: {pd.Series(eventsForPeople).sum()} # of non events: {pd.Series(nonEventsForPeople).sum()}")
         print(f" of events untreated : {pd.Series(eventsForPeople).sum()/modelEstimatedRR:.2f} # of events treated: {pd.Series(eventsForPeople).sum():.2f} delta events: {pd.Series(eventsForPeople).sum()/modelEstimatedRR-pd.Series(eventsForPeople).sum():.2f}")
         if delta < 0:
             if numberOfEventStatusesToChange > 0:
                 new_events = recalibration_pop.loc[nonEventsForPeople].sample(n=numberOfEventStatusesToChange,
-                                                                            replace=False,
-                                                                            weights=pd.Series(untreatedRisks).loc[nonEventsForPeople].values)
+                                                                              replace=False,
+                                                                              weights=pd.Series(untreatedRisks).loc[nonEventsForPeople].values)
                 for i, event in new_events.iteritems():
                     event.add_outcome_event(Outcome(outcomeType, fatalityDetermination(event)))
 
@@ -197,14 +205,19 @@ class Population:
                 numberOfEventStatusesToChange = pd.Series(eventsForPeople).sum()
             if numberOfEventStatusesToChange > 0:
                 events_to_rollback = recalibration_pop.loc[eventsForPeople].sample(n=numberOfEventStatusesToChange,
-                                                                                replace=False,
-                                                                                weights=pd.Series(1-untreatedRisks).loc[eventsForPeople].values)
+                                                                                   replace=False,
+                                                                                   weights=pd.Series(1-untreatedRisks).loc[eventsForPeople].values)
                 for i, event in events_to_rollback.iteritems():
                     event.rollback_most_recent_event(outcomeType)
-        print(f"events after recalibration 2 : {pd.Series([person.has_stroke_during_wave(self._currentWave) for _, person in recalibration_pop.iteritems()]).sum()}")
-        print(f"events after recalibration 3 : {pd.Series([person.has_stroke_during_wave(self._currentWave) for _, person in self._people.iteritems()]).sum()}")
+        print(
+            f"events after recalibration 2 : {pd.Series([person.has_stroke_during_wave(self._currentWave) for _, person in recalibration_pop.iteritems()]).sum()}")
+        print(
+            f"events after recalibration 3 : {pd.Series([person.has_stroke_during_simulation() for _, person in recalibration_pop.iteritems()]).sum()}")
 
     def get_people_alive_at_the_start_of_the_current_wave(self):
+        return self.get_people_alive_at_the_start_of_wave(self._currentWave)
+
+    def get_people_alive_at_the_start_of_wave(self, save):
         peopleAlive = []
         for person in self._people:
             if person.alive_at_start_of_wave(self._currentWave):
@@ -476,11 +489,31 @@ def build_people_using_nhanes_for_sampling(nhanes, n, filter=None, random_seed=N
         weights=nhanes.WTINT2YR,
         random_state=random_seed,
         replace=True)
-    people = repeated_sample.apply(build_person, axis=1)
+    #people = repeated_sample.apply(build_person, axis=1)
+    people = parallelize_on_rows(repeated_sample, build_person)
     if filter is not None:
         people = people.loc[people.apply(filter)]
 
     return people
+
+# from https://stackoverflow.com/questions/26784164/pandas-multiprocessing-apply
+
+
+def parallelize(data, func, num_of_processes=8):
+    data_split = np.array_split(data, num_of_processes)
+    pool = mp.Pool(num_of_processes)
+    data = pd.concat(pool.map(func, data_split))
+    pool.close()
+    pool.join()
+    return data
+
+
+def run_on_subset(func, data_subset):
+    return data_subset.apply(func, axis=1)
+
+
+def parallelize_on_rows(data, func, num_of_processes=8):
+    return parallelize(data, partial(run_on_subset, func), num_of_processes)
 
 
 class NHANESDirectSamplePopulation(Population):
@@ -505,7 +538,7 @@ class NHANESDirectSamplePopulation(Population):
 
     def copy(self):
         newPop = NHANESDirectSamplePopulation(self.n, self.year, False)
-        newPop._people = self._people.copy(deep=True)
+        newPop._people = copy.deepcopy(self._people)
         return newPop
 
     def _initialize_risk_models(self, model_repository_type):
