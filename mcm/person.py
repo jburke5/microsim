@@ -229,7 +229,7 @@ class Person:
     def has_outcome_during_wave(self, wave, outcomeType):
         if (wave <= 0) or (self._alive[-1] and wave > len(self._age)-1):
             raise Exception(
-                f"Can not have an event in a wave before 1 or after last wave ({len(self._age)-1}) for person")
+                f"Can not have an event in a wave ({wave}) before 1 or after last wave ({len(self._age)-1}) for person")
         elif (not self._alive[-1]) and (wave > len(self._age)):
             return False
         return (len(self._outcomes[outcomeType]) != 0 and
