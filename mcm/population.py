@@ -43,6 +43,7 @@ class Population:
         self._totalWavesAdvanced = 0
         self._currentWave = 0
         self._bpTreatmentStrategy = None
+        self.num_of_processes=8
 
     def reset_to_baseline(self):
         self._totalWavesAdvanced = 0
@@ -70,12 +71,11 @@ class Population:
         return people.apply(self.advance_person)
 
     def advance_multi_process(self, years):
-        num_of_processes = 8
         for i in range(years):
             self._currentWave += 1
             print(f"processing year: {i}")
-            data_split = np.array_split(self._people, num_of_processes)
-            pool = mp.Pool(num_of_processes)
+            data_split = np.array_split(self._people, self.num_of_processes)
+            pool = mp.Pool(self.num_of_processes)
             self._people = pd.concat(pool.map(self.advance_people, data_split))
             pool.close()
             pool.join()
@@ -150,16 +150,14 @@ class Population:
             person, OutcomeModelType.CARDIOVASCULAR, 1) for _, person in recalibration_pop.iteritems()])
         strokeProbabilities = pd.Series(
             [CVOutcomeDetermination().get_stroke_probability(person) for _, person in recalibration_pop.iteritems()])
-        nonCVMortality = pd.Series([self._outcome_model_repository.get_risk_for_person(
-            person, OutcomeModelType.NON_CV_MORTALITY) for _, person in recalibration_pop.iteritems()])
 
         # we want to estiamte the # of people that would have a stroke/MI after we account for mortality...
         # so, these are weighted by their likelihood of survival
         # people that are very likely to die for non-stroke/MI reasons, get weighted down...
         # we could just do this at the mean level (i.e. up-weight the absolute risk difference, after taking
         # out mean mortality risk, but i think this will get us a slightly more accurate poulation)
-        strokeRisks = combinedRisks * strokeProbabilities  # /(1-nonCVMortality)
-        miRisks = combinedRisks * (1-strokeProbabilities)  # / (1-nonCVMortality)
+        strokeRisks = combinedRisks * strokeProbabilities  
+        miRisks = combinedRisks * (1-strokeProbabilities)  
         return strokeRisks, miRisks
 
     def create_or_rollback_events_to_correct_calibration(self,
@@ -505,9 +503,9 @@ def build_people_using_nhanes_for_sampling(nhanes, n, filter=None, random_seed=N
 # from https://stackoverflow.com/questions/26784164/pandas-multiprocessing-apply
 
 
-def parallelize(data, func, num_of_processes=8):
-    data_split = np.array_split(data, num_of_processes)
-    pool = mp.Pool(num_of_processes)
+def parallelize(data, func, number_of_processes=8):
+    data_split = np.array_split(data, number_of_processes)
+    pool = mp.Pool(number_of_processes)
     data = pd.concat(pool.map(func, data_split))
     pool.close()
     pool.join()
@@ -518,8 +516,8 @@ def run_on_subset(func, data_subset):
     return data_subset.apply(func, axis=1)
 
 
-def parallelize_on_rows(data, func, num_of_processes=8):
-    return parallelize(data, partial(run_on_subset, func), num_of_processes)
+def parallelize_on_rows(data, func, number_of_processes=8):
+    return parallelize(data, partial(run_on_subset, func), number_of_processes)
 
 
 class NHANESDirectSamplePopulation(Population):
