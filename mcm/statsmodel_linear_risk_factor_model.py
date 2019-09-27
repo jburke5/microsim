@@ -39,6 +39,10 @@ class StatsModelLinearRiskFactorModel:
     matters,they'll be appleid in order of which they are listed...
     '''
 
+    # luciana tag...
+    # profiling wise...this is where we're getting killed. 
+    # the solution seems to be to cache this logic in some way. the first time through, figure out the series of manimpuations, subsequently
+    # apply those manipulations — i just dont' see an easy way to do that. it can clearly be done...but, tis going to make my head bleed.
     def get_modified_parameter_for_person(self, name, person):
         if name.startswith("log"):
             name = self.convert_first_letter_to_lower(name[len("log"):])
