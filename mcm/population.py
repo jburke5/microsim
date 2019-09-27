@@ -151,11 +151,6 @@ class Population:
         strokeProbabilities = pd.Series(
             [CVOutcomeDetermination().get_stroke_probability(person) for _, person in recalibration_pop.iteritems()])
 
-        # we want to estiamte the # of people that would have a stroke/MI after we account for mortality...
-        # so, these are weighted by their likelihood of survival
-        # people that are very likely to die for non-stroke/MI reasons, get weighted down...
-        # we could just do this at the mean level (i.e. up-weight the absolute risk difference, after taking
-        # out mean mortality risk, but i think this will get us a slightly more accurate poulation)
         strokeRisks = combinedRisks * strokeProbabilities  
         miRisks = combinedRisks * (1-strokeProbabilities)  
         return strokeRisks, miRisks
@@ -170,13 +165,8 @@ class Population:
         modelEstimatedRR = treatedRisks.mean()/untreatedRisks.mean()
         # use the delta between that effect and the calibration standard to recalibrate the pop.
         delta = modelEstimatedRR - treatment_outcome_standard[outcomeType]
-        # note: the person._age[-1] -1 captures the person's age during the prior wave (when they could have had an vent
-        # not at the end  of the wafe (when their age is increased...need to think about a cleaner way to refer to that event
-        # ))
         eventsForPeople = [person.has_outcome_during_wave(
             self._currentWave, outcomeType) for _, person in recalibration_pop.iteritems()]
-#        numberOfEventStatusesToChange = abs(
-#           int(round(delta * untreatedRisks.mean()*len(recalibration_pop)/modelEstimatedRR)))
 
         numberOfEventStatusesToChange = abs(
             int(round(delta * pd.Series(eventsForPeople).sum()/modelEstimatedRR)))
@@ -188,11 +178,6 @@ class Population:
         # it would not, i think, be hard to change. but, just spelling it out here.
 
         # if negative, the model estimated too many events, if positive, too few
-        print(f"untreated risks sum: {untreatedRisks.sum()}")
-        print(f"treated risks sum: {treatedRisks.sum()}")
-        print(f"RR: {modelEstimatedRR:.2f}, # of events untreated estimated: {round(untreatedRisks.mean()*len(recalibration_pop)):.2f}")
-        print(f" delta: {delta:.2f}, # of events to change: {numberOfEventStatusesToChange} # of events: {pd.Series(eventsForPeople).sum()} # of non events: {pd.Series(nonEventsForPeople).sum()}")
-        print(f" of events untreated : {pd.Series(eventsForPeople).sum()/modelEstimatedRR:.2f} # of events treated: {pd.Series(eventsForPeople).sum():.2f} delta events: {pd.Series(eventsForPeople).sum()/modelEstimatedRR-pd.Series(eventsForPeople).sum():.2f}")
         if delta < 0:
             if numberOfEventStatusesToChange > 0:
                 new_events = recalibration_pop.loc[nonEventsForPeople].sample(n=numberOfEventStatusesToChange,
@@ -213,10 +198,6 @@ class Population:
                                                                                    weights=pd.Series(1-untreatedRisks).loc[eventsForPeople].values)
                 for i, event in events_to_rollback.iteritems():
                     event.rollback_most_recent_event(outcomeType)
-        print(
-            f"events after recalibration 2 : {pd.Series([person.has_stroke_during_wave(self._currentWave) for _, person in recalibration_pop.iteritems()]).sum()}")
-        print(
-            f"events after recalibration 3 : {pd.Series([person.has_stroke_during_simulation() for _, person in recalibration_pop.iteritems()]).sum()}")
 
     def get_people_alive_at_the_start_of_the_current_wave(self):
         return self.get_people_alive_at_the_start_of_wave(self._currentWave)
