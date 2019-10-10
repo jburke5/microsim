@@ -43,7 +43,7 @@ class Population:
         self._totalWavesAdvanced = 0
         self._currentWave = 0
         self._bpTreatmentStrategy = None
-        self.num_of_processes=8
+        self.num_of_processes = 8
 
     def reset_to_baseline(self):
         self._totalWavesAdvanced = 0
@@ -151,8 +151,8 @@ class Population:
         strokeProbabilities = pd.Series(
             [CVOutcomeDetermination().get_stroke_probability(person) for _, person in recalibration_pop.iteritems()])
 
-        strokeRisks = combinedRisks * strokeProbabilities  
-        miRisks = combinedRisks * (1-strokeProbabilities)  
+        strokeRisks = combinedRisks * strokeProbabilities
+        miRisks = combinedRisks * (1-strokeProbabilities)
         return strokeRisks, miRisks
 
     def create_or_rollback_events_to_correct_calibration(self,
@@ -474,7 +474,7 @@ def build_people_using_nhanes_for_sampling(nhanes, n, filter=None, random_seed=N
         weights=nhanes.WTINT2YR,
         random_state=random_seed,
         replace=True)
-    #people = repeated_sample.apply(build_person, axis=1)
+    # people = repeated_sample.apply(build_person, axis=1)
     people = parallelize_on_rows(repeated_sample, build_person)
     if filter is not None:
         people = people.loc[people.apply(filter)]
