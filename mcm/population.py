@@ -177,7 +177,7 @@ class Population:
         # this is, i thikn, the first time where a coding decision is tied to one of those structure.
         # it would not, i think, be hard to change. but, just spelling it out here.
 
-        # if negative, the model estimated too many events, if positive, too few
+        # if negative, the model estimated too few events, if positive, too mnany
         if delta < 0:
             if numberOfEventStatusesToChange > 0:
                 new_events = recalibration_pop.loc[nonEventsForPeople].sample(n=numberOfEventStatusesToChange,

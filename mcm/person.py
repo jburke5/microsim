@@ -262,11 +262,6 @@ class Person:
         # age at teh start of the wave.
         rollbackAge = self._age[-1]-1 if self._alive[-1] else self._age[-1]
         if rollbackAge != outcome_rolled_back[0]:
-            print(self)
-            print(self._age)
-            print(self._age)
-            print(self.is_dead())
-            print(outcomes_for_type)
             raise Exception(
                 f'# of outcomes: {len(outcomes_for_type)} while trying to rollback event at age {outcome_rolled_back[0]}, but current age is {rollbackAge} - can not roll back if age has changed')
 
