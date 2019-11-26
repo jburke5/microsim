@@ -5,6 +5,7 @@ from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 from mcm.outcome_model_repository import OutcomeModelRepository
 from mcm.education import Education
+from mcm.alcohol_category import AlcoholCategory
 
 import unittest
 
@@ -21,7 +22,8 @@ class TestOutcomeRepository(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=120, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE, 
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._black_male = Person(
@@ -29,7 +31,8 @@ class TestOutcomeRepository(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
             sbp=120, dbp=80, a1c=6, hdl=50, totChol=200, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._black_treated_male = Person(
@@ -37,7 +40,8 @@ class TestOutcomeRepository(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
             sbp=120, dbp=80, a1c=6, hdl=50, totChol=200, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=1,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=1,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_female = Person(
@@ -45,7 +49,8 @@ class TestOutcomeRepository(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=120, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._black_female = Person(
@@ -53,7 +58,8 @@ class TestOutcomeRepository(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
             sbp=120, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._outcome_model_repository = OutcomeModelRepository()

@@ -6,6 +6,7 @@ from mcm.cv_outcome_determination import CVOutcomeDetermination
 from mcm.outcome import Outcome
 from mcm.outcome import OutcomeType
 from mcm.education import Education
+from mcm.alcohol_category import AlcoholCategory
 
 from mcm.smoking_status import SmokingStatus
 import unittest
@@ -53,6 +54,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             0,
             Education.COLLEGEGRADUATE,
             SmokingStatus.NEVER,
+            AlcoholCategory.NONE,
             0,
             0,
             0,

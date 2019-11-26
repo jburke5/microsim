@@ -9,6 +9,7 @@ from mcm.gender import NHANESGender
 from mcm.outcome import Outcome, OutcomeType
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
+from mcm.alcohol_category import AlcoholCategory
 
 # luciana-tag...lne thing that tripped me up was probable non clear communication regarding "waves"
 # so, i'm going to spell it out here and try to make the code consistent.
@@ -43,6 +44,7 @@ class Person:
         anyPhysicalActivity: int,
         education: Education,
         smokingStatus: SmokingStatus,
+        alcohol: AlcoholCategory,
         antiHypertensiveCount: int,
         statin: int,
         otherLipidLoweringMedicationCount: int,
@@ -72,6 +74,7 @@ class Person:
         self._bmi = [bmi]
         self._waist = [waist]
         self._anyPhysicalActivity = [anyPhysicalActivity]
+        self._alcoholPerWeek = [alcohol]
         self._education = education
         # TODO : change smoking status into a factor that changes over time
         self._smokingStatus = smokingStatus
@@ -101,6 +104,8 @@ class Person:
             self._afib = [initializeAfib(self)]
         else:
             self._afib = [False]
+        
+        self._gcp = []
 
         self._bpTreatmentStrategy = None
 
@@ -121,6 +126,7 @@ class Person:
         self._statin = [self._statin[0]]
         self._otherLipidLoweringMedicationCount = [self._otherLipidLoweringMedicationCount[0]]
         self._bpTreatmentStrategy = None
+        self._gcp = []
 
         # iterate through outcomes and remove those that occured after the simulation started
         for type, outcomes_for_type in self._outcomes.items():
@@ -356,6 +362,9 @@ class Person:
         if cv_event is not None:
             self.add_outcome_event(cv_event)
 
+        # then assign gcp
+        self._gcp.append(outcome_model_repository.get_gcp(self))
+
         # if not dead from the CV event...assess non CV mortality
         if (not self.is_dead()):
             non_cv_death = outcome_model_repository.assign_non_cv_mortality(self)
@@ -430,13 +439,15 @@ class Person:
             return False
         if not other._alive == self._alive:
             return False
+        if not other._gcp == self._gcp:
+            return False
         return other._outcomes == self._outcomes
 
     # luciana tag...there is almost definitely a better way to do this..
     def __deepcopy__(self, memo):
         selfCopy = Person(age=0, gender=None, raceEthnicity=None, sbp=0, dbp=0, a1c=0, hdl=0, totChol=0,
                           bmi=0, ldl=0, trig=0, waist=0, anyPhysicalActivity=0, education=None,
-                          smokingStatus=None, antiHypertensiveCount=0, statin=0, otherLipidLoweringMedicationCount=0,
+                          smokingStatus=None, alcohol=None, antiHypertensiveCount=0, statin=0, otherLipidLoweringMedicationCount=0,
                           initializeAfib=None)
         selfCopy._lowerBounds = self._lowerBounds
         selfCopy._upperBounds = self._upperBounds
@@ -456,6 +467,7 @@ class Person:
         selfCopy._anyPhysicalActivity = copy.deepcopy(self._anyPhysicalActivity)
         selfCopy._education = copy.deepcopy(self._education)
         selfCopy._smokingStatus = copy.deepcopy(self._smokingStatus)
+        selfCopy._alcoholPerWeek = copy.deepcopy(self._alcoholPerWeek)
         selfCopy._antiHypertensiveCount = copy.deepcopy(self._antiHypertensiveCount)
         selfCopy._statin = copy.deepcopy(self._statin)
         selfCopy._otherLipidLoweringMedicationCount = copy.deepcopy(
@@ -465,5 +477,6 @@ class Person:
         selfCopy._selfReportMIPriorToSim = copy.deepcopy(self._selfReportMIPriorToSim)
         selfCopy._afib = self._afib
         selfCopy._bpTreatmentStrategy = self._bpTreatmentStrategy
+        selfCopy._gcp = copy.deepcopy(self._gcp)
 
         return selfCopy

@@ -2,7 +2,8 @@ from mcm.person import Person
 from mcm.gender import NHANESGender
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.outcome_model_repository import OutcomeModelRepository
-from mcm.outcome import Outcome, Outcome
+from mcm.outcome import Outcome
+from mcm.alcohol_category import AlcoholCategory
 from mcm.outcome import OutcomeType
 from mcm.education import Education
 from mcm.test.test_risk_model_repository import TestRiskModelRepository
@@ -59,7 +60,7 @@ class TestPersonWaveStatus(unittest.TestCase):
                              sbp=140, dbp=90, a1c=5.5, hdl=50, totChol=200, bmi=25, ldl=90,
                              trig=150, waist=45, anyPhysicalActivity=0,
                              education=Education.COLLEGEGRADUATE,
-                             smokingStatus=SmokingStatus.NEVER,
+                             smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
                              antiHypertensiveCount=0, statin=0, otherLipidLoweringMedicationCount=0,
                              initializeAfib=initializeAFib)
 
@@ -68,7 +69,7 @@ class TestPersonWaveStatus(unittest.TestCase):
                                sbp=140, dbp=90, a1c=5.5, hdl=50, totChol=200, bmi=25, ldl=90,
                                trig=150, waist=45, anyPhysicalActivity=0,
                                education=Education.COLLEGEGRADUATE,
-                               smokingStatus=SmokingStatus.NEVER,
+                               smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
                                antiHypertensiveCount=0, statin=0,
                                otherLipidLoweringMedicationCount=0, initializeAfib=initializeAFib)
 

@@ -29,6 +29,7 @@ class TestTreatmentStrategy(unittest.TestCase):
             anyPhysicalActivity=0,
             education=Education.COLLEGEGRADUATE,
             smokingStatus=1,
+            alcohol=0,
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
