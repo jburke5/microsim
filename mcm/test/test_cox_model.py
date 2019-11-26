@@ -8,6 +8,7 @@ from mcm.cox_regression_model import CoxRegressionModel
 from mcm.statsmodel_cox_model import StatsModelCoxModel
 from mcm.education import Education
 from mcm.data_loader import load_model_spec
+from mcm.alcohol_category import AlcoholCategory
 
 
 def initializeAFib(person):
@@ -20,7 +21,7 @@ class TestCoxModel(unittest.TestCase):
                                                    NHANESRaceEthnicity.NON_HISPANIC_WHITE,
                                                    144.667, 52.6667, 9.5, 34, 191, 30.05,
                                                    110.0, 128, 45, 0, Education.COLLEGEGRADUATE,
-                                                   SmokingStatus.FORMER, 0, 0, 0,
+                                                   SmokingStatus.FORMER, AlcoholCategory.NONE, 0, 0, 0,
                                                    initializeAFib)
 
         model_spec = load_model_spec("nhanesMortalityModel")
@@ -28,7 +29,7 @@ class TestCoxModel(unittest.TestCase):
 
     def test_single_linear_predictor(self):
         # Baseline estimate derived in notebook — buildNHANESMortalityModel.
-        # only testing to 3 places because we approximate the cum hazard as oppossed
+        # only testing to 3 places because we approximate the cumulative hazard as oppossed
         # as opposed to directly using it
         self.assertAlmostEqual(
             first=5.440096345569454, second=self.model.linear_predictor(

@@ -5,6 +5,7 @@ from mcm.gender import NHANESGender
 from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 from mcm.education import Education
+from mcm.alcohol_category import AlcoholCategory
 
 import unittest
 import pandas as pd
@@ -53,6 +54,7 @@ class TestPopulationAdvanceOutcomes(unittest.TestCase):
             0,
             Education.COLLEGEGRADUATE,
             SmokingStatus.NEVER,
+            AlcoholCategory.NONE,
             0,
             0,
             0,

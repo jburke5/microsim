@@ -9,6 +9,7 @@ from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.education import Education
 from mcm.smoking_status import SmokingStatus
 from mcm.outcome import Outcome, OutcomeType
+from mcm.alcohol_category import AlcoholCategory
 
 
 def initializeAfib(arg):
@@ -71,7 +72,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
         
         self._white_male_copy_paste = Person(
@@ -79,7 +81,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
 
@@ -88,7 +91,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_female = Person(
@@ -96,7 +100,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._black_female = Person(
@@ -104,7 +109,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
         
         self._white_male_plus_sbp = Person(
@@ -112,7 +118,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP+10, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_male_plus_dbp = Person(
@@ -120,7 +127,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=90, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
         
         self._white_male_plus_a1c = Person(
@@ -128,7 +136,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=7, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, 
+            alcohol=AlcoholCategory.NONE, antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_male_plus_hdl = Person(
@@ -136,7 +145,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=60, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_male_plus_totChol = Person(
@@ -144,7 +154,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=223, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_male_plus_ldl = Person(
@@ -152,7 +163,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=100, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_male_plus_trig = Person(
@@ -160,7 +172,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=160,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_male_plus_bmi = Person(
@@ -168,7 +181,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=25, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_male_plus_waist = Person(
@@ -176,7 +190,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=36, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_male_plus_activity = Person(
@@ -184,7 +199,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=1, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_male_minus_edudcation = Person(
@@ -192,7 +208,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=1, education=Education.HIGHSCHOOLGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, 
+            alcohol=AlcoholCategory.NONE, antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_male_plus_smoking = Person(
@@ -200,7 +217,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=1, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.CURRENT, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.CURRENT, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_male_plus_bpMed = Person(
@@ -208,7 +226,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=1,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=1,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_male_plus_statin = Person(
@@ -216,7 +235,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=1, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
         self._white_male_plus_lipid = Person(
@@ -224,7 +244,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=1, initializeAfib=initializeAfib)
 
         self._white_male_plus_afib = Person(
@@ -232,7 +253,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfibAlwaysPositive)
 
         self._baseline_stroke_person = Person(
@@ -240,7 +262,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib,
             selfReportStrokeAge=50)
 
@@ -249,7 +272,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib,
             selfReportStrokeAge=50)
 

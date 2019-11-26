@@ -4,6 +4,7 @@ from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 from mcm.regression_model import RegressionModel
 from mcm.education import Education
+from mcm.alcohol_category import AlcoholCategory
 
 
 from mcm.person import Person
@@ -37,7 +38,8 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                              raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE, sbp=120,
                              dbp=80, a1c=5.5, hdl=50, totChol=200, bmi=27, ldl=90, trig=150,
                              waist=70, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-                             smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+                             smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+                             antiHypertensiveCount=0,
                              statin=0, otherLipidLoweringMedicationCount=0,
                              initializeAfib=initializeAfib)
 
@@ -46,7 +48,8 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                               sbp=bpinstance, dbp=80, a1c=5.5, hdl=50, totChol=200, bmi=27, ldl=90,
                               trig=150, waist=70, anyPhysicalActivity=0,
                               education=Education.COLLEGEGRADUATE,
-                              smokingStatus=SmokingStatus.NEVER, antiHypertensiveCount=0,
+                              smokingStatus=SmokingStatus.NEVER,  alcohol=AlcoholCategory.NONE,
+                              antiHypertensiveCount=0,
                               statin=0, otherLipidLoweringMedicationCount=0,
                               initializeAfib=initializeAfib)
                        for bpinstance in sbp]

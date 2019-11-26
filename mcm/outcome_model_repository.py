@@ -5,6 +5,9 @@ from mcm.statsmodel_cox_model import StatsModelCoxModel
 from mcm.cox_regression_model import CoxRegressionModel
 from mcm.cv_outcome_determination import CVOutcomeDetermination
 from mcm.data_loader import load_model_spec
+from mcm.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
+from mcm.regression_model import RegressionModel
+from mcm.gcp_model import GCPModel
 
 import numpy.random as npRand
 
@@ -53,6 +56,8 @@ class OutcomeModelRepository:
             ),
 
         }
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+
         # This represents non-cardiovascular mortality..
         self._models[OutcomeModelType.NON_CV_MORTALITY] = self.initialize_cox_model(
             "nhanesMortalityModel")
@@ -60,9 +65,12 @@ class OutcomeModelRepository:
     def get_risk_for_person(self, person, outcome, years=1):
         return self.select_model_for_person(person, outcome).get_risk_for_person(person, years)
 
+    def get_gcp(self, person):
+        return self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE)
+
     def select_model_for_person(self, person, outcome):
         models_for_outcome = self._models[outcome]
-        if outcome == OutcomeModelType.NON_CV_MORTALITY:
+        if outcome == OutcomeModelType.NON_CV_MORTALITY or outcome == OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE:
             return models_for_outcome
         elif outcome == OutcomeModelType.CARDIOVASCULAR:
             gender_stem = "male" if person._gender == NHANESGender.MALE else "female"

@@ -3,6 +3,7 @@ from mcm.race_ethnicity import NHANESRaceEthnicity
 from mcm.smoking_status import SmokingStatus
 from mcm.gender import NHANESGender
 from mcm.education import Education
+from mcm.alcohol_category import AlcoholCategory
 from mcm.cohort_risk_model_repository import CohortRiskModelRepository
 from mcm.nhanes_risk_model_repository import NHANESRiskModelRepository
 from mcm.outcome_model_repository import OutcomeModelRepository
@@ -457,6 +458,7 @@ def build_person(x):
         waist=x.waist,
         anyPhysicalActivity=x.anyPhysicalActivity,
         smokingStatus=SmokingStatus(int(x.smokingStatus)),
+        alcohol=AlcoholCategory.get_category_for_consumption(x.alcoholPerWeek),
         education=Education(int(x.education)),
         antiHypertensiveCount=x.antiHypertensive,
         statin=x.statin,
