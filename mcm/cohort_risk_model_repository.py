@@ -19,6 +19,7 @@ class CohortRiskModelRepository(RiskModelRepository):
         self._initialize_linear_probability_risk_model("afib", "afibCohortModel")
         self._initialize_linear_probability_risk_model("statin", "statinCohortModel")
         self._initialize_int_rounded_linear_risk_model("antiHypertensiveCount", "antiHypertensiveCountCohortModel")
+        self._initialize_int_rounded_linear_risk_model("alcoholPerWeek", "alcoholPerWeekCohortModel")
         self._initialize_linear_risk_model("sbp", "logSbpCohortModel", log=True)
         self._initialize_linear_risk_model("dbp", "logDbpCohortModel", log=True)
 
