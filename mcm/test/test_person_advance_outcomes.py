@@ -16,7 +16,6 @@ import copy
 def initializeAFib(person):
     return None
 
-
 class AlwaysPositiveOutcomeRepository(OutcomeModelRepository):
     def __init__(self):
         super(AlwaysPositiveOutcomeRepository, self).__init__()

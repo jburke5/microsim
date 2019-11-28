@@ -15,6 +15,7 @@ from mcm.alcohol_category import AlcoholCategory
 def initializeAfib(arg):
     return False
 
+
 def initializeAfibAlwaysPositive(arg):
     return True
 
@@ -29,6 +30,10 @@ class AlwaysFatalStrokeOutcomeRepository(OutcomeModelRepository):
     def assign_non_cv_mortality(self, person):
         return False
 
+    def get_random_effects(self):
+        return {}
+
+
 class AlwaysNonCVDeathRepository(OutcomeModelRepository):
     def __init__(self):
         super(AlwaysNonCVDeathRepository, self).__init__()
@@ -38,6 +43,9 @@ class AlwaysNonCVDeathRepository(OutcomeModelRepository):
 
     def assign_non_cv_mortality(self, person):
         return True
+
+    def get_random_effects(self):
+        return {}
 
 
 class AlwaysNonFatalStrokeOutcomeRepository(OutcomeModelRepository):
@@ -50,6 +58,10 @@ class AlwaysNonFatalStrokeOutcomeRepository(OutcomeModelRepository):
     def assign_non_cv_mortality(self, person):
         return False
 
+    def get_random_effects(self):
+        return {}
+
+
 class NothingHappensRepository(OutcomeModelRepository):
     def __init__(self):
         super(NothingHappensRepository, self).__init__()
@@ -60,7 +72,8 @@ class NothingHappensRepository(OutcomeModelRepository):
     def assign_non_cv_mortality(self, person):
         return False
 
-
+    def get_random_effects(self):
+        return {}
 
 
 class TestResetPersonAndRollBackEvents(unittest.TestCase):
@@ -75,7 +88,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
-        
+
         self._white_male_copy_paste = Person(
             age=self.baseAge, gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
@@ -84,7 +97,6 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
-
 
         self._white_male_plus_one_year = Person(
             age=self.baseAge+1, gender=NHANESGender.MALE,
@@ -112,7 +124,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
-        
+
         self._white_male_plus_sbp = Person(
             age=self.baseAge+1, gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
@@ -130,13 +142,13 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
-        
+
         self._white_male_plus_a1c = Person(
             age=self.baseAge+1, gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=7, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, 
+            smokingStatus=SmokingStatus.NEVER,
             alcohol=AlcoholCategory.NONE, antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
@@ -208,7 +220,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
             bmi=22, waist=34, anyPhysicalActivity=1, education=Education.HIGHSCHOOLGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, 
+            smokingStatus=SmokingStatus.NEVER,
             alcohol=AlcoholCategory.NONE, antiHypertensiveCount=0,
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
 
@@ -277,9 +289,9 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib,
             selfReportStrokeAge=50)
 
-
     def testResetBasicAttributes(self):
-        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(TestRiskModelRepository(),
+                                      AlwaysNonFatalStrokeOutcomeRepository())
         self._baseline_stroke_person.advance_year(TestRiskModelRepository(),
                                                   AlwaysFatalStrokeOutcomeRepository())
         self.assertEqual(2, len(self._white_male._dbp))
@@ -296,7 +308,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
         self.assertEqual(self.baseAge, self._white_male._age[-1])
 
     def testResetOutcomes(self):
-        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(TestRiskModelRepository(),
+                                      AlwaysNonFatalStrokeOutcomeRepository())
         self._baseline_stroke_person.advance_year(TestRiskModelRepository(),
                                                   AlwaysFatalStrokeOutcomeRepository())
         self.assertEqual(1, len(self._white_male._outcomes[OutcomeType.STROKE]))
@@ -304,7 +317,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
         self.assertEqual(0, len(self._white_male._outcomes[OutcomeType.STROKE]))
 
     def testResetOutcomesPreservesPreSimOutcomes(self):
-        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(TestRiskModelRepository(),
+                                      AlwaysNonFatalStrokeOutcomeRepository())
         self._baseline_stroke_person.advance_year(TestRiskModelRepository(),
                                                   AlwaysFatalStrokeOutcomeRepository())
         self.assertEqual(2, len(self._baseline_stroke_person._outcomes[OutcomeType.STROKE]))
@@ -312,7 +326,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
         self.assertEqual(1, len(self._baseline_stroke_person._outcomes[OutcomeType.STROKE]))
 
     def testRollbackNonFatalEvent(self):
-        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(TestRiskModelRepository(),
+                                      AlwaysNonFatalStrokeOutcomeRepository())
         self._baseline_stroke_person.advance_year(TestRiskModelRepository(),
                                                   AlwaysFatalStrokeOutcomeRepository())
         self.assertEqual(False, self._white_male.has_stroke_prior_to_simulation())
@@ -326,7 +341,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
         self.assertEqual(False, self._white_male.has_stroke_during_simulation())
 
     def testRollbackFatalEvent(self):
-        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(TestRiskModelRepository(),
+                                      AlwaysNonFatalStrokeOutcomeRepository())
         self._baseline_stroke_person.advance_year(TestRiskModelRepository(),
                                                   AlwaysFatalStrokeOutcomeRepository())
         self.assertEqual(True, self._baseline_stroke_person.has_stroke_during_simulation())
@@ -366,46 +382,50 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
 
     def testBaselineEqualityAfterAdvancingAYear(self):
         self._white_male.advance_year(TestRiskModelRepository(), NothingHappensRepository())
-        self._white_male_copy_paste.advance_year(TestRiskModelRepository(), NothingHappensRepository())
+        self._white_male_copy_paste.advance_year(
+            TestRiskModelRepository(), NothingHappensRepository())
         self.assertEqual(self._white_male, self._white_male_copy_paste)
 
-
-    def testBasePatientWithBaselineStroke(self):  
+    def testBasePatientWithBaselineStroke(self):
         self.assertNotEqual(self._white_male, self._baseline_stroke_person)
         self.assertEqual(self._baseline_stroke_person, self._baseline_stroke_person_copy_paste)
-        self._baseline_stroke_person.advance_year(TestRiskModelRepository(), NothingHappensRepository())
-        self._baseline_stroke_person_copy_paste.advance_year(TestRiskModelRepository(), NothingHappensRepository())
+        self._baseline_stroke_person.advance_year(
+            TestRiskModelRepository(), NothingHappensRepository())
+        self._baseline_stroke_person_copy_paste.advance_year(
+            TestRiskModelRepository(), NothingHappensRepository())
         self.assertEqual(self._baseline_stroke_person, self._baseline_stroke_person_copy_paste)
-        
 
     def testBasePatientWithCVEvents(self):
         self.assertEqual(self._white_male_copy_paste, self._white_male)
-        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(TestRiskModelRepository(),
+                                      AlwaysNonFatalStrokeOutcomeRepository())
         self.assertNotEqual(self._white_male, self._white_male_copy_paste)
-        self._white_male_copy_paste.advance_year(TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository())
+        self._white_male_copy_paste.advance_year(
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository())
         self.assertEqual(self._white_male_copy_paste, self._white_male)
 
     def testBasePatientWithNonCVDeath(self):
         self.assertEqual(self._white_male_copy_paste, self._white_male)
         self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository())
         self.assertNotEqual(self._white_male, self._white_male_copy_paste)
-        self._white_male_copy_paste.advance_year(TestRiskModelRepository(), NothingHappensRepository())
+        self._white_male_copy_paste.advance_year(
+            TestRiskModelRepository(), NothingHappensRepository())
         self.assertNotEqual(self._white_male_copy_paste, self._white_male)
 
     def testBasePatientWithNonCVDeathOtherWay(self):
         self.assertEqual(self._white_male_copy_paste, self._white_male)
         self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository())
         self.assertNotEqual(self._white_male, self._white_male_copy_paste)
-        self._white_male_copy_paste.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository())
+        self._white_male_copy_paste.advance_year(
+            TestRiskModelRepository(), AlwaysNonCVDeathRepository())
         self.assertEqual(self._white_male_copy_paste, self._white_male)
 
     def testDeepCopy(self):
         self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
         self._white_male.advance_year(TestRiskModelRepository(), NothingHappensRepository())
         self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
-        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(TestRiskModelRepository(),
+                                      AlwaysNonFatalStrokeOutcomeRepository())
         self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
         self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository())
         self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
-
- 

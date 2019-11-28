@@ -27,6 +27,9 @@ class AgeOver50CausesFatalStroke(OutcomeModelRepository):
     def assign_non_cv_mortality(self, person, years=1):
         return False
 
+    def get_gcp(self, person):
+        return 50
+
 
 class NonFatalStrokeAndNonCVMortality(OutcomeModelRepository):
     def __init__(self):
@@ -38,6 +41,9 @@ class NonFatalStrokeAndNonCVMortality(OutcomeModelRepository):
 
     def assign_non_cv_mortality(self, person, years=1):
         return True
+    
+    def get_gcp(self, person):
+        return 50
 
 
 class AgeOver50CausesNonCVMortality(OutcomeModelRepository):
@@ -50,6 +56,9 @@ class AgeOver50CausesNonCVMortality(OutcomeModelRepository):
 
     def assign_non_cv_mortality(self, person, years=1):
         return True if person._age[-1] > 50 else False
+
+    def get_gcp(self, person):
+        return 50
 
 
 class TestPersonWaveStatus(unittest.TestCase):

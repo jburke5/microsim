@@ -104,8 +104,10 @@ class Person:
             self._afib = [initializeAfib(self)]
         else:
             self._afib = [False]
-        
+
         self._gcp = []
+        # for outcome mocels that require random effects, store in this dictionary
+        self._randomEffects = dict()
 
         self._bpTreatmentStrategy = None
 
@@ -123,6 +125,7 @@ class Person:
         self._waist = [self._waist[0]]
         self._anyPhysicalActivity = [self._anyPhysicalActivity[0]]
         self._antiHypertensiveCount = [self._antiHypertensiveCount[0]]
+        self._alcoholPerWeek = [self._alcoholPerWeek[0]]
         self._statin = [self._statin[0]]
         self._otherLipidLoweringMedicationCount = [self._otherLipidLoweringMedicationCount[0]]
         self._bpTreatmentStrategy = None
@@ -182,6 +185,10 @@ class Person:
         # print(f"advance_year on person, age: {self._age[0]} sbp : {self._sbp[0]}")
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance year")
+
+        # initialize random effects if they haven't already been initialized and this is our first year
+        if self.years_in_simulation() == 0 and len(self._randomEffects) == 0:
+            self._randomEffects = outcome_model_repository.get_random_effects()
 
         self.advance_risk_factors(risk_model_repository)
         self.advance_treatment(risk_model_repository)
@@ -320,6 +327,8 @@ class Person:
                 risk_model_repository))
         self._afib.append(self.get_next_risk_factor("afib", risk_model_repository))
         self._statin.append(self.get_next_risk_factor("statin", risk_model_repository))
+        self._alcoholPerWeek.append(self.get_next_risk_factor(
+            "alcoholPerWeek", risk_model_repository))
 
     # redraw from models to pick new risk factors for person
 
@@ -343,6 +352,7 @@ class Person:
                           "anyPhysicalActivity", risk_model_repository),
                       education=self._education,
                       smokingStatus=self._smokingStatus,
+                      alcohol=self._alcoholPerWeek[0],
                       antiHypertensiveCount=self.get_next_risk_factor(
                           "antiHypertensiveCount", risk_model_repository),
                       statin=self.get_next_risk_factor("statin", risk_model_repository),
@@ -376,6 +386,24 @@ class Person:
         if cv_event.fatal:
             self._alive.append(False)
 
+    # Using this paper...glucose and a1c are highly related
+    # Nathan, D. M., Kuenen, J., Borg, R., Zheng, H., Schoenfeld, D., Heine, R. J., for the A1c-Derived Average Glucose (ADAG) Study Group. (2008). Translating the A1C Assay Into Estimated Average Glucose Values. Diabetes Care, 31(8), 1473–1478.
+    # so, will use their formula + a draw from residual distribution fo same moddel in NHANES (which has very simnilar coefficients)
+
+    @staticmethod
+    def convert_fasting_glucose_to_a1c(glucose):
+        return (glucose + 46.7)/28.7
+
+    @staticmethod
+    def convert_a1c_to_fasting_glucose(a1c):
+        return 28.7 * a1c - 46.7
+
+    def get_fasting_glucose(self, use_residual=True):
+        glucose = Person.convert_a1c_to_fasting_glucose(self._a1c[-1])
+        if use_residual:
+            glucose += npRand.normal(0, 21)
+        return glucose
+
     def __repr__(self):
         return (f"Person(age={self._age[-1]}, "
                 f"gender={self._gender}, "
@@ -388,7 +416,14 @@ class Person:
                 f"bmi={self._bmi[-1]:.1f}, "
                 f"ldl={self._ldl[-1]:.1f}, "
                 f"trig={self._trig[-1]:.1f}, "
-                f"smoking={self._smokingStatus}"
+                f"smoking={SmokingStatus(self._smokingStatus)}, "
+                f"waist={self._waist[-1]}, "
+                f"anyPhysicalActivity={self._anyPhysicalActivity[-1]}, "
+                f"alcohol={AlcoholCategory(self._alcoholPerWeek[-1])}, "
+                f"education={Education(self._education)}, "
+                f"antiHypertensiveCount={self._antiHypertensiveCount[-1]}, "
+                f"otherLipid={self._otherLipidLoweringMedicationCount[-1]}, "
+                f"statin={self._statin[-1]}"
                 f")")
 
     def __ne__(self, obj):
@@ -429,6 +464,8 @@ class Person:
             return False
         if not other._smokingStatus == self._smokingStatus:
             return False
+        if not other._alcoholPerWeek == self._alcoholPerWeek:
+            return False
         if not other._antiHypertensiveCount == self._antiHypertensiveCount:
             return False
         if not other._statin == self._statin:
@@ -440,6 +477,8 @@ class Person:
         if not other._alive == self._alive:
             return False
         if not other._gcp == self._gcp:
+            return False
+        if not other._randomEffects == self._randomEffects:
             return False
         return other._outcomes == self._outcomes
 
@@ -478,5 +517,6 @@ class Person:
         selfCopy._afib = self._afib
         selfCopy._bpTreatmentStrategy = self._bpTreatmentStrategy
         selfCopy._gcp = copy.deepcopy(self._gcp)
+        selfCopy._randomEffects = copy.deepcopy(self._randomEffects)
 
         return selfCopy

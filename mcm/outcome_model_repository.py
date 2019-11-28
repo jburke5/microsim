@@ -62,11 +62,14 @@ class OutcomeModelRepository:
         self._models[OutcomeModelType.NON_CV_MORTALITY] = self.initialize_cox_model(
             "nhanesMortalityModel")
 
+    def get_random_effects(self):
+        return {'gcp': npRand.normal(0, 4.84)}
+
     def get_risk_for_person(self, person, outcome, years=1):
         return self.select_model_for_person(person, outcome).get_risk_for_person(person, years)
 
     def get_gcp(self, person):
-        return self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE)
+        return self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE) 
 
     def select_model_for_person(self, person, outcome):
         models_for_outcome = self._models[outcome]
