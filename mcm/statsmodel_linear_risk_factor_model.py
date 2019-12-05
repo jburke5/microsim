@@ -29,16 +29,7 @@ class StatsModelLinearRiskFactorModel:
     def convert_first_letter_to_lower(self, toLower):
         return toLower[:1].lower() + toLower[1:]
 
-    '''
-    This will apply an order of operations to the elements of the mdoel name. So, meanLogLagSbp
-    would take lagSBP, log it and take the mean. If the order of operations for the first elements
-    matters,they'll be appleid in order of which they are listed...
-    '''
-
-    # luciana tag...
-    # profiling wise...this is where we're getting killed. 
-    # the solution seems to be to cache this logic in some way. the first time through, figure out the series of manimpuations, subsequently
-    # apply those manipulations — i just dont' see an easy way to do that. it can clearly be done...but, tis going to make my head bleed.
+   # TODO: cache prop name -> transform order
     def get_modified_parameter_for_person(self, name, person):
         if name.startswith("log"):
             name = self.convert_first_letter_to_lower(name[len("log"):])
@@ -52,7 +43,6 @@ class StatsModelLinearRiskFactorModel:
         elif name.startswith("base"):
             name = self.convert_first_letter_to_lower(name[len("base"):])
             return getattr(person, "_" + name)[0]
-        # just strip lag prefixes
         elif name.startswith("lag"):
             name = self.convert_first_letter_to_lower(name[len("lag"):])
             return getattr(person, "_" + name)
