@@ -38,7 +38,7 @@ def get_all_argument_transforms(parameter_names: Iterable[str]) -> Dict[str, Lis
     param_transforms = {}
     for param_name in parameter_names:
         prop_name, transforms = get_argument_transforms(param_name)
-        if transforms:
+        if param_name.casefold() != prop_name:
             param_transforms[param_name] = (prop_name, transforms)
     return param_transforms
 
