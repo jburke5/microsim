@@ -26,9 +26,11 @@ def get_argument_transforms(parameter_name: str) -> Tuple[str, List[Callable]]:
         return (prop_name, transforms + [lambda v: v[0]])
     elif folded_param_name.startswith("lag"):
         trimmed_param_name = parameter_name[len("lag"):]
-        return (trimmed_param_name, [])  # identity: no transformation
+        expected_prop_name = trimmed_param_name[0].casefold() + trimmed_param_name[1:]
+        return (expected_prop_name, [])  # identity: no transformation
     else:
-        return (parameter_name, [])  # identity: no transformation
+        expected_prop_name = parameter_name[0].casefold() + parameter_name[1:]
+        return (expected_prop_name, [])  # identity: no transformation
 
 
 def get_all_argument_transforms(parameter_names: Iterable[str]) -> Dict[str, List[Callable]]:
