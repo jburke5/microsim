@@ -45,12 +45,19 @@ class StatsModelLinearRiskFactorModel:
     def __init__(self, regression_model, log_transform=False):
         self.parameters = regression_model._coefficients
         self.standard_errors = regression_model._coefficient_standard_errors
-        self.residual_mean = regression_model._residual_mean
-        self.residual_standard_deviation = regression_model._residual_standard_deviation
         self.log_transform = log_transform
         self.argument_transforms = get_all_argument_transforms(self.parameters.keys())
+        if (
+            hasattr(regression_model, "_residual_mean")
+            and hasattr(regression_model, "_residual_standard_deviation")
+        ):
+            self.residual_mean = regression_model._residual_mean
+            self.residual_standard_deviation = regression_model._residual_standard_deviation
 
     def draw_from_residual_distribution(self):
+        if not hasattr(self, "residual_mean") and hasattr(self, "residual_standard_deviation"):
+            raise RuntimeError("Cannot draw from residual distribution: model does not have"
+                               " residual information")
         return np.random.normal(
             loc=self.residual_mean,
             scale=self.residual_standard_deviation,
