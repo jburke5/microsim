@@ -1,8 +1,44 @@
-
+from functools import reduce
+from typing import Callable, Dict, Iterable, List, Tuple
 import numpy as np
 
 # TODO: this class needs to be renamed. its no longer interfacing with statsmodel
 # conceptually, what it does now is bridge the regression model and the person
+
+
+def get_argument_transforms(parameter_name: str) -> Tuple[str, List[Callable]]:
+    folded_param_name = parameter_name.casefold()
+    if folded_param_name.startswith("log"):
+        trimmed_param_name = parameter_name[len("log"):]
+        prop_name, transforms = get_argument_transforms(trimmed_param_name)
+        return (prop_name, transforms + [lambda v: np.log(v)])
+    elif folded_param_name.startswith("mean"):
+        trimmed_param_name = parameter_name[len("mean"):]
+        prop_name, transforms = get_argument_transforms(trimmed_param_name)
+        return (prop_name, transforms + [lambda v: np.array(v).mean()])
+    elif folded_param_name.startswith("square"):
+        trimmed_param_name = parameter_name[len("square"):]
+        prop_name, transforms = get_argument_transforms(trimmed_param_name)
+        return (prop_name, transforms + [lambda v: v ** 2])
+    elif folded_param_name.startswith("base"):
+        trimmed_param_name = parameter_name[len("base"):]
+        prop_name, transforms = get_argument_transforms(trimmed_param_name)
+        return (prop_name, transforms + [lambda v: v[0]])
+    elif folded_param_name.startswith("lag"):
+        trimmed_param_name = parameter_name[len("lag"):]
+        return (trimmed_param_name, [])  # identity: no transformation
+    else:
+        return (parameter_name, [])  # identity: no transformation
+
+
+def get_all_argument_transforms(parameter_names: Iterable[str]) -> Dict[str, List[Callable]]:
+    """Return transform functions for each model parameter, if any"""
+    param_transforms = {}
+    for param_name in parameter_names:
+        prop_name, transforms = get_argument_transforms(param_name)
+        if transforms:
+            param_transforms[param_name] = (prop_name, transforms)
+    return param_transforms
 
 
 class StatsModelLinearRiskFactorModel:
@@ -12,6 +48,7 @@ class StatsModelLinearRiskFactorModel:
         self.residual_mean = regression_model._residual_mean
         self.residual_standard_deviation = regression_model._residual_standard_deviation
         self.log_transform = log_transform
+        self.argument_transforms = get_all_argument_transforms(self.parameters.keys())
 
     def draw_from_residual_distribution(self):
         return np.random.normal(
@@ -25,29 +62,6 @@ class StatsModelLinearRiskFactorModel:
             return returnParam
         else:
             return returnParam[-1]
-
-    def convert_first_letter_to_lower(self, toLower):
-        return toLower[:1].lower() + toLower[1:]
-
-   # TODO: cache prop name -> transform order
-    def get_modified_parameter_for_person(self, name, person):
-        if name.startswith("log"):
-            name = self.convert_first_letter_to_lower(name[len("log"):])
-            return np.log(self.get_modified_parameter_for_person(name, person))
-        elif name.startswith("mean"):
-            name = self.convert_first_letter_to_lower(name[len("mean"):])
-            return np.array(self.get_modified_parameter_for_person(name, person)).mean()
-        elif name.startswith("square"):
-            name = self.convert_first_letter_to_lower(name[len("square"):])
-            return (self.get_modified_parameter_for_person(name, person))**2
-        elif name.startswith("base"):
-            name = self.convert_first_letter_to_lower(name[len("base"):])
-            return getattr(person, "_" + name)[0]
-        elif name.startswith("lag"):
-            name = self.convert_first_letter_to_lower(name[len("lag"):])
-            return getattr(person, "_" + name)
-        else:
-            return getattr(person, "_" + name)
 
     def strip_categorical_name(self, name):
         stripped_name = "_" + name[:name.index("[")]
@@ -76,8 +90,16 @@ class StatsModelLinearRiskFactorModel:
 
         # for non-categorical parameters this is easy — just add the linear predictor
         for coeff_name, coeff_val in nonCategoricalParams.items():
-            linearPredictor += coeff_val * \
-                self.get_modified_attribute_for_parameter_from_person(coeff_name, person)
+
+            if coeff_name not in self.argument_transforms:
+                model_argument = getattr(person, f"_{coeff_name}")
+            else:
+                prop_name, transforms = self.argument_transforms[coeff_name]
+                prop_value = getattr(person, f"_{prop_name}")
+                model_argument = reduce(lambda v, f: f(v), transforms, prop_value)
+            if isinstance(model_argument, list) or isinstance(model_argument, np.ndarray):
+                model_argument = model_argument[-1]
+            linearPredictor += coeff_val * model_argument
 
         # for categorical params, pick which parameter to add...
         for coeff_name, coeff_val in categoricalParams.items():
