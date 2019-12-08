@@ -65,13 +65,6 @@ class StatsModelLinearRiskFactorModel:
             scale=self.residual_standard_deviation,
             size=1)[0]
 
-    def get_modified_attribute_for_parameter_from_person(self, name, person):
-        returnParam = self.get_modified_parameter_for_person(name, person)
-        if not isinstance(returnParam, list) and not isinstance(returnParam, np.ndarray):
-            return returnParam
-        else:
-            return returnParam[-1]
-
     def strip_categorical_name(self, name):
         stripped_name = "_" + name[:name.index("[")]
         stripped_value = int(name[name.index("[T.") + len("[T."): name.index("]")])
