@@ -1,14 +1,22 @@
 from functools import reduce
 from typing import Callable, Dict, Iterable, List, Tuple
 import numpy as np
+import re
 
 # TODO: this class needs to be renamed. its no longer interfacing with statsmodel
 # conceptually, what it does now is bridge the regression model and the person
 
+categorical_param_name_pattern = r"^(?P<propname>[^\[]+)\[T\.(?P<matchingval>[^\]]+)\]"
+categorical_param_name_regex = re.compile(categorical_param_name_pattern)
+
 
 def get_argument_transforms(parameter_name: str) -> Tuple[str, List[Callable]]:
     folded_param_name = parameter_name.casefold()
-    if folded_param_name.startswith("log"):
+    categorical_match = categorical_param_name_regex.match(parameter_name)
+    if categorical_match is not None:
+        prop_name, matching_categorical_value = categorical_match.group('propname', 'matchingval')
+        return (prop_name, [lambda v: 1 if v == matching_categorical_value else 0])
+    elif folded_param_name.startswith("log"):
         trimmed_param_name = parameter_name[len("log"):]
         prop_name, transforms = get_argument_transforms(trimmed_param_name)
         return (prop_name, transforms + [lambda v: np.log(v)])
