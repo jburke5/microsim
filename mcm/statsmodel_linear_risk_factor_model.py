@@ -14,7 +14,8 @@ def get_argument_transforms(parameter_name: str) -> Tuple[str, List[Callable]]:
     folded_param_name = parameter_name.casefold()
     categorical_match = categorical_param_name_regex.match(parameter_name)
     if categorical_match is not None:
-        prop_name, matching_categorical_value = categorical_match.group('propname', 'matchingval')
+        prop_name = categorical_match['propname']
+        matching_categorical_value = int(categorical_match['matchingval'])
         return (prop_name, [lambda v: 1 if v == matching_categorical_value else 0])
     elif folded_param_name.startswith("log"):
         trimmed_param_name = parameter_name[len("log"):]
@@ -63,16 +64,8 @@ class StatsModelLinearRiskFactorModel:
             self.residual_standard_deviation = regression_model._residual_standard_deviation
 
         self.parameters = {**(regression_model._coefficients)}
-        self._categoricalParams = {}
-        self._nonCategoricalParams = {}
-        for param_name, param_val in self.parameters.items():
-            if param_name == "Intercept":
-                continue
-            if "[" in param_name:
-                self._categoricalParams[param_name] = param_val
-            else:
-                self._nonCategoricalParams[param_name] = param_val
-        self.argument_transforms = get_all_argument_transforms(self._nonCategoricalParams.keys())
+        self.non_intercept_params = {k: v for k, v in self.parameters.items() if k != 'Intercept'}
+        self.argument_transforms = get_all_argument_transforms(self.non_intercept_params.keys())
 
     def draw_from_residual_distribution(self):
         if not hasattr(self, "residual_mean") and hasattr(self, "residual_standard_deviation"):
@@ -95,8 +88,7 @@ class StatsModelLinearRiskFactorModel:
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
         linearPredictor = self.get_intercept()
 
-        # for non-categorical parameters this is easy — just add the linear predictor
-        for coeff_name, coeff_val in self._nonCategoricalParams.items():
+        for coeff_name, coeff_val in self.non_intercept_params.items():
             if coeff_name not in self.argument_transforms:
                 model_argument = getattr(person, f"_{coeff_name}")
             else:
@@ -106,12 +98,6 @@ class StatsModelLinearRiskFactorModel:
             if isinstance(model_argument, list) or isinstance(model_argument, np.ndarray):
                 model_argument = model_argument[-1]
             linearPredictor += coeff_val * model_argument
-
-        # for categorical params, pick which parameter to add...
-        for coeff_name, coeff_val in self._categoricalParams.items():
-            stripped_name, matched_categorical_value = self.strip_categorical_name(coeff_name)
-            if (matched_categorical_value == getattr(person, stripped_name)):
-                linearPredictor += coeff_val
 
         if (self.log_transform):
             linearPredictor = np.exp(linearPredictor)
