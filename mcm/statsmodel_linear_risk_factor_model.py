@@ -76,11 +76,6 @@ class StatsModelLinearRiskFactorModel:
             scale=self.residual_standard_deviation,
             size=1)[0]
 
-    def strip_categorical_name(self, name):
-        stripped_name = "_" + name[:name.index("[")]
-        stripped_value = int(name[name.index("[T.") + len("[T."): name.index("]")])
-        return (stripped_name, stripped_value)
-
     def get_intercept(self):
         return self.parameters['Intercept']
 
