@@ -1,14 +1,11 @@
 from copy import copy
 from functools import reduce
 from typing import Callable, Dict, Iterable, List, Tuple
-import numpy as np
 import re
+import numpy as np
 
 # TODO: this class needs to be renamed. its no longer interfacing with statsmodel
 # conceptually, what it does now is bridge the regression model and the person
-
-categorical_param_name_pattern = r"^(?P<propname>[^\[]+)\[T\.(?P<matchingval>[^\]]+)\]"
-categorical_param_name_regex = re.compile(categorical_param_name_pattern)
 
 
 class IndicatorTransform:
@@ -54,9 +51,12 @@ def base_transform(value):
     return value[0]
 
 
+categorical_param_name_pattern = r"^(?P<propname>[^\[]+)\[T\.(?P<matchingval>[^\]]+)\]"
+categorical_param_name_regex = re.compile(categorical_param_name_pattern)
+
 def get_argument_transforms(
     parameter_name: str,
-    max_num_transforms: int = 10
+    max_num_transforms: int = 10,
 ) -> Tuple[str, List[Callable]]:
     trimmed_param_name = parameter_name
     prop_transforms = []
