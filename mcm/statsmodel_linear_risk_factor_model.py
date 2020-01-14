@@ -68,38 +68,6 @@ def get_argument_transforms(
     return (expected_prop_name, reversed(prop_transforms))
 
 
-def get_argument_transforms_recursive(parameter_name: str) -> Tuple[str, List[Callable]]:
-    folded_param_name = parameter_name.casefold()
-    categorical_match = categorical_param_name_regex.match(parameter_name)
-    if categorical_match is not None:
-        prop_name = categorical_match['propname']
-        matching_categorical_value = int(categorical_match['matchingval'])
-        return (prop_name, [lambda v: 1 if v == matching_categorical_value else 0])
-    elif folded_param_name.startswith("log"):
-        trimmed_param_name = parameter_name[len("log"):]
-        prop_name, transforms = get_argument_transforms_recursive(trimmed_param_name)
-        return (prop_name, transforms + [lambda v: np.log(v)])
-    elif folded_param_name.startswith("mean"):
-        trimmed_param_name = parameter_name[len("mean"):]
-        prop_name, transforms = get_argument_transforms_recursive(trimmed_param_name)
-        return (prop_name, transforms + [lambda v: np.array(v).mean()])
-    elif folded_param_name.startswith("square"):
-        trimmed_param_name = parameter_name[len("square"):]
-        prop_name, transforms = get_argument_transforms_recursive(trimmed_param_name)
-        return (prop_name, transforms + [lambda v: v ** 2])
-    elif folded_param_name.startswith("base"):
-        trimmed_param_name = parameter_name[len("base"):]
-        prop_name, transforms = get_argument_transforms_recursive(trimmed_param_name)
-        return (prop_name, transforms + [lambda v: v[0]])
-    elif folded_param_name.startswith("lag"):
-        trimmed_param_name = parameter_name[len("lag"):]
-        expected_prop_name = trimmed_param_name[0].casefold() + trimmed_param_name[1:]
-        return (expected_prop_name, [])  # identity: no transformation
-    else:
-        expected_prop_name = parameter_name[0].casefold() + parameter_name[1:]
-        return (expected_prop_name, [])  # identity: no transformation
-
-
 def get_all_argument_transforms(parameter_names: Iterable[str]) -> Dict[str, List[Callable]]:
     """Return transform functions for each model parameter, if any"""
     param_transforms = {}
