@@ -54,6 +54,7 @@ def base_transform(value):
 categorical_param_name_pattern = r"^(?P<propname>[^\[]+)\[T\.(?P<matchingval>[^\]]+)\]"
 categorical_param_name_regex = re.compile(categorical_param_name_pattern)
 
+
 def get_argument_transforms(
     parameter_name: str,
     max_num_transforms: int = 10,
