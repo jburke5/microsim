@@ -10,7 +10,7 @@ categorical_param_name_pattern = r"^(?P<propname>[^\[]+)\[T\.(?P<matchingval>[^\
 categorical_param_name_regex = re.compile(categorical_param_name_pattern)
 
 
-def get_argument_transforms(parameter_name: str) -> Tuple[str, List[Callable]]:
+def get_argument_transforms_recursive(parameter_name: str) -> Tuple[str, List[Callable]]:
     folded_param_name = parameter_name.casefold()
     categorical_match = categorical_param_name_regex.match(parameter_name)
     if categorical_match is not None:
@@ -19,19 +19,19 @@ def get_argument_transforms(parameter_name: str) -> Tuple[str, List[Callable]]:
         return (prop_name, [lambda v: 1 if v == matching_categorical_value else 0])
     elif folded_param_name.startswith("log"):
         trimmed_param_name = parameter_name[len("log"):]
-        prop_name, transforms = get_argument_transforms(trimmed_param_name)
+        prop_name, transforms = get_argument_transforms_recursive(trimmed_param_name)
         return (prop_name, transforms + [lambda v: np.log(v)])
     elif folded_param_name.startswith("mean"):
         trimmed_param_name = parameter_name[len("mean"):]
-        prop_name, transforms = get_argument_transforms(trimmed_param_name)
+        prop_name, transforms = get_argument_transforms_recursive(trimmed_param_name)
         return (prop_name, transforms + [lambda v: np.array(v).mean()])
     elif folded_param_name.startswith("square"):
         trimmed_param_name = parameter_name[len("square"):]
-        prop_name, transforms = get_argument_transforms(trimmed_param_name)
+        prop_name, transforms = get_argument_transforms_recursive(trimmed_param_name)
         return (prop_name, transforms + [lambda v: v ** 2])
     elif folded_param_name.startswith("base"):
         trimmed_param_name = parameter_name[len("base"):]
-        prop_name, transforms = get_argument_transforms(trimmed_param_name)
+        prop_name, transforms = get_argument_transforms_recursive(trimmed_param_name)
         return (prop_name, transforms + [lambda v: v[0]])
     elif folded_param_name.startswith("lag"):
         trimmed_param_name = parameter_name[len("lag"):]
@@ -46,7 +46,7 @@ def get_all_argument_transforms(parameter_names: Iterable[str]) -> Dict[str, Lis
     """Return transform functions for each model parameter, if any"""
     param_transforms = {}
     for param_name in parameter_names:
-        prop_name, transforms = get_argument_transforms(param_name)
+        prop_name, transforms = get_argument_transforms_recursive(param_name)
         if param_name.casefold() != prop_name:
             param_transforms[param_name] = (prop_name, transforms)
     return param_transforms
