@@ -1,3 +1,4 @@
+from copy import copy
 from functools import reduce
 from typing import Callable, Dict, Iterable, List, Tuple
 import numpy as np
@@ -8,6 +9,49 @@ import re
 
 categorical_param_name_pattern = r"^(?P<propname>[^\[]+)\[T\.(?P<matchingval>[^\]]+)\]"
 categorical_param_name_regex = re.compile(categorical_param_name_pattern)
+
+
+class IndicatorTransform:
+    """
+    Transform that returns 1 if value matches; else 0.
+
+    matching_value should be either a primitive or a `copy`-able container of primitives.
+    """
+
+    def __init__(self, matching_value):
+        self._matching_value = copy(matching_value)
+
+    @property
+    def matching_value(self):
+        return self._matching_value
+
+    def __call__(self, value):
+        return 1 if value == self._matching_value else 0
+
+    def __eq__(self, other):
+        if issubclass(type(other), IndicatorTransform):
+            return self._matching_value == other.matching_value
+        return False
+
+
+def log_transform(value):
+    """Returns the log (one or many) of the given value."""
+    return np.log(value)
+
+
+def mean_transform(value):
+    """Returns the mean of the given value."""
+    return np.array(value).mean()
+
+
+def square_transform(value):
+    """Returns the square (one or many) of the given value."""
+    return value ** 2
+
+
+def base_transform(value):
+    """Returns the base (i.e., first) element of the given value."""
+    return value[0]
 
 
 def get_argument_transforms(
@@ -23,21 +67,21 @@ def get_argument_transforms(
         if categorical_match is not None:
             expected_prop_name = categorical_match['propname']
             matching_categorical_value = int(categorical_match['matchingval'])
-            prop_transforms.append(lambda v: 1 if v == matching_categorical_value else 0)
+            prop_transforms.append(IndicatorTransform(matching_categorical_value))
             reached_base_case = True
             break
         elif folded_param_name.startswith("log"):
             trimmed_param_name = trimmed_param_name[len("log"):]
-            prop_transforms.append(lambda v: np.log(v))
+            prop_transforms.append(log_transform)
         elif folded_param_name.startswith("mean"):
             trimmed_param_name = trimmed_param_name[len("mean"):]
-            prop_transforms.append(lambda v: np.array(v).mean())
+            prop_transforms.append(mean_transform)
         elif folded_param_name.startswith("square"):
             trimmed_param_name = trimmed_param_name[len("square"):]
-            prop_transforms.append(lambda v: v ** 2)
+            prop_transforms.append(square_transform)
         elif folded_param_name.startswith("base"):
             trimmed_param_name = trimmed_param_name[len("base"):]
-            prop_transforms.append(lambda v: v[0])
+            prop_transforms.append(base_transform)
         elif folded_param_name.startswith("lag"):
             trimmed_param_name = trimmed_param_name[len("lag"):]
             expected_prop_name = trimmed_param_name[0].casefold() + trimmed_param_name[1:]
