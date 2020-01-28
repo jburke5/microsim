@@ -12,7 +12,6 @@ categorical_param_name_regex = re.compile(categorical_param_name_pattern)
 
 class BaseTransform(metaclass=ABCMeta):
     """Interface definition for model argument transforms."""
-
     @abstractmethod
     def apply(self, value):
         raise NotImplementedError()
@@ -27,7 +26,6 @@ class IndicatorTransform(BaseTransform):
 
     matching_value should be either a primitive or a `copy`-able container of primitives.
     """
-
     def __init__(self, matching_value):
         self._matching_value = copy(matching_value)
 
