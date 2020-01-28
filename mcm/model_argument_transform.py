@@ -1,5 +1,6 @@
+from abc import ABCMeta, abstractmethod
 from copy import copy
-from typing import Callable, Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple
 import re
 
 import numpy as np
@@ -9,13 +10,19 @@ categorical_param_name_pattern = r"^(?P<propname>[^\[]+)\[T\.(?P<matchingval>[^\
 categorical_param_name_regex = re.compile(categorical_param_name_pattern)
 
 
-class IndicatorTransform:
+class AbstractBaseTransform(metaclass=ABCMeta):
+    """Interface definition for model argument transforms."""
+    @abstractmethod
+    def apply(self, value):
+        raise NotImplementedError()
+
+
+class IndicatorTransform(AbstractBaseTransform):
     """
     Transform that returns 1 if value matches; else 0.
 
     matching_value should be either a primitive or a `copy`-able container of primitives.
     """
-
     def __init__(self, matching_value):
         self._matching_value = copy(matching_value)
 
@@ -23,7 +30,7 @@ class IndicatorTransform:
     def matching_value(self):
         return self._matching_value
 
-    def __call__(self, value):
+    def apply(self, value):
         return 1 if value == self._matching_value else 0
 
     def __eq__(self, other):
@@ -32,30 +39,37 @@ class IndicatorTransform:
         return False
 
 
-def log_transform(value):
+class LogTransform(AbstractBaseTransform):
     """Returns the log (one or many) of the given value."""
-    return np.log(value)
+    def apply(self, value):
+        return np.log(value)
 
 
-def mean_transform(value):
+class MeanTransform(AbstractBaseTransform):
     """Returns the mean of the given value."""
-    return np.array(value).mean()
+    def apply(self, value):
+        return np.array(value).mean()
 
 
-def square_transform(value):
+class SquareTransform(AbstractBaseTransform):
     """Returns the square (one or many) of the given value."""
-    return value ** 2
+    def apply(self, value):
+        return value ** 2
 
 
-def base_transform(value):
-    """Returns the base (i.e., first) element of the given value."""
-    return value[0]
+class FirstElementTransform(AbstractBaseTransform):
+    """Returns the first element of the given value."""
+    def apply(self, value):
+        return value[0]
+
+
+Transform = AbstractBaseTransform
 
 
 def get_argument_transforms(
     parameter_name: str,
     max_num_transforms: int = 10,
-) -> Tuple[str, List[Callable]]:
+) -> Tuple[str, List[Transform]]:
     trimmed_param_name = parameter_name
     prop_transforms = []
     reached_base_case = False
@@ -70,16 +84,16 @@ def get_argument_transforms(
             break
         elif folded_param_name.startswith("log"):
             trimmed_param_name = trimmed_param_name[len("log"):]
-            prop_transforms.append(log_transform)
+            prop_transforms.append(LogTransform())
         elif folded_param_name.startswith("mean"):
             trimmed_param_name = trimmed_param_name[len("mean"):]
-            prop_transforms.append(mean_transform)
+            prop_transforms.append(MeanTransform())
         elif folded_param_name.startswith("square"):
             trimmed_param_name = trimmed_param_name[len("square"):]
-            prop_transforms.append(square_transform)
+            prop_transforms.append(SquareTransform())
         elif folded_param_name.startswith("base"):
             trimmed_param_name = trimmed_param_name[len("base"):]
-            prop_transforms.append(base_transform)
+            prop_transforms.append(FirstElementTransform())
         elif folded_param_name.startswith("lag"):
             trimmed_param_name = trimmed_param_name[len("lag"):]
             expected_prop_name = trimmed_param_name[0].casefold() + trimmed_param_name[1:]
@@ -102,7 +116,7 @@ def get_argument_transforms(
     return (expected_prop_name, reversed(prop_transforms))
 
 
-def get_all_argument_transforms(parameter_names: Iterable[str]) -> Dict[str, List[Callable]]:
+def get_all_argument_transforms(parameter_names: Iterable[str]) -> Dict[str, List[Transform]]:
     """Return transform functions for each model parameter, if any"""
     param_transforms = {}
     for param_name in parameter_names:
