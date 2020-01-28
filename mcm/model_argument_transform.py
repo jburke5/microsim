@@ -16,9 +16,6 @@ class AbstractBaseTransform(metaclass=ABCMeta):
     def apply(self, value):
         raise NotImplementedError()
 
-    def __call__(self, value):
-        return self.apply(value)
-
 
 class IndicatorTransform(AbstractBaseTransform):
     """
