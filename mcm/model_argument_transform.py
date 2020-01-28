@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from copy import copy
-from typing import Callable, Dict, Iterable, List, Tuple
+from typing import Callable, Dict, Iterable, List, Tuple, TypeVar
 import re
 
 import numpy as np
@@ -66,10 +66,13 @@ class FirstElementTransform(AbstractBaseTransform):
         return value[0]
 
 
+Transform = AbstractBaseTransform
+
+
 def get_argument_transforms(
     parameter_name: str,
     max_num_transforms: int = 10,
-) -> Tuple[str, List[Callable]]:
+) -> Tuple[str, List[Transform]]:
     trimmed_param_name = parameter_name
     prop_transforms = []
     reached_base_case = False
@@ -116,7 +119,7 @@ def get_argument_transforms(
     return (expected_prop_name, reversed(prop_transforms))
 
 
-def get_all_argument_transforms(parameter_names: Iterable[str]) -> Dict[str, List[Callable]]:
+def get_all_argument_transforms(parameter_names: Iterable[str]) -> Dict[str, List[Transform]]:
     """Return transform functions for each model parameter, if any"""
     param_transforms = {}
     for param_name in parameter_names:
