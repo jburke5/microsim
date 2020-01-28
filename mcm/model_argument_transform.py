@@ -84,16 +84,16 @@ def get_argument_transforms(
             break
         elif folded_param_name.startswith("log"):
             trimmed_param_name = trimmed_param_name[len("log"):]
-            prop_transforms.append(log_transform)
+            prop_transforms.append(LogTransform())
         elif folded_param_name.startswith("mean"):
             trimmed_param_name = trimmed_param_name[len("mean"):]
-            prop_transforms.append(mean_transform)
+            prop_transforms.append(MeanTransform())
         elif folded_param_name.startswith("square"):
             trimmed_param_name = trimmed_param_name[len("square"):]
-            prop_transforms.append(square_transform)
+            prop_transforms.append(SquareTransform())
         elif folded_param_name.startswith("base"):
             trimmed_param_name = trimmed_param_name[len("base"):]
-            prop_transforms.append(base_transform)
+            prop_transforms.append(FirstElementTransform())
         elif folded_param_name.startswith("lag"):
             trimmed_param_name = trimmed_param_name[len("lag"):]
             expected_prop_name = trimmed_param_name[0].casefold() + trimmed_param_name[1:]
