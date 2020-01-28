@@ -42,24 +42,28 @@ class IndicatorTransform(AbstractBaseTransform):
         return False
 
 
-def log_transform(value):
+class LogTransform(AbstractBaseTransform):
     """Returns the log (one or many) of the given value."""
-    return np.log(value)
+    def apply(self, value):
+        return np.log(value)
 
 
-def mean_transform(value):
+class MeanTransform(AbstractBaseTransform):
     """Returns the mean of the given value."""
-    return np.array(value).mean()
+    def apply(self, value):
+        return np.array(value).mean()
 
 
-def square_transform(value):
+class SquareTransform(AbstractBaseTransform):
     """Returns the square (one or many) of the given value."""
-    return value ** 2
+    def apply(self, value):
+        return value ** 2
 
 
-def base_transform(value):
-    """Returns the base (i.e., first) element of the given value."""
-    return value[0]
+class FirstElementTransform(AbstractBaseTransform):
+    """Returns the first element of the given value."""
+    def apply(self, value):
+        return value[0]
 
 
 def get_argument_transforms(
