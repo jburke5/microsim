@@ -18,7 +18,7 @@ class BaseTransform(metaclass=ABCMeta):
         raise NotImplementedError()
 
 
-class IndicatorTransform:
+class IndicatorTransform(BaseTransform):
     """
     Transform that returns 1 if value matches; else 0.
 
@@ -33,6 +33,9 @@ class IndicatorTransform:
         return self._matching_value
 
     def __call__(self, value):
+        return self.apply(value)
+
+    def apply(self, value):
         return 1 if value == self._matching_value else 0
 
     def __eq__(self, other):
