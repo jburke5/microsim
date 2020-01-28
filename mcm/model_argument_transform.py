@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from copy import copy
-from typing import Callable, Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple
 import re
 
 import numpy as np
