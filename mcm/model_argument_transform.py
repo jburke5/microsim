@@ -11,7 +11,7 @@ categorical_param_name_regex = re.compile(categorical_param_name_pattern)
 
 
 class BaseTransform(metaclass=ABCMeta):
-    """ABC/interface definition for model argument transforms."""
+    """Interface definition for model argument transforms."""
 
     @abstractmethod
     def apply(self, value):
