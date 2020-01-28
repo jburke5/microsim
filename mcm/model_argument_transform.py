@@ -1,3 +1,4 @@
+from abc import ABCMeta, abstractmethod
 from copy import copy
 from typing import Callable, Dict, Iterable, List, Tuple
 import re
@@ -7,6 +8,14 @@ import numpy as np
 
 categorical_param_name_pattern = r"^(?P<propname>[^\[]+)\[T\.(?P<matchingval>[^\]]+)\]"
 categorical_param_name_regex = re.compile(categorical_param_name_pattern)
+
+
+class BaseTransform(metaclass=ABCMeta):
+    """ABC/interface definition for model argument transforms."""
+
+    @abstractmethod
+    def apply(self, value):
+        raise NotImplementedError()
 
 
 class IndicatorTransform:
