@@ -10,7 +10,7 @@ categorical_param_name_pattern = r"^(?P<propname>[^\[]+)\[T\.(?P<matchingval>[^\
 categorical_param_name_regex = re.compile(categorical_param_name_pattern)
 
 
-class BaseTransform(metaclass=ABCMeta):
+class AbstractBaseTransform(metaclass=ABCMeta):
     """Interface definition for model argument transforms."""
     @abstractmethod
     def apply(self, value):
@@ -20,7 +20,7 @@ class BaseTransform(metaclass=ABCMeta):
         return self.apply(value)
 
 
-class IndicatorTransform(BaseTransform):
+class IndicatorTransform(AbstractBaseTransform):
     """
     Transform that returns 1 if value matches; else 0.
 
