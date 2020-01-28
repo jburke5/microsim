@@ -43,7 +43,7 @@ class StatsModelLinearRiskFactorModel:
             else:
                 prop_name, transforms = self.argument_transforms[coeff_name]
                 prop_value = getattr(person, f"_{prop_name}")
-                model_argument = reduce(lambda v, f: f(v), transforms, prop_value)
+                model_argument = reduce(lambda v, t: t.apply(v), transforms, prop_value)
             if isinstance(model_argument, list) or isinstance(model_argument, np.ndarray):
                 model_argument = model_argument[-1]
             linearPredictor += coeff_val * model_argument
