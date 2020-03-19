@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "mcm"
+name = "microsim"
 version = "0.0.1"
-description = "Open-source cardiovascular and cognition simulation framework for population health"
+description = "Open-source chronic disease simulation framework for population health"
 authors = []
 license = ""
 

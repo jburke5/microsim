@@ -8,7 +8,7 @@ def main():
         "unittest",
         "discover",
         "--start-directory",
-        "./mcm/test",
+        "./microsim/test",
         "--pattern",
         "test_*.py"
     ]
