@@ -5,6 +5,7 @@ from microsim.model_argument_transform import get_all_argument_transforms
 # TODO: this class needs to be renamed. its no longer interfacing with statsmodel
 # conceptually, what it does now is bridge the regression model and the person
 
+INTERACTION_INDICATOR = "#"
 
 class StatsModelLinearRiskFactorModel:
     def __init__(self, regression_model, log_transform=False):
@@ -19,7 +20,16 @@ class StatsModelLinearRiskFactorModel:
 
         self.parameters = {**(regression_model._coefficients)}
         self.non_intercept_params = {k: v for k, v in self.parameters.items() if k != 'Intercept'}
-        self.argument_transforms = get_all_argument_transforms(self.non_intercept_params.keys())
+        self.argument_transforms = get_all_argument_transforms(self.get_keys_for_transforms())
+
+    def get_keys_for_transforms(self):
+        keysForTransforms = []
+        for key in self.non_intercept_params.keys():
+            if self.contains_interaction(key):
+                keysForTransforms.extend(self.get_interactions(key))
+            else:
+                keysForTransforms.append(key)
+        return keysForTransforms
 
     def draw_from_residual_distribution(self):
         if not hasattr(self, "residual_mean") and hasattr(self, "residual_standard_deviation"):
@@ -33,21 +43,38 @@ class StatsModelLinearRiskFactorModel:
     def get_intercept(self):
         return self.parameters['Intercept']
 
+    def get_model_argument_for_coeff_name(self, coeff_name, person):
+        if coeff_name not in self.argument_transforms:
+            model_argument = getattr(person, f"_{coeff_name}")
+        else:
+            prop_name, transforms = self.argument_transforms[coeff_name]
+            prop_value = getattr(person, f"_{prop_name}")
+            model_argument = reduce(lambda v, t: t.apply(v), transforms, prop_value)
+        if isinstance(model_argument, list) or isinstance(model_argument, np.ndarray):
+            model_argument = model_argument[-1]
+        return model_argument
+    
+    def contains_interaction(self, coeff_name):
+        return INTERACTION_INDICATOR in coeff_name
+
+    def get_interactions(self, coeff_name):
+        return coeff_name.split(INTERACTION_INDICATOR)
+    
     def estimate_next_risk(self, person):
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
         linearPredictor = self.get_intercept()
 
         for coeff_name, coeff_val in self.non_intercept_params.items():
-            if coeff_name not in self.argument_transforms:
-                model_argument = getattr(person, f"_{coeff_name}")
+            if self.contains_interaction(coeff_name):
+                interactions = []
+                for interact in self.get_interactions(coeff_name):
+                    interactions.append(self.get_model_argument_for_coeff_name(interact, person))
+                model_argument = reduce(lambda x, y: x * y, interactions, 1)
             else:
-                prop_name, transforms = self.argument_transforms[coeff_name]
-                prop_value = getattr(person, f"_{prop_name}")
-                model_argument = reduce(lambda v, t: t.apply(v), transforms, prop_value)
-            if isinstance(model_argument, list) or isinstance(model_argument, np.ndarray):
-                model_argument = model_argument[-1]
+                model_argument = self.get_model_argument_for_coeff_name(coeff_name, person)
             linearPredictor += coeff_val * model_argument
-
+        
+        
         if (self.log_transform):
             linearPredictor = np.exp(linearPredictor)
 

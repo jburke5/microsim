@@ -104,6 +104,14 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
             self.meanLagModelResultSM.resid.mean(),
             self.meanLagModelResultSM.resid.std())
 
+        self.ageSbpInteractionCoeff = 0.02
+        self.sbpInteractionCoeff = 0.5
+        self.interactionModel = RegressionModel({'meanSbp#age' : self.ageSbpInteractionCoeff,
+                                                'meanSbp' : self.sbpInteractionCoeff,
+                                                'Intercept' : 0},
+            {'meanSbp#age' : 0.0, 'meanSbp' : 0.0}, 0, 0)
+
+
     def advancePerson(self, person):
         person._age.append(person._age[-1] + 1)
         person._dbp.append(person._dbp[-1])
@@ -159,3 +167,15 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                                self.raceModelResultSM.params['Intercept'],
                                StatsModelLinearRiskFactorModel(
             self.raceModelResult).estimate_next_risk(testPerson), 5)
+
+    def testInteractionModel(self):
+        testPerson = self.people[32]
+        self.assertAlmostEqual(np.array(testPerson._sbp).mean()*
+            testPerson._age[-1]*self.ageSbpInteractionCoeff +
+            np.array(testPerson._sbp).mean()*self.sbpInteractionCoeff, 
+            StatsModelLinearRiskFactorModel(
+            self.interactionModel).estimate_next_risk(testPerson), 5)
+
+if __name__ == "__main__":
+    unittest.main()
+    
