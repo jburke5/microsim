@@ -22,6 +22,11 @@ class StatsModelLinearRiskFactorModel:
         self.non_intercept_params = {k: v for k, v in self.parameters.items() if k != 'Intercept'}
         self.argument_transforms = get_all_argument_transforms(self.get_keys_for_transforms())
 
+    # method to be overriden by models that want to, in addition to the risks estimated by 
+    # the regression coefficients loaded from a model, also be able to apply some manual parameters.
+    def get_manual_parameters(self):
+        return {}
+
     def get_keys_for_transforms(self):
         keysForTransforms = []
         for key in self.non_intercept_params.keys():
@@ -72,7 +77,13 @@ class StatsModelLinearRiskFactorModel:
                 model_argument = reduce(lambda x, y: x * y, interactions, 1)
             else:
                 model_argument = self.get_model_argument_for_coeff_name(coeff_name, person)
+            
             linearPredictor += coeff_val * model_argument
+        
+        for coeff_name, manual_tuple in self.get_manual_parameters().items():
+            # the tuple gives one item as the regression coefficent and the second item as a method 
+            # to get the values from a person
+            linearPredictor += manual_tuple[0] * manual_tuple[1](person)
         
         
         if (self.log_transform):
