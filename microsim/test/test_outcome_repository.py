@@ -66,13 +66,13 @@ class TestOutcomeRepository(unittest.TestCase):
 
     def test_get_model_for_person(self):
         self.assertEqual(0.106501, self._outcome_model_repository.select_model_for_person(
-            self._white_female, OutcomeModelType.CARDIOVASCULAR)._age)
+            self._white_female, OutcomeModelType.CARDIOVASCULAR).parameters['lagAge'])
         self.assertEqual(0.106501, self._outcome_model_repository.select_model_for_person(
-            self._black_female, OutcomeModelType.CARDIOVASCULAR)._age)
+            self._black_female, OutcomeModelType.CARDIOVASCULAR).parameters['lagAge'])
         self.assertEqual(0.064200, self._outcome_model_repository.select_model_for_person(
-            self._white_male, OutcomeModelType.CARDIOVASCULAR)._age)
+            self._white_male, OutcomeModelType.CARDIOVASCULAR).parameters['lagAge'])
         self.assertEqual(0.064200, self._outcome_model_repository.select_model_for_person(
-            self._black_male, OutcomeModelType.CARDIOVASCULAR)._age)
+            self._black_male, OutcomeModelType.CARDIOVASCULAR).parameters['lagAge'])
 
     def test_calculate_risk_for_person(self):
         self.assertAlmostEqual(0.017654, self._outcome_model_repository.get_risk_for_person(

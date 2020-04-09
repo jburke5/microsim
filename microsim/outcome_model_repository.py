@@ -31,29 +31,30 @@ class OutcomeModelRepository:
         self.manualStrokeMIProbability = None
 
         self._models = {}
+        femaleCVCoefficients = {'lagAge': 0.106501, 'black': 0.432440, 'lagSbp#lagSbp': 0.000056, 'lagSbp': 0.017666,
+                                'current_bp_treatment': 0.731678, 'current_diabetes': 0.943970, 'current_smoker': 1.009790,
+                                'lagAge#black': -0.008580, 'lagSbp#current_bp_treatment': -0.003647, 'lagSbp#black': 0.006208,
+                                'black#current_bp_treatment': 0.152968, 'lagAge#lagSbp': -0.000153, 'black#current_diabetes': 0.115232,
+                                'black#current_smoker': -0.092231, 'lagSbp#black#current_bp_treatment': -0.000173,
+                                'lagAge#lagSbp#black': -0.000094, 'Intercept': -12.823110}
+
+        maleCVCoefficients = {'lagAge': 0.064200, 'black': 0.482835, 'lagSbp#lagSbp': -0.000061, 'lagSbp': 0.038950,
+                              'current_bp_treatment': 2.055533, 'current_diabetes': 0.842209, 'current_smoker': 0.895589,
+                              'lagAge#black': 0, 'lagSbp#current_bp_treatment': -0.014207, 'lagSbp#black': 0.011609,
+                              'black#current_bp_treatment': -0.119460, 'lagAge#lagSbp': 0.000025, 'black#current_diabetes': -0.077214,
+                              'black#current_smoker': -0.226771, 'lagSbp#black#current_bp_treatment': 0.004190,
+                              'lagAge#lagSbp#black': -0.000199, 'Intercept': -11.679980}
+
         self._models[OutcomeModelType.CARDIOVASCULAR] = {
-            "female": ASCVDOutcomeModel(
-                age=0.106501, black_race=0.432440, sbp_x_sbp=0.000056, sbp=0.017666,
-                bp_treatment=0.731678, diabetes=0.943970, current_smoker=1.009790,
-                tot_chol_hdl_ratio=0.151318, age_x_black_race=-0.008580,
-                sbp_x_treatment=-0.003647, sbp_x_black_race=0.006208,
-                black_race_x_treatment=0.152968, age_x_sbp=-0.000153,
-                black_race_x_diabetes=0.115232,
-                black_race_x_current_smoker=-0.092231, black_race_x_tot_chol_hdl_ratio=0.070498,
-                sbp_x_black_race_x_treatment=-0.000173, age_x_sbp_x_black_race=-0.000094,
-                intercept=-12.823110
-            ),
-            "male": ASCVDOutcomeModel(
-                age=0.064200, black_race=0.482835, sbp_x_sbp=-0.000061, sbp=0.038950,
-                bp_treatment=2.055533, diabetes=0.842209, current_smoker=0.895589,
-                tot_chol_hdl_ratio=0.193307, age_x_black_race=0,
-                sbp_x_treatment=-0.014207, sbp_x_black_race=0.011609,
-                black_race_x_treatment=-0.119460, age_x_sbp=0.000025,
-                black_race_x_diabetes=-0.077214,
-                black_race_x_current_smoker=-0.226771, black_race_x_tot_chol_hdl_ratio=-0.117749,
-                sbp_x_black_race_x_treatment=0.004190, age_x_sbp_x_black_race=-0.000199,
-                intercept=-11.679980
-            ),
+            "female": ASCVDOutcomeModel(RegressionModel(coefficients=femaleCVCoefficients,
+                                                        coefficient_standard_errors={key: 0 for key in femaleCVCoefficients},
+                                                        residual_mean=0, residual_standard_deviation=0),
+                                        tot_chol_hdl_ratio=0.151318, black_race_x_tot_chol_hdl_ratio=0.070498),
+
+            "male": ASCVDOutcomeModel(RegressionModel(coefficients=maleCVCoefficients,
+                                                      coefficient_standard_errors={key: 0 for key in maleCVCoefficients},
+                                                      residual_mean=0, residual_standard_deviation=0),
+                                      tot_chol_hdl_ratio=0.193307, black_race_x_tot_chol_hdl_ratio=-0.117749)
 
         }
         self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
@@ -69,7 +70,7 @@ class OutcomeModelRepository:
         return self.select_model_for_person(person, outcome).get_risk_for_person(person, years)
 
     def get_gcp(self, person):
-        return self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE) 
+        return self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE)
 
     def select_model_for_person(self, person, outcome):
         models_for_outcome = self._models[outcome]

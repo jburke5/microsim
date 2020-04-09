@@ -137,12 +137,28 @@ class Person:
                 filter(lambda outcome: outcome[0] < self._age[0], outcomes_for_type))
 
     @property
+    def _current_smoker(self):
+        return self._smokingStatus == SmokingStatus.CURRENT
+    
+    @property
+    def _current_bp_treatment(self):
+        return self._antiHypertensiveCount[-1] > 0
+    
+    @property
+    def _current_diabetes(self):
+        return self.has_diabetes()
+    
+    @property
     def _mi(self):
         return len(self._outcomes[OutcomeType.MI]) > 0
 
     @property
     def _stroke(self):
         return len(self._outcomes[OutcomeType.STROKE]) > 0
+
+    @property
+    def _black(self):
+        return self._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK
 
     def get_median_age(self):
         medianYear = math.floor(len(self._age) / 2)
