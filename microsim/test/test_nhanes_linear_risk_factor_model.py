@@ -1,7 +1,6 @@
 from microsim.person import Person
 from microsim.education import Education
 from microsim.alcohol_category import AlcoholCategory
-from microsim.alcohol_category import AlcoholCategory
 from microsim.test.test_risk_model_repository import TestRiskModelRepository
 
 import unittest
