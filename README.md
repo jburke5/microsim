@@ -5,6 +5,8 @@ This is the broad framework for representing a representative population and mod
 ## Development Quickstart
 This section assumes you have Python 3.7+ with `pip` installed. You will also need to [install `poetry`](https://poetry.eustace.io/docs/#installation) to install dependencies, run development commands, and build the package.
 
+For a more gentle introduction, try the [installation guide](INSTALL.md).
+
 First, clone this GitHub repository using your method of choice. Then, to create a development virtualenv and install development dependencies, run:
 ```
 poetry install
