@@ -5,9 +5,10 @@ from microsim.statsmodel_cox_model import StatsModelCoxModel
 from microsim.cox_regression_model import CoxRegressionModel
 from microsim.cv_outcome_determination import CVOutcomeDetermination
 from microsim.data_loader import load_model_spec
-from microsim.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
 from microsim.regression_model import RegressionModel
 from microsim.gcp_model import GCPModel
+from microsim.outcome import Outcome
+from microsim.dementia_model import DementiaModel
 
 import numpy.random as npRand
 
@@ -47,17 +48,20 @@ class OutcomeModelRepository:
 
         self._models[OutcomeModelType.CARDIOVASCULAR] = {
             "female": ASCVDOutcomeModel(RegressionModel(coefficients=femaleCVCoefficients,
-                                                        coefficient_standard_errors={key: 0 for key in femaleCVCoefficients},
+                                                        coefficient_standard_errors={
+                                                            key: 0 for key in femaleCVCoefficients},
                                                         residual_mean=0, residual_standard_deviation=0),
                                         tot_chol_hdl_ratio=0.151318, black_race_x_tot_chol_hdl_ratio=0.070498),
 
             "male": ASCVDOutcomeModel(RegressionModel(coefficients=maleCVCoefficients,
-                                                      coefficient_standard_errors={key: 0 for key in maleCVCoefficients},
+                                                      coefficient_standard_errors={
+                                                          key: 0 for key in maleCVCoefficients},
                                                       residual_mean=0, residual_standard_deviation=0),
                                       tot_chol_hdl_ratio=0.193307, black_race_x_tot_chol_hdl_ratio=-0.117749)
 
         }
         self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+        self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
 
         # This represents non-cardiovascular mortality..
         self._models[OutcomeModelType.NON_CV_MORTALITY] = self.initialize_cox_model(
@@ -72,13 +76,19 @@ class OutcomeModelRepository:
     def get_gcp(self, person):
         return self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE)
 
+    def get_dementia(self, person):
+        if npRand.uniform(size=1) < self.get_risk_for_person(person, OutcomeModelType.DEMENTIA):
+            return Outcome(OutcomeType.DEMENTIA, False)
+        else:
+            return None
+
     def select_model_for_person(self, person, outcome):
         models_for_outcome = self._models[outcome]
-        if outcome == OutcomeModelType.NON_CV_MORTALITY or outcome == OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE:
-            return models_for_outcome
-        elif outcome == OutcomeModelType.CARDIOVASCULAR:
+        if outcome == OutcomeModelType.CARDIOVASCULAR:
             gender_stem = "male" if person._gender == NHANESGender.MALE else "female"
             return models_for_outcome[gender_stem]
+        else:
+            return models_for_outcome
 
     def initialize_cox_model(self, modelName):
         model_spec = load_model_spec(modelName)
