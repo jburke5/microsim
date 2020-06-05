@@ -19,3 +19,4 @@ class Outcome:
 class OutcomeType(Enum):
     STROKE = "stroke"
     MI = "mi"
+    DEMENTIA = "dementia"

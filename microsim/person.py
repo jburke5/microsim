@@ -87,7 +87,7 @@ class Person:
         # the age of the patient at the time of an event (element zero). and the outcome
         # (element one).multiple events can be accounted for by having multiple
         # elements in the array.
-        self._outcomes = {OutcomeType.MI: [], OutcomeType.STROKE: []}
+        self._outcomes = {OutcomeType.MI: [], OutcomeType.STROKE: [], OutcomeType.DEMENTIA: []}
         self._selfReportStrokePriorToSim = 0
         self._selfReportMIPriorToSim = 0
 
@@ -155,6 +155,10 @@ class Person:
     @property
     def _stroke(self):
         return len(self._outcomes[OutcomeType.STROKE]) > 0
+    
+    @property
+    def _dementia(self):
+        return len(self._outcomes[OutcomeType.DEMENTIA]) > 0
 
     @property
     def _black(self):
@@ -388,8 +392,14 @@ class Person:
         if cv_event is not None:
             self.add_outcome_event(cv_event)
 
-        # then assign gcp
+        # then assign gcp and dementia...
         self._gcp.append(outcome_model_repository.get_gcp(self))
+
+        # dementia is conceptualized as a progressive process rather than an event you only "get" it onceexit
+        if (not self._dementia):
+            dementia = outcome_model_repository.get_dementia(self)
+            if (dementia is not None):
+                self.add_outcome_event(dementia)
 
         # if not dead from the CV event...assess non CV mortality
         if (not self.is_dead()):
