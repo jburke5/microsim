@@ -7,6 +7,9 @@ from microsim.alcohol_category import AlcoholCategory
 from microsim.outcome import OutcomeType
 from microsim.education import Education
 from microsim.test.test_risk_model_repository import TestRiskModelRepository
+from microsim.gcp_model import GCPModel
+from microsim.dementia_model import DementiaModel
+from microsim.outcome_model_type import OutcomeModelType
 
 from microsim.smoking_status import SmokingStatus
 import unittest
@@ -19,6 +22,9 @@ def initializeAFib(person):
 class AgeOver50CausesFatalStroke(OutcomeModelRepository):
     def __init__(self):
         super(OutcomeModelRepository, self).__init__()
+        self._models = {}
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+        self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
 
     # override super to alays return a probability of each outcom eas 1
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
@@ -34,6 +40,10 @@ class AgeOver50CausesFatalStroke(OutcomeModelRepository):
 class NonFatalStrokeAndNonCVMortality(OutcomeModelRepository):
     def __init__(self):
         super(OutcomeModelRepository, self).__init__()
+        self._models = {}
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+        self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
+
 
     # override super to alays return a probability of each outcom eas 1
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
@@ -49,6 +59,10 @@ class NonFatalStrokeAndNonCVMortality(OutcomeModelRepository):
 class AgeOver50CausesNonCVMortality(OutcomeModelRepository):
     def __init__(self):
         super(OutcomeModelRepository, self).__init__()
+        self._models = {}
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+        self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
+
 
     # override super to alays return a probability of each outcom eas 1
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
