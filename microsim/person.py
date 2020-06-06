@@ -139,15 +139,15 @@ class Person:
     @property
     def _current_smoker(self):
         return self._smokingStatus == SmokingStatus.CURRENT
-    
+
     @property
     def _current_bp_treatment(self):
         return self._antiHypertensiveCount[-1] > 0
-    
+
     @property
     def _current_diabetes(self):
         return self.has_diabetes()
-    
+
     @property
     def _mi(self):
         return len(self._outcomes[OutcomeType.MI]) > 0
@@ -155,7 +155,7 @@ class Person:
     @property
     def _stroke(self):
         return len(self._outcomes[OutcomeType.STROKE]) > 0
-    
+
     @property
     def _dementia(self):
         return len(self._outcomes[OutcomeType.DEMENTIA]) > 0
@@ -347,8 +347,8 @@ class Person:
                 risk_model_repository))
         self._afib.append(self.get_next_risk_factor("afib", risk_model_repository))
         self._statin.append(self.get_next_risk_factor("statin", risk_model_repository))
-        self._alcoholPerWeek.append(self.get_next_risk_factor(
-            "alcoholPerWeek", risk_model_repository))
+        self._alcoholPerWeek.append(AlcoholCategory.get_category_for_consumption(self.get_next_risk_factor(
+            "alcoholPerWeek", risk_model_repository)))
 
     # redraw from models to pick new risk factors for person
 

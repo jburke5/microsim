@@ -184,7 +184,7 @@ class Population:
                 new_events = recalibration_pop.loc[nonEventsForPeople].sample(n=numberOfEventStatusesToChange,
                                                                               replace=False,
                                                                               weights=pd.Series(untreatedRisks).loc[nonEventsForPeople].values)
-                for i, event in new_events.iteritems():
+                for _, event in new_events.iteritems():
                     event.add_outcome_event(Outcome(outcomeType, fatalityDetermination(event)))
 
         # redtag - two problems here...1. rolling back events in people that may not have events
@@ -197,7 +197,7 @@ class Population:
                 events_to_rollback = recalibration_pop.loc[eventsForPeople].sample(n=numberOfEventStatusesToChange,
                                                                                    replace=False,
                                                                                    weights=pd.Series(1-untreatedRisks).loc[eventsForPeople].values)
-                for i, event in events_to_rollback.iteritems():
+                for _, event in events_to_rollback.iteritems():
                     event.rollback_most_recent_event(outcomeType)
 
     def get_people_alive_at_the_start_of_the_current_wave(self):
@@ -214,7 +214,7 @@ class Population:
         return pd.Series([not person.is_dead() for _, person in self._people.iteritems()])
 
     def get_number_of_patients_currently_alive(self):
-        self.get_people_that_are_currently_alive.sum()
+        self.get_people_that_are_currently_alive().sum()
 
     def get_events_in_most_recent_wave(self, eventType):
         peopleWithEvents = []

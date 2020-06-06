@@ -1,4 +1,3 @@
-import numpy as np
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.education import Education
 from microsim.gender import NHANESGender
@@ -9,7 +8,7 @@ from microsim.cox_regression_model import CoxRegressionModel
 class DementiaModel(StatsModelCoxModel):
 
     def __init__(self):
-        super(DementiaModel, self).__init__(CoxRegressionModel({},{}, -1.15252068e-05, -2.58682684e-06), False)
+        super(DementiaModel, self).__init__(CoxRegressionModel({}, {}, 1.15252068e-05, 2.58682684e-06), False)
         # fit slope in notebook lookAtSurvivalFunctionForDementiaModel
 
     def linear_predictor(self, person):
