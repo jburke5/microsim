@@ -7,7 +7,7 @@ from microsim.cv_outcome_determination import CVOutcomeDetermination
 from microsim.data_loader import load_model_spec
 from microsim.regression_model import RegressionModel
 from microsim.gcp_model import GCPModel
-from microsim.outcome import Outcome
+from microsim.outcome import Outcome, OutcomeType
 from microsim.dementia_model import DementiaModel
 
 import numpy.random as npRand
