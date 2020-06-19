@@ -10,6 +10,7 @@ from microsim.outcome import Outcome, OutcomeType
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
+from microsim.gcp_model import GCPModel
 
 # luciana-tag...lne thing that tripped me up was probable non clear communication regarding "waves"
 # so, i'm going to spell it out here and try to make the code consistent.
@@ -105,7 +106,7 @@ class Person:
         else:
             self._afib = [False]
 
-        self._gcp = []
+        self._gcp = [GCPModel().get_risk_for_person(self)]
         # for outcome mocels that require random effects, store in this dictionary
         self._randomEffects = dict()
 
@@ -129,7 +130,7 @@ class Person:
         self._statin = [self._statin[0]]
         self._otherLipidLoweringMedicationCount = [self._otherLipidLoweringMedicationCount[0]]
         self._bpTreatmentStrategy = None
-        self._gcp = []
+        self._gcp = [self._gcp[0]]
 
         # iterate through outcomes and remove those that occured after the simulation started
         for type, outcomes_for_type in self._outcomes.items():
