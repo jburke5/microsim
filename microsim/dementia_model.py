@@ -7,8 +7,10 @@ from microsim.cox_regression_model import CoxRegressionModel
 
 class DementiaModel(StatsModelCoxModel):
 
-    def __init__(self):
-        super(DementiaModel, self).__init__(CoxRegressionModel({}, {}, 1.33371239e-05, 5.64485841e-05), False)
+    # initial parameters fit to population incidence equation in notebook: identifyOptimalBaselineSurvivalParametersForDementia
+    def __init__(self, linearTerm=0.000056, quadraticTerm=0.000009):
+        super().__init__(
+            CoxRegressionModel({}, {}, linearTerm, quadraticTerm), False)
         # fit slope in notebook lookAtSurvivalFunctionForDementiaModel
 
     def linear_predictor(self, person):

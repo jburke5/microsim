@@ -161,6 +161,14 @@ class Person:
     def _dementia(self):
         return len(self._outcomes[OutcomeType.DEMENTIA]) > 0
 
+    def has_incident_event(self, outcomeType):
+        # luciana-tag..this feels messy there is probably a better way to deal weith this.
+        # age is updated after dementia events are set, so "incident demetnia" is dementia as of the last wave
+        return (len(self._outcomes[outcomeType]) > 0 ) and (len(self._age) >= 2) and (self._outcomes[outcomeType][0][0] == self._age[-2])
+
+    def has_incident_dementia(self):
+        return self.has_incident_event(OutcomeType.DEMENTIA)
+
     @property
     def _black(self):
         return self._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK

@@ -83,9 +83,6 @@ class TestDementiaModel(unittest.TestCase):
 
     def test_dementia_after_one_year(self):
         self.assertAlmostEqual(1.115571, DementiaModel().linear_predictor(person=self._test_case_one), places=5)
-        self.assertAlmostEqual(6.97857079e-05, DementiaModel().get_cumulative_hazard(person=self._test_case_one), places=5)
-        self.assertAlmostEqual(6.97857079e-05*np.exp(1.115571), DementiaModel().get_risk_for_person(person=self._test_case_one, years=1), places=5)
 
     def test_dementia_after_one_year_person_two(self):
         self.assertAlmostEqual(-1.122424, DementiaModel().linear_predictor(person=self._test_case_two), places=5)
-        self.assertAlmostEqual(6.97857079e-05*np.exp(-1.122424), DementiaModel().get_risk_for_person(person=self._test_case_two, years=1), places=5)

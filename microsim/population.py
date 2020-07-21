@@ -203,10 +203,10 @@ class Population:
     def get_people_alive_at_the_start_of_the_current_wave(self):
         return self.get_people_alive_at_the_start_of_wave(self._currentWave)
 
-    def get_people_alive_at_the_start_of_wave(self, save):
+    def get_people_alive_at_the_start_of_wave(self, wave):
         peopleAlive = []
         for person in self._people:
-            if person.alive_at_start_of_wave(self._currentWave):
+            if person.alive_at_start_of_wave(wave):
                 peopleAlive.append(person)
         return pd.Series(peopleAlive)
 
@@ -247,6 +247,33 @@ class Population:
                       initializeAfib=(lambda _: False),
                       selfReportStrokeAge=None,
                       selfReportMIAge=None)
+
+    def get_raw_incidence_by_age(self, eventType):
+        popDF = self.get_people_current_state_as_dataframe()
+
+        for year in range(1, self._totalWavesAdvanced + 1):
+            eventVarName = 'event' + str(year)
+            ageVarName = 'age' + str(year)
+            popDF[ageVarName] = popDF['baseAge'] + year
+            popDF[eventVarName] = [person.has_outcome_during_wave(year, OutcomeType.DEMENTIA) for person in self._people]
+
+        popDF = popDF[list(filter(lambda x: x.startswith('age') or x.startswith('event'), popDF.columns))]
+        popDF['id'] = popDF.index
+        popDF.drop(columns=['age'], inplace=True)
+        longAgesEvents = pd.wide_to_long(df=popDF, stubnames=['age', 'event'], i='id', j='wave')
+
+        agesDeadDF = self.get_people_current_state_as_dataframe()
+        for year in range(1, self._totalWavesAdvanced + 1):
+            deadVarName = 'dead' + str(year)
+            ageVarName = 'age' + str(year)
+            agesDeadDF[ageVarName] = agesDeadDF['baseAge'] + year
+            agesDeadDF[deadVarName] = [person.alive_at_start_of_wave(year) for i, person in self._people.iteritems()]
+        
+        agesDeadDF = agesDeadDF[list(filter(lambda x: x.startswith('age') or x.startswith('dead'), agesDeadDF.columns))]
+        agesDeadDF.drop(columns=['age', 'dead'], inplace=True)
+        agesDeadDF['id'] = agesDeadDF.index
+        longAgesDead = pd.wide_to_long(df=agesDeadDF, stubnames=['age', 'dead'], i='id', j='wave')
+        return longAgesEvents.groupby('age')['event'].sum()/longAgesDead.groupby('age')['dead'].sum()
 
     # refactorrtag: we should probably build a specific class that loads data files...
 
@@ -330,15 +357,11 @@ class Population:
                                                                 yearOfStandardizedPopulation)
         return pd.Series([event[0] for event in events]).mean()
 
-    def calculate_mean_age_sex_standardized_event(self, eventSelector, eventAgeIdentifier,
-                                                  yearOfStandardizedPopulation=2016,
-                                                  subPopulationSelector=None,
-                                                  subPopulationDFSelector=None):
+    def get_events_for_event_type(self, eventSelector, eventAgeIdentifier, subPopulationSelector=None, subPopulationDFSelector=None):
         # build a dataframe to represent the population
         popDF = self.get_people_current_state_as_dataframe()
         popDF['female'] = popDF['gender'] - 1
 
-        eventsPerYear = []
         # calculated standardized event rate for each year
         for year in range(1, self._totalWavesAdvanced + 1):
             eventVarName = 'event' + str(year)
@@ -349,12 +372,26 @@ class Population:
                 popDF = popDF.loc[popDF.subpopFilter == 1]
             popDF[eventVarName] = [eventSelector(person) and eventAgeIdentifier(
                 person) == year for person in filter(subPopulationSelector, self._people)]
+        return popDF
+
+    def calculate_mean_age_sex_standardized_event(self, eventSelector, eventAgeIdentifier,
+                                                  yearOfStandardizedPopulation=2016,
+                                                  subPopulationSelector=None,
+                                                  subPopulationDFSelector=None):
+        # calculated standardized event rate for each year
+        popDF = get_events_for_event_type(eventSelector, eventAgeIdentifier,
+                                                         subPopulationSelector=None,
+                                                         subPopulationDFSelector=None)
+        eventsPerYear = []
+
+        for year in range(1, self._totalWavesAdvanced + 1):
             dfForAnnualEventCalc = popDF[[ageVarName, 'female', eventVarName]]
             dfForAnnualEventCalc.rename(
                 columns={
                     ageVarName: 'age',
                     eventVarName: 'event'},
                 inplace=True)
+
             eventsPerYear.append(
                 self.get_standardized_events_for_year(
                     dfForAnnualEventCalc,
