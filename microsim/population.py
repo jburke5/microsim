@@ -391,7 +391,6 @@ class Population:
                     ageVarName: 'age',
                     eventVarName: 'event'},
                 inplace=True)
-
             eventsPerYear.append(
                 self.get_standardized_events_for_year(
                     dfForAnnualEventCalc,
