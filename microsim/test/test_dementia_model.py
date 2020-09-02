@@ -29,9 +29,62 @@ class TestDementiaModel(unittest.TestCase):
         return None
 
     def setUp(self):
-        # 2740200061fos
+        # test case 1 in rep_gdta.
         self._test_case_one = Person(
-            age=54.060233,
+            age=40,
+            gender=NHANESGender.MALE,
+            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
+            sbp=120,
+            dbp=80,
+            # guessingon the centering standard for glucose...may have to check
+            a1c=Person.convert_fasting_glucose_to_a1c(100),
+            hdl=50,
+            totChol=150,
+            ldl=90,
+            trig=150,
+            bmi=26.6,
+            waist=94,
+            anyPhysicalActivity=1,
+            education=Education.LESSTHANHIGHSCHOOL,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.ONETOSIX,
+            antiHypertensiveCount=0,
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=TestDementiaModel.initializeAfib)
+        self._test_case_one._gcp[0] = 25
+        # GCP slope is zero
+        self._test_case_one._gcp.append(self._test_case_one._gcp[0])
+
+        # test case 71 in rep_gdta.
+        self._test_case_two = Person(
+            age=80,
+            gender=NHANESGender.FEMALE,
+            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
+            sbp=120,
+            dbp=80,
+            # guessingon the centering standard for glucose...may have to check
+            a1c=Person.convert_fasting_glucose_to_a1c(100),
+            hdl=50,
+            totChol=150,
+            ldl=90,
+            trig=150,
+            bmi=26.6,
+            waist=94,
+            anyPhysicalActivity=1,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.ONETOSIX,
+            antiHypertensiveCount=0,
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=TestDementiaModel.initializeAfib)
+        self._test_case_two._gcp[0] = 75
+        self._test_case_two._gcp.append(self._test_case_two._gcp[0])
+
+        # test case 72 in rep_gdta.
+        self._test_case_three = Person(
+            age=80,
             gender=NHANESGender.FEMALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
             sbp=120,
@@ -45,44 +98,24 @@ class TestDementiaModel(unittest.TestCase):
             bmi=26.6,
             waist=94,
             anyPhysicalActivity=1,
-            education=Education.HIGHSCHOOLGRADUATE,
+            education=Education.COLLEGEGRADUATE,
             smokingStatus=SmokingStatus.NEVER,
             alcohol=AlcoholCategory.ONETOSIX,
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
             initializeAfib=TestDementiaModel.initializeAfib)
-        self._test_case_one._gcp[0] = 58.68
-        self._test_case_one._gcp.append(self._test_case_one._gcp[0] -1.1078128)
-
-        # 2740201178fos
-        self._test_case_two = Person(
-            age=34.504449,
-            gender=NHANESGender.MALE,
-            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=120,
-            dbp=80,
-            # guessingon the centering standard for glucose...may have to check
-            a1c=Person.convert_fasting_glucose_to_a1c(100),
-            hdl=50,
-            totChol=150,
-            ldl=90,
-            trig=150,
-            bmi=26.6,
-            waist=94,
-            anyPhysicalActivity=1,
-            education=Education.SOMECOLLEGE,
-            smokingStatus=SmokingStatus.NEVER,
-            alcohol=AlcoholCategory.ONETOSIX,
-            antiHypertensiveCount=0,
-            statin=0,
-            otherLipidLoweringMedicationCount=0,
-            initializeAfib=TestDementiaModel.initializeAfib)
-        self._test_case_two._gcp[0] = 58.68
-        self._test_case_two._gcp.append(self._test_case_two._gcp[0] -1.7339989)
+        self._test_case_three._gcp[0] = 75
+        self._test_case_three._gcp.append(self._test_case_two._gcp[0])
 
     def test_dementia_after_one_year(self):
-        self.assertAlmostEqual(1.115571, DementiaModel().linear_predictor(person=self._test_case_one), places=5)
+        self.assertAlmostEqual(-9.990598486, DementiaModel().linear_predictor(person=self._test_case_one), places=5)
+        self.assertAlmostEqual(5.19E-05, DementiaModel().get_risk_for_person(person=self._test_case_one, years=1), places=5)
 
     def test_dementia_after_one_year_person_two(self):
-        self.assertAlmostEqual(-1.122424, DementiaModel().linear_predictor(person=self._test_case_two), places=5)
+        self.assertAlmostEqual(-5.804540672, DementiaModel().linear_predictor(person=self._test_case_two), places=5)
+        self.assertAlmostEqual(0.003411382, DementiaModel().get_risk_for_person(person=self._test_case_two, years=1), places=5)
+
+    def test_dementia_after_one_year_person_three(self):
+        self.assertAlmostEqual(-6.018035196, DementiaModel().linear_predictor(person=self._test_case_three), places=5)
+        self.assertAlmostEqual(0.002755566, DementiaModel().get_risk_for_person(person=self._test_case_three, years=1), places=5)
