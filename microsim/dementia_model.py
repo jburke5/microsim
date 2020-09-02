@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 import numpy as np
 
-=======
->>>>>>> b23d023ebaa434642b189135b38d028683672796
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.education import Education
 from microsim.gender import NHANESGender
@@ -21,13 +18,8 @@ class DementiaModel(StatsModelCoxModel):
 
     def linear_predictor(self, person):
         xb = 0
-<<<<<<< HEAD
         xb += person._age[-1] * 0.175429647
         xb += person._gcp[0] * -0.060809704
-=======
-        xb += person._age[-1] * 0.1023685
-        xb += person._gcp[0] * -0.0754936
->>>>>>> b23d023ebaa434642b189135b38d028683672796
 
         # can only calculate slope for people under observation for 2 or more years...
         slope = 0
