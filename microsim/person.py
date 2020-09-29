@@ -439,6 +439,9 @@ class Person:
             glucose += npRand.normal(0, 21)
         return glucose
 
+    def __hash__(self):
+        return hash(self.__repr__())
+
     def __repr__(self):
         return (f"Person(age={self._age[-1]}, "
                 f"gender={self._gender}, "

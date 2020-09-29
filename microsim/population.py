@@ -262,18 +262,18 @@ class Population:
         popDF.drop(columns=['age'], inplace=True)
         longAgesEvents = pd.wide_to_long(df=popDF, stubnames=['age', 'event'], i='id', j='wave')
 
-        agesDeadDF = self.get_people_current_state_as_dataframe()
+        agesAliveDF = self.get_people_current_state_as_dataframe()
         for year in range(1, self._totalWavesAdvanced + 1):
-            deadVarName = 'dead' + str(year)
+            aliveVarName = 'alive' + str(year)
             ageVarName = 'age' + str(year)
-            agesDeadDF[ageVarName] = agesDeadDF['baseAge'] + year
-            agesDeadDF[deadVarName] = [person.alive_at_start_of_wave(year) for i, person in self._people.iteritems()]
+            agesAliveDF[ageVarName] = agesAliveDF['baseAge'] + year
+            agesAliveDF[aliveVarName] = [person.alive_at_start_of_wave(year) for i, person in self._people.iteritems()]
         
-        agesDeadDF = agesDeadDF[list(filter(lambda x: x.startswith('age') or x.startswith('dead'), agesDeadDF.columns))]
-        agesDeadDF.drop(columns=['age', 'dead'], inplace=True)
-        agesDeadDF['id'] = agesDeadDF.index
-        longAgesDead = pd.wide_to_long(df=agesDeadDF, stubnames=['age', 'dead'], i='id', j='wave')
-        return longAgesEvents.groupby('age')['event'].sum()/longAgesDead.groupby('age')['dead'].sum()
+        agesAliveDF = agesAliveDF[list(filter(lambda x: x.startswith('age') or x.startswith('alive'), agesAliveDF.columns))]
+        agesAliveDF.drop(columns=['age'], inplace=True)
+        agesAliveDF['id'] = agesAliveDF.index
+        longAgesDead = pd.wide_to_long(df=agesAliveDF, stubnames=['age', 'alive'], i='id', j='wave')
+        return longAgesEvents.groupby('age')['event'].sum()/longAgesDead.groupby('age')['alive'].sum()
 
     # refactorrtag: we should probably build a specific class that loads data files...
 
