@@ -1,5 +1,3 @@
-import numpy as np
-
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.education import Education
 from microsim.gender import NHANESGender
@@ -10,50 +8,34 @@ from microsim.cox_regression_model import CoxRegressionModel
 class DementiaModel(StatsModelCoxModel):
 
     # initial parameters fit to population incidence equation in notebook: identifyOptimalBaselineSurvivalParametersForDementia
-    def __init__(self, linearTerm=0.0, quadraticTerm=0.0):
+    def __init__(self, linearTerm=0.000056, quadraticTerm=0.000009):
         super().__init__(
             CoxRegressionModel({}, {}, linearTerm, quadraticTerm), False)
-        self.shapeParameter = 0.242891669
         # fit slope in notebook lookAtSurvivalFunctionForDementiaModel
 
     def linear_predictor(self, person):
         xb = 0
-        xb += person._age[-1] * 0.175429647
-        xb += person._gcp[0] * -0.060809704
+        xb += person._age[-1] * 0.1023685
+        xb += person._gcp[0] * -0.0754936
 
         # can only calculate slope for people under observation for 2 or more years...
         slope = 0
         if len(person._gcp) >= 2:
             slope = person._gcp[-1] - person._gcp[-2]
-        xb += slope * -0.001158854
+        xb += slope * -0.000999
 
         if person._gender == NHANESGender.FEMALE:
-            xb += 0.091511933
+            xb += 0.0950601
 
-        # less than high school is default, 0
-        if person._education == Education.SOMEHIGHSCHOOL:
-            xb += 0.141510702
+        if person._education == Education.LESSTHANHIGHSCHOOL:
+            xb += 0.0307459
+        elif person._education == Education.SOMEHIGHSCHOOL:
+            xb += 0.0841255
         elif person._education == Education.HIGHSCHOOLGRADUATE:
-            xb += 0.046780821
+            xb += -0.0846951
         elif person._education == Education.SOMECOLLEGE:
-            xb += -0.007563779
-        elif person._education == Education.COLLEGEGRADUATE:
-            xb += 0.117845198
+            xb += -0.2263593
 
-        
-        raceCoeff =-0.213494525
         if person._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
-            xb += raceCoeff
-        elif person._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_WHITE:
-            xb += raceCoeff*2
-
-
-        xb += -15.274047241 # intercept
+            xb += 0.1937563
         return xb
-
-    def get_cumulative_hazard(self, person, time):
-        return np.exp(self.linear_predictor(person)) / self.shapeParameter * (np.exp(self.shapeParameter * time) - 1)
-            
-    def get_risk_for_person(self, person, years):
-        return self.get_cumulative_hazard(person, len(person._age)) - self.get_cumulative_hazard(person, len(person._age) - 1)
-
