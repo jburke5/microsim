@@ -7,11 +7,15 @@ from microsim.cox_regression_model import CoxRegressionModel
 
 class DementiaModel(StatsModelCoxModel):
 
-    # initial parameters fit to population incidence equation in notebook: identifyOptimalBaselineSurvivalParametersForDementia
-    def __init__(self, linearTerm=0.000056, quadraticTerm=0.000009):
+    # initial parameters in notebook lookAtSurvivalFunctionForDementiaModel (linearTerm=1.33371239e-05, quadraticTerm=5.64485841e-05)
+    # recalibrated fit to population incidence equation in notebook: identifyOptimalBaselineSurvivalParametersForDementia, linear multiplier = 0.5, quad = 0.05
+
+    def __init__(self, linearTerm=1.33371239e-05, quadraticTerm=5.64485841e-05, populationRecalibration=True):
         super().__init__(
             CoxRegressionModel({}, {}, linearTerm, quadraticTerm), False)
-        # fit slope in notebook lookAtSurvivalFunctionForDementiaModel
+        if populationRecalibration:
+            self.one_year_linear_cumulative_hazard = self.one_year_linear_cumulative_hazard * 0.5
+            self.one_year_quad_cumulative_hazard = self.one_year_quad_cumulative_hazard * 0.05
 
     def linear_predictor(self, person):
         xb = 0

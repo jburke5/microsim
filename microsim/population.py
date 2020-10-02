@@ -12,6 +12,7 @@ from microsim.data_loader import load_regression_model, get_absolute_datafile_pa
 from microsim.outcome_model_type import OutcomeModelType
 from microsim.cv_outcome_determination import CVOutcomeDetermination
 from microsim.outcome import Outcome, OutcomeType
+from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 
 import pandas as pd
 import copy
@@ -37,6 +38,7 @@ class Population:
         self._people = people
         self._risk_model_repository = None
         self._outcome_model_repository = None
+        self._qaly_assignment_strategy = None
         self._ageStandards = {}
         # luciana tag: discuss with luciana...want to keep track of the sim wave htat is currently running, while running
         # and also the total number of years advanced...need to think about how to do this is a way that will be safe
@@ -65,7 +67,8 @@ class Population:
     def advance_person(self, person):
         if not person.is_dead():
             person.advance_year(self._risk_model_repository,
-                                self._outcome_model_repository)
+                                self._outcome_model_repository,
+                                self._qaly_assignment_strategy)
         return person
 
     def advance_people(self, people):
@@ -558,6 +561,7 @@ class NHANESDirectSamplePopulation(Population):
         self.year = year
         self._initialize_risk_models(model_reposistory_type)
         self._outcome_model_repository = OutcomeModelRepository()
+        self._qaly_assignment_strategy = QALYAssignmentStrategy()
 
     def copy(self):
         newPop = NHANESDirectSamplePopulation(self.n, self.year, False)
