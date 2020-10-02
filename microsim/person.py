@@ -11,6 +11,7 @@ from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
 from microsim.gcp_model import GCPModel
+from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 
 # luciana-tag...lne thing that tripped me up was probable non clear communication regarding "waves"
 # so, i'm going to spell it out here and try to make the code consistent.
@@ -109,6 +110,13 @@ class Person:
         self._gcp = [GCPModel().get_risk_for_person(self)]
         # for outcome mocels that require random effects, store in this dictionary
         self._randomEffects = dict()
+
+        # lucianatag: for this and GCP, this approach is a bit inelegant. the idea is to have classees that can be swapped out
+        # at the population level to change the behavior about how people change over time.
+        # but, when we instantiate a person, we don't want to keep a refernce tot the population.
+        # is the fix just to have the population create people (such that the repository/strategy/model classes can be assigned from within
+        # the population)
+        self._qalys = [QALYAssignmentStrategy().get_next_qaly(self)]
 
         self._bpTreatmentStrategy = None
 
@@ -210,7 +218,7 @@ class Person:
             varValue = varValue if varValue > lowerBound else lowerBound
         return varValue
 
-    def advance_year(self, risk_model_repository, outcome_model_repository):
+    def advance_year(self, risk_model_repository, outcome_model_repository, qaly_assignment_strategy=QALYAssignmentStrategy()):
         # print(f"advance_year on person, age: {self._age[0]} sbp : {self._sbp[0]}")
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance year")
@@ -222,6 +230,7 @@ class Person:
         self.advance_risk_factors(risk_model_repository)
         self.advance_treatment(risk_model_repository)
         self.advance_outcomes(outcome_model_repository)
+        self.assign_qalys(qaly_assignment_strategy)
         if not self.is_dead():
             self._age.append(self._age[-1] + 1)
             self._alive.append(True)
@@ -420,6 +429,10 @@ class Person:
         self._outcomes[cv_event.type].append((self._age[-1], cv_event))
         if cv_event.fatal:
             self._alive.append(False)
+    
+    def assign_qalys(self, qaly_assignment_strategy):
+        self._qalys.append(qaly_assignment_strategy.get_next_qaly(self))
+
 
     # Using this paper...glucose and a1c are highly related
     # Nathan, D. M., Kuenen, J., Borg, R., Zheng, H., Schoenfeld, D., Heine, R. J., for the A1c-Derived Average Glucose (ADAG) Study Group. (2008). Translating the A1C Assay Into Estimated Average Glucose Values. Diabetes Care, 31(8), 1473–1478.

@@ -7,7 +7,7 @@ from microsim.statsmodel_cox_model import StatsModelCoxModel
 from microsim.cox_regression_model import CoxRegressionModel
 
 
-class DementiaModelWeibull(StatsModelCoxModel):
+class DementiaModelGompertz(StatsModelCoxModel):
 
     # initial parameters fit to population incidence equation in notebook: identifyOptimalBaselineSurvivalParametersForDementia
     def __init__(self, linearTerm=0.0, quadraticTerm=0.0):
