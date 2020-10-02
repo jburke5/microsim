@@ -4,6 +4,69 @@ from microsim.person import Person
 from microsim.test.test_risk_model_repository import TestRiskModelRepository
 from microsim.education import Education
 from microsim.outcome import Outcome, OutcomeType
+from microsim.test.do_not_change_risk_factors_model_repository import DoNotChangeRiskFactorsModelRepository
+from microsim.outcome_model_repository import OutcomeModelRepository
+from microsim.outcome_model_type import OutcomeModelType
+from microsim.dementia_model import DementiaModel
+from microsim.gcp_model import GCPModel
+
+
+class AlwaysNonFatalStroke(OutcomeModelRepository):
+    def __init__(self):
+        super(OutcomeModelRepository, self).__init__()
+        self._models = {}
+        self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+        return Outcome(OutcomeType.STROKE, 0)
+
+    def assign_non_cv_mortality(self, person, years=1):
+        return False
+
+
+class AlwaysFatalStroke(OutcomeModelRepository):
+    def __init__(self):
+        super(OutcomeModelRepository, self).__init__()
+        self._models = {}
+        self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+        return Outcome(OutcomeType.STROKE, 1)
+
+    def assign_non_cv_mortality(self, person, years=1):
+        return False
+
+
+class AlwaysNonFatalMI(OutcomeModelRepository):
+    def __init__(self):
+        super(OutcomeModelRepository, self).__init__()
+        self._models = {}
+        self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+        return Outcome(OutcomeType.MI, 0)
+
+    def assign_non_cv_mortality(self, person, years=1):
+        return False
+
+
+class AlwaysDementia(OutcomeModelRepository):
+    def __init__(self):
+        super(OutcomeModelRepository, self).__init__()
+        self._models = {}
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+        return None
+
+    def get_dementia(self, person):
+        return Outcome(OutcomeType.DEMENTIA, False)
+
+    def assign_non_cv_mortality(self, person, years=1):
+        return False
 
 
 class TestQALYAssignment(unittest.TestCase):
@@ -33,57 +96,71 @@ class TestQALYAssignment(unittest.TestCase):
             statin=0,
             otherLipidLoweringMedicationCount=0,
             initializeAfib=TestQALYAssignment.initializeAfib)
-    
+
     def setUp(self):
         self._hasNoConditions = self.getPerson()
         self._hasDementia = self.getPerson()
-        self._hasDementia.add_outcome_event(Outcome(OutcomeType.DEMENTIA, False))
-
         self._hasStroke = self.getPerson()
-        self._hasStroke.add_outcome_event(Outcome(OutcomeType.STROKE, False))
-
         self._hasFatalStroke = self.getPerson()
-        self._hasFatalStroke.add_outcome_event(Outcome(OutcomeType.STROKE, True))
-        
         self._hasMI = self.getPerson()
-        self._hasMI.add_outcome_event(Outcome(OutcomeType.MI, True))
-
         self._age90 = self.getPerson(90)
 
-    # for  dementia... Jönsson, L., Andreasen, N., Kilander, L., Soininen, H., Waldemar, G., Nygaard, H., et al. (2006). 
-    # Patient- and proxy-reported utility in Alzheimer disease using the EuroQoL. Alzheimer Disease and Associated Disorders, 
-    # 20(1), 49–55. http://doi.org/10.1097/01.wad.0000201851.52707.c9
-    # it has utilizites at bsaeline and with dementia follow-up...seems like a simple thing  to use...
-
-    # for stroke/MI...Sussman, J., Vijan, S., & Hayward, R. (2013). Using benefit-based tailored treatment to improve the use of 
-    # antihypertensive medications. Circulation, 128(21), 2309–2317. http://doi.org/10.1161/CIRCULATIONAHA.113.002290
-    # same idea, has utilities at bsaeline and in sugsequent years...so, it shoudl be relatifely easy to use.
-
-    # for aging...Netuveli, G. (2006). Quality of life at older ages: evidence from the English longitudinal study of aging (wave 1). 
-    # Journal of Epidemiology and Community Health, 60(4), 357–363. http://doi.org/10.1136/jech.2005.040071
-    #  i think we can get away with something htat sets QALYS at 1 < 70 and then applies a baseline reduction of 
-    # something like 10% per decade
-
-
-    def testBaselineQALYS(self):
+    def testAgeQALYsOnly(self):
         self.assertEqual(1, self._hasNoConditions._qalys[-1])
-        self.assertEqual(1, self._hasDementia._qalys[-1])
-        self.assertEqual(1, self._hasStroke._qalys[-1])
-        self.assertEqual(1, self._hasMI._qalys[-1])
-        self.assertEqual(1, self._hasFatalStroke._qalys[-1])
         self.assertEqual(0.8, self._age90._qalys[-1])
 
-    def testQALYSOneYearAfterEvent(self):
-        pass
+    def testStrokeQALYS(self):
+        self.assertEqual(1, self._hasStroke._qalys[0])
+        self._hasStroke.advance_year(
+            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke())
+        self._hasStroke.advance_year(
+            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke())
+        self._hasStroke.advance_year(
+            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke())
+        self.assertEqual(1, self._hasStroke._qalys[0])
+        self.assertEqual(0.67, self._hasStroke._qalys[1])
+        self.assertEqual(0.9, self._hasStroke._qalys[2])
+        self.assertEqual(0.9, self._hasStroke._qalys[3])
 
-    def testQALYSTwoYearsAfterEvent(self):
-        pass
+    def testMIQALYS(self):
+        self.assertEqual(1, self._hasMI._qalys[0])
+        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI())
+        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI())
+        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI())
+        self.assertEqual(1, self._hasMI._qalys[0])
+        self.assertEqual(0.88, self._hasMI._qalys[1])
+        self.assertEqual(0.9, self._hasMI._qalys[2])
+        self.assertEqual(0.9, self._hasMI._qalys[3])
 
-    def testQALYSByAge(self):
-        pass
-
-    def testQALYSWithConditionAtOlderAge(self):
-        pass
+    def testDementiaQALYS(self):
+        self.assertEqual(1, self._hasDementia._qalys[0])
+        self._hasDementia.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysDementia())
+        self._hasDementia.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysDementia())
+        self._hasDementia.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysDementia())
+        self.assertEqual(1, self._hasDementia._qalys[0])
+        self.assertEqual(0.80, self._hasDementia._qalys[1])
+        self.assertEqual(0.79, self._hasDementia._qalys[2])
+        self.assertEqual(0.78, self._hasDementia._qalys[3])
 
     def testQALYSWithMultipleConditions(self):
-        pass
+        self.assertEqual(1, self._hasMI._qalys[0])
+        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI())
+        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke())
+        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI())
+        self.assertEqual(1, self._hasMI._qalys[0])
+        self.assertEqual(0.88, self._hasMI._qalys[1])
+        # 0.9 * 0.678
+        self.assertAlmostEqual(0.603, self._hasMI._qalys[2], places=5)
+        # 0.9 * 0.9
+        self.assertEqual(0.81, self._hasMI._qalys[3])
+
+    def testQALYsWithDeath(self):
+        self.assertEqual(1, self._hasFatalStroke._qalys[0])
+        self._hasFatalStroke.advance_year(
+            DoNotChangeRiskFactorsModelRepository(), AlwaysFatalStroke())
+        self.assertEqual(1, self._hasFatalStroke._qalys[0])
+        self.assertEqual(0, self._hasFatalStroke._qalys[1])
+
+
+if __name__ == '__main__':
+    unittest.main()
