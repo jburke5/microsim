@@ -172,7 +172,7 @@ class Person:
     def has_incident_event(self, outcomeType):
         # luciana-tag..this feels messy there is probably a better way to deal weith this.
         # age is updated after dementia events are set, so "incident demetnia" is dementia as of the last wave
-        return (len(self._outcomes[outcomeType]) > 0 ) and (len(self._age) >= 2) and (self._outcomes[outcomeType][0][0] == self._age[-2])
+        return (len(self._outcomes[outcomeType]) > 0) and (len(self._age) >= 2) and (self._outcomes[outcomeType][0][0] == self._age[-2])
 
     def has_incident_dementia(self):
         return self.has_incident_event(OutcomeType.DEMENTIA)
@@ -202,6 +202,15 @@ class Person:
     def get_next_risk_factor(self, riskFactor, risk_model_repository):
         model = risk_model_repository.get_model(riskFactor)
         return model.estimate_next_risk(self)
+
+    def get_total_qalys(self):
+        return sum(self._qalys)
+
+    def get_qalys_from_wave(self, wave):
+        total = 0
+        for i in range(wave-1, len(self._qalys)):
+            total += self._qalys[i]
+        return total
 
     def apply_bounds(self, varName, varValue):
         """
@@ -291,6 +300,18 @@ class Person:
             if outcome_tuple[0] == age:
                 return True
         return False
+
+    def get_age_at_first_outcome(self, type):
+        for outcome_tuple in self._outcomes[type]:
+            return outcome_tuple[0]
+        return None
+
+    def get_age_at_first_outcome_in_sim(self, type):
+        for outcome_tuple in self._outcomes[type]:
+            age = outcome_tuple[0]
+            if age > 0:
+                return age
+        return None
 
     def has_fatal_stroke(self):
         return any([stroke.fatal for _, stroke in self._outcomes[OutcomeType.STROKE]])
@@ -429,10 +450,9 @@ class Person:
         self._outcomes[cv_event.type].append((self._age[-1], cv_event))
         if cv_event.fatal:
             self._alive.append(False)
-    
+
     def assign_qalys(self, qaly_assignment_strategy):
         self._qalys.append(qaly_assignment_strategy.get_next_qaly(self))
-
 
     # Using this paper...glucose and a1c are highly related
     # Nathan, D. M., Kuenen, J., Borg, R., Zheng, H., Schoenfeld, D., Heine, R. J., for the A1c-Derived Average Glucose (ADAG) Study Group. (2008). Translating the A1C Assay Into Estimated Average Glucose Values. Diabetes Care, 31(8), 1473–1478.
