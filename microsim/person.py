@@ -92,6 +92,9 @@ class Person:
         self._outcomes = {OutcomeType.MI: [], OutcomeType.STROKE: [], OutcomeType.DEMENTIA: []}
         self._selfReportStrokePriorToSim = 0
         self._selfReportMIPriorToSim = 0
+        
+        # a variable to track changes in BP meds compared to the baseline
+        self._bpMedsAdded = [0]
 
         # convert events for events prior to simulation
         if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
@@ -351,18 +354,26 @@ class Person:
             self._antiHypertensiveCount.append(new_antihypertensive_count)
 
         if self._bpTreatmentStrategy is not None:
-            treatment_modifications, risk_factor_modifications, recalibration_standards = self._bpTreatmentStrategy(
-                self)
-            self.apply_linear_modifications(treatment_modifications)
-            self.apply_linear_modifications(risk_factor_modifications)
+            additive_changes, static_changes, addititive_risk_changes = self._bpTreatmentStrategy.get_changes_for_person(self)
+
+            self.apply_static_modifications(static_changes)
+            self.apply_linear_modifications(additive_changes)
+            self.apply_linear_modifications(addititive_risk_changes)
             # simple starting assumption...a treatment is applied once and has a persistent effect
             # so, the treastment strategy is nulled out after being applied
-            self._bpTreatmentStrategy = None
+            if not self._bpTreatmentStrategy.repeat_treatment_strategy():
+                self._bpTreatmentStrategy = None
 
     def apply_linear_modifications(self, modifications):
         for key, value in modifications.items():
             attribute_value = getattr(self, key)
             attribute_value[-1] = attribute_value[-1] + value
+
+    def apply_static_modifications(self, modifications):
+        for key, value in modifications.items():
+            attribute_value = getattr(self, key)
+            attribute_value.append(value)
+
 
     def advance_risk_factors(self, risk_model_repository):
         if self.is_dead():
