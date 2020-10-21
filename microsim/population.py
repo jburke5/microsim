@@ -95,8 +95,7 @@ class Population:
     def apply_recalibration_standards(self):
         # treatment_standard is a dictionary of outcome types and effect sizees
         if (self._bpTreatmentStrategy is not None):
-            _, _, treatment_outcome_standard = self._bpTreatmentStrategy(self)
-            if (treatment_outcome_standard is not None):
+            if (self._bpTreatmentStrategy.get_treatment_recalibration_for_population() is not None):
                 self.recalibrate_bp_treatment()
 
     # should the estiamted treatment effect be based on the number of events in the population
@@ -108,8 +107,7 @@ class Population:
     # so, i thikn it should be based on the model-predicted risks...
 
     def recalibrate_bp_treatment(self):
-        treatment_change_standard, effect_of_treatment_standard, treatment_outcome_standard = self._bpTreatmentStrategy(
-            self)
+        treatment_outcome_standard = self._bpTreatmentStrategy.get_treatment_recalibration_for_population()
         # estimate risk for the people alive at the start of the wave
         recalibration_pop = self.get_people_alive_at_the_start_of_the_current_wave()
         treatedStrokeRisks, treatedMIRisks = self.estimate_risks(recalibration_pop)
@@ -118,36 +116,58 @@ class Population:
         # redtag: would like to apply to this to a deeply cloned population, but i can't get that to work
         # so, for now, applying it to the actual population and then rolling the effect back later.
         for _, person in recalibration_pop.iteritems():
-            person._sbp[-1] = person._sbp[-1] - effect_of_treatment_standard['_sbp']
-            person._dbp[-1] = person._dbp[-1] - effect_of_treatment_standard['_dbp']
+            treatment_change_standard, _, effect_of_treatment_standard = self._bpTreatmentStrategy.get_changes_for_person(person)
+            person._sbp[-1] = person._sbp[-1] - \
+                effect_of_treatment_standard['_sbp'] * person._bpMedsAdded[-1]
+            person._dbp[-1] = person._dbp[-1] - \
+                effect_of_treatment_standard['_dbp'] * person._bpMedsAdded[-1]
             person._antiHypertensiveCount[-1] = person._antiHypertensiveCount[-1] - \
-                treatment_change_standard['_antiHypertensiveCount']
+                treatment_change_standard['_antiHypertensiveCount'] * person._bpMedsAdded[-1]
 
         # estimate risk after applying the treamtent effect
         untreatedStrokeRisks, untreatedMIRisks = self.estimate_risks(recalibration_pop)
 
         # hacktag related to above — roll back the treatment effect...
         for _, person in recalibration_pop.iteritems():
-            person._sbp[-1] = person._sbp[-1] + effect_of_treatment_standard['_sbp']
-            person._dbp[-1] = person._dbp[-1] + effect_of_treatment_standard['_dbp']
+            treatment_change_standard, _, effect_of_treatment_standard = self._bpTreatmentStrategy.get_changes_for_person(person)
+            person._sbp[-1] = person._sbp[-1] + \
+                effect_of_treatment_standard['_sbp'] * person._bpMedsAdded[-1]
+            person._dbp[-1] = person._dbp[-1] + \
+                effect_of_treatment_standard['_dbp'] * person._bpMedsAdded[-1]
             person._antiHypertensiveCount[-1] = person._antiHypertensiveCount[-1] + \
-                treatment_change_standard['_antiHypertensiveCount']
+                treatment_change_standard['_antiHypertensiveCount'] * person._bpMedsAdded[-1]
 
-        # recalibrate stroke
-        self.create_or_rollback_events_to_correct_calibration(treatment_outcome_standard,
-                                                              treatedStrokeRisks,
-                                                              untreatedStrokeRisks,
-                                                              OutcomeType.STROKE,
-                                                              CVOutcomeDetermination()._will_have_fatal_stroke,
-                                                              recalibration_pop)
+        maxMeds = 5
+        # recalibrate within each group of added medicaitons so that we can stratify the treamtnet effects
+        for i in range(1, maxMeds+1):
+            peopleWithBPMedsAdded = [((person._bpMedsAdded[-1] ==
+                                       i) or (person._bpMedsAdded[-1] >= maxMeds)) for _, person in recalibration_pop.iteritems()]
+            recalibrationPopForMedCount = recalibration_pop.loc[peopleWithBPMedsAdded]
+            treatedStrokeRisksForMedCount = treatedStrokeRisks.loc[peopleWithBPMedsAdded]
+            untreatedStrokeRisksForMedCount = untreatedStrokeRisks.loc[peopleWithBPMedsAdded]
+            treatedMIRisksForMedCount = treatedMIRisks.loc[peopleWithBPMedsAdded]
+            untreatedMIRisksForMedCount = untreatedMIRisks.loc[peopleWithBPMedsAdded]
+            # the change standards are for a single medication
+            recalibration_standard_for_med_count = treatment_outcome_standard.copy()
+            for key, value in recalibration_standard_for_med_count.items():
+                recalibration_standard_for_med_count[key] = value**i
 
-        # recalibrate MI
-        self.create_or_rollback_events_to_correct_calibration(treatment_outcome_standard,
-                                                              treatedMIRisks,
-                                                              untreatedMIRisks,
-                                                              OutcomeType.MI,
-                                                              CVOutcomeDetermination()._will_have_fatal_mi,
-                                                              recalibration_pop)
+            if len(recalibrationPopForMedCount) > 0:
+                # recalibrate stroke
+                self.create_or_rollback_events_to_correct_calibration(recalibration_standard_for_med_count,
+                                                                    treatedStrokeRisksForMedCount,
+                                                                    untreatedStrokeRisksForMedCount,
+                                                                    OutcomeType.STROKE,
+                                                                    CVOutcomeDetermination()._will_have_fatal_stroke,
+                                                                    recalibrationPopForMedCount)
+
+                # recalibrate MI
+                self.create_or_rollback_events_to_correct_calibration(recalibration_standard_for_med_count,
+                                                                    treatedMIRisksForMedCount,
+                                                                    untreatedMIRisksForMedCount,
+                                                                    OutcomeType.MI,
+                                                                    CVOutcomeDetermination()._will_have_fatal_mi,
+                                                                    recalibrationPopForMedCount)
 
     def estimate_risks(self, recalibration_pop):
         combinedRisks = pd.Series([self._outcome_model_repository.get_risk_for_person(
@@ -171,7 +191,6 @@ class Population:
         delta = modelEstimatedRR - treatment_outcome_standard[outcomeType]
         eventsForPeople = [person.has_outcome_during_wave(
             self._currentWave, outcomeType) for _, person in recalibration_pop.iteritems()]
-
         numberOfEventStatusesToChange = abs(
             int(round(delta * pd.Series(eventsForPeople).sum()/modelEstimatedRR)))
         nonEventsForPeople = [not item for item in eventsForPeople]
@@ -258,9 +277,11 @@ class Population:
             eventVarName = 'event' + str(year)
             ageVarName = 'age' + str(year)
             popDF[ageVarName] = popDF['baseAge'] + year
-            popDF[eventVarName] = [person.has_outcome_during_wave(year, OutcomeType.DEMENTIA) for person in self._people]
+            popDF[eventVarName] = [person.has_outcome_during_wave(
+                year, OutcomeType.DEMENTIA) for person in self._people]
 
-        popDF = popDF[list(filter(lambda x: x.startswith('age') or x.startswith('event'), popDF.columns))]
+        popDF = popDF[list(filter(lambda x: x.startswith(
+            'age') or x.startswith('event'), popDF.columns))]
         popDF['id'] = popDF.index
         popDF.drop(columns=['age'], inplace=True)
         longAgesEvents = pd.wide_to_long(df=popDF, stubnames=['age', 'event'], i='id', j='wave')
@@ -270,12 +291,15 @@ class Population:
             aliveVarName = 'alive' + str(year)
             ageVarName = 'age' + str(year)
             agesAliveDF[ageVarName] = agesAliveDF['baseAge'] + year
-            agesAliveDF[aliveVarName] = [person.alive_at_start_of_wave(year) for i, person in self._people.iteritems()]
-        
-        agesAliveDF = agesAliveDF[list(filter(lambda x: x.startswith('age') or x.startswith('alive'), agesAliveDF.columns))]
+            agesAliveDF[aliveVarName] = [person.alive_at_start_of_wave(
+                year) for i, person in self._people.iteritems()]
+
+        agesAliveDF = agesAliveDF[list(filter(lambda x: x.startswith(
+            'age') or x.startswith('alive'), agesAliveDF.columns))]
         agesAliveDF.drop(columns=['age'], inplace=True)
         agesAliveDF['id'] = agesAliveDF.index
-        longAgesDead = pd.wide_to_long(df=agesAliveDF, stubnames=['age', 'alive'], i='id', j='wave')
+        longAgesDead = pd.wide_to_long(df=agesAliveDF, stubnames=[
+                                       'age', 'alive'], i='id', j='wave')
         return longAgesEvents.groupby('age')['event'].sum()/longAgesDead.groupby('age')['alive'].sum()
 
     # refactorrtag: we should probably build a specific class that loads data files...
@@ -383,8 +407,8 @@ class Population:
                                                   subPopulationDFSelector=None):
         # calculated standardized event rate for each year
         popDF = get_events_for_event_type(eventSelector, eventAgeIdentifier,
-                                                         subPopulationSelector=None,
-                                                         subPopulationDFSelector=None)
+                                          subPopulationSelector=None,
+                                          subPopulationDFSelector=None)
         eventsPerYear = []
 
         for year in range(1, self._totalWavesAdvanced + 1):
