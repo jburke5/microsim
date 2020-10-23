@@ -26,7 +26,7 @@ class AddBPTreatmentMedsToGoal120:
 
     def get_meds_needed_for_goal(self, person):
         sbpMedCount = int((person._sbp[-1] - 120)/self.sbpLowering)
-        dbpMedCount = int((person._dbp[-1] - 80)/self.dbpLowering)
+        dbpMedCount = int((person._dbp[-1] - 65)/self.dbpLowering)
         medCount = dbpMedCount if dbpMedCount < sbpMedCount else sbpMedCount
         return 0 if medCount < 0 else medCount
 

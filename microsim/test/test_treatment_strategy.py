@@ -74,8 +74,9 @@ class TestTreatmentStrategy(unittest.TestCase):
         self.assertEqual(1, self._test_person._antiHypertensiveCount[2])
 
     def testTreatTo12080Strategy(self):
-        self._test_person._bpTreatmentStrategy = AddBPTreatmentMedsToGoal120()
-        self._test_person.advance_treatment(self._risk_model_repository)
+        dbpAtGoal = self.getPerson(190, 65)
+        dbpAtGoal._bpTreatmentStrategy = AddBPTreatmentMedsToGoal120()
+        dbpAtGoal.advance_treatment(self._risk_model_repository)
         # no BP meds because baseline DBP is 80
         self.assertEqual(0, self._test_person._antiHypertensiveCount[-1])
 
@@ -102,9 +103,9 @@ class TestTreatmentStrategy(unittest.TestCase):
         dbpDrives = self.getPerson(250, 110)
         dbpDrives._bpTreatmentStrategy = AddBPTreatmentMedsToGoal120()
         dbpDrives.advance_treatment(self._risk_model_repository)
-        # 110-80/3.1
-        self.assertEqual(9, dbpDrives._antiHypertensiveCount[-1])
-        self.assertEqual(82.1, dbpDrives._dbp[-1])
+        # 110-66/3.1
+        self.assertEqual(14, dbpDrives._antiHypertensiveCount[-1])
+        self.assertEqual(66.6, dbpDrives._dbp[-1])
 
 
 if __name__ == "__main__":
