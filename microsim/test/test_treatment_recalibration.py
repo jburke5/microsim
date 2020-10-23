@@ -5,6 +5,7 @@ import numpy as np
 from microsim.population import NHANESDirectSamplePopulation
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.outcome import Outcome, OutcomeType
+from microsim.bp_treatment_strategies import AddASingleBPMedTreatmentStrategy
 
 class TestOftenStrokeModelRepository(OutcomeModelRepository):
     def __init__(self, stroke_rate):
@@ -38,20 +39,37 @@ class TestOftenMIModelRepository(OutcomeModelRepository):
         return False
 
 
-def addABPMedStrokeLargeEffectSize(person):
-    return {'_antiHypertensiveCount': 1}, {'_sbp': - 5.5, '_dbp': -3.1}, {OutcomeType.STROKE: 0.5, OutcomeType.MI: 0.92}
+class addABPMedStrokeLargeEffectSize(AddASingleBPMedTreatmentStrategy):
+    def get_changes_for_person(self, person):
+        return {'_antiHypertensiveCount': 1}, {'_bpMedsAdded': 1}, {'_sbp': - 5.5, '_dbp': -3.1}
+
+    def get_treatment_recalibration_for_population(self):
+        return {OutcomeType.STROKE: 0.5, OutcomeType.MI: 0.92}
+
+    def get_treatment_recalibration_for_person(self, person):
+        return {OutcomeType.STROKE: 0.5, OutcomeType.MI: 0.92}
 
 
-def addABPMedStrokeHarm(person):
-    return {'_antiHypertensiveCount': 1}, {'_sbp': - 5.5, '_dbp': -3.1}, {OutcomeType.STROKE: 1.5, OutcomeType.MI: 0.92}
+class addABPMedStrokeHarm(addABPMedStrokeLargeEffectSize):
+    def get_treatment_recalibration_for_population(self):
+        return {OutcomeType.STROKE: 1.5, OutcomeType.MI: 0.92}
 
+    def get_treatment_recalibration_for_person(self, person):
+        return {OutcomeType.STROKE: 1.5, OutcomeType.MI: 0.92}
 
-def addABPMedMIHarm(person):
-    return {'_antiHypertensiveCount': 1}, {'_sbp': - 5.5, '_dbp': -3.1}, {OutcomeType.MI: 1.5, OutcomeType.STROKE: 0.92}
+class addABPMedMIHarm(addABPMedStrokeLargeEffectSize):
+    def get_treatment_recalibration_for_population(self):
+        return {OutcomeType.MI: 1.5, OutcomeType.STROKE: 0.92}
 
+    def get_treatment_recalibration_for_person(self, person):
+        return {OutcomeType.MI: 1.5, OutcomeType.STROKE: 0.92}
 
-def addABPMedMILargeEffectSize(person):
-    return {'_antiHypertensiveCount': 1}, {'_sbp': - 5.5, '_dbp': -3.1}, {OutcomeType.MI: 0.5, OutcomeType.STROKE: 0.92}
+class addABPMedMILargeEffectSize(addABPMedStrokeLargeEffectSize):
+    def get_treatment_recalibration_for_population(self):
+        return {OutcomeType.MI: 0.5, OutcomeType.STROKE: 0.92}
+
+    def get_treatment_recalibration_for_person(self, person):
+        return {OutcomeType.MI: 0.5, OutcomeType.STROKE: 0.92}
 
 
 class TestTreatmentRecalibration(unittest.TestCase):
@@ -73,7 +91,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         alwaysStrokePop._outcome_model_repository = TestOftenStrokeModelRepository(0.5)
         # on average, treatment will have an RR round 0.95 for the BP lowering effect applied
         # so, we're going to recalibrate to a RR of 1.5...that will lead to many MORE strokes 
-        alwaysStrokePop.set_bp_treatment_strategy(addABPMedStrokeHarm)
+        alwaysStrokePop.set_bp_treatment_strategy(addABPMedStrokeHarm())
         alwaysStrokePop.advance(1)
         numberOfStrokesInRecalibratedPopulation = pd.Series(
             [person.has_stroke_during_simulation() for i, person in alwaysStrokePop._people.iteritems()]).sum()
@@ -93,7 +111,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         # set a treatment strategy on teh population
         alwaysStrokePop = NHANESDirectSamplePopulation(self.popSize, 2001)
         alwaysStrokePop._outcome_model_repository = TestOftenStrokeModelRepository(0.5)
-        alwaysStrokePop.set_bp_treatment_strategy(addABPMedStrokeLargeEffectSize)
+        alwaysStrokePop.set_bp_treatment_strategy(addABPMedStrokeLargeEffectSize())
         alwaysStrokePop.advance(1)
         numberOfStrokesInRecalibratedPopulation = pd.Series(
             [person.has_stroke_during_simulation() for i, person in alwaysStrokePop._people.iteritems()]).sum()
@@ -112,7 +130,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         # set a treatment strategy on teh population
         alwaysMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
         alwaysMIPop._outcome_model_repository = TestOftenMIModelRepository(0.5)
-        alwaysMIPop.set_bp_treatment_strategy(addABPMedMIHarm)
+        alwaysMIPop.set_bp_treatment_strategy(addABPMedMIHarm())
         alwaysMIPop.advance(1)
         numberOfMIsInRecalibratedPopulation = pd.Series(
             [person.has_mi_during_simulation() for i, person in alwaysMIPop._people.iteritems()]).sum()
@@ -132,8 +150,11 @@ class TestTreatmentRecalibration(unittest.TestCase):
         # set a treatment strategy on teh population
         neverMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
         neverMIPop._outcome_model_repository = TestOftenMIModelRepository(0.5)
-        neverMIPop.set_bp_treatment_strategy(addABPMedMILargeEffectSize)
+        neverMIPop.set_bp_treatment_strategy(addABPMedMILargeEffectSize())
         neverMIPop.advance(1)
         numberOfMIsInRecalibratedPopulation = pd.Series(
             [person.has_mi_during_simulation() for i, person in neverMIPop._people.iteritems()]).sum()
         self.assertGreater(numberOfMIsInBasePopulation, numberOfMIsInRecalibratedPopulation)
+
+if __name__ == "__main__":
+    unittest.main()
