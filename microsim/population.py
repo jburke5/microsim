@@ -15,6 +15,7 @@ from microsim.outcome import Outcome, OutcomeType
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 
 import pandas as pd
+from pandarallel import pandarallel
 import copy
 import multiprocessing as mp
 import numpy as np
@@ -48,6 +49,14 @@ class Population:
         self._bpTreatmentStrategy = None
         self.num_of_processes = 8
 
+        self._riskFactors = ['sbp', 'dbp', 'a1c', 'hdl', 'ldl', 'trig', 'totChol',
+                             'bmi', 'anyPhysicalActivity', 'afib', 'waist', 'alcoholPerWeek']
+        # , 'otherLipidLoweringMedicationCount']
+        self._treatments = ['antiHypertensiveCount', 'statin']
+        self._timeVaryingCovariates = copy.copy(self._riskFactors)
+        self._timeVaryingCovariates.append('age')
+        self._timeVaryingCovariates.extend(self._treatments)
+
     def reset_to_baseline(self):
         self._totalWavesAdvanced = 0
         self._currentWave = 0
@@ -63,6 +72,90 @@ class Population:
                 self.advance_person(person)
             self.apply_recalibration_standards()
             self._totalWavesAdvanced += 1
+
+    # trying to work this out. if we do get it worked out, then we probably want to rebuild the person to use systematic data structrures
+    # (i.e. static attributes, time-varying attributes)
+    # also, will need to thikn about ways to make sure that the dataframe version of reality stays synced with teh "patient-based" version of reality
+    # for now, will build a DF at the beginnign and then update the peopel at the end...
+    def advance_vectorized(self, years):
+        # get dataframe of people...
+        df = self.get_people_current_state_and_summary_as_dataframe()
+        alive = df.loc[df.dead == False]
+        pandarallel.initialize()
+        for yearIndex in range(years):
+            print(f"processing year: {yearIndex}")
+            self._currentWave += 1
+
+            # advance risk factors
+            for rf in self._riskFactors:
+                print(f"### Risk Factor: {rf}")
+                alive[rf + "Next"] = alive.parallel_apply(self._risk_model_repository.get_model(
+                    rf).estimate_next_risk_vectorized, axis='columns')
+
+            # advance treatment
+            for treatment in self._treatments:
+                print(f"### Treatment: {treatment}")
+                alive[treatment + "Next"] = alive.parallel_apply(self._risk_model_repository.get_model(
+                    treatment).estimate_next_risk_vectorized, axis='columns')
+
+            # apply treatment modifications
+            if self._bpTreatmentStrategy is not None:
+                alive = alive.parallel_apply(
+                    self._bpTreatmentStrategy.get_changes_vectorized, axis='columns')
+
+            # advance outcomes
+            for outcome in ['stroke', 'mi', 'dementia', 'dead', 'gcp']:
+                alive[outcome + 'Next'] = 0
+
+            # first determine if there is a cv event
+
+            alive = alive.parallel_apply(
+                self._outcome_model_repository.assign_cv_outcome_vectorized, axis='columns')
+
+            # then assign gcp and dementia...
+            # self._gcp.append(outcome_model_repository.get_gcp(self))
+
+            # dementia is conceptualized as a progressive process rather than an event you only "get" it onceexit
+            # if (not self._dementia):
+            #    dementia = outcome_model_repository.get_dementia(self)
+            #    if (dementia is not None):
+            #        self.add_outcome_event(dementia)
+
+            # if not dead from the CV event...assess non CV mortality
+            # if (not self.is_dead()):
+            #    non_cv_death = outcome_model_repository.assign_non_cv_mortality(self)
+            #    if (non_cv_death):
+            #        self._alive.append(False)
+
+            alive = self.move_people_df_forward(alive)
+        return alive
+        # alive['']
+        # advance gcp
+        # advance treastment
+        # advance outcomes
+        # advasnce qalys
+        # update age
+
+        # self.apply_recalibration_standards()
+        #self._totalWavesAdvanced += 1
+
+    def move_people_df_forward(self, df):
+        factorsToChange = copy.copy(self._riskFactors)
+        factorsToChange.extend(self._treatments)
+
+        for rf in factorsToChange:
+            df[rf] = df[rf + 'Next']
+            df['mean' + rf.capitalize()] = (df['mean' + rf.capitalize()] *
+                                            (df['totalYearsInSim']+1) + df[rf + 'Next']) / (df['totalYearsInSim']+2)
+        df['totalYearsInSim'] = df['totalYearsInSim'] + 1
+        df['miInSim'] = df['miInSim'] | df['miNext']
+        df['strokeInSim'] = df['strokeInSim'] | df['strokeNext']
+
+        # redtag: need to add current diabetse, bp treatment...current smoker
+
+        nextCols = [col for col in df.columns if "Next" in col]
+        df.drop(columns=nextCols, inplace=True)
+        return df
 
     def advance_person(self, person):
         if not person.is_dead():
@@ -116,7 +209,8 @@ class Population:
         # redtag: would like to apply to this to a deeply cloned population, but i can't get that to work
         # so, for now, applying it to the actual population and then rolling the effect back later.
         for _, person in recalibration_pop.iteritems():
-            treatment_change_standard, _, effect_of_treatment_standard = self._bpTreatmentStrategy.get_changes_for_person(person)
+            treatment_change_standard, _, effect_of_treatment_standard = self._bpTreatmentStrategy.get_changes_for_person(
+                person)
             person._sbp[-1] = person._sbp[-1] - \
                 effect_of_treatment_standard['_sbp'] * person._bpMedsAdded[-1]
             person._dbp[-1] = person._dbp[-1] - \
@@ -129,7 +223,8 @@ class Population:
 
         # hacktag related to above — roll back the treatment effect...
         for _, person in recalibration_pop.iteritems():
-            treatment_change_standard, _, effect_of_treatment_standard = self._bpTreatmentStrategy.get_changes_for_person(person)
+            treatment_change_standard, _, effect_of_treatment_standard = self._bpTreatmentStrategy.get_changes_for_person(
+                person)
             person._sbp[-1] = person._sbp[-1] + \
                 effect_of_treatment_standard['_sbp'] * person._bpMedsAdded[-1]
             person._dbp[-1] = person._dbp[-1] + \
@@ -155,19 +250,19 @@ class Population:
             if len(recalibrationPopForMedCount) > 0:
                 # recalibrate stroke
                 self.create_or_rollback_events_to_correct_calibration(recalibration_standard_for_med_count,
-                                                                    treatedStrokeRisksForMedCount,
-                                                                    untreatedStrokeRisksForMedCount,
-                                                                    OutcomeType.STROKE,
-                                                                    CVOutcomeDetermination()._will_have_fatal_stroke,
-                                                                    recalibrationPopForMedCount)
+                                                                      treatedStrokeRisksForMedCount,
+                                                                      untreatedStrokeRisksForMedCount,
+                                                                      OutcomeType.STROKE,
+                                                                      CVOutcomeDetermination()._will_have_fatal_stroke,
+                                                                      recalibrationPopForMedCount)
 
                 # recalibrate MI
                 self.create_or_rollback_events_to_correct_calibration(recalibration_standard_for_med_count,
-                                                                    treatedMIRisksForMedCount,
-                                                                    untreatedMIRisksForMedCount,
-                                                                    OutcomeType.MI,
-                                                                    CVOutcomeDetermination()._will_have_fatal_mi,
-                                                                    recalibrationPopForMedCount)
+                                                                      treatedMIRisksForMedCount,
+                                                                      untreatedMIRisksForMedCount,
+                                                                      OutcomeType.MI,
+                                                                      CVOutcomeDetermination()._will_have_fatal_mi,
+                                                                      recalibrationPopForMedCount)
 
     def estimate_risks(self, recalibration_pop):
         combinedRisks = pd.Series([self._outcome_model_repository.get_risk_for_person(
@@ -452,9 +547,11 @@ class Population:
                              'baseAge': [person._age[0] for person in self._people],
                              'gender': [person._gender for person in self._people],
                              'raceEthnicity': [person._raceEthnicity for person in self._people],
+                             'black': [person._raceEthnicity == 4 for person in self._people],
                              'sbp': [person._sbp[-1] for person in self._people],
                              'dbp': [person._dbp[-1] for person in self._people],
                              'a1c': [person._a1c[-1] for person in self._people],
+                             'current_diabetes': [person._a1c[-1] > 6.5 for person in self._people],
                              'hdl': [person._hdl[-1] for person in self._people],
                              'ldl': [person._ldl[-1] for person in self._people],
                              'trig': [person._trig[-1] for person in self._people],
@@ -462,18 +559,31 @@ class Population:
                              'bmi': [person._bmi[-1] for person in self._people],
                              'anyPhysicalActivity': [person._anyPhysicalActivity[-1] for person in self._people],
                              'education': [person._education.value for person in self._people],
-                             'aFib': [person._afib[-1] for person in self._people],
-                             'antiHypertensive': [person._antiHypertensiveCount[-1] for person in self._people],
+                             'afib': [person._afib[-1] for person in self._people],
+                             'alcoholPerWeek': [person._alcoholPerWeek[-1] for person in self._people],
+                             'antiHypertensiveCount': [person._antiHypertensiveCount[-1] for person in self._people],
+                             'current_bp_treatment': [person._antiHypertensiveCount[-1] > 0 for person in self._people],
                              'statin': [person._statin[-1] for person in self._people],
                              'otherLipidLoweringMedicationCount': [person._otherLipidLoweringMedicationCount[-1] for person in self._people],
                              'waist': [person._waist[-1] for person in self._people],
                              'smokingStatus': [person._smokingStatus for person in self._people],
+                             'current_smoker': [person._smokingStatus == 2 for person in self._people],
                              'dead': [person.is_dead() for person in self._people],
                              'miPriorToSim': [person._selfReportMIPriorToSim for person in self._people],
                              'miInSim': [person.has_mi_during_simulation() for person in self._people],
                              'strokePriorToSim': [person._selfReportStrokePriorToSim for person in self._people],
                              'strokeInSim': [person.has_stroke_during_simulation() for person in self._people],
                              'totalYearsInSim': [person.years_in_simulation() for person in self._people]})
+
+    def get_people_current_state_and_summary_as_dataframe(self):
+        df = self.get_people_current_state_as_dataframe()
+        # iterate through variables that vary over time
+        for var in self._timeVaryingCovariates:
+            df['base' + var.capitalize()] = [getattr(person, "_" + var)[0]
+                                             for i, person in self._people.iteritems()]
+            df['mean' + var.capitalize()] = [pd.Series(getattr(person, "_" + var)).mean()
+                                             for i, person in self._people.iteritems()]
+        return df
 
     def get_people_initial_state_as_dataframe(self):
         return pd.DataFrame({'age': [person._age[0] for person in self._people],
@@ -489,8 +599,8 @@ class Population:
                              'bmi': [person._bmi[0] for person in self._people],
                              'anyPhysicalActivity': [person._anyPhysicalActivity[0] for person in self._people],
                              'education': [person._education.value for person in self._people],
-                             'aFib': [person._afib[0] for person in self._people],
-                             'antiHypertensive': [person._antiHypertensiveCount[0] for person in self._people],
+                             'afib': [person._afib[0] for person in self._people],
+                             'antiHypertensiveCount': [person._antiHypertensiveCount[0] for person in self._people],
                              'statin': [person._statin[0] for person in self._people],
                              'otherLipidLoweringMedicationCount': [person._otherLipidLoweringMedicationCount[0] for person in self._people],
                              'waist': [person._waist[0] for person in self._people],

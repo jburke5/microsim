@@ -21,10 +21,11 @@ class StatsModelLinearRiskFactorModel:
         self.parameters = {**(regression_model._coefficients)}
         self.non_intercept_params = {k: v for k, v in self.parameters.items() if k != 'Intercept'}
         self.argument_transforms = get_all_argument_transforms(self.get_keys_for_transforms())
+        self.argument_transforms_vectorized = get_all_argument_transforms(self.get_keys_for_transforms(), True)
 
     # method to be overriden by models that want to, in addition to the risks estimated by 
     # the regression coefficients loaded from a model, also be able to apply some manual parameters.
-    def get_manual_parameters(self):
+    def get_manual_parameters(self, vectorized):
         return {}
 
     def get_keys_for_transforms(self):
@@ -80,7 +81,7 @@ class StatsModelLinearRiskFactorModel:
             
             linearPredictor += coeff_val * model_argument
         
-        for coeff_name, manual_tuple in self.get_manual_parameters().items():
+        for coeff_name, manual_tuple in self.get_manual_parameters(False).items():
             # the tuple gives one item as the regression coefficent and the second item as a method 
             # to get the values from a person
             linearPredictor += manual_tuple[0] * manual_tuple[1](person)
@@ -90,3 +91,41 @@ class StatsModelLinearRiskFactorModel:
             linearPredictor = np.exp(linearPredictor)
 
         return linearPredictor
+
+    def estimate_next_risk_vectorized(self, x):
+
+        # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
+        linearPredictor = self.get_intercept()
+
+        for coeff_name, coeff_val in self.non_intercept_params.items():
+            if self.contains_interaction(coeff_name):
+                interactions = []
+                for interact in self.get_interactions(coeff_name):
+                    interactions.append(self.get_model_argument_for_coeff_name_vectorized(interact, x))
+                model_argument = reduce(lambda x, y: x * y, interactions, 1)
+            else:
+                model_argument = self.get_model_argument_for_coeff_name_vectorized(coeff_name, x)
+            
+            linearPredictor += coeff_val * model_argument
+        
+        for coeff_name, manual_tuple in self.get_manual_parameters(True).items():
+            # the tuple gives one item as the regression coefficent and the second item as a method 
+            # to get the values from a person
+            linearPredictor += manual_tuple[0] * manual_tuple[1](x)
+        
+        
+        if (self.log_transform):
+            linearPredictor = np.exp(linearPredictor)
+
+        return linearPredictor
+
+    def get_model_argument_for_coeff_name_vectorized(self, coeff_name, x):
+        if coeff_name not in self.argument_transforms_vectorized:
+            model_argument = x[coeff_name]
+        else:
+            prop_name, transforms = self.argument_transforms_vectorized[coeff_name]
+            for transform in list(transforms):
+                transform.prop_name = prop_name
+            model_argument = reduce(lambda v, t: t.apply(v), transforms, x)
+        return model_argument
+
