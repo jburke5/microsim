@@ -1,14 +1,18 @@
 from microsim.outcome_model_type import OutcomeModelType
 from microsim.gender import NHANESGender
+from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.education import Education
 from microsim.ascvd_outcome_model import ASCVDOutcomeModel
 from microsim.statsmodel_cox_model import StatsModelCoxModel
 from microsim.cox_regression_model import CoxRegressionModel
 from microsim.cv_outcome_determination import CVOutcomeDetermination
+from microsim.person import Person
 from microsim.data_loader import load_model_spec
 from microsim.regression_model import RegressionModel
 from microsim.gcp_model import GCPModel
 from microsim.outcome import Outcome, OutcomeType
 from microsim.dementia_model import DementiaModel
+from microsim.smoking_status import SmokingStatus
 
 import numpy.random as npRand
 
@@ -27,6 +31,12 @@ class OutcomeModelRepository:
         self.stroke_case_fatality = CVOutcomeDetermination.default_stroke_case_fatality
         self.secondary_stroke_case_fatality = CVOutcomeDetermination.default_secondary_stroke_case_fatality
         self.secondary_prevention_multiplier = CVOutcomeDetermination.default_secondary_prevention_multiplier
+
+        self.outcomeDet = CVOutcomeDetermination(self.mi_case_fatality,
+                                                 self.stroke_case_fatality,
+                                                 self.secondary_mi_case_fatality,
+                                                 self.secondary_stroke_case_fatality,
+                                                 self.secondary_prevention_multiplier)
 
         # variable used in testing to control whether a patient will have a stroke or mi
         self.manualStrokeMIProbability = None
@@ -70,11 +80,13 @@ class OutcomeModelRepository:
     def get_random_effects(self):
         return {'gcp': npRand.normal(0, 4.84)}
 
-    def get_risk_for_person(self, person, outcome, years=1):
-        return self.select_model_for_person(person, outcome).get_risk_for_person(person, years)
+    def get_risk_for_person(self, person, outcome, years=1, vectorized=False):
+        if vectorized:
+            personWrapper = PersonRowWrapper(person)
+        return self.select_model_for_person(personWrapper, outcome).get_risk_for_person(person, years, vectorized)
 
     def get_gcp(self, person):
-        return self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE)
+        return self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE) + person._randomEffects['gcp']
 
     def get_dementia(self, person):
         if npRand.uniform(size=1) < self.get_risk_for_person(person, OutcomeModelType.DEMENTIA):
@@ -83,9 +95,12 @@ class OutcomeModelRepository:
             return None
 
     def select_model_for_person(self, person, outcome):
+        return self.select_model_for_gender(person._gender, outcome)
+
+    def select_model_for_gender(self, gender, outcome):
         models_for_outcome = self._models[outcome]
         if outcome == OutcomeModelType.CARDIOVASCULAR:
-            gender_stem = "male" if person._gender == NHANESGender.MALE else "female"
+            gender_stem = "male" if gender == NHANESGender.MALE else "female"
             return models_for_outcome[gender_stem]
         else:
             return models_for_outcome
@@ -95,16 +110,27 @@ class OutcomeModelRepository:
         return StatsModelCoxModel(CoxRegressionModel(**model_spec))
 
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
-        outcomeDet = CVOutcomeDetermination(self.mi_case_fatality,
-                                            self.stroke_case_fatality,
-                                            self.secondary_mi_case_fatality,
-                                            self.secondary_stroke_case_fatality,
-                                            self.secondary_prevention_multiplier)
-        return outcomeDet.assign_outcome_for_person(
+        return self.outcomeDet.assign_outcome_for_person(
             self, person, years, self.manualStrokeMIProbability)
 
-    # Returns True if the model-based logic vs. the random comparison suggests death
+    def assign_cv_outcome_vectorized(self, x, years=1, manualStrokeMIProbability=None):
+        return self.outcomeDet.assign_outcome_for_person(
+            self, x, vectorized=True, years=years, manualStrokeMIProbability=self.manualStrokeMIProbability)
+
+        # Returns True if the model-based logic vs. the random comparison suggests death
+
     def assign_non_cv_mortality(self, person, years=1):
         riskForPerson = self.get_risk_for_person(person, OutcomeModelType.NON_CV_MORTALITY)
         if (npRand.uniform(size=1) < riskForPerson):
             return True
+
+# utility class to take a dataframe row and convert some salietn elements to a person to streamline model selection
+
+
+class PersonRowWrapper:
+    def __init__(self, x):
+        self._age = x.age
+        self._gender = NHANESGender(x.gender)
+        self._raceEthnicity = NHANESRaceEthnicity(x.raceEthnicity)
+        self._education = Education(x.education)
+        self._smokingStatus = SmokingStatus(x.smokingStatus)
