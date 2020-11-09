@@ -108,8 +108,10 @@ class Population:
             alive = alive.parallel_apply(
                 self._outcome_model_repository.assign_cv_outcome_vectorized, axis='columns')
 
-            alive['gcp'] = alive.parallel_apply(self._outcome_model_repository.get_gcp_vectorized, axis='columns')
-            alive['dementia'] = alive.loc[~alive.dementia].parallel_apply(self._outcome_model_repository.get_dementia_vectorized, axis='columns')
+            alive['gcp'] = alive.parallel_apply(
+                self._outcome_model_repository.get_gcp_vectorized, axis='columns')
+            alive['dementia'] = alive.loc[~alive.dementia].parallel_apply(
+                self._outcome_model_repository.get_dementia_vectorized, axis='columns')
 
             # if (not self._dementia):
             #    dementia = outcome_model_repository.get_dementia(self)
@@ -147,7 +149,6 @@ class Population:
         df['strokeInSim'] = df['strokeInSim'] | df['strokeNext']
         df['current_diabetes'] = df['a1c'] > 6.5
         df['current_bp_treatment'] = df['antiHypertensiveCount'] >= 1
-
 
         nextCols = [col for col in df.columns if "Next" in col]
         df.drop(columns=nextCols, inplace=True)
@@ -539,43 +540,47 @@ class Population:
         ageStandard = self.tabulate_age_specific_rates(ageStandard)
         return((ageStandard.ageSpecificContribution.sum(), ageStandard.outcomeCount.sum()))
 
+    def get_person_attributes_from_person(self, person):
+        return {'age': person._age[-1],
+                'baseAge': person._age[0],
+                'gender': person._gender,
+                'raceEthnicity': person._raceEthnicity,
+                'black': person._raceEthnicity == 4,
+                'sbp': person._sbp[-1],
+                'dbp': person._dbp[-1],
+                'a1c': person._a1c[-1],
+                'current_diabetes': person._a1c[-1] > 6.5,
+                'hdl': person._hdl[-1],
+                'ldl': person._ldl[-1],
+                'trig': person._trig[-1],
+                'totChol': person._totChol[-1],
+                'bmi': person._bmi[-1],
+                'anyPhysicalActivity': person._anyPhysicalActivity[-1],
+                'education': person._education.value,
+                'afib': person._afib[-1],
+                'alcoholPerWeek': person._alcoholPerWeek[-1],
+                'antiHypertensiveCount': person._antiHypertensiveCount[-1],
+                'current_bp_treatment': person._antiHypertensiveCount[-1] > 0,
+                'statin': person._statin[-1],
+                'otherLipidLoweringMedicationCount': person._otherLipidLoweringMedicationCount[-1],
+                'waist': person._waist[-1],
+                'smokingStatus': person._smokingStatus,
+                'current_smoker': person._smokingStatus == 2,
+                'dead': person.is_dead(),
+                'gcpRandomEffect': person._randomEffects['gcp'],
+                'miPriorToSim': person._selfReportMIPriorToSim,
+                'miInSim': person.has_mi_during_simulation(),
+                'strokePriorToSim': person._selfReportStrokePriorToSim,
+                'strokeInSim': person.has_stroke_during_simulation(),
+                'dementia': person._dementia,
+                'gcp': person._gcp[-1],
+                'baseGcp': person._gcp[0],
+                'gcpSlope': person._gcp[-1] - person._gcp[-2] if len(person._gcp) >= 2 else 0,
+                'totalYearsInSim': person.years_in_simulation()}
+
     def get_people_current_state_as_dataframe(self):
-        return pd.DataFrame({'age': [person._age[-1] for person in self._people],
-                             'baseAge': [person._age[0] for person in self._people],
-                             'gender': [person._gender for person in self._people],
-                             'raceEthnicity': [person._raceEthnicity for person in self._people],
-                             'black': [person._raceEthnicity == 4 for person in self._people],
-                             'sbp': [person._sbp[-1] for person in self._people],
-                             'dbp': [person._dbp[-1] for person in self._people],
-                             'a1c': [person._a1c[-1] for person in self._people],
-                             'current_diabetes': [person._a1c[-1] > 6.5 for person in self._people],
-                             'hdl': [person._hdl[-1] for person in self._people],
-                             'ldl': [person._ldl[-1] for person in self._people],
-                             'trig': [person._trig[-1] for person in self._people],
-                             'totChol': [person._totChol[-1] for person in self._people],
-                             'bmi': [person._bmi[-1] for person in self._people],
-                             'anyPhysicalActivity': [person._anyPhysicalActivity[-1] for person in self._people],
-                             'education': [person._education.value for person in self._people],
-                             'afib': [person._afib[-1] for person in self._people],
-                             'alcoholPerWeek': [person._alcoholPerWeek[-1] for person in self._people],
-                             'antiHypertensiveCount': [person._antiHypertensiveCount[-1] for person in self._people],
-                             'current_bp_treatment': [person._antiHypertensiveCount[-1] > 0 for person in self._people],
-                             'statin': [person._statin[-1] for person in self._people],
-                             'otherLipidLoweringMedicationCount': [person._otherLipidLoweringMedicationCount[-1] for person in self._people],
-                             'waist': [person._waist[-1] for person in self._people],
-                             'smokingStatus': [person._smokingStatus for person in self._people],
-                             'current_smoker': [person._smokingStatus == 2 for person in self._people],
-                             'dead': [person.is_dead() for person in self._people],
-                             'gcpRandomEffect': [person._randomEffects['gcp'] for person in self._people],
-                             'miPriorToSim': [person._selfReportMIPriorToSim for person in self._people],
-                             'miInSim': [person.has_mi_during_simulation() for person in self._people],
-                             'strokePriorToSim': [person._selfReportStrokePriorToSim for person in self._people],
-                             'strokeInSim': [person.has_stroke_during_simulation() for person in self._people],
-                             'dementia': [person._dementia for person in self._people],
-                             'gcp': [person._gcp[-1] for person in self._people],
-                             'baseGcp': [person._gcp[0] for person in self._people],
-                             'gcpSlope': [person._gcp[-1] - person._gcp[-2] if len(person._gcp) >= 2 else 0 for person in self._people],
-                             'totalYearsInSim': [person.years_in_simulation() for person in self._people]})
+        pandarallel.initialize()
+        return pd.DataFrame.from_dict(self._people.parallel_apply(self.get_person_attributes_from_person).array)
 
     def get_people_current_state_and_summary_as_dataframe(self):
         df = self.get_people_current_state_as_dataframe()
@@ -653,7 +658,8 @@ def build_people_using_nhanes_for_sampling(nhanes, n, outcome_model_repository, 
         random_state=random_seed,
         replace=True)
     pandarallel.initialize()
-    people = repeated_sample.parallel_apply(build_person, outcome_model_repository=outcome_model_repository, axis='columns')
+    people = repeated_sample.parallel_apply(
+        build_person, outcome_model_repository=outcome_model_repository, axis='columns')
     if filter is not None:
         people = people.loc[people.apply(filter)]
 
@@ -671,7 +677,7 @@ class NHANESDirectSamplePopulation(Population):
             generate_new_people=True,
             model_reposistory_type="cohort",
             random_seed=None):
-        
+
         self._outcome_model_repository = OutcomeModelRepository()
         self._qaly_assignment_strategy = QALYAssignmentStrategy()
         nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
