@@ -53,6 +53,7 @@ class Person:
         initializeAfib: Callable,
         selfReportStrokeAge=None,
         selfReportMIAge=None,
+        randomEffects=dict(),
         **kwargs,
     ) -> None:
 
@@ -112,7 +113,7 @@ class Person:
 
         self._gcp = [GCPModel().get_risk_for_person(self)]
         # for outcome mocels that require random effects, store in this dictionary
-        self._randomEffects = dict()
+        self._randomEffects = randomEffects
 
         # lucianatag: for this and GCP, this approach is a bit inelegant. the idea is to have classees that can be swapped out
         # at the population level to change the behavior about how people change over time.
@@ -234,10 +235,6 @@ class Person:
         # print(f"advance_year on person, age: {self._age[0]} sbp : {self._sbp[0]}")
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance year")
-
-        # initialize random effects if they haven't already been initialized and this is our first year
-        if self.years_in_simulation() == 0 and len(self._randomEffects) == 0:
-            self._randomEffects = outcome_model_repository.get_random_effects()
 
         self.advance_risk_factors(risk_model_repository)
         self.advance_treatment(risk_model_repository)
