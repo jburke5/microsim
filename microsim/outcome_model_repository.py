@@ -15,6 +15,7 @@ from microsim.dementia_model import DementiaModel
 from microsim.smoking_status import SmokingStatus
 
 import numpy.random as npRand
+import numpy as np
 
 
 # This object is currently serving two purposes.
@@ -83,16 +84,23 @@ class OutcomeModelRepository:
     def get_risk_for_person(self, person, outcome, years=1, vectorized=False):
         if vectorized:
             personWrapper = PersonRowWrapper(person)
-        return self.select_model_for_person(personWrapper, outcome).get_risk_for_person(person, years, vectorized)
+        return self.select_model_for_person(personWrapper if vectorized else person, outcome).get_risk_for_person(person, years, vectorized)
 
     def get_gcp(self, person):
         return self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE) + person._randomEffects['gcp']
+
+    def get_gcp_vectorized(self, person):
+        return self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE, years=1, vectorized=True) + person.gcpRandomEffect
 
     def get_dementia(self, person):
         if npRand.uniform(size=1) < self.get_risk_for_person(person, OutcomeModelType.DEMENTIA):
             return Outcome(OutcomeType.DEMENTIA, False)
         else:
             return None
+
+    def get_dementia_vectorized(self, person):
+        return npRand.uniform(size=1)[0] < self.get_risk_for_person(
+            person, OutcomeModelType.DEMENTIA, years=1, vectorized=True)
 
     def select_model_for_person(self, person, outcome):
         return self.select_model_for_gender(person._gender, outcome)
@@ -129,6 +137,9 @@ class OutcomeModelRepository:
 
 class PersonRowWrapper:
     def __init__(self, x):
+        if np.isnan(x.gender):
+            print("Is nan")
+            print(x)
         self._age = x.age
         self._gender = NHANESGender(x.gender)
         self._raceEthnicity = NHANESRaceEthnicity(x.raceEthnicity)

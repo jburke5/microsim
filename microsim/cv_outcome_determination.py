@@ -111,8 +111,11 @@ class CVOutcomeDetermination:
                 return self.get_outcome(person, True, self._will_have_fatal_mi(person, vectorized),  vectorized)
             else:
                 return self.get_outcome(person, False, self._will_have_fatal_stroke(person, vectorized), vectorized)
-        elif not self._will_have_cvd_event(cvRisk) and vectorized:
-            return self.get_outcome(person, False, False, True)
+        elif vectorized:
+            person.miNext = False
+            person.strokeNext = False
+            person.deadNext = False
+            return person
 
     def get_outcome(self, person, mi, fatal, vectorized):
         if vectorized:
@@ -121,4 +124,4 @@ class CVOutcomeDetermination:
             person.deadNext = fatal
             return person
         else:
-            return Outcome(OutcomeType.MI if mi else OutcomeType.Stroke, fatal)
+            return Outcome(OutcomeType.MI if mi else OutcomeType.STROKE, fatal)

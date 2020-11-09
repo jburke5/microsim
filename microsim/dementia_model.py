@@ -18,28 +18,43 @@ class DementiaModel(StatsModelCoxModel):
             self.one_year_quad_cumulative_hazard = self.one_year_quad_cumulative_hazard * 0.05
 
     def linear_predictor(self, person):
+        return self.linear_predictor_for_patient_characteristics(currentAge=person._age[-1],
+                                                                 baselineGcp=person.gcp[0],
+                                                                 gcpSlope=person._gcp[-1] - person._gcp[-2] if len(
+                                                                     person_gcp >= 2) else 0,
+                                                                 gender=person._gender,
+                                                                 educatioon=person._education,
+                                                                 raceEthnicity=person._raceEthnicity)
+
+    def linear_predictor_for_patient_characteristics(self, currentAge, baselineGcp, gcpSlope, gender, education, raceEthnicity):
         xb = 0
-        xb += person._age[-1] * 0.1023685
-        xb += person._gcp[0] * -0.0754936
+        xb += currentAge * 0.1023685
+        xb += baselineGcp * -0.0754936
 
-        # can only calculate slope for people under observation for 2 or more years...
-        slope = 0
-        if len(person._gcp) >= 2:
-            slope = person._gcp[-1] - person._gcp[-2]
-        xb += slope * -0.000999
+      # can only calculate slope for people under observation for 2 or more years...
+        xb += gcpSlope * -0.000999
 
-        if person._gender == NHANESGender.FEMALE:
+        if gender == NHANESGender.FEMALE:
             xb += 0.0950601
 
-        if person._education == Education.LESSTHANHIGHSCHOOL:
+        if education == Education.LESSTHANHIGHSCHOOL:
             xb += 0.0307459
-        elif person._education == Education.SOMEHIGHSCHOOL:
+        elif education == Education.SOMEHIGHSCHOOL:
             xb += 0.0841255
-        elif person._education == Education.HIGHSCHOOLGRADUATE:
+        elif education == Education.HIGHSCHOOLGRADUATE:
             xb += -0.0846951
-        elif person._education == Education.SOMECOLLEGE:
+        elif education == Education.SOMECOLLEGE:
             xb += -0.2263593
 
-        if person._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
+        if raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
             xb += 0.1937563
         return xb
+
+    # need to override for specific subclasses that implement it.
+    def linear_predictor_vectorized(self, x):
+        return self.linear_predictor_for_patient_characteristics(currentAge=x.age,
+                                                                 baselineGcp=x.baseGcp,
+                                                                 gcpSlope=x.gcpSlope,
+                                                                 gender=x.gender,
+                                                                 education=x.education,
+                                                                 raceEthnicity=x.raceEthnicity)

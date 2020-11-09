@@ -19,7 +19,6 @@ from pandarallel import pandarallel
 import copy
 import multiprocessing as mp
 import numpy as np
-from functools import partial
 
 
 class Population:
@@ -37,9 +36,6 @@ class Population:
 
     def __init__(self, people):
         self._people = people
-        self._risk_model_repository = None
-        self._outcome_model_repository = None
-        self._qaly_assignment_strategy = None
         self._ageStandards = {}
         # luciana tag: discuss with luciana...want to keep track of the sim wave htat is currently running, while running
         # and also the total number of years advanced...need to think about how to do this is a way that will be safe
@@ -112,10 +108,9 @@ class Population:
             alive = alive.parallel_apply(
                 self._outcome_model_repository.assign_cv_outcome_vectorized, axis='columns')
 
-            # then assign gcp and dementia...
-            # self._gcp.append(outcome_model_repository.get_gcp(self))
+            alive['gcp'] = alive.parallel_apply(self._outcome_model_repository.get_gcp_vectorized, axis='columns')
+            alive['dementia'] = alive.loc[~alive.dementia].parallel_apply(self._outcome_model_repository.get_dementia_vectorized, axis='columns')
 
-            # dementia is conceptualized as a progressive process rather than an event you only "get" it onceexit
             # if (not self._dementia):
             #    dementia = outcome_model_repository.get_dementia(self)
             #    if (dementia is not None):
@@ -150,8 +145,9 @@ class Population:
         df['totalYearsInSim'] = df['totalYearsInSim'] + 1
         df['miInSim'] = df['miInSim'] | df['miNext']
         df['strokeInSim'] = df['strokeInSim'] | df['strokeNext']
+        df['current_diabetes'] = df['a1c'] > 6.5
+        df['current_bp_treatment'] = df['antiHypertensiveCount'] >= 1
 
-        # redtag: need to add current diabetse, bp treatment...current smoker
 
         nextCols = [col for col in df.columns if "Next" in col]
         df.drop(columns=nextCols, inplace=True)
@@ -363,7 +359,8 @@ class Population:
                           round(df.otherLipidLoweringMedicationCount.mean())),
                       initializeAfib=(lambda _: False),
                       selfReportStrokeAge=None,
-                      selfReportMIAge=None)
+                      selfReportMIAge=None,
+                      randomEffects=self._outcome_model_repository.get_random_effects())
 
     def get_raw_incidence_by_age(self, eventType):
         popDF = self.get_people_current_state_as_dataframe()
@@ -569,10 +566,15 @@ class Population:
                              'smokingStatus': [person._smokingStatus for person in self._people],
                              'current_smoker': [person._smokingStatus == 2 for person in self._people],
                              'dead': [person.is_dead() for person in self._people],
+                             'gcpRandomEffect': [person._randomEffects['gcp'] for person in self._people],
                              'miPriorToSim': [person._selfReportMIPriorToSim for person in self._people],
                              'miInSim': [person.has_mi_during_simulation() for person in self._people],
                              'strokePriorToSim': [person._selfReportStrokePriorToSim for person in self._people],
                              'strokeInSim': [person.has_stroke_during_simulation() for person in self._people],
+                             'dementia': [person._dementia for person in self._people],
+                             'gcp': [person._gcp[-1] for person in self._people],
+                             'baseGcp': [person._gcp[0] for person in self._people],
+                             'gcpSlope': [person._gcp[-1] - person._gcp[-2] if len(person._gcp) >= 2 else 0 for person in self._people],
                              'totalYearsInSim': [person.years_in_simulation() for person in self._people]})
 
     def get_people_current_state_and_summary_as_dataframe(self):
@@ -615,7 +617,7 @@ def initializeAFib(person):
     return statsModel.estimate_next_risk(person)
 
 
-def build_person(x):
+def build_person(x, outcome_model_repository):
     return Person(
         age=x.age,
         gender=NHANESGender(int(x.gender)),
@@ -639,41 +641,23 @@ def build_person(x):
         initializeAfib=initializeAFib,
         selfReportStrokeAge=x.selfReportStrokeAge,
         selfReportMIAge=x.selfReportMIAge,
+        randomEffects=outcome_model_repository.get_random_effects(),
         dfIndex=x.index,
         diedBy2015=x.diedBy2015)
 
 
-def build_people_using_nhanes_for_sampling(nhanes, n, filter=None, random_seed=None):
+def build_people_using_nhanes_for_sampling(nhanes, n, outcome_model_repository,  filter=None, random_seed=None):
     repeated_sample = nhanes.sample(
         n,
         weights=nhanes.WTINT2YR,
         random_state=random_seed,
         replace=True)
-    # people = repeated_sample.apply(build_person, axis=1)
-    people = parallelize_on_rows(repeated_sample, build_person)
+    pandarallel.initialize()
+    people = repeated_sample.parallel_apply(build_person, outcome_model_repository=outcome_model_repository, axis='columns')
     if filter is not None:
         people = people.loc[people.apply(filter)]
 
     return people
-
-# from https://stackoverflow.com/questions/26784164/pandas-multiprocessing-apply
-
-
-def parallelize(data, func, number_of_processes=8):
-    data_split = np.array_split(data, number_of_processes)
-    pool = mp.Pool(number_of_processes)
-    data = pd.concat(pool.map(func, data_split))
-    pool.close()
-    pool.join()
-    return data
-
-
-def run_on_subset(func, data_subset):
-    return data_subset.apply(func, axis=1)
-
-
-def parallelize_on_rows(data, func, number_of_processes=8):
-    return parallelize(data, partial(run_on_subset, func), number_of_processes)
 
 
 class NHANESDirectSamplePopulation(Population):
@@ -687,15 +671,17 @@ class NHANESDirectSamplePopulation(Population):
             generate_new_people=True,
             model_reposistory_type="cohort",
             random_seed=None):
+        
+        self._outcome_model_repository = OutcomeModelRepository()
+        self._qaly_assignment_strategy = QALYAssignmentStrategy()
         nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         nhanes = nhanes.loc[nhanes.year == year]
-        super().__init__(build_people_using_nhanes_for_sampling(
-            nhanes, n, filter=filter, random_seed=random_seed))
+        people = build_people_using_nhanes_for_sampling(
+            nhanes, n, self._outcome_model_repository,  filter=filter, random_seed=random_seed)
+        super().__init__(people)
         self.n = n
         self.year = year
         self._initialize_risk_models(model_reposistory_type)
-        self._outcome_model_repository = OutcomeModelRepository()
-        self._qaly_assignment_strategy = QALYAssignmentStrategy()
 
     def copy(self):
         newPop = NHANESDirectSamplePopulation(self.n, self.year, False)
