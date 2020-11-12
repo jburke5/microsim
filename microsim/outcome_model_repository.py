@@ -129,10 +129,17 @@ class OutcomeModelRepository:
 
     def assign_non_cv_mortality(self, person, years=1):
         riskForPerson = self.get_risk_for_person(person, OutcomeModelType.NON_CV_MORTALITY)
-        if (npRand.uniform(size=1) < riskForPerson):
+        if (npRand.uniform(size=1)[0] < riskForPerson):
             return True
 
-# utility class to take a dataframe row and convert some salietn elements to a person to streamline model selection
+    def assign_non_cv_mortality_vectorized(self, person, years=1):
+        riskForPerson = self.get_risk_for_person(
+            person, OutcomeModelType.NON_CV_MORTALITY, years, vectorized=True)
+        return npRand.uniform(size=1)[0] < riskForPerson
+
+
+
+            # utility class to take a dataframe row and convert some salietn elements to a person to streamline model selection
 
 
 class PersonRowWrapper:

@@ -93,15 +93,17 @@ class Person:
         self._outcomes = {OutcomeType.MI: [], OutcomeType.STROKE: [], OutcomeType.DEMENTIA: []}
         self._selfReportStrokePriorToSim = 0
         self._selfReportMIPriorToSim = 0
-        
+
         # a variable to track changes in BP meds compared to the baseline
         self._bpMedsAdded = [0]
 
         # convert events for events prior to simulation
         if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
+            self._selfReportStrokeAge = selfReportStrokeAge
             self._selfReportStrokePriorToSim = 1
             self._outcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False)))
         if selfReportMIAge is not None and selfReportMIAge > 1:
+            self._selfReportMIAge = selfReportMIAge
             self._selfReportMIPriorToSim = 1
             self._outcomes[OutcomeType.MI].append((-1, Outcome(OutcomeType.MI, False)))
         for k, v in kwargs.items():
@@ -303,7 +305,12 @@ class Person:
 
     def get_age_at_first_outcome(self, type):
         for outcome_tuple in self._outcomes[type]:
-            return outcome_tuple[0]
+            age = outcome_tuple[0]
+            if type == OutcomeType.STROKE and age == -1:
+                age = self._selfReportStrokeAge
+            elif type == OutcomeType.MI and age == -1:
+                age = self._selfReportMIAge
+            return age
         return None
 
     def get_age_at_first_outcome_in_sim(self, type):
@@ -311,6 +318,7 @@ class Person:
             age = outcome_tuple[0]
             if age > 0:
                 return age
+
         return None
 
     def has_fatal_stroke(self):
@@ -351,7 +359,8 @@ class Person:
             self._antiHypertensiveCount.append(new_antihypertensive_count)
 
         if self._bpTreatmentStrategy is not None:
-            additive_changes, static_changes, addititive_risk_changes = self._bpTreatmentStrategy.get_changes_for_person(self)
+            additive_changes, static_changes, addititive_risk_changes = self._bpTreatmentStrategy.get_changes_for_person(
+                self)
 
             self.apply_static_modifications(static_changes)
             self.apply_linear_modifications(additive_changes)
@@ -370,7 +379,6 @@ class Person:
         for key, value in modifications.items():
             attribute_value = getattr(self, key)
             attribute_value.append(value)
-
 
     def advance_risk_factors(self, risk_model_repository):
         if self.is_dead():
