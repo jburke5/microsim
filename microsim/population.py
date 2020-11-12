@@ -108,29 +108,26 @@ class Population:
             alive = alive.parallel_apply(
                 self._outcome_model_repository.assign_cv_outcome_vectorized, axis='columns')
 
+            # reselect on survivors...because we don't want to set non-cv mortality on poepel that died from cv events.
             alive['gcp'] = alive.parallel_apply(
                 self._outcome_model_repository.get_gcp_vectorized, axis='columns')
-            alive['dementia'] = alive.loc[~alive.dementia].parallel_apply(
+            newDementia = alive['dementia'] = alive.loc[~alive.dementia].parallel_apply(
                 self._outcome_model_repository.get_dementia_vectorized, axis='columns')
+            alive['dementia'] = newDementia | alive['dementia']
+            nonCVDeath = alive.parallel_apply(
+                self._outcome_model_repository.assign_non_cv_mortality_vectorized, axis='columns')
+            alive['deadNext'] = nonCVDeath | alive['deadNext']
 
-            # if (not self._dementia):
-            #    dementia = outcome_model_repository.get_dementia(self)
-            #    if (dementia is not None):
-            #        self.add_outcome_event(dementia)
-
-            # if not dead from the CV event...assess non CV mortality
-            # if (not self.is_dead()):
-            #    non_cv_death = outcome_model_repository.assign_non_cv_mortality(self)
-            #    if (non_cv_death):
-            #        self._alive.append(False)
 
             alive = self.move_people_df_forward(alive)
+            alive['qalyNext'] = alive.parallel_apply(
+                QALYAssignmentStrategy().get_qalys_vectorized, axis='columns')
+            alive['totalQalys'] = alive['qalyNext'] + alive['totalQalys']
+            alive.rename(columns={'qalyNext' : 'qaly'}, inplace=True)
+
+            alive.loc[~alive.dead, 'age'] = alive.age + 1
+            print(f"dead count : {alive['dead'].sum()}")
         return alive
-        # alive['']
-        # advance gcp
-        # advance treastment
-        # advance outcomes
-        # advasnce qalys
         # update age
 
         # self.apply_recalibration_standards()
@@ -149,6 +146,12 @@ class Population:
         df['strokeInSim'] = df['strokeInSim'] | df['strokeNext']
         df['current_diabetes'] = df['a1c'] > 6.5
         df['current_bp_treatment'] = df['antiHypertensiveCount'] >= 1
+        df['dead'] = df['deadNext']
+        # assign ages for new events
+        df.loc[(df.ageAtFirstStroke.isnull()) & (df.strokeNext), 'ageAtFirstStroke'] = df.age
+        df.loc[(df.ageAtFirstMI.isnull()) & (df.miNext), 'ageAtFirstMI'] = df.age
+        df.loc[(df.ageAtFirstDementia.isnull()) & (df.dementiaNext), 'ageAtFirstDementia'] = df.age
+
 
         nextCols = [col for col in df.columns if "Next" in col]
         df.drop(columns=nextCols, inplace=True)
@@ -569,6 +572,11 @@ class Population:
                 'dead': person.is_dead(),
                 'gcpRandomEffect': person._randomEffects['gcp'],
                 'miPriorToSim': person._selfReportMIPriorToSim,
+                'mi': person._selfReportMIPriorToSim or person.has_mi_during_simulation(),
+                'stroke': person._selfReportStrokePriorToSim or person.has_stroke_during_simulation(),
+                'ageAtFirstStroke': person.get_age_at_first_outcome(OutcomeType.STROKE),
+                'ageAtFirstMI': person.get_age_at_first_outcome(OutcomeType.MI),
+                'ageAtFirstDementia': person.get_age_at_first_outcome(OutcomeType.DEMENTIA),
                 'miInSim': person.has_mi_during_simulation(),
                 'strokePriorToSim': person._selfReportStrokePriorToSim,
                 'strokeInSim': person.has_stroke_during_simulation(),
@@ -576,7 +584,8 @@ class Population:
                 'gcp': person._gcp[-1],
                 'baseGcp': person._gcp[0],
                 'gcpSlope': person._gcp[-1] - person._gcp[-2] if len(person._gcp) >= 2 else 0,
-                'totalYearsInSim': person.years_in_simulation()}
+                'totalYearsInSim': person.years_in_simulation(),
+                'totalQalys': np.array(person._qalys).sum()}
 
     def get_people_current_state_as_dataframe(self):
         pandarallel.initialize()
@@ -613,7 +622,8 @@ class Population:
                              'waist': [person._waist[0] for person in self._people],
                              'smokingStatus': [person._smokingStatus for person in self._people],
                              'miPriorToSim': [person._selfReportMIPriorToSim for person in self._people],
-                             'strokePriorToSim': [person._selfReportStrokePriorToSim for person in self._people]})
+                             'strokePriorToSim': [person._selfReportStrokePriorToSim for person in self._people],
+                             'totalQalys': [np.array(person._qalys).sum() for person in self._people]})
 
 
 def initializeAFib(person):
@@ -645,7 +655,8 @@ def build_person(x, outcome_model_repository):
         otherLipidLoweringMedicationCount=x.otherLipidLowering,
         initializeAfib=initializeAFib,
         selfReportStrokeAge=x.selfReportStrokeAge,
-        selfReportMIAge=x.selfReportMIAge,
+        selfReportMIAge=np.random.randint(
+            18, x.age) if x.selfReportMIAge == 99999 else x.selfReportMIAge,
         randomEffects=outcome_model_repository.get_random_effects(),
         dfIndex=x.index,
         diedBy2015=x.diedBy2015)

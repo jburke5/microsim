@@ -15,9 +15,8 @@ class StatsModelCoxModel(StatsModelLinearRiskFactorModel):
     def linear_predictor(self, person):
         return super(StatsModelCoxModel, self).estimate_next_risk(person)
 
-    # need to override for specific subclasses that implement it.
     def linear_predictor_vectorized(self, person):
-        return None
+        return self.estimate_next_risk_vectorized(person)
 
     def get_cumulative_hazard_for_interval(self, intervalStart, intervalEnd):
         cumHazardAtIntervalStart = intervalStart * self.one_year_linear_cumulative_hazard + \
