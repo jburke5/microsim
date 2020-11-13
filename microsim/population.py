@@ -78,6 +78,8 @@ class Population:
         df = self.get_people_current_state_and_summary_as_dataframe()
         alive = df.loc[df.dead == False]
         pandarallel.initialize()
+        # might not need this row...depends o n whethe we do an bulk update on people or an wave-abased update
+        waveAtStartOfAdvance = self._currentWave
         for yearIndex in range(years):
             print(f"processing year: {yearIndex}")
             self._currentWave += 1
@@ -100,11 +102,13 @@ class Population:
                     self._bpTreatmentStrategy.get_changes_vectorized, axis='columns')
 
             # advance outcomes
+            # first, setup outcome variables
             for outcome in ['stroke', 'mi', 'dementia', 'dead', 'gcp']:
                 alive[outcome + 'Next'] = 0
+            alive['strokeFatal'] = 0
+            alive['miFatal'] = 0
 
             # first determine if there is a cv event
-
             alive = alive.parallel_apply(
                 self._outcome_model_repository.assign_cv_outcome_vectorized, axis='columns')
 
@@ -113,32 +117,63 @@ class Population:
                 self._outcome_model_repository.get_gcp_vectorized, axis='columns')
             newDementia = alive['dementia'] = alive.loc[~alive.dementia].parallel_apply(
                 self._outcome_model_repository.get_dementia_vectorized, axis='columns')
+            alive.loc[newDementia, 'ageAtFirstDementia'] = alive.age
             alive['dementia'] = newDementia | alive['dementia']
             nonCVDeath = alive.parallel_apply(
                 self._outcome_model_repository.assign_non_cv_mortality_vectorized, axis='columns')
             alive['deadNext'] = nonCVDeath | alive['deadNext']
 
-
-            alive = self.move_people_df_forward(alive)
             alive['qalyNext'] = alive.parallel_apply(
                 QALYAssignmentStrategy().get_qalys_vectorized, axis='columns')
-            alive['totalQalys'] = alive['qalyNext'] + alive['totalQalys']
-            alive.rename(columns={'qalyNext' : 'qaly'}, inplace=True)
 
             alive.loc[~alive.dead, 'age'] = alive.age + 1
             print(f"dead count : {alive['dead'].sum()}")
-        return alive
-        # update age
+            self._totalWavesAdvanced += 1
+
+            alive = self.move_people_df_forward(alive)
+            # for efficieicny, we could try to do this all at the end...gut, its a bit cleanear  to do it wave by wave
+            self._people = alive.parallel_apply(self.push_updates_back_to_people, axis='columns')
+            nextCols = [col for col in alive.columns if "Next" in col]
+            alive.drop(columns=nextCols, inplace=True)
+
+        return alive, df
 
         # self.apply_recalibration_standards()
-        #self._totalWavesAdvanced += 1
+
+    def push_updates_back_to_people(self, x):
+        person = self._people.iloc[int(x.populationIndex)]
+        return self.update_person(person, x)
+
+    def update_person(self, person, x):
+        for rf in self._riskFactors:
+            attr = getattr(person, "_" + rf)
+            attr.append(x[rf + str(self._currentWave)])
+
+        for treatment in self._treatments:
+            attr = getattr(person, "_" + treatment)
+            attr.append(x[treatment + str(self._currentWave)])
+
+        # advance outcomes
+        for outcomeName, outcomeType in {'stroke':  OutcomeType.STROKE, 'mi': OutcomeType.MI, 'dementia': OutcomeType.DEMENTIA}.items():
+            if x[outcomeName + "Next"]:
+                fatal = False if outcomeName == "dementia" else x[outcomeName + "Fatal"]
+                person.add_outcome_event(Outcome(outcomeType, fatal))
+
+        person._gcp.append(x.gcp)
+        person._alive.append(not x.deadNext)
+        person._qalys.append(x.qalyNext)
+        person._age.append(x.age + 1)
+        return person
 
     def move_people_df_forward(self, df):
         factorsToChange = copy.copy(self._riskFactors)
         factorsToChange.extend(self._treatments)
+        print(f"current wave: {self._currentWave}")
 
         for rf in factorsToChange:
+            # the curent value is stored in the variable name
             df[rf] = df[rf + 'Next']
+            df[rf + str(self._currentWave)] = df[rf + 'Next']
             df['mean' + rf.capitalize()] = (df['mean' + rf.capitalize()] *
                                             (df['totalYearsInSim']+1) + df[rf + 'Next']) / (df['totalYearsInSim']+2)
         df['totalYearsInSim'] = df['totalYearsInSim'] + 1
@@ -147,14 +182,12 @@ class Population:
         df['current_diabetes'] = df['a1c'] > 6.5
         df['current_bp_treatment'] = df['antiHypertensiveCount'] >= 1
         df['dead'] = df['deadNext']
+        df['totalQalys'] = df['totalQalys'] + df['qalyNext']
         # assign ages for new events
-        df.loc[(df.ageAtFirstStroke.isnull()) & (df.strokeNext), 'ageAtFirstStroke'] = df.age
-        df.loc[(df.ageAtFirstMI.isnull()) & (df.miNext), 'ageAtFirstMI'] = df.age
-        df.loc[(df.ageAtFirstDementia.isnull()) & (df.dementiaNext), 'ageAtFirstDementia'] = df.age
+        #df.loc[(df.ageAtFirstStroke.isnull()) & (df.strokeNext), 'ageAtFirstStroke'] = df.age
+        #df.loc[(df.ageAtFirstMI.isnull()) & (df.miNext), 'ageAtFirstMI'] = df.age
+        #df.loc[(df.ageAtFirstDementia.isnull()) & (df.dementiaNext), 'ageAtFirstDementia'] = df.age
 
-
-        nextCols = [col for col in df.columns if "Next" in col]
-        df.drop(columns=nextCols, inplace=True)
         return df
 
     def advance_person(self, person):
@@ -543,60 +576,65 @@ class Population:
         ageStandard = self.tabulate_age_specific_rates(ageStandard)
         return((ageStandard.ageSpecificContribution.sum(), ageStandard.outcomeCount.sum()))
 
-    def get_person_attributes_from_person(self, person):
-        return {'age': person._age[-1],
-                'baseAge': person._age[0],
-                'gender': person._gender,
-                'raceEthnicity': person._raceEthnicity,
-                'black': person._raceEthnicity == 4,
-                'sbp': person._sbp[-1],
-                'dbp': person._dbp[-1],
-                'a1c': person._a1c[-1],
-                'current_diabetes': person._a1c[-1] > 6.5,
-                'hdl': person._hdl[-1],
-                'ldl': person._ldl[-1],
-                'trig': person._trig[-1],
-                'totChol': person._totChol[-1],
-                'bmi': person._bmi[-1],
-                'anyPhysicalActivity': person._anyPhysicalActivity[-1],
-                'education': person._education.value,
-                'afib': person._afib[-1],
-                'alcoholPerWeek': person._alcoholPerWeek[-1],
-                'antiHypertensiveCount': person._antiHypertensiveCount[-1],
-                'current_bp_treatment': person._antiHypertensiveCount[-1] > 0,
-                'statin': person._statin[-1],
-                'otherLipidLoweringMedicationCount': person._otherLipidLoweringMedicationCount[-1],
-                'waist': person._waist[-1],
-                'smokingStatus': person._smokingStatus,
-                'current_smoker': person._smokingStatus == 2,
-                'dead': person.is_dead(),
-                'gcpRandomEffect': person._randomEffects['gcp'],
-                'miPriorToSim': person._selfReportMIPriorToSim,
-                'mi': person._selfReportMIPriorToSim or person.has_mi_during_simulation(),
-                'stroke': person._selfReportStrokePriorToSim or person.has_stroke_during_simulation(),
-                'ageAtFirstStroke': person.get_age_at_first_outcome(OutcomeType.STROKE),
-                'ageAtFirstMI': person.get_age_at_first_outcome(OutcomeType.MI),
-                'ageAtFirstDementia': person.get_age_at_first_outcome(OutcomeType.DEMENTIA),
-                'miInSim': person.has_mi_during_simulation(),
-                'strokePriorToSim': person._selfReportStrokePriorToSim,
-                'strokeInSim': person.has_stroke_during_simulation(),
-                'dementia': person._dementia,
-                'gcp': person._gcp[-1],
-                'baseGcp': person._gcp[0],
-                'gcpSlope': person._gcp[-1] - person._gcp[-2] if len(person._gcp) >= 2 else 0,
-                'totalYearsInSim': person.years_in_simulation(),
-                'totalQalys': np.array(person._qalys).sum()}
+    def get_person_attributes_from_person(self, person, timeVaryingCovariates):
+        attrForPerson = {'age': person._age[-1],
+                         'baseAge': person._age[0],
+                         'populationIndex': person._populationIndex,
+                         'gender': person._gender,
+                         'raceEthnicity': person._raceEthnicity,
+                         'black': person._raceEthnicity == 4,
+                         'sbp': person._sbp[-1],
+                         'dbp': person._dbp[-1],
+                         'a1c': person._a1c[-1],
+                         'current_diabetes': person._a1c[-1] > 6.5,
+                         'hdl': person._hdl[-1],
+                         'ldl': person._ldl[-1],
+                         'trig': person._trig[-1],
+                         'totChol': person._totChol[-1],
+                         'bmi': person._bmi[-1],
+                         'anyPhysicalActivity': person._anyPhysicalActivity[-1],
+                         'education': person._education.value,
+                         'afib': person._afib[-1],
+                         'alcoholPerWeek': person._alcoholPerWeek[-1],
+                         'antiHypertensiveCount': person._antiHypertensiveCount[-1],
+                         'current_bp_treatment': person._antiHypertensiveCount[-1] > 0,
+                         'statin': person._statin[-1],
+                         'otherLipidLoweringMedicationCount': person._otherLipidLoweringMedicationCount[-1],
+                         'waist': person._waist[-1],
+                         'smokingStatus': person._smokingStatus,
+                         'current_smoker': person._smokingStatus == 2,
+                         'dead': person.is_dead(),
+                         'gcpRandomEffect': person._randomEffects['gcp'],
+                         'miPriorToSim': person._selfReportMIPriorToSim,
+                         'mi': person._selfReportMIPriorToSim or person.has_mi_during_simulation(),
+                         'stroke': person._selfReportStrokePriorToSim or person.has_stroke_during_simulation(),
+                         'ageAtFirstStroke': person.get_age_at_first_outcome(OutcomeType.STROKE),
+                         'ageAtFirstMI': person.get_age_at_first_outcome(OutcomeType.MI),
+                         'ageAtFirstDementia': person.get_age_at_first_outcome(OutcomeType.DEMENTIA),
+                         'miInSim': person.has_mi_during_simulation(),
+                         'strokePriorToSim': person._selfReportStrokePriorToSim,
+                         'strokeInSim': person.has_stroke_during_simulation(),
+                         'dementia': person._dementia,
+                         'gcp': person._gcp[-1],
+                         'baseGcp': person._gcp[0],
+                         'gcpSlope': person._gcp[-1] - person._gcp[-2] if len(person._gcp) >= 2 else 0,
+                         'totalYearsInSim': person.years_in_simulation(),
+                         'totalQalys': np.array(person._qalys).sum()}
+
+        for var in timeVaryingCovariates:
+            attr = getattr(person, "_" + var)
+            for wave in range(0, len(attr)):
+                attrForPerson[var + str(wave)] = attr[wave]
+        return attrForPerson
 
     def get_people_current_state_as_dataframe(self):
         pandarallel.initialize()
-        return pd.DataFrame.from_dict(self._people.parallel_apply(self.get_person_attributes_from_person).array)
+        return pd.DataFrame.from_dict(self._people.parallel_apply(self.get_person_attributes_from_person, timeVaryingCovariates=self._timeVaryingCovariates).array)
 
     def get_people_current_state_and_summary_as_dataframe(self):
         df = self.get_people_current_state_as_dataframe()
         # iterate through variables that vary over time
         for var in self._timeVaryingCovariates:
-            df['base' + var.capitalize()] = [getattr(person, "_" + var)[0]
-                                             for i, person in self._people.iteritems()]
             df['mean' + var.capitalize()] = [pd.Series(getattr(person, "_" + var)).mean()
                                              for i, person in self._people.iteritems()]
         return df
@@ -671,6 +709,10 @@ def build_people_using_nhanes_for_sampling(nhanes, n, outcome_model_repository, 
     pandarallel.initialize()
     people = repeated_sample.parallel_apply(
         build_person, outcome_model_repository=outcome_model_repository, axis='columns')
+    
+    for i in range(0, len(people)):
+        people.iloc[i]._populationIndex = i
+
     if filter is not None:
         people = people.loc[people.apply(filter)]
 

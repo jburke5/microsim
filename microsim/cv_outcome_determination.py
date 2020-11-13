@@ -7,6 +7,7 @@ from microsim.data_loader import load_model_spec
 
 
 import numpy.random as npRand
+import numpy as np
 import scipy.special as scipySpecial
 
 
@@ -122,6 +123,10 @@ class CVOutcomeDetermination:
             person.miNext = mi
             person.strokeNext = not mi
             person.deadNext = fatal
+            person.miFatal = mi and fatal
+            person.strokeFatal = not mi and fatal
+            person.ageAtFirstMI = person.age if np.isnan(person.ageAtFirstMI) else person.ageAtFirstMI 
+            person.ageAtFirstStroke = person.age if np.isnan(person.ageAtFirstStroke) else person.ageAtFirstStroke 
             return person
         else:
             return Outcome(OutcomeType.MI if mi else OutcomeType.STROKE, fatal)

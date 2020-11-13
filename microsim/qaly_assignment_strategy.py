@@ -63,7 +63,7 @@ class QALYAssignmentStrategy:
         return multipliers
 
     def get_qalys_vectorized(self, x):
-        conditions = {OutcomeType.DEMENTIA: (x.dementia, x.ageAtFirstDementia),
-                      OutcomeType.STROKE: (x.stroke, x.ageAtFirstStroke),
-                      OutcomeType.MI: (x.mi, x.ageAtFirstMI)}
+        conditions = {OutcomeType.DEMENTIA: (x.dementia or x.dementiaNext, x.ageAtFirstDementia),
+                      OutcomeType.STROKE: (x.strokeNext or x.stroke, x.ageAtFirstStroke),
+                      OutcomeType.MI: (x.miNext or x.mi, x.ageAtFirstMI)}
         return self.get_qalys_for_age_and_conditions(x.age, conditions, x.dead, x)
