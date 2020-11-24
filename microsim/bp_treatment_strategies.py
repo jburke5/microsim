@@ -47,7 +47,7 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
         return 0 if medCount < 0 else medCount
 
     def get_changes_for_person(self, person):
-        medsForGoal = self.get_meds_needed_for_goal(person.sbp[-1], person.dbp[-1])
+        medsForGoal = self.get_meds_needed_for_goal(person._sbp[-1], person._dbp[-1])
         return {'_antiHypertensiveCount': medsForGoal}, {'_bpMedsAdded': medsForGoal}, {'_sbp': -1 * medsForGoal * AddBPTreatmentMedsToGoal120.sbpLowering, '_dbp': -1 * medsForGoal * AddBPTreatmentMedsToGoal120.dbpLowering}
 
     def get_treatment_recalibration_for_population(self):

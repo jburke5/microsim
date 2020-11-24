@@ -99,11 +99,11 @@ class Person:
 
         # convert events for events prior to simulation
         if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
-            self._selfReportStrokeAge = selfReportStrokeAge
+            self._selfReportStrokeAge = selfReportStrokeAge if selfReportStrokeAge <= self._age[-1] else self._age[-1]
             self._selfReportStrokePriorToSim = 1
             self._outcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False)))
         if selfReportMIAge is not None and selfReportMIAge > 1:
-            self._selfReportMIAge = selfReportMIAge
+            self._selfReportMIAge = selfReportMIAge if selfReportMIAge <= self._age[-1] else self._age[-1]
             self._selfReportMIPriorToSim = 1
             self._outcomes[OutcomeType.MI].append((-1, Outcome(OutcomeType.MI, False)))
         for k, v in kwargs.items():
@@ -196,7 +196,7 @@ class Person:
             (self._sbp[end_of_wave_num > 140 and self._sbp[end_of_wave_num] < 180]) and \
             (self._dbp[end_of_wave_num] > 90 and self._dbp[end_of_wave_num] < 110) and \
             (self._smokingStatus == SmokingStatus.CURRENT or self._a1c[end_of_wave_num] > 6.5 or
-             self.has_stroke_prior_to_simulation() or self.has_mi_prior_to_simulation or
+             self.has_stroke_prior_to_simulation() or self.has_mi_prior_to_simulation() or
              self._hdl[end_of_wave_num] < 35)
 
     def has_diabetes(self):

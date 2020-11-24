@@ -19,11 +19,11 @@ class DementiaModel(StatsModelCoxModel):
 
     def linear_predictor(self, person):
         return self.linear_predictor_for_patient_characteristics(currentAge=person._age[-1],
-                                                                 baselineGcp=person.gcp[0],
+                                                                 baselineGcp=person._gcp[0],
                                                                  gcpSlope=person._gcp[-1] - person._gcp[-2] if len(
-                                                                     person_gcp >= 2) else 0,
+                                                                     person._gcp) >= 2 else 0,
                                                                  gender=person._gender,
-                                                                 educatioon=person._education,
+                                                                 education=person._education,
                                                                  raceEthnicity=person._raceEthnicity)
 
     def linear_predictor_for_patient_characteristics(self, currentAge, baselineGcp, gcpSlope, gender, education, raceEthnicity):

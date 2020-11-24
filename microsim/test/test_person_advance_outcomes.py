@@ -21,7 +21,7 @@ class AlwaysPositiveOutcomeRepository(OutcomeModelRepository):
         super(AlwaysPositiveOutcomeRepository, self).__init__()
 
     # override super to alays return a probability of each outcom eas 1
-    def get_risk_for_person(self, person, outcome, years=1):
+    def get_risk_for_person(self, person, outcome, years=1, vectorized=False):
         return 1
 
 
@@ -30,7 +30,7 @@ class AlwaysNegativeOutcomeRepository(OutcomeModelRepository):
         super(AlwaysNegativeOutcomeRepository, self).__init__()
 
     # override super to alays return a probability of each outcome as 0
-    def get_risk_for_person(self, person, outcome, years=1):
+    def get_risk_for_person(self, person, outcome, years=1, vectorized=False):
         return 0
 
 
