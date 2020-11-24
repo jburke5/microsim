@@ -115,9 +115,10 @@ class Population:
             # reselect on survivors...because we don't want to set non-cv mortality on poepel that died from cv events.
             alive['gcp'] = alive.parallel_apply(
                 self._outcome_model_repository.get_gcp_vectorized, axis='columns')
-            newDementia = alive['dementia'] = alive.loc[~alive.dementia].parallel_apply(
+            newDementia = alive.loc[~alive.dementia].parallel_apply(
                 self._outcome_model_repository.get_dementia_vectorized, axis='columns')
-            alive.loc[newDementia, 'ageAtFirstDementia'] = alive.age
+            alive['dementiaNext']  = newDementia
+            alive.loc[alive['dementiaNext']==1, 'ageAtFirstDementia'] = alive.age
             alive['dementia'] = newDementia | alive['dementia']
             nonCVDeath = alive.parallel_apply(
                 self._outcome_model_repository.assign_non_cv_mortality_vectorized, axis='columns')
@@ -136,9 +137,10 @@ class Population:
             nextCols = [col for col in alive.columns if "Next" in col]
             alive.drop(columns=nextCols, inplace=True)
 
+            # for efficiency...probaly  want to also push this forward
+            self.apply_recalibration_standards()
         return alive, df
 
-        # self.apply_recalibration_standards()
 
     def push_updates_back_to_people(self, x):
         person = self._people.iloc[int(x.populationIndex)]
@@ -176,12 +178,15 @@ class Population:
             df[rf + str(self._currentWave)] = df[rf + 'Next']
             df['mean' + rf.capitalize()] = (df['mean' + rf.capitalize()] *
                                             (df['totalYearsInSim']+1) + df[rf + 'Next']) / (df['totalYearsInSim']+2)
+        for outcome in ['mi', 'stroke']:
+            df[outcome + 'InSim'] = df[outcome + 'InSim'] | df[outcome + "Next"]
+            df[outcome + str(self._currentWave)] = df[outcome + "Next"]
+        df['dead'] = df['dead'] | df['deadNext']
+        df['dead' + str(self._currentWave)] = df['deadNext']
+
         df['totalYearsInSim'] = df['totalYearsInSim'] + 1
-        df['miInSim'] = df['miInSim'] | df['miNext']
-        df['strokeInSim'] = df['strokeInSim'] | df['strokeNext']
         df['current_diabetes'] = df['a1c'] > 6.5
         df['current_bp_treatment'] = df['antiHypertensiveCount'] >= 1
-        df['dead'] = df['deadNext']
         df['totalQalys'] = df['totalQalys'] + df['qalyNext']
         # assign ages for new events
         #df.loc[(df.ageAtFirstStroke.isnull()) & (df.strokeNext), 'ageAtFirstStroke'] = df.age

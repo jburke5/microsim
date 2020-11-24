@@ -53,9 +53,12 @@ class QALYAssignmentStrategy:
             ageAtEvent = outcomeTuple[1]
             qalyListForOutcome = self._qalysForOutcome[outcomeType] if outcomeType in self._qalysForOutcome else None
             if qalyListForOutcome is not None and hasOutcome:
-                if ageAtEvent is None:
-                    print(f"current age: {currentAge}, age at event: {ageAtEvent}, outcome type: {outcomeType}, conditions: {conditions}, x: {x}")
                 yearsFromEvent = int(currentAge - ageAtEvent)
+                #print(f"current age: {currentAge}, age at event: {ageAtEvent}, outcome type: {outcomeType}, conditions: {conditions}, x: {x}")
+                if (yearsFromEvent >= len(qalyListForOutcome) and len(qalyListForOutcome) < 1):
+                    raise RuntimeError(f"error 1: qalyListForOutcome: {qalyListForOutcome}")
+                elif (yearsFromEvent < len(qalyListForOutcome) and yearsFromEvent < 0):
+                    raise RuntimeError(f"error 2 qalyListForOutcome: {qalyListForOutcome} years from event: {yearsFromEvent} currentAge : {currentAge}, age at event: {ageAtEvent}")
                 qalys = qalyListForOutcome[-1] if yearsFromEvent >= len(
                     qalyListForOutcome) else qalyListForOutcome[yearsFromEvent]
                 multipliers.append(qalys)
