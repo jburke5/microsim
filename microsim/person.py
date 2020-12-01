@@ -93,6 +93,9 @@ class Person:
         self._outcomes = {OutcomeType.MI: [], OutcomeType.STROKE: [], OutcomeType.DEMENTIA: []}
         self._selfReportStrokePriorToSim = 0
         self._selfReportMIPriorToSim = 0
+        
+        # a variable to track changes in BP meds compared to the baseline
+        self._bpMedsAdded = [0]
 
         # a variable to track changes in BP meds compared to the baseline
         self._bpMedsAdded = [0]
@@ -116,6 +119,13 @@ class Person:
         self._gcp = [GCPModel().get_risk_for_person(self)]
         # for outcome mocels that require random effects, store in this dictionary
         self._randomEffects = randomEffects
+
+        # lucianatag: for this and GCP, this approach is a bit inelegant. the idea is to have classees that can be swapped out
+        # at the population level to change the behavior about how people change over time.
+        # but, when we instantiate a person, we don't want to keep a refernce tot the population.
+        # is the fix just to have the population create people (such that the repository/strategy/model classes can be assigned from within
+        # the population)
+        self._qalys = [QALYAssignmentStrategy().get_next_qaly(self)]
 
         # lucianatag: for this and GCP, this approach is a bit inelegant. the idea is to have classees that can be swapped out
         # at the population level to change the behavior about how people change over time.
@@ -318,7 +328,6 @@ class Person:
             age = outcome_tuple[0]
             if age > 0:
                 return age
-
         return None
 
     def has_fatal_stroke(self):
