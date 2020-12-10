@@ -119,7 +119,7 @@ class OutcomeModelRepository:
 
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
         return self.outcomeDet.assign_outcome_for_person(
-            self, person, years, self.manualStrokeMIProbability)
+            self, person, False, years, self.manualStrokeMIProbability)
 
     def assign_cv_outcome_vectorized(self, x, years=1, manualStrokeMIProbability=None):
         return self.outcomeDet.assign_outcome_for_person(

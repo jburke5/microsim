@@ -78,8 +78,8 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             self.joe.advance_outcomes(None)
 
     def test_will_have_fatal_mi(self):
-        self.assertEqual(self.cvDeterminer._will_have_fatal_mi(self.joe, 1.0), 1)
-        self.assertEqual(self.cvDeterminer._will_have_fatal_mi(self.joe, 0.0), 0)
+        self.assertEqual(self.cvDeterminer._will_have_fatal_mi(self.joe, False, 1.0), 1)
+        self.assertEqual(self.cvDeterminer._will_have_fatal_mi(self.joe, False, 0.0), 0)
 
     def test_fatal_mi_secondary_prob(self):
         self.cvDeterminer.mi_secondary_case_fatality = 1.0
@@ -109,12 +109,12 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(joeClone, 0.0), 1)
 
     def test_will_have_fatal_stroke(self):
-        self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(self.joe, 1.0), 1)
-        self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(self.joe, 0.0), 0)
+        self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(self.joe, False, 1.0), 1)
+        self.assertEqual(self.cvDeterminer._will_have_fatal_stroke(self.joe, False, 0.0), 0)
 
     def test_has_mi_vs_stroke(self):
-        self.assertEqual(self.cvDeterminer._will_have_mi(self.joe, None, 1.0), 1)
-        self.assertEqual(self.cvDeterminer._will_have_mi(self.joe, None, 0.0), 0)
+        self.assertEqual(self.cvDeterminer._will_have_mi(self.joe, None, False, 1.0), 1)
+        self.assertEqual(self.cvDeterminer._will_have_mi(self.joe, None, False, 0.0), 0)
 
     def test_advance_outcomes_fatal_mi(self):
         self._always_positive_repository.stroke_case_fatality = 1.0

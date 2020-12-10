@@ -94,6 +94,9 @@ class TestGCPModel(unittest.TestCase):
             statin=0,
             otherLipidLoweringMedicationCount=0,
             initializeAfib=TestGCPModel.initializeAfib)
+        self._test_case_one._randomEffects['gcp'] = 0
+        self._test_case_two._randomEffects['gcp'] = 0
+        self._test_case_three._randomEffects['gcp'] = 0
 
     def test_baseline_gcp(self):
         # check that all of the random elements have been removed for testing...

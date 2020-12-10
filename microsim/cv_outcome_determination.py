@@ -83,10 +83,10 @@ class CVOutcomeDetermination:
                                                                 years=1)
 
     def has_prior_stroke(self, person, vectorized):
-        return (person.has_stroke_during_simulation() or person.has_stroke_prior_to_simulation()) if vectorized else person._stroke
+        return person.stroke if vectorized else person._stroke
 
     def has_prior_mi(self, person, vectorized):
-        return (person.has_mi_during_simulation or person.has_mi_prior_to_simulation) if vectorized else person._mi
+        return person.mi if vectorized else person._mi
     
     def has_prior_stroke_mi(self, person, vectorized):
         return self.has_prior_stroke(person, vectorized) or self.has_prior_mi(person, vectorized)
