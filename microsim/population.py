@@ -77,7 +77,7 @@ class Population:
         # get dataframe of people...
         df = self.get_people_current_state_and_summary_as_dataframe()
         alive = df.loc[df.dead == False]
-        pandarallel.initialize()
+        pandarallel.initialize(verbose=1, nb_workers=6)
         # might not need this row...depends o n whethe we do an bulk update on people or an wave-abased update
         waveAtStartOfAdvance = self._currentWave
         for yearIndex in range(years):
@@ -86,19 +86,19 @@ class Population:
 
             # advance risk factors
             for rf in self._riskFactors:
-                print(f"### Risk Factor: {rf}")
+                #print(f"### Risk Factor: {rf}")
                 alive[rf + "Next"] = alive.parallel_apply(self._risk_model_repository.get_model(
                     rf).estimate_next_risk_vectorized, axis='columns')
 
             # advance treatment
             for treatment in self._treatments:
-                print(f"### Treatment: {treatment}")
-                alive[treatment + "Next"] = alive.parallel_apply(self._risk_model_repository.get_model(
+                #print(f"### Treatment: {treatment}")
+                alive[treatment + "Next"] = alive.apply(self._risk_model_repository.get_model(
                     treatment).estimate_next_risk_vectorized, axis='columns')
 
             # apply treatment modifications
             if self._bpTreatmentStrategy is not None:
-                alive = alive.parallel_apply(
+                alive = alive.apply(
                     self._bpTreatmentStrategy.get_changes_vectorized, axis='columns')
 
             # advance outcomes
@@ -109,31 +109,31 @@ class Population:
             alive['miFatal'] = 0
 
             # first determine if there is a cv event
-            alive = alive.parallel_apply(
+            alive = alive.apply(
                 self._outcome_model_repository.assign_cv_outcome_vectorized, axis='columns')
 
             # reselect on survivors...because we don't want to set non-cv mortality on poepel that died from cv events.
-            alive['gcp'] = alive.parallel_apply(
+            alive['gcp'] = alive.apply(
                 self._outcome_model_repository.get_gcp_vectorized, axis='columns')
-            newDementia = alive.loc[~alive.dementia].parallel_apply(
+            newDementia = alive.loc[~alive.dementia].apply(
                 self._outcome_model_repository.get_dementia_vectorized, axis='columns')
             alive['dementiaNext']  = newDementia
             alive.loc[alive['dementiaNext']==1, 'ageAtFirstDementia'] = alive.age
             alive['dementia'] = newDementia | alive['dementia']
-            nonCVDeath = alive.parallel_apply(
+            nonCVDeath = alive.apply(
                 self._outcome_model_repository.assign_non_cv_mortality_vectorized, axis='columns')
             alive['deadNext'] = nonCVDeath | alive['deadNext']
 
-            alive['qalyNext'] = alive.parallel_apply(
+            alive['qalyNext'] = alive.apply(
                 QALYAssignmentStrategy().get_qalys_vectorized, axis='columns')
 
             alive.loc[~alive.dead, 'age'] = alive.age + 1
-            print(f"dead count : {alive['dead'].sum()}")
             self._totalWavesAdvanced += 1
 
             alive = self.move_people_df_forward(alive)
             # for efficieicny, we could try to do this all at the end...gut, its a bit cleanear  to do it wave by wave
-            self._people = alive.parallel_apply(self.push_updates_back_to_people, axis='columns')
+            self._people = alive.apply(self.push_updates_back_to_people, axis='columns')
+            #self._people = alive.apply(self.push_updates_back_to_people, axis='columns')
             nextCols = [col for col in alive.columns if "Next" in col]
             alive.drop(columns=nextCols, inplace=True)
 
@@ -170,7 +170,7 @@ class Population:
     def move_people_df_forward(self, df):
         factorsToChange = copy.copy(self._riskFactors)
         factorsToChange.extend(self._treatments)
-        print(f"current wave: {self._currentWave}")
+        #print(f"current wave: {self._currentWave}")
 
         for rf in factorsToChange:
             # the curent value is stored in the variable name
@@ -633,7 +633,7 @@ class Population:
         return attrForPerson
 
     def get_people_current_state_as_dataframe(self):
-        pandarallel.initialize()
+        #pandarallel.initialize(verbose=1)
         return pd.DataFrame.from_dict(self._people.parallel_apply(self.get_person_attributes_from_person, timeVaryingCovariates=self._timeVaryingCovariates).array)
 
     def get_people_current_state_and_summary_as_dataframe(self):
@@ -711,7 +711,7 @@ def build_people_using_nhanes_for_sampling(nhanes, n, outcome_model_repository, 
         weights=nhanes.WTINT2YR,
         random_state=random_seed,
         replace=True)
-    pandarallel.initialize()
+    pandarallel.initialize(verbose=1)
     people = repeated_sample.parallel_apply(
         build_person, outcome_model_repository=outcome_model_repository, axis='columns')
     
