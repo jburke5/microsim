@@ -3,6 +3,7 @@ from microsim.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFac
 from microsim.stats_model_linear_probability_risk_factor_model import StatsModelLinearProbabilityRiskFactorModel
 from microsim.stats_model_rounded_linear_risk_factor_model import StatsModelRoundedLinearRiskFactorModel
 from microsim.data_loader import load_regression_model
+from microsim.alcohol_category import AlcoholCategory
 
 
 class CohortRiskModelRepository(RiskModelRepository):
@@ -19,7 +20,7 @@ class CohortRiskModelRepository(RiskModelRepository):
         self._initialize_linear_probability_risk_model("afib", "afibCohortModel")
         self._initialize_linear_probability_risk_model("statin", "statinCohortModel")
         self._initialize_int_rounded_linear_risk_model("antiHypertensiveCount", "antiHypertensiveCountCohortModel")
-        self._initialize_int_rounded_linear_risk_model("alcoholPerWeek", "alcoholPerWeekCohortModel")
+        self._repository['alcoholPerWeek'] = AlcoholCategoryModel(load_regression_model('alcoholPerWeekCohortModel'))
         self._initialize_linear_risk_model("sbp", "logSbpCohortModel", log=True)
         self._initialize_linear_risk_model("dbp", "logDbpCohortModel", log=True)
 
@@ -34,3 +35,15 @@ class CohortRiskModelRepository(RiskModelRepository):
     def _initialize_int_rounded_linear_risk_model(self, referenceName, modelName):
         model = load_regression_model(modelName)
         self._repository[referenceName] = StatsModelRoundedLinearRiskFactorModel(model)
+
+
+class AlcoholCategoryModel(StatsModelRoundedLinearRiskFactorModel):
+    def estimate_next_risk(self, person):
+        drinks = super(StatsModelRoundedLinearRiskFactorModel, self).estimate_next_risk(person)
+        return AlcoholCategory.get_category_for_consumption(drinks if drinks > 0 else 0)
+
+    def estimate_next_risk_vectorized(self, x):
+        drinks = super(StatsModelRoundedLinearRiskFactorModel, self).estimate_next_risk_vectorized(x)
+        return AlcoholCategory.get_category_for_consumption(drinks if drinks > 0 else 0)
+
+

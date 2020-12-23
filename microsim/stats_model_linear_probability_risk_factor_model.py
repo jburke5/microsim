@@ -11,3 +11,10 @@ class StatsModelLinearProbabilityRiskFactorModel(StatsModelLinearRiskFactorModel
             self).estimate_next_risk(person)
         riskWithResidual = linearRisk + self.draw_from_residual_distribution()
         return riskWithResidual > 0.5
+
+    def estimate_next_risk_vectorized(self, x):
+        linearRisk = super(
+            StatsModelLinearProbabilityRiskFactorModel,
+            self).estimate_next_risk_vectorized(x)
+        riskWithResidual = linearRisk + self.draw_from_residual_distribution()
+        return riskWithResidual > 0.5

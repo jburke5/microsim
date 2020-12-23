@@ -82,6 +82,7 @@ class Population:
         waveAtStartOfAdvance = self._currentWave
         for yearIndex in range(years):
             print(f"processing year: {yearIndex}")
+            alive = alive.loc[alive.dead == False]
             self._currentWave += 1
 
             # advance risk factors
@@ -132,8 +133,7 @@ class Population:
 
             alive = self.move_people_df_forward(alive)
             # for efficieicny, we could try to do this all at the end...gut, its a bit cleanear  to do it wave by wave
-            self._people = alive.apply(self.push_updates_back_to_people, axis='columns')
-            #self._people = alive.apply(self.push_updates_back_to_people, axis='columns')
+            alive.apply(self.push_updates_back_to_people, axis='columns')
             nextCols = [col for col in alive.columns if "Next" in col]
             alive.drop(columns=nextCols, inplace=True)
 
@@ -164,13 +164,12 @@ class Population:
         person._gcp.append(x.gcp)
         person._alive.append(not x.deadNext)
         person._qalys.append(x.qalyNext)
-        person._age.append(x.age + 1)
+        person._age.append(x.age)
         return person
 
     def move_people_df_forward(self, df):
         factorsToChange = copy.copy(self._riskFactors)
         factorsToChange.extend(self._treatments)
-        #print(f"current wave: {self._currentWave}")
 
         for rf in factorsToChange:
             # the curent value is stored in the variable name

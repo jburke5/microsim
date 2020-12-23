@@ -10,3 +10,9 @@ class StatsModelRoundedLinearRiskFactorModel(StatsModelLinearRiskFactorModel):
         linearRisk = super(StatsModelRoundedLinearRiskFactorModel, self).estimate_next_risk(person)
         riskWithResidual = round(linearRisk + self.draw_from_residual_distribution())
         return riskWithResidual if riskWithResidual > 0 else 0
+
+    def estimate_next_risk_vectorized(self, x):
+        linearRisk = super(StatsModelRoundedLinearRiskFactorModel,
+                           self).estimate_next_risk_vectorized(x)
+        riskWithResidual = round(linearRisk + self.draw_from_residual_distribution())
+        return riskWithResidual if riskWithResidual > 0 else 0
