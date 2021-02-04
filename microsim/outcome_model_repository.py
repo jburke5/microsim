@@ -87,10 +87,12 @@ class OutcomeModelRepository:
         return self.select_model_for_person(personWrapper if vectorized else person, outcome).get_risk_for_person(person, years, vectorized)
 
     def get_gcp(self, person):
-        return self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE) + person._randomEffects['gcp']
+        gcp = self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE) + person._randomEffects['gcp']
+        return gcp if gcp > 0 else 0
 
     def get_gcp_vectorized(self, person):
-        return self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE, years=1, vectorized=True) + person.gcpRandomEffect
+        gcp = self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE, years=1, vectorized=True) + person.gcpRandomEffect
+        return gcp if gcp > 0 else 0
 
     def get_dementia(self, person):
         if npRand.uniform(size=1) < self.get_risk_for_person(person, OutcomeModelType.DEMENTIA):
