@@ -13,6 +13,7 @@ from microsim.outcome_model_type import OutcomeModelType
 from microsim.cv_outcome_determination import CVOutcomeDetermination
 from microsim.outcome import Outcome, OutcomeType
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
+from microsim.initialization_repository import InitializationRepository
 
 import pandas as pd
 from pandarallel import pandarallel
@@ -696,6 +697,7 @@ def build_person(x, outcome_model_repository):
         statin=x.statin,
         otherLipidLoweringMedicationCount=x.otherLipidLowering,
         initializeAfib=initializeAFib,
+        initializationRepository=InitializationRepository(),
         selfReportStrokeAge=x.selfReportStrokeAge,
         selfReportMIAge=np.random.randint(
             18, x.age) if x.selfReportMIAge == 99999 else x.selfReportMIAge,
