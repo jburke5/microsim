@@ -11,6 +11,7 @@ from microsim.dementia_model import DementiaModel
 from microsim.dementia_model_gompertz import DementiaModelGompertz
 from microsim.test.do_not_change_risk_factors_model_repository import DoNotChangeRiskFactorsModelRepository
 from microsim.outcome_model_repository import OutcomeModelRepository
+from microsim.initialization_repository import InitializationRepository
 
 
 class AlwaysNegativeOutcomeRepository(OutcomeModelRepository):
@@ -52,7 +53,8 @@ class TestDementiaModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            initializeAfib=TestDementiaModel.initializeAfib)
+            initializeAfib=TestDementiaModel.initializeAfib,
+            initializationRepository=InitializationRepository())
         self._test_case_one._gcp[0] = 58.68
         self._test_case_one._gcp.append(self._test_case_one._gcp[0] -1.1078128)
 
@@ -78,7 +80,8 @@ class TestDementiaModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            initializeAfib=TestDementiaModel.initializeAfib)
+            initializeAfib=TestDementiaModel.initializeAfib,
+            initializationRepository=InitializationRepository())
         self._test_case_two._gcp[0] = 58.68
         self._test_case_two._gcp.append(self._test_case_two._gcp[0] -1.7339989)
 
@@ -103,7 +106,8 @@ class TestDementiaModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            initializeAfib=TestDementiaModel.initializeAfib)
+            initializeAfib=TestDementiaModel.initializeAfib,
+            initializationRepository=InitializationRepository())
         self._test_case_one_parameteric._gcp[0] = 25
         # GCP slope is zero
         self._test_case_one_parameteric._gcp.append(self._test_case_one._gcp[0])
@@ -130,7 +134,8 @@ class TestDementiaModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            initializeAfib=TestDementiaModel.initializeAfib)
+            initializeAfib=TestDementiaModel.initializeAfib,
+            initializationRepository=InitializationRepository())
         self._test_case_two_parametric._gcp[0] = 75
         self._test_case_two_parametric._gcp.append(self._test_case_two._gcp[0])
 
@@ -156,7 +161,8 @@ class TestDementiaModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            initializeAfib=TestDementiaModel.initializeAfib)
+            initializeAfib=TestDementiaModel.initializeAfib,
+            initializationRepository=InitializationRepository())
         self._test_case_three_parametric._gcp[0] = 75
         self._test_case_three_parametric._gcp.append(self._test_case_two._gcp[0])
 

@@ -1,4 +1,5 @@
 import numpy as np
+from microsim.person import Person
 from microsim.smoking_status import SmokingStatus
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.education import Education
@@ -23,7 +24,10 @@ class GCPModel:
                                                                       meanSbp=np.array(
                                                                           person._sbp).mean(),
                                                                       afib=person._afib[-1],
-                                                                      anyPhysicalActivity=person._anyPhysicalActivity[-1])
+                                                                      anyPhysicalActivity=person._anyPhysicalActivity[-1],
+                                                                      alc=person._alcoholPerWeek[-1],
+                                                                      antiHypertensiveCount=person._antiHypertensiveCount[-1],
+                                                                      a1c =person._a1c[-1])
 
     def calc_linear_predictor_vectorized(self, x):
         return self.calc_linear_predictor_for_patient_characteristics(years_in_simulation=x.totalYearsInSim,
@@ -37,10 +41,14 @@ class GCPModel:
                                                                       totChol=x.totChol,
                                                                       meanSbp=x.meanSbp,
                                                                       afib=x.afib,
-                                                                      anyPhysicalActivity=x.anyPhysicalActivity)
+                                                                      anyPhysicalActivity=x.anyPhysicalActivity,
+                                                                      alc=x.alcoholPerWeek,
+                                                                      antiHypertensiveCOunt=x.antiHypertensiveCount,
+                                                                      a1c = x.a1c)
 
     def calc_linear_predictor_for_patient_characteristics(self, years_in_simulation, raceEthnicity, gender, baseAge, education,
-                                                          smokingStatus, bmi, waist, totChol, meanSbp, afib, anyPhysicalActivity):
+                                                          smokingStatus, bmi, waist, totChol, meanSbp, afib, anyPhysicalActivity, alc,
+                                                          antiHypertensiveCount, a1c):
         xb = 55.6090
         xb += years_in_simulation * -0.2031
         if raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
@@ -60,10 +68,9 @@ class GCPModel:
         elif education == Education.SOMECOLLEGE:
             xb += -2.3795
 
-        # TODO...figure otu what to do with A1cs
-        # alc1	0.8071
-        # alc2	0.6943
-        # alc3	0.7706
+        alcCoeffs = [0, 0.8071, 0.6943, 0.7706]
+        xb += alcCoeffs[int(alc)]
+
         if smokingStatus == SmokingStatus.CURRENT:
             xb += -1.1678
         xb += bmi * 0.1309
@@ -72,8 +79,12 @@ class GCPModel:
         xb += (meanSbp-120) * -0.2663
         xb += (meanSbp-120) * years_in_simulation * -0.01953
 
-        # need to figure otu what to do with glucose
-        # gluc10 - 0.09362
+        xb += (antiHypertensiveCount > 0) * 0.04410
+        xb += (antiHypertensiveCount > 0) * years_in_simulation * 0.01984
+
+        xb += (Person.convert_a1c_to_fasting_glucose(a1c)-100)/10 * - 0.09362
+
+
         if anyPhysicalActivity:
             xb += 0.6065
         if afib:

@@ -10,7 +10,6 @@ from microsim.outcome import Outcome, OutcomeType
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
-from microsim.gcp_model import GCPModel
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 
 # luciana-tag...lne thing that tripped me up was probable non clear communication regarding "waves"
@@ -51,6 +50,7 @@ class Person:
         statin: int,
         otherLipidLoweringMedicationCount: int,
         initializeAfib: Callable,
+        initializationRepository =None,
         selfReportStrokeAge=None,
         selfReportMIAge=None,
         randomEffects=dict(),
@@ -116,7 +116,6 @@ class Person:
         else:
             self._afib = [False]
 
-        self._gcp = [GCPModel().get_risk_for_person(self)]
         # for outcome mocels that require random effects, store in this dictionary
         self._randomEffects = randomEffects
 
@@ -125,14 +124,14 @@ class Person:
         # but, when we instantiate a person, we don't want to keep a refernce tot the population.
         # is the fix just to have the population create people (such that the repository/strategy/model classes can be assigned from within
         # the population)
-        self._qalys = [QALYAssignmentStrategy().get_next_qaly(self)]
-
-        # lucianatag: for this and GCP, this approach is a bit inelegant. the idea is to have classees that can be swapped out
-        # at the population level to change the behavior about how people change over time.
-        # but, when we instantiate a person, we don't want to keep a refernce tot the population.
-        # is the fix just to have the population create people (such that the repository/strategy/model classes can be assigned from within
-        # the population)
-        self._qalys = [QALYAssignmentStrategy().get_next_qaly(self)]
+        self._qalys = []
+        self._gcp = []
+        if initializationRepository is not None:
+            initializers = initializationRepository.get_initializers()
+            for initializerName, method in initializers.items():
+                attr = getattr(self, initializerName)
+                attr.append(method(self))
+        
 
         self._bpTreatmentStrategy = None
 

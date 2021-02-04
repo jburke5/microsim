@@ -9,6 +9,7 @@ from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.outcome_model_type import OutcomeModelType
 from microsim.dementia_model import DementiaModel
 from microsim.gcp_model import GCPModel
+from microsim.initialization_repository import InitializationRepository
 
 
 class AlwaysNonFatalStroke(OutcomeModelRepository):
@@ -95,7 +96,8 @@ class TestQALYAssignment(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            initializeAfib=TestQALYAssignment.initializeAfib)
+            initializeAfib=TestQALYAssignment.initializeAfib,
+            initializationRepository=InitializationRepository())
 
     def setUp(self):
         self._hasNoConditions = self.getPerson()
