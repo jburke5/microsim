@@ -43,7 +43,7 @@ class GCPModel:
                                                                       afib=x.afib,
                                                                       anyPhysicalActivity=x.anyPhysicalActivity,
                                                                       alc=x.alcoholPerWeek,
-                                                                      antiHypertensiveCOunt=x.antiHypertensiveCount,
+                                                                      antiHypertensiveCount=x.antiHypertensiveCount,
                                                                       a1c = x.a1c)
 
     def calc_linear_predictor_for_patient_characteristics(self, years_in_simulation, raceEthnicity, gender, baseAge, education,
