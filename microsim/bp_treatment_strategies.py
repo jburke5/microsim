@@ -66,3 +66,29 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
         x.sbpNext = x.sbpNext - medsNeeded * AddBPTreatmentMedsToGoal120.sbpLowering
         x.dbpNext = x.dbpNext - medsNeeded * AddBPTreatmentMedsToGoal120.dbpLowering
         return x
+
+
+class NoBPTreatmentNoBPChange(BaseTreatmentStrategy):
+    def __init__(self):
+        pass
+
+    def get_changes_for_person(self, person):
+        current = person._antiHypertensiveCount[-1]
+        changeSBP = person._sbp[-1] - person._sbp[-2]
+        changeDBP = person._dbp[-1] - person._dbp[-2]
+        return {'_antiHypertensiveCount': -1*current}, {'_bpMedsAdded': -1*current}, {'_sbp': -1*changeSBP, '_dbp': -1*changeDBP}
+
+    def get_treatment_recalibration_for_population(self):
+        return None
+
+    def get_treatment_recalibration_for_person(self):
+        return None
+
+    def repeat_treatment_strategy(self):
+        return True
+
+    def get_changes_vectorized(self, x):
+        x.antiHypertensiveCountNext = 0
+        x.sbpNext = x.sbp
+        x.dbpNext = x.dbp
+        return x        

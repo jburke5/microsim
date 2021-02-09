@@ -125,8 +125,8 @@ class CVOutcomeDetermination:
             person.deadNext = fatal
             person.miFatal = mi and fatal
             person.strokeFatal = not mi and fatal
-            person.ageAtFirstMI = person.age if np.isnan(person.ageAtFirstMI) else person.ageAtFirstMI 
-            person.ageAtFirstStroke = person.age if np.isnan(person.ageAtFirstStroke) else person.ageAtFirstStroke 
+            person.ageAtFirstMI = person.age if (person.ageAtFirstMI is None) or (np.isnan(person.ageAtFirstMI)) else person.ageAtFirstMI 
+            person.ageAtFirstStroke = person.age if (person.ageAtFirstStroke is None) or (np.isnan(person.ageAtFirstStroke)) else person.ageAtFirstStroke 
             return person
         else:
             return Outcome(OutcomeType.MI if mi else OutcomeType.STROKE, fatal)

@@ -760,3 +760,21 @@ class NHANESDirectSamplePopulation(Population):
             self._risk_model_repository = NHANESRiskModelRepository()
         else:
             raise Exception('unknwon risk model repository type' + model_repository_type)
+
+
+class ClonePopulation(Population):
+    """ Simple class to build a "Population" seeded by mulitple copies of the same person"""
+
+    def __init__(self,person, n):
+        self._outcome_model_repository = OutcomeModelRepository()
+        self._qaly_assignment_strategy = QALYAssignmentStrategy()
+        self._risk_model_repository = CohortRiskModelRepository()
+        self.n = n
+
+        people = pd.Series([copy.deepcopy(person) for i in range(0, n)])
+        
+        pandarallel.initialize(verbose=1)
+        for i in range(0, len(people)):
+            people.iloc[i]._populationIndex = i
+        super().__init__(people)
+

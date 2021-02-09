@@ -74,19 +74,37 @@ class TestOutcomeRepository(unittest.TestCase):
         self.assertEqual(0.064200, self._outcome_model_repository.select_model_for_person(
             self._black_male, OutcomeModelType.CARDIOVASCULAR).parameters['lagAge'])
 
-    def test_calculate_risk_for_person(self):
-        self.assertAlmostEqual(0.017654, self._outcome_model_repository.get_risk_for_person(
-            self._black_female, OutcomeModelType.CARDIOVASCULAR, 10), delta=0.00001)
+
+    # this is testing whether our ASCVD model class directly reproduces the yadlowsky paper cases
+    def test_calculate_actual_ten_year_risk_for_person(self):
+        modelOne = self._outcome_model_repository.select_model_for_person(self._black_female, OutcomeModelType.CARDIOVASCULAR)
+        linearPredictorOne = modelOne.get_one_year_linear_predictor(self._black_female)
+        self.assertAlmostEqual(0.017654, modelOne.transform_to_ten_year_risk(linearPredictorOne), delta=0.00001)
+
         # note that the reference value here is the corrected version of the
         # appendis table with the tot_chol/hdl ratio set to 4 for both the overall term and
         # the race interaction term
-        self.assertAlmostEqual(.03476, self._outcome_model_repository.get_risk_for_person(
-            self._black_male, OutcomeModelType.CARDIOVASCULAR, 10), delta=0.00001)
+        modelTwo = self._outcome_model_repository.select_model_for_person(self._black_male, OutcomeModelType.CARDIOVASCULAR)
+        linearPredictorTwo = modelTwo.get_one_year_linear_predictor(self._black_male)
+        self.assertAlmostEqual(.03476, modelTwo.transform_to_ten_year_risk(linearPredictorTwo), delta=0.00001)
+
+    def test_approximate_one_year_risk_for_person(self):
+        self.assertAlmostEqual(0.017654/10, self._outcome_model_repository.get_risk_for_person(
+            self._black_female, OutcomeModelType.CARDIOVASCULAR, 1), delta=0.03)
+
+        self.assertAlmostEqual(.03476/10, self._outcome_model_repository.get_risk_for_person(
+            self._black_male, OutcomeModelType.CARDIOVASCULAR, 1), delta=0.03)
+    
 
     # details of risk worked out in example_treated_ascvd_scenario.xlsx
-    def test_calculate_risk_for_treated_person(self):
-        self.assertAlmostEqual(0.069810753, self._outcome_model_repository.get_risk_for_person(
-            self._black_treated_male, OutcomeModelType.CARDIOVASCULAR, 10), delta=0.00001)
+    def test_calculate_actual_ten_year_risk_for_treated_person(self):
+        model = self._outcome_model_repository.select_model_for_person(self._black_treated_male, OutcomeModelType.CARDIOVASCULAR)
+        linearPredictor = model.get_one_year_linear_predictor(self._black_treated_male)
+        self.assertAlmostEqual(0.069810753, model.transform_to_ten_year_risk(linearPredictor), delta=0.00001)
+
+    def test_approximate_one_year_risk_for_person(self):
+        self.assertAlmostEqual(0.069810753/10, self._outcome_model_repository.get_risk_for_person(
+            self._black_treated_male, OutcomeModelType.CARDIOVASCULAR), delta=0.03)
 
     if __name__ == "__main__":
         unittest.main()
