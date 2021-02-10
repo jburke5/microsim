@@ -38,10 +38,10 @@ class ASCVDOutcomeModel(StatsModelLinearRiskFactorModel):
     # but, that is computationally intense and this seems like a resonable compromise
     def get_risk_for_person(self, person, years, vectorized=False):
         linearRisk = self.get_one_year_linear_predictor(person, vectorized)
-        fiveYearLinearAgeChange = self.parameters["lagAge"] * 5
-        linearRiskMinusFiveYears = linearRisk - fiveYearLinearAgeChange
-        linearRiskPlusFiveYears = linearRisk + fiveYearLinearAgeChange
-        #print(f"linear risk {linearRisk:.5f} five year change: {fiveYearLinearAgeChange:.5f}, transform plus: {self.transform_to_ten_year_risk(linearRiskPlusFiveYears):.5f}")
+        # four years gets us to the middle of hte 10 year window because we're using the 1 year lagged age
+        # for the baseline..
+        fourYearLinearAgeChange = self.parameters["lagAge"] * 4
+        linearRiskMinusFourYears = linearRisk - fourYearLinearAgeChange
 
-        return (self.transform_to_ten_year_risk(linearRiskPlusFiveYears) + self.transform_to_ten_year_risk(linearRiskMinusFiveYears))/20 * years
+        return (self.transform_to_ten_year_risk(linearRiskMinusFourYears))/10 * years
 

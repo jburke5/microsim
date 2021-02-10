@@ -8,6 +8,9 @@ class DoNotChangeRiskFactorModel:
     def estimate_next_risk(self, person):
         return getattr(person, "_"+self.varName)[-1]
 
+    def estimate_next_risk_vectorized(self, person):
+        return getattr(person, self.varName)
+
 
 class DoNotChangeRiskFactorsModelRepository(RiskModelRepository):
     def __init__(self):
