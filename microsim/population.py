@@ -404,6 +404,11 @@ class Population:
                       selfReportMIAge=None,
                       randomEffects=self._outcome_model_repository.get_random_effects())
 
+    def get_event_rate_in_simulation(self, eventType, duration):
+        events = [person.has_outcome_during_simulation_prior_to_wave(eventType, duration) for i, person in self._people.iteritems()]
+        totalTime = [person.years_in_simulation() if person.years_in_simulation() < duration  else duration for i, person in self._people.iteritems()]
+        return np.array(events).sum() / np.array(totalTime).sum()
+    
     def get_raw_incidence_by_age(self, eventType):
         popDF = self.get_people_current_state_as_dataframe()
 

@@ -1,6 +1,7 @@
 import math
 import copy
 import numpy.random as npRand
+import numpy as np
 
 from typing import Callable
 
@@ -172,6 +173,13 @@ class Person:
     def _current_diabetes(self):
         return self.has_diabetes()
 
+    # generlized logistic function mapping GCP to MMSE in combined cohrot data
+    def get_current_mmse(self):
+        numerator = 30 # ceiling effect
+        denominator = (0.9924 + np.exp(-0.0795*self._gcp[-1])) ** (1/0.1786)
+        return numerator/denominator
+
+
     @property
     def _mi(self):
         return len(self._outcomes[OutcomeType.MI]) > 0
@@ -281,6 +289,10 @@ class Person:
 
     def has_outcome_during_simulation(self, outcomeType):
         return any([ageAtEvent >= 0 for ageAtEvent, _ in self._outcomes[outcomeType]])
+
+    def has_outcome_during_simulation_prior_to_wave(self, outcomeType, wave):
+        return any([ageAtEvent >= self._age[0]+wave for ageAtEvent, _ in self._outcomes[outcomeType]])
+
 
     def has_outcome_at_any_time(self, outcomeType):
         return len(self._outcomes[outcomeType]) > 0
