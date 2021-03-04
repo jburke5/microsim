@@ -3,7 +3,7 @@ name = "microsim"
 version = "0.0.1"
 description = "Open-source chronic disease simulation framework for population health"
 authors = []
-license = ""
+license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.7"
