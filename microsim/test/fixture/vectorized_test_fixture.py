@@ -9,13 +9,12 @@ from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
 
 
-# haven't figure out why setUpClass hasn't been working as expected, so using a global singleton
-_population_dataframe = None
-
-
-def get_or_setup_population():
-    global _population_dataframe
-    if _population_dataframe is None:
+class VectorizedTestFixture(unittest.TestCase):
+    """
+    Provides Pandas `DataFrame`s suitable for testing vectorized code.
+    """
+    @classmethod
+    def setUpClass(cls):
         people = [
             Person(
                 age=71,
@@ -41,13 +40,7 @@ def get_or_setup_population():
             ),
         ]
         population = Population(people)
-        _population_dataframe = population.get_people_current_state_as_dataframe()
+        cls._population_dataframe = population.get_people_current_state_as_dataframe()
 
-
-class VectorizedTestFixture(unittest.TestCase):
-    """
-    Provides Pandas `DataFrame`s suitable for testing vectorized code.
-    """
     def setUp(self):
-        get_or_setup_population()
-        self.population_dataframe = _population_dataframe
+        self.population_dataframe = self._population_dataframe
