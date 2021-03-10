@@ -11,7 +11,7 @@ from microsim.data_loader import load_model_spec
 from microsim.alcohol_category import AlcoholCategory
 
 
-def initializeAFib(person):
+def initializeAfib(person):
     return None
 
 
@@ -37,7 +37,7 @@ class TestCoxModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            initializeAfib=initializeAFib,
+            initializeAfib=initializeAfib,
         )
 
         model_spec = load_model_spec("nhanesMortalityModel")
