@@ -69,4 +69,10 @@ class TestCoxModel(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    try:
+        TestCoxModel(methodName='test_single_linear_predictor').debug()
+    except Exception:
+        import pdb, sys, traceback
+        errtype, errvalue, tb = sys.exc_info()
+        traceback.print_exception(errtype, errvalue, tb)
+        pdb.post_mortem(tb)
