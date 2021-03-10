@@ -6,6 +6,7 @@ from microsim.test.fixture.vectorized_test_fixture import VectorizedTestFixture
 
 class TestCoxModel(VectorizedTestFixture):
     def setUp(self):
+        super().setUp()
         model_spec = load_model_spec("nhanesMortalityModel")
         self.model = StatsModelCoxModel(CoxRegressionModel(**model_spec))
 
