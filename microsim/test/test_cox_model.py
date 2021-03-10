@@ -1,45 +1,11 @@
-import unittest
-
-from microsim.person import Person
-from microsim.gender import NHANESGender
-from microsim.race_ethnicity import NHANESRaceEthnicity
-from microsim.smoking_status import SmokingStatus
 from microsim.cox_regression_model import CoxRegressionModel
-from microsim.statsmodel_cox_model import StatsModelCoxModel
-from microsim.education import Education
 from microsim.data_loader import load_model_spec
-from microsim.alcohol_category import AlcoholCategory
+from microsim.statsmodel_cox_model import StatsModelCoxModel
+from microsim.test.fixture.vectorized_test_fixture import VectorizedTestFixture
 
 
-def initializeAfib(person):
-    return None
-
-
-class TestCoxModel(unittest.TestCase):
+class TestCoxModel(VectorizedTestFixture):
     def setUp(self):
-        self.imputed_dataset_first_person = Person(
-            age=71,
-            gender=NHANESGender.MALE,
-            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=144.667,
-            dbp=52.6667,
-            a1c=9.5,
-            hdl=34,
-            totChol=191,
-            bmi=30.05,
-            ldl=110.0,
-            trig=128,
-            waist=45,
-            anyPhysicalActivity=0,
-            education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.FORMER,
-            alcohol=AlcoholCategory.NONE,
-            antiHypertensiveCount=0,
-            statin=0,
-            otherLipidLoweringMedicationCount=0,
-            initializeAfib=initializeAfib,
-        )
-
         model_spec = load_model_spec("nhanesMortalityModel")
         self.model = StatsModelCoxModel(CoxRegressionModel(**model_spec))
 
@@ -47,14 +13,12 @@ class TestCoxModel(unittest.TestCase):
         # Baseline estimate derived in notebook — buildNHANESMortalityModel.
         # only testing to 3 places because we approximate the cumulative hazard as oppossed
         # as opposed to directly using it
-        actual_current_risk = self.model.linear_predictor_vectorized(
-            self.imputed_dataset_first_person
-        )
+        actual_current_risk = self.model.linear_predictor_vectorized(self.population_dataframe)
         actual_cumulative_risk = self.model.get_risk_for_person(
-            self.imputed_dataset_first_person,
+            self.population_dataframe,
             years=1,
-            vectorized=True
-        ),
+            vectorized=True,
+        )
 
         self.assertAlmostEqual(
             first=5.440096345569454,
