@@ -47,14 +47,23 @@ class TestCoxModel(unittest.TestCase):
         # Baseline estimate derived in notebook — buildNHANESMortalityModel.
         # only testing to 3 places because we approximate the cumulative hazard as oppossed
         # as opposed to directly using it
+        actual_current_risk = self.model.linear_predictor_vectorized(
+            self.imputed_dataset_first_person
+        )
+        actual_cumulative_risk = self.model.get_risk_for_person(
+            self.imputed_dataset_first_person,
+            years=1,
+            vectorized=True
+        ),
+
         self.assertAlmostEqual(
             first=5.440096345569454,
-            second=self.model.linear_predictor(self.imputed_dataset_first_person),
+            second=actual_current_risk,
             places=1,
         )
         self.assertAlmostEqual(
             first=0.026299703075722214,
-            second=self.model.get_risk_for_person(self.imputed_dataset_first_person, 1),
+            second=actual_cumulative_risk,
             places=1,
         )
 
