@@ -649,8 +649,12 @@ class Population:
         return attrForPerson
 
     def get_people_current_state_as_dataframe(self):
-        #pandarallel.initialize(verbose=1)
-        return pd.DataFrame.from_dict(self._people.parallel_apply(self.get_person_attributes_from_person, timeVaryingCovariates=self._timeVaryingCovariates).array)
+        return pd.DataFrame.from_dict(
+            self._people.parallel_apply(
+                self.get_person_attributes_from_person,
+                timeVaryingCovariates=self._timeVaryingCovariates
+            ).array
+        )
 
     def get_people_current_state_and_summary_as_dataframe(self):
         df = self.get_people_current_state_as_dataframe()
