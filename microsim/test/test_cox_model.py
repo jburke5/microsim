@@ -10,7 +10,7 @@ class TestCoxModel(VectorizedTestFixture):
         super().setUpClass()
 
     def setUp(self):
-        super.setUp()
+        super().setUp()
         model_spec = load_model_spec("nhanesMortalityModel")
         self.model = StatsModelCoxModel(CoxRegressionModel(**model_spec))
 
