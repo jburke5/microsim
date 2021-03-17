@@ -622,7 +622,6 @@ class Population:
     def get_person_attributes_from_person(self, person, timeVaryingCovariates):
         attrForPerson = {'age': person._age[-1],
                          'baseAge': person._age[0],
-                         'populationIndex': person._populationIndex,
                          'gender': person._gender,
                          'raceEthnicity': person._raceEthnicity,
                          'black': person._raceEthnicity == 4,
@@ -663,6 +662,10 @@ class Population:
                          'gcpSlope': person._gcp[-1] - person._gcp[-2] if len(person._gcp) >= 2 else 0,
                          'totalYearsInSim': person.years_in_simulation(),
                          'totalQalys': np.array(person._qalys).sum()}
+        try:
+            attrForPerson['populationIndex'] = person._populationIndex
+        except AttributeError:
+            pass  # populationIndex is not necessary for advancing; can continue safely without it
 
         for var in timeVaryingCovariates:
             attr = getattr(person, "_" + var)
