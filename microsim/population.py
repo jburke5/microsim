@@ -21,6 +21,28 @@ import copy
 import multiprocessing as mp
 import numpy as np
 import logging
+from functools import singledispatch
+
+
+@singledispatch
+def map_or_apply(iterable, func, *args, **kwargs):
+    """
+    Calls the given function over each element of the given iterable.
+
+    If `iterable` is a pandas DataFrame, uses `.parallel_apply` if
+    available (e.g., via `pandarallel`), or regular `apply` if not.
+    Otherwise, uses a list comprehension. Extra `args` and `kwargs` are
+    passed through to the function.
+    """
+    return [func(x, *args, **kwargs) for x in iterable]
+
+
+@map_or_apply.register
+def map_or_apply_dataframe(iterable: pd.DataFrame, func, *args, **kwargs):
+    if hasattr(iterable, 'parallel_apply'):
+        return iterable.parallel_apply(func, *args, **kwargs)
+    else:
+        return iterable.apply(func, *args, **kwargs)
 
 
 class Population:
