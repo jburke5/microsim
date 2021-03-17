@@ -40,7 +40,7 @@ class VectorizedTestFixture(unittest.TestCase):
             ),
         ]
         population = Population(people)
-        cls._population_dataframe = population.get_people_current_state_as_dataframe()
+        cls._population_dataframe = population.get_people_current_state_and_summary_as_dataframe()
 
     def setUp(self):
         self.population_dataframe = self._population_dataframe
