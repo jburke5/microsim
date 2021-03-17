@@ -41,6 +41,7 @@ class VectorizedTestFixture(unittest.TestCase):
                     statin=0,
                     otherLipidLoweringMedicationCount=0,
                     initializeAfib=(lambda _: None),
+                    randomEffects={'gcp': 0},
                 ),
             ]
             population = Population(people)
