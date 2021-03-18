@@ -683,7 +683,6 @@ class Population:
             result = result.array
         return pd.DataFrame.from_dict(result)
 
-
     def get_people_current_state_and_summary_as_dataframe(self):
         df = self.get_people_current_state_as_dataframe()
         # iterate through variables that vary over time
