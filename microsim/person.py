@@ -54,7 +54,7 @@ class Person:
         initializationRepository =None,
         selfReportStrokeAge=None,
         selfReportMIAge=None,
-        randomEffects=dict(),
+        randomEffects=None,
         **kwargs,
     ) -> None:
 
@@ -118,7 +118,7 @@ class Person:
             self._afib = [False]
 
         # for outcome mocels that require random effects, store in this dictionary
-        self._randomEffects = randomEffects
+        self._randomEffects = dict(randomEffects) if randomEffects is not None else {}
 
         # lucianatag: for this and GCP, this approach is a bit inelegant. the idea is to have classees that can be swapped out
         # at the population level to change the behavior about how people change over time.
