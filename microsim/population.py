@@ -551,6 +551,15 @@ class Population:
         eventsPerYear = []
 
         for year in range(1, self._totalWavesAdvanced + 1):
+            eventVarName = 'event' + str(year)
+            ageVarName = 'age' + str(year)
+            popDF[ageVarName] = popDF['baseAge'] + year
+            if subPopulationDFSelector is not None:
+                popDF['subpopFilter'] = popDF.apply(subPopulationDFSelector, axis='columns')
+                popDF = popDF.loc[popDF.subpopFilter == 1]
+            popDF[eventVarName] = [eventSelector(person) and eventAgeIdentifier(
+                person) == year for person in filter(subPopulationSelector, self._people)]
+    
             dfForAnnualEventCalc = popDF[[ageVarName, 'female', eventVarName]]
             dfForAnnualEventCalc.rename(
                 columns={
