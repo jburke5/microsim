@@ -545,12 +545,22 @@ class Population:
                                                   subPopulationSelector=None,
                                                   subPopulationDFSelector=None):
         # calculated standardized event rate for each year
-        popDF = get_events_for_event_type(eventSelector, eventAgeIdentifier,
+        popDF = self.get_events_for_event_type(eventSelector, eventAgeIdentifier,
                                           subPopulationSelector=None,
                                           subPopulationDFSelector=None)
+        popDF['female'] = popDF['gender'] - 1
+
         eventsPerYear = []
 
         for year in range(1, self._totalWavesAdvanced + 1):
+            eventVarName = 'event' + str(year)
+            ageVarName = 'age' + str(year)
+            popDF[ageVarName] = popDF['baseAge'] + year
+            if subPopulationDFSelector is not None:
+                popDF['subpopFilter'] = popDF.apply(subPopulationDFSelector, axis='columns')
+                popDF = popDF.loc[popDF.subpopFilter == 1]
+            popDF[eventVarName] = [eventSelector(person) and eventAgeIdentifier(
+                person) == year for person in filter(subPopulationSelector, self._people)] 
             dfForAnnualEventCalc = popDF[[ageVarName, 'female', eventVarName]]
             dfForAnnualEventCalc.rename(
                 columns={
@@ -708,7 +718,7 @@ def build_person(x, outcome_model_repository):
             18, x.age) if x.selfReportMIAge == 99999 else x.selfReportMIAge,
         randomEffects=outcome_model_repository.get_random_effects(),
         dfIndex=x.index,
-        diedBy2015=x.diedBy2015)
+        diedBy2015=x.diedBy2015==True)
 
 
 def build_people_using_nhanes_for_sampling(nhanes, n, outcome_model_repository,  filter=None, random_seed=None):
