@@ -1,5 +1,7 @@
 import unittest
 
+import pandas as pd
+
 from microsim.gcp_model import GCPModel
 from microsim.alcohol_category import AlcoholCategory
 from microsim.education import Education
@@ -46,7 +48,7 @@ class VectorizedTestFixture(unittest.TestCase):
             base_gcp = GCPModel().calc_linear_predictor(test_person)
             test_person._gcp.append([base_gcp])
 
-            people = [test_person]
+            people = pd.Series([test_person])
             population = Population(people)
             VectorizedTestFixture._population_dataframe = population.get_people_current_state_and_summary_as_dataframe()
         return VectorizedTestFixture._population_dataframe
