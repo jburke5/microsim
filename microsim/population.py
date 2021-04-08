@@ -21,28 +21,6 @@ import copy
 import multiprocessing as mp
 import numpy as np
 import logging
-from functools import singledispatch
-
-
-@singledispatch
-def map_or_apply(iterable, func, *args, **kwargs):
-    """
-    Calls the given function over each element of the given iterable.
-
-    If `iterable` is a pandas DataFrame, uses `.parallel_apply` if
-    available (e.g., via `pandarallel`), or regular `apply` if not.
-    Otherwise, uses a list comprehension. Extra `args` and `kwargs` are
-    passed through to the function.
-    """
-    return [func(x, *args, **kwargs) for x in iterable]
-
-
-@map_or_apply.register
-def map_or_apply_dataframe(iterable: pd.DataFrame, func, *args, **kwargs):
-    if hasattr(iterable, 'parallel_apply'):
-        return iterable.parallel_apply(func, *args, **kwargs)
-    else:
-        return iterable.apply(func, *args, **kwargs)
 
 
 class Population:
@@ -674,14 +652,8 @@ class Population:
         return attrForPerson
 
     def get_people_current_state_as_dataframe(self):
-        result = map_or_apply(
-            self._people,
-            self.get_person_attributes_from_person,
-            timeVaryingCovariates=self._timeVaryingCovariates
-        )
-        if isinstance(result, pd.DataFrame):
-            result = result.array
-        return pd.DataFrame.from_dict(result)
+        #pandarallel.initialize(verbose=1)
+        return pd.DataFrame.from_dict(self._people.parallel_apply(self.get_person_attributes_from_person, timeVaryingCovariates=self._timeVaryingCovariates).array)
 
     def get_people_current_state_and_summary_as_dataframe(self):
         df = self.get_people_current_state_as_dataframe()
