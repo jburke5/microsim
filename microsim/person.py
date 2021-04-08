@@ -2,6 +2,7 @@ import math
 import copy
 import numpy.random as npRand
 import numpy as np
+import logging
 
 from typing import Callable
 
@@ -253,7 +254,7 @@ class Person:
         return varValue
 
     def advance_year(self, risk_model_repository, outcome_model_repository, qaly_assignment_strategy=QALYAssignmentStrategy()):
-        # print(f"advance_year on person, age: {self._age[0]} sbp : {self._sbp[0]}")
+        logging.debug(f"advance_year on person, age: {self._age[0]} sbp : {self._sbp[0]}")
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance year")
 
