@@ -20,6 +20,7 @@ from pandarallel import pandarallel
 import copy
 import multiprocessing as mp
 import numpy as np
+import logging
 
 
 class Population:
@@ -63,7 +64,7 @@ class Population:
 
     def advance(self, years):
         for yearIndex in range(years):
-            print(f"processing year: {yearIndex}")
+            logging.info(f"processing year: {yearIndex}")
             self._currentWave += 1
             for person in self._people:
                 self.advance_person(person)
@@ -208,7 +209,7 @@ class Population:
     def advance_multi_process(self, years):
         for i in range(years):
             self._currentWave += 1
-            print(f"processing year: {i}")
+            logging.info(f"processing year: {i}")
             data_split = np.array_split(self._people, self.num_of_processes)
             pool = mp.Pool(self.num_of_processes)
             self._people = pd.concat(pool.map(self.advance_people, data_split))
@@ -792,4 +793,3 @@ class ClonePopulation(Population):
         for i in range(0, len(people)):
             people.iloc[i]._populationIndex = i
         super().__init__(people)
-
