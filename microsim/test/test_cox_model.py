@@ -14,9 +14,11 @@ class TestCoxModel(VectorizedTestFixture):
         # Baseline estimate derived in notebook — buildNHANESMortalityModel.
         # only testing to 3 places because we approximate the cumulative hazard as oppossed
         # as opposed to directly using it
-        actual_current_risk = self.model.linear_predictor_vectorized(self.population_dataframe)
+        p1_data = self.population_dataframe.iloc[0]
+
+        actual_current_risk = self.model.linear_predictor_vectorized(p1_data)
         actual_cumulative_risk = self.model.get_risk_for_person(
-            self.population_dataframe,
+            p1_data,
             years=1,
             vectorized=True,
         )
