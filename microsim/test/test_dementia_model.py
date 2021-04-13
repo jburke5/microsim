@@ -12,6 +12,9 @@ from microsim.dementia_model_gompertz import DementiaModelGompertz
 from microsim.test.do_not_change_risk_factors_model_repository import DoNotChangeRiskFactorsModelRepository
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.initialization_repository import InitializationRepository
+from microsim.test.helper.init_vectorized_population_dataframe import (
+    init_vectorized_population_dataframe
+)
 
 
 class AlwaysNegativeOutcomeRepository(OutcomeModelRepository):
@@ -166,11 +169,29 @@ class TestDementiaModel(unittest.TestCase):
         self._test_case_three_parametric._gcp[0] = 75
         self._test_case_three_parametric._gcp.append(self._test_case_two._gcp[0])
 
+        self._population_dataframe = init_vectorized_population_dataframe([
+            self._test_case_one,
+            self._test_case_two,
+        ])
+        self._parameterized_population_dataframe = init_vectorized_population_dataframe([
+            self._test_case_one_parameteric,
+            self._test_case_two_parametric,
+            self._test_case_three_parametric,
+        ])
+
     def test_dementia_after_one_year(self):
-        self.assertAlmostEqual(1.115571, DementiaModel().linear_predictor(person=self._test_case_one), places=5)
+        p1_data = self._population_dataframe.iloc[0]
+
+        actual_risk = DementiaModel().linear_predictor_vectorized(p1_data)
+
+        self.assertAlmostEqual(1.115571, actual_risk, places=5)
 
     def test_dementia_after_one_year_person_two(self):
-        self.assertAlmostEqual(-1.122424, DementiaModel().linear_predictor(person=self._test_case_two), places=5)
+        p2_data = self._population_dataframe.iloc[1]
+
+        actual_risk = DementiaModel().linear_predictor_vectorized(p2_data)
+
+        self.assertAlmostEqual(-1.122424, actual_risk, places=5)
 
     def test_dementia_after_one_year_gompertz(self):
         self.assertAlmostEqual(-9.990598486, DementiaModelGompertz().linear_predictor(person=self._test_case_one_parameteric), places=1)
