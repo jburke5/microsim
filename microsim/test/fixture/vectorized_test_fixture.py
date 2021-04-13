@@ -1,15 +1,15 @@
 import unittest
 
-import pandas as pd
-
 from microsim.gcp_model import GCPModel
 from microsim.alcohol_category import AlcoholCategory
 from microsim.education import Education
 from microsim.gender import NHANESGender
-from microsim.population import Population
 from microsim.person import Person
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
+from microsim.test.helper.init_vectorized_population_dataframe import (
+    init_vectorized_population_dataframe
+)
 
 
 class VectorizedTestFixture(unittest.TestCase):
@@ -48,9 +48,8 @@ class VectorizedTestFixture(unittest.TestCase):
             base_gcp = GCPModel().calc_linear_predictor(test_person)
             test_person._gcp.append([base_gcp])
 
-            people = pd.Series([test_person])
-            population = Population(people)
-            VectorizedTestFixture._population_dataframe = population.get_people_current_state_and_summary_as_dataframe()
+            VectorizedTestFixture._population_dataframe = \
+                init_vectorized_population_dataframe([test_person])
         return VectorizedTestFixture._population_dataframe
 
     def setUp(self):
