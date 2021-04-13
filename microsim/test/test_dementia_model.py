@@ -173,11 +173,6 @@ class TestDementiaModel(unittest.TestCase):
             self._test_case_one,
             self._test_case_two,
         ])
-        self._parameterized_population_dataframe = init_vectorized_population_dataframe([
-            self._test_case_one_parameteric,
-            self._test_case_two_parametric,
-            self._test_case_three_parametric,
-        ])
 
     def test_dementia_after_one_year(self):
         p1_data = self._population_dataframe.iloc[0]
