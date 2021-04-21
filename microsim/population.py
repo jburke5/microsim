@@ -113,7 +113,7 @@ class Population:
             # first determine if there is a cv event
             alive = alive.apply(
                 self._outcome_model_repository.assign_cv_outcome_vectorized, axis='columns')
-
+            
             # reselect on survivors...because we don't want to set non-cv mortality on poepel that died from cv events.
             alive['gcp'] = alive.apply(
                 self._outcome_model_repository.get_gcp_vectorized, axis='columns')
@@ -510,7 +510,7 @@ class Population:
         # first element within the returned tuple (the second [0])
         events = self.calculate_mean_age_sex_standardized_event(
             lambda x: x.has_outcome_during_simulation(outcomeType),
-            lambda x: x._outcomes[outcomeType][0][0] - x._age[0] + 1,
+            lambda x: x.get_outcomes_during_simulation(outcomeType)[0][0] - x._age[0] + 1,
             yearOfStandardizedPopulation,
             subPopulationSelector,
             subPopulationDFSelector)
@@ -525,7 +525,7 @@ class Population:
 
     def get_events_for_event_type(self, eventSelector, eventAgeIdentifier, subPopulationSelector=None, subPopulationDFSelector=None):
         # build a dataframe to represent the population
-        popDF = self.get_people_current_state_as_dataframe()
+        popDF = self.get_people_current_state_as_dataframe(parallel=False)
         popDF['female'] = popDF['gender'] - 1
 
         # calculated standardized event rate for each year
@@ -540,14 +540,14 @@ class Population:
                 person) == year for person in filter(subPopulationSelector, self._people)]
         return popDF
 
-    def calculate_mean_age_sex_standardized_event(self, eventSelector, eventAgeIdentifier,
+    def  calculate_mean_age_sex_standardized_event(self, eventSelector, eventAgeIdentifier,
                                                   yearOfStandardizedPopulation=2016,
                                                   subPopulationSelector=None,
                                                   subPopulationDFSelector=None):
         # calculated standardized event rate for each year
         popDF = self.get_events_for_event_type(eventSelector, eventAgeIdentifier,
-                                          subPopulationSelector=None,
-                                          subPopulationDFSelector=None)
+                                          subPopulationSelector,
+                                          subPopulationDFSelector)
         popDF['female'] = popDF['gender'] - 1
 
         eventsPerYear = []
@@ -584,8 +584,8 @@ class Population:
         # take the dataframe of peoplein teh population and tabnulate events relative
         # to the age standard (max age is 85 in the age standard...)
         peopleDF.loc[peopleDF['age'] > 85, 'age'] = 85
-        peopleDF['ageGroup'] = (peopleDF['age'] // 5) + 1
-        peopleDF['ageGroup'] = peopleDF['ageGroup'].astype(int)
+        peopleDF.loc[:,'ageGroup'] = (peopleDF['age'] // 5) + 1
+        peopleDF.loc[:,'ageGroup'] = peopleDF['ageGroup'].astype(int)
         # tabulate events by group
         eventsByGroup = peopleDF.groupby(['ageGroup', 'female'])['event'].sum()
         personYears = peopleDF.groupby(['ageGroup', 'female'])['age'].count()
@@ -647,9 +647,12 @@ class Population:
                 attrForPerson[var + str(wave)] = attr[wave]
         return attrForPerson
 
-    def get_people_current_state_as_dataframe(self):
+    def get_people_current_state_as_dataframe(self, parallel=True):
         #pandarallel.initialize(verbose=1)
-        return pd.DataFrame.from_dict(self._people.parallel_apply(self.get_person_attributes_from_person, timeVaryingCovariates=self._timeVaryingCovariates).array)
+        if parallel:
+            return pd.DataFrame.from_dict(self._people.parallel_apply(self.get_person_attributes_from_person, timeVaryingCovariates=self._timeVaryingCovariates).array)
+        else:
+            return pd.DataFrame.from_dict(self._people.apply(self.get_person_attributes_from_person, timeVaryingCovariates=self._timeVaryingCovariates).array)
 
     def get_people_current_state_and_summary_as_dataframe(self):
         df = self.get_people_current_state_as_dataframe()
@@ -721,10 +724,12 @@ def build_person(x, outcome_model_repository):
         diedBy2015=x.diedBy2015==True)
 
 
-def build_people_using_nhanes_for_sampling(nhanes, n, outcome_model_repository,  filter=None, random_seed=None):
+def build_people_using_nhanes_for_sampling(nhanes, n, outcome_model_repository,  filter=None, random_seed=None, weights=None):
+    if weights is None:
+        weights = nhanes.WTINT2YR
     repeated_sample = nhanes.sample(
         n,
-        weights=nhanes.WTINT2YR,
+        weights=weights,
         random_state=random_seed,
         replace=True)
     pandarallel.initialize(verbose=1)
@@ -750,15 +755,16 @@ class NHANESDirectSamplePopulation(Population):
             filter=None,
             generate_new_people=True,
             model_reposistory_type="cohort",
-            random_seed=None):
+            random_seed=None,
+            weights=None):
 
-        self._outcome_model_repository = OutcomeModelRepository()
-        self._qaly_assignment_strategy = QALYAssignmentStrategy()
         nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         nhanes = nhanes.loc[nhanes.year == year]
+        self._outcome_model_repository = OutcomeModelRepository()
         people = build_people_using_nhanes_for_sampling(
-            nhanes, n, self._outcome_model_repository,  filter=filter, random_seed=random_seed)
+            nhanes, n, self._outcome_model_repository,  filter=filter, random_seed=random_seed, weights=weights)
         super().__init__(people)
+        self._qaly_assignment_strategy = QALYAssignmentStrategy()
         self.n = n
         self.year = year
         self._initialize_risk_models(model_reposistory_type)
@@ -775,6 +781,33 @@ class NHANESDirectSamplePopulation(Population):
             self._risk_model_repository = NHANESRiskModelRepository()
         else:
             raise Exception('unknwon risk model repository type' + model_repository_type)
+
+class NHANESAgeStandardPopulation(NHANESDirectSamplePopulation):
+        def __init__(self, n, year):
+            nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
+            weights = self.get_weights(year)
+            weights['gender'] = weights['female'] + 1
+            weights =  pd.merge(nhanes, weights, how='left', on=['age', 'gender']).popWeight
+            super().__init__(n=n, year=year, weights = weights)
+
+        def get_weights(self, year):
+            standard = self.build_age_standard(year)
+            return self.get_population_weighted_standard(standard)
+
+        def get_population_weighted_standard(self, standard):
+            rows = []
+            for age in range(1, 151):
+                for female in range (0, 2):
+                    dfRow = standard.loc[(age >= standard.lowerAgeBound ) & (age <= standard.upperAgeBound) & (standard.female==female)]
+                    upperAge = dfRow['upperAgeBound'].values[0]
+                    lowerAge = dfRow['lowerAgeBound'].values[0]
+                    totalPop = dfRow['standardPopulation'].values[0]
+                    rows.append({'age' : age, 'female' : female, 'pop' : totalPop/(upperAge-lowerAge+1)})
+            df = pd.DataFrame(rows)
+            df['popWeight'] = df['pop']/df['pop'].sum()
+            return df
+
+
 
 
 class ClonePopulation(Population):
