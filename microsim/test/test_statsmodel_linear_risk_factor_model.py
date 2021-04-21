@@ -123,59 +123,85 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                            np.random.normal(loc=120, scale=20, size=1)[0])
 
     def testSimpleModel(self):
-        self.assertEqual(self.simpleModelResultSM.params['age'] * self.person._age[-1] +
-                         self.simpleModelResultSM.params['Intercept'],
-                         StatsModelLinearRiskFactorModel(
-            self.simpleModelResult).estimate_next_risk(self.person))
+        expected_model_result = (
+            self.simpleModelResultSM.params['age'] * self.person._age[-1] +
+            self.simpleModelResultSM.params['Intercept']
+        )
+        model = StatsModelLinearRiskFactorModel(self.simpleModelResult)
+
+        actual_model_result = model.estimate_next_risk(self.person)
+
+        self.assertEqual(expected_model_result, actual_model_result)
 
     def testModelWithMeanParameter(self):
         testPerson = self.people[5]
+        expected_model_result = (
+            self.meanModelResultSM.params['age'] * testPerson._age[-1]
+            + self.meanModelResultSM.params['meanSbp'] * np.array(testPerson._sbp).mean()
+            + self.meanModelResultSM.params['Intercept']
+        )
+        model = StatsModelLinearRiskFactorModel(self.meanModelResult)
 
-        self.assertAlmostEqual(self.meanModelResultSM.params['age'] * testPerson._age[-1] +
-                               self.meanModelResultSM.params['meanSbp'] *
-                               np.array(testPerson._sbp).mean() +
-                               self.meanModelResultSM.params['Intercept'],
-                               StatsModelLinearRiskFactorModel(
-            self.meanModelResult).estimate_next_risk(testPerson), 5)
+        actual_model_result = model.estimate_next_risk(testPerson)
+
+        self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 
     def testLagAndMean(self):
         testPerson = self.people[12]
+        expected_model_result = (
+            self.meanLagModelResultSM.params['age'] * testPerson._age[-1]
+            + self.meanLagModelResultSM.params['meanSbp'] * np.array(testPerson._sbp).mean()
+            + self.meanLagModelResultSM.params['lagSbp'] * testPerson._sbp[-1]
+            + self.meanLagModelResultSM.params['Intercept']
+        )
+        model = StatsModelLinearRiskFactorModel(self.meanLagModelResult)
 
-        self.assertAlmostEqual(self.meanLagModelResultSM.params['age'] * testPerson._age[-1] +
-                               self.meanLagModelResultSM.params['meanSbp'] *
-                               np.array(testPerson._sbp).mean() +
-                               self.meanLagModelResultSM.params['lagSbp'] * testPerson._sbp[-1] +
-                               self.meanLagModelResultSM.params['Intercept'],
-                               StatsModelLinearRiskFactorModel(
-            self.meanLagModelResult).estimate_next_risk(testPerson), 5)
+        actual_model_result = model.estimate_next_risk(testPerson)
+
+        self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 
     def testModelWithLogMeanParameter(self):
         testPerson = self.people[10]
-        self.assertAlmostEqual(self.logMeanModelResultSM.params['age'] * testPerson._age[-1] +
-                               self.logMeanModelResultSM.params['logMeanSbp'] *
-                               np.log(np.array(testPerson._sbp).mean()) +
-                               self.logMeanModelResultSM.params['Intercept'],
-                               StatsModelLinearRiskFactorModel(
-            self.logMeanModelResult).estimate_next_risk(testPerson), 5)
+        expected_model_result = (
+            self.logMeanModelResultSM.params['age'] * testPerson._age[-1]
+            + self.logMeanModelResultSM.params['logMeanSbp'] * np.log(
+                np.array(testPerson._sbp).mean()
+            )
+            + self.logMeanModelResultSM.params['Intercept']
+        )
+        model = StatsModelLinearRiskFactorModel(self.logMeanModelResult)
+
+        actual_model_result = model.estimate_next_risk(testPerson)
+
+        self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 
     def testModelWithCategoricalParameter(self):
         testPerson = self.people[21]
         testRace = testPerson._raceEthnicity
-        self.assertAlmostEqual(self.raceModelResultSM.params['age'] * testPerson._age[-1] +
-                               self.raceModelResultSM.params['raceEthnicity[T.' +
-                                                             str(int(testRace)) + ']'] +
-                               self.raceModelResultSM.params['Intercept'],
-                               StatsModelLinearRiskFactorModel(
-            self.raceModelResult).estimate_next_risk(testPerson), 5)
+        raceParamName = f"raceEthnicity[T.{int(testRace)}]"
+        expected_model_result = (
+            self.raceModelResultSM.params['age'] * testPerson._age[-1]
+            + self.raceModelResultSM.params[raceParamName]
+            + self.raceModelResultSM.params['Intercept']
+        )
+        model = StatsModelLinearRiskFactorModel(self.raceModelResult)
+
+        actual_model_result = model.estimate_next_risk(testPerson)
+
+        self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 
     def testInteractionModel(self):
         testPerson = self.people[32]
-        self.assertAlmostEqual(np.array(testPerson._sbp).mean()*
-            testPerson._age[-1]*self.ageSbpInteractionCoeff +
-            np.array(testPerson._sbp).mean()*self.sbpInteractionCoeff, 
-            StatsModelLinearRiskFactorModel(
-            self.interactionModel).estimate_next_risk(testPerson), 5)
+        expected_model_result = (
+            np.array(testPerson._sbp).mean() * testPerson._age[-1] * self.ageSbpInteractionCoeff
+            + np.array(testPerson._sbp).mean() * self.sbpInteractionCoeff
+        )
+        model = StatsModelLinearRiskFactorModel(self.interactionModel)
+
+        actual_model_result = model.estimate_next_risk(testPerson)
+
+        self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
+
 
 if __name__ == "__main__":
     unittest.main()
-    
