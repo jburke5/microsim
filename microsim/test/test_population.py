@@ -1,6 +1,6 @@
-from microsim.population import NHANESDirectSamplePopulation
-from microsim.population import Population
+from microsim.population import NHANESDirectSamplePopulation, ClonePopulation
 from microsim.person import Person
+from microsim.gcp_model import GCPModel
 from microsim.gender import NHANESGender
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
@@ -32,7 +32,7 @@ class TestPopulation(unittest.TestCase):
 
 
 def initializeAFib(person):
-    return None
+    return False
 
 
 class TestPopulationAdvanceOutcomes(unittest.TestCase):
@@ -65,15 +65,21 @@ class TestPopulationAdvanceOutcomes(unittest.TestCase):
             diedBy2015=0)
 
     def test_dont_advance_dead_people_in_population(self):
-        self.dummy_population = Population([self.joe])
-        self.joe._alive.append(False)
-        expected_risk_factor_length = len(self.joe._sbp)
+        # add GCP to advance successfully
+        joe_base_gcp = GCPModel().calc_linear_predictor(self.joe)
+        self.joe._gcp.append(joe_base_gcp)
+        # use ClonePopulation: sets up repositories, populationIndex, and 2+ people to workaround
+        self.dummy_population = ClonePopulation(self.joe, 2)
+        initial_joe = self.dummy_population._people.iloc[0]
+        initial_joe._alive.append(False)
+        expected_risk_factor_length = len(initial_joe._sbp)
 
         # this should NOT raise an error if it is (correctly) not trying to
         #  advance on poor dead, joe
-        self.dummy_population.advance(1)
+        self.dummy_population.advance_vectorized(1)
 
-        self.assertEqual(expected_risk_factor_length, len(self.joe._sbp))
+        advanced_joe = self.dummy_population._people.iloc[0]
+        self.assertEqual(expected_risk_factor_length, len(advanced_joe._sbp))
 
 
 if __name__ == "__main__":
