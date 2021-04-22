@@ -83,7 +83,7 @@ class Population:
         # might not need this row...depends o n whethe we do an bulk update on people or an wave-abased update
         waveAtStartOfAdvance = self._currentWave
         for yearIndex in range(years):
-            print(f"processing year: {yearIndex}")
+            logging.info(f"processing year: {yearIndex}")
             alive = alive.loc[alive.dead == False]
             self._currentWave += 1
 
