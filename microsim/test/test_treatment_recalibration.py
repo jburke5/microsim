@@ -21,13 +21,13 @@ class TestOftenStrokeModelRepository(OutcomeModelRepository):
             x.miNext = False
             x.strokeNext = True
             x.deadNext = False
-            x.ageAtFirstStroke = x.age if (x.ageAtFirstStroke is None) or (np.isnan(x.ageAtFirstStroke)) else x.ageAtFirstStroke 
+            x.ageAtFirstStroke = x.age if (x.ageAtFirstStroke is None) or (np.isnan(x.ageAtFirstStroke)) else x.ageAtFirstStroke
         else:
             x.miNext = False
             x.strokeNext = False
             x.deadNext = False
         return x
-    
+
     def get_risk_for_person(self, person, outcomeModelType, years=1, vectorized=False):
         return self._stroke_rate
 
@@ -49,7 +49,7 @@ class TestOftenMIModelRepository(OutcomeModelRepository):
             x.miNext = True
             x.strokeNext = False
             x.deadNext = False
-            x.ageAtFirstMI = x.age if (x.ageAtFirstMI is None) or (np.isnan(x.ageAtFirstMI)) else x.ageAtFirstMI 
+            x.ageAtFirstMI = x.age if (x.ageAtFirstMI is None) or (np.isnan(x.ageAtFirstMI)) else x.ageAtFirstMI
         else:
             x.miNext = False
             x.strokeNext = False
