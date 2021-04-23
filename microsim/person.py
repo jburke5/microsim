@@ -290,6 +290,9 @@ class Person:
     def has_outcome_during_simulation(self, outcomeType):
         return any([ageAtEvent >= 0 for ageAtEvent, _ in self._outcomes[outcomeType]])
 
+    def get_outcomes_during_simulation(self, outcomeType):
+        return list(filter(lambda x: x[0] > 0, self._outcomes[outcomeType]))
+
     def has_outcome_during_simulation_prior_to_wave(self, outcomeType, wave):
         return any([ageAtEvent >= self._age[0]+wave for ageAtEvent, _ in self._outcomes[outcomeType]])
 
