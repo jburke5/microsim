@@ -5,6 +5,9 @@ from microsim.smoking_status import SmokingStatus
 from microsim.regression_model import RegressionModel
 from microsim.education import Education
 from microsim.alcohol_category import AlcoholCategory
+from microsim.test.helper.init_vectorized_population_dataframe import (
+    init_vectorized_population_dataframe
+)
 
 
 from microsim.person import Person
@@ -55,6 +58,10 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                        for bpinstance in sbp]
         for person in self.people:
             self.advancePerson(person)
+        self.population_dataframe = init_vectorized_population_dataframe(
+            self.people,
+            with_base_gcp=True,
+        )
 
         df2 = pd.DataFrame({'age': age, 'sbp': [person._sbp[-1] for person in self.people],
                             'meanSbp': [np.array(person._sbp).mean() for person in self.people]})
@@ -123,59 +130,92 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                            np.random.normal(loc=120, scale=20, size=1)[0])
 
     def testSimpleModel(self):
-        self.assertEqual(self.simpleModelResultSM.params['age'] * self.person._age[-1] +
-                         self.simpleModelResultSM.params['Intercept'],
-                         StatsModelLinearRiskFactorModel(
-            self.simpleModelResult).estimate_next_risk(self.person))
+        df = init_vectorized_population_dataframe([self.person], with_base_gcp=True)
+        person_data = df.iloc[0]
+        expected_model_result = (
+            self.simpleModelResultSM.params['age'] * person_data.age +
+            self.simpleModelResultSM.params['Intercept']
+        )
+        model = StatsModelLinearRiskFactorModel(self.simpleModelResult)
+
+        actual_model_result = model.estimate_next_risk_vectorized(person_data)
+
+        self.assertEqual(expected_model_result, actual_model_result)
 
     def testModelWithMeanParameter(self):
         testPerson = self.people[5]
+        expected_model_result = (
+            self.meanModelResultSM.params['age'] * testPerson._age[-1]
+            + self.meanModelResultSM.params['meanSbp'] * np.array(testPerson._sbp).mean()
+            + self.meanModelResultSM.params['Intercept']
+        )
+        model = StatsModelLinearRiskFactorModel(self.meanModelResult)
+        person_data = self.population_dataframe.iloc[5]
 
-        self.assertAlmostEqual(self.meanModelResultSM.params['age'] * testPerson._age[-1] +
-                               self.meanModelResultSM.params['meanSbp'] *
-                               np.array(testPerson._sbp).mean() +
-                               self.meanModelResultSM.params['Intercept'],
-                               StatsModelLinearRiskFactorModel(
-            self.meanModelResult).estimate_next_risk(testPerson), 5)
+        actual_model_result = model.estimate_next_risk_vectorized(person_data)
+
+        self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 
     def testLagAndMean(self):
         testPerson = self.people[12]
+        expected_model_result = (
+            self.meanLagModelResultSM.params['age'] * testPerson._age[-1]
+            + self.meanLagModelResultSM.params['meanSbp'] * np.array(testPerson._sbp).mean()
+            + self.meanLagModelResultSM.params['lagSbp'] * testPerson._sbp[-1]
+            + self.meanLagModelResultSM.params['Intercept']
+        )
+        model = StatsModelLinearRiskFactorModel(self.meanLagModelResult)
+        person_data = self.population_dataframe.iloc[12]
 
-        self.assertAlmostEqual(self.meanLagModelResultSM.params['age'] * testPerson._age[-1] +
-                               self.meanLagModelResultSM.params['meanSbp'] *
-                               np.array(testPerson._sbp).mean() +
-                               self.meanLagModelResultSM.params['lagSbp'] * testPerson._sbp[-1] +
-                               self.meanLagModelResultSM.params['Intercept'],
-                               StatsModelLinearRiskFactorModel(
-            self.meanLagModelResult).estimate_next_risk(testPerson), 5)
+        actual_model_result = model.estimate_next_risk_vectorized(person_data)
+
+        self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 
     def testModelWithLogMeanParameter(self):
         testPerson = self.people[10]
-        self.assertAlmostEqual(self.logMeanModelResultSM.params['age'] * testPerson._age[-1] +
-                               self.logMeanModelResultSM.params['logMeanSbp'] *
-                               np.log(np.array(testPerson._sbp).mean()) +
-                               self.logMeanModelResultSM.params['Intercept'],
-                               StatsModelLinearRiskFactorModel(
-            self.logMeanModelResult).estimate_next_risk(testPerson), 5)
+        expected_model_result = (
+            self.logMeanModelResultSM.params['age'] * testPerson._age[-1]
+            + self.logMeanModelResultSM.params['logMeanSbp'] * np.log(
+                np.array(testPerson._sbp).mean()
+            )
+            + self.logMeanModelResultSM.params['Intercept']
+        )
+        model = StatsModelLinearRiskFactorModel(self.logMeanModelResult)
+        person_data = self.population_dataframe.iloc[10]
+
+        actual_model_result = model.estimate_next_risk_vectorized(person_data)
+
+        self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 
     def testModelWithCategoricalParameter(self):
         testPerson = self.people[21]
         testRace = testPerson._raceEthnicity
-        self.assertAlmostEqual(self.raceModelResultSM.params['age'] * testPerson._age[-1] +
-                               self.raceModelResultSM.params['raceEthnicity[T.' +
-                                                             str(int(testRace)) + ']'] +
-                               self.raceModelResultSM.params['Intercept'],
-                               StatsModelLinearRiskFactorModel(
-            self.raceModelResult).estimate_next_risk(testPerson), 5)
+        raceParamName = f"raceEthnicity[T.{int(testRace)}]"
+        expected_model_result = (
+            self.raceModelResultSM.params['age'] * testPerson._age[-1]
+            + self.raceModelResultSM.params[raceParamName]
+            + self.raceModelResultSM.params['Intercept']
+        )
+        model = StatsModelLinearRiskFactorModel(self.raceModelResult)
+        person_data = self.population_dataframe.iloc[21]
+
+        actual_model_result = model.estimate_next_risk_vectorized(person_data)
+
+        self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 
     def testInteractionModel(self):
         testPerson = self.people[32]
-        self.assertAlmostEqual(np.array(testPerson._sbp).mean()*
-            testPerson._age[-1]*self.ageSbpInteractionCoeff +
-            np.array(testPerson._sbp).mean()*self.sbpInteractionCoeff, 
-            StatsModelLinearRiskFactorModel(
-            self.interactionModel).estimate_next_risk(testPerson), 5)
+        expected_model_result = (
+            np.array(testPerson._sbp).mean() * testPerson._age[-1] * self.ageSbpInteractionCoeff
+            + np.array(testPerson._sbp).mean() * self.sbpInteractionCoeff
+        )
+        model = StatsModelLinearRiskFactorModel(self.interactionModel)
+        person_data = self.population_dataframe.iloc[32]
+
+        actual_model_result = model.estimate_next_risk_vectorized(person_data)
+
+        self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
+
 
 if __name__ == "__main__":
     unittest.main()
-    

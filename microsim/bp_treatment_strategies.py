@@ -28,6 +28,7 @@ class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
 
     def get_changes_vectorized(self, x):
         x.antiHypertensiveCountNext = x.antiHypertensiveCountNext + 1
+        x.bpMedsAddedNext = 1
         x.sbpNext = x.sbpNext - AddASingleBPMedTreatmentStrategy.sbpLowering
         x.dbpNext = x.dbpNext - AddASingleBPMedTreatmentStrategy.dbpLowering
         return x
@@ -62,6 +63,7 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
 
     def get_changes_vectorized(self, x):
         medsNeeded = self.get_meds_needed_for_goal(x.sbpNext, x.dbpNext)
+        x.bpMedsAddedNext = medsNeeded
         x.antiHypertensiveCountNext = x.antiHypertensiveCountNext + medsNeeded
         x.sbpNext = x.sbpNext - medsNeeded * AddBPTreatmentMedsToGoal120.sbpLowering
         x.dbpNext = x.dbpNext - medsNeeded * AddBPTreatmentMedsToGoal120.dbpLowering
@@ -88,6 +90,7 @@ class NoBPTreatmentNoBPChange(BaseTreatmentStrategy):
         return True
 
     def get_changes_vectorized(self, x):
+        x.bpMedsAddedNext = 0
         x.antiHypertensiveCountNext = 0
         x.sbpNext = x.sbp
         x.dbpNext = x.dbp

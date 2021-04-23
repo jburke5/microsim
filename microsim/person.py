@@ -99,9 +99,6 @@ class Person:
         # a variable to track changes in BP meds compared to the baseline
         self._bpMedsAdded = [0]
 
-        # a variable to track changes in BP meds compared to the baseline
-        self._bpMedsAdded = [0]
-
         # convert events for events prior to simulation
         if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
             self._selfReportStrokeAge = selfReportStrokeAge if selfReportStrokeAge <= self._age[-1] else self._age[-1]

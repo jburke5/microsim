@@ -54,6 +54,7 @@ class Population:
         self._timeVaryingCovariates = copy.copy(self._riskFactors)
         self._timeVaryingCovariates.append('age')
         self._timeVaryingCovariates.extend(self._treatments)
+        self._timeVaryingCovariates.append('bpMedsAdded')
 
     def reset_to_baseline(self):
         self._totalWavesAdvanced = 0
@@ -83,7 +84,7 @@ class Population:
         # might not need this row...depends o n whethe we do an bulk update on people or an wave-abased update
         waveAtStartOfAdvance = self._currentWave
         for yearIndex in range(years):
-            print(f"processing year: {yearIndex}")
+            logging.info(f"processing year: {yearIndex}")
             alive = alive.loc[alive.dead == False]
             self._currentWave += 1
 
@@ -100,6 +101,7 @@ class Population:
                     treatment).estimate_next_risk_vectorized, axis='columns')
 
             # apply treatment modifications
+            alive['bpMedsAddedNext'] = 0
             if self._bpTreatmentStrategy is not None:
                 alive = alive.apply(
                     self._bpTreatmentStrategy.get_changes_vectorized, axis='columns')
@@ -134,7 +136,7 @@ class Population:
             self._totalWavesAdvanced += 1
 
             alive = self.move_people_df_forward(alive)
-            # for efficieicny, we could try to do this all at the end...gut, its a bit cleanear  to do it wave by wave
+            # for efficieicny, we could try to do this all at the end...but, its a bit cleanear  to do it wave by wave
             alive.apply(self.push_updates_back_to_people, axis='columns')
             nextCols = [col for col in alive.columns if "Next" in col]
             alive.drop(columns=nextCols, inplace=True)
@@ -166,7 +168,9 @@ class Population:
         person._gcp.append(x.gcp)
         person._alive.append(not x.deadNext)
         person._qalys.append(x.qalyNext)
-        person._age.append(x.age)
+        person._bpMedsAdded.append(x.bpMedsAddedNext)
+        if not person.is_dead():
+            person._age.append(x.age)
         return person
 
     def move_people_df_forward(self, df):
@@ -600,7 +604,6 @@ class Population:
     def get_person_attributes_from_person(self, person, timeVaryingCovariates):
         attrForPerson = {'age': person._age[-1],
                          'baseAge': person._age[0],
-                         'populationIndex': person._populationIndex,
                          'gender': person._gender,
                          'raceEthnicity': person._raceEthnicity,
                          'black': person._raceEthnicity == 4,
@@ -640,7 +643,12 @@ class Population:
                          'baseGcp': person._gcp[0],
                          'gcpSlope': person._gcp[-1] - person._gcp[-2] if len(person._gcp) >= 2 else 0,
                          'totalYearsInSim': person.years_in_simulation(),
-                         'totalQalys': np.array(person._qalys).sum()}
+                         'totalQalys': np.array(person._qalys).sum(),
+                         'bpMedsAdded' : person._bpMedsAdded[-1]}
+        try:
+            attrForPerson['populationIndex'] = person._populationIndex
+        except AttributeError:
+            pass  # populationIndex is not necessary for advancing; can continue safely without it
 
         for var in timeVaryingCovariates:
             attr = getattr(person, "_" + var)
@@ -649,8 +657,8 @@ class Population:
         return attrForPerson
 
     def get_people_current_state_as_dataframe(self, parallel=True):
-        #pandarallel.initialize(verbose=1)
         if parallel:
+            pandarallel.initialize(verbose=1)
             return pd.DataFrame.from_dict(self._people.parallel_apply(self.get_person_attributes_from_person, timeVaryingCovariates=self._timeVaryingCovariates).array)
         else:
             return pd.DataFrame.from_dict(self._people.apply(self.get_person_attributes_from_person, timeVaryingCovariates=self._timeVaryingCovariates).array)
