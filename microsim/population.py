@@ -54,6 +54,7 @@ class Population:
         self._timeVaryingCovariates = copy.copy(self._riskFactors)
         self._timeVaryingCovariates.append('age')
         self._timeVaryingCovariates.extend(self._treatments)
+        self._timeVaryingCovariates.append('bpMedsAdded')
 
     def reset_to_baseline(self):
         self._totalWavesAdvanced = 0
@@ -100,6 +101,7 @@ class Population:
                     treatment).estimate_next_risk_vectorized, axis='columns')
 
             # apply treatment modifications
+            alive['bpMedsAddedNext'] = 0
             if self._bpTreatmentStrategy is not None:
                 alive = alive.apply(
                     self._bpTreatmentStrategy.get_changes_vectorized, axis='columns')
@@ -134,7 +136,7 @@ class Population:
             self._totalWavesAdvanced += 1
 
             alive = self.move_people_df_forward(alive)
-            # for efficieicny, we could try to do this all at the end...gut, its a bit cleanear  to do it wave by wave
+            # for efficieicny, we could try to do this all at the end...but, its a bit cleanear  to do it wave by wave
             alive.apply(self.push_updates_back_to_people, axis='columns')
             nextCols = [col for col in alive.columns if "Next" in col]
             alive.drop(columns=nextCols, inplace=True)
@@ -166,7 +168,9 @@ class Population:
         person._gcp.append(x.gcp)
         person._alive.append(not x.deadNext)
         person._qalys.append(x.qalyNext)
-        person._age.append(x.age)
+        person._bpMedsAdded.append(x.bpMedsAddedNext)
+        if not person.is_dead():
+            person._age.append(x.age)
         return person
 
     def move_people_df_forward(self, df):
@@ -639,7 +643,8 @@ class Population:
                          'baseGcp': person._gcp[0],
                          'gcpSlope': person._gcp[-1] - person._gcp[-2] if len(person._gcp) >= 2 else 0,
                          'totalYearsInSim': person.years_in_simulation(),
-                         'totalQalys': np.array(person._qalys).sum()}
+                         'totalQalys': np.array(person._qalys).sum(),
+                         'bpMedsAdded' : person._bpMedsAdded[-1]}
         try:
             attrForPerson['populationIndex'] = person._populationIndex
         except AttributeError:

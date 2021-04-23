@@ -16,6 +16,18 @@ class TestOftenStrokeModelRepository(OutcomeModelRepository):
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
         return Outcome(OutcomeType.STROKE, False) if np.random.random() < self._stroke_rate else None
 
+    def assign_cv_outcome_vectorized(self, x):
+        if np.random.random() < self._stroke_rate:
+            x.miNext = False
+            x.strokeNext = True
+            x.deadNext = False
+            x.ageAtFirstStroke = x.age if (x.ageAtFirstStroke is None) or (np.isnan(x.ageAtFirstStroke)) else x.ageAtFirstStroke 
+        else:
+            x.miNext = False
+            x.strokeNext = False
+            x.deadNext = False
+        return x
+    
     def get_risk_for_person(self, person, outcomeModelType, years=1, vectorized=False):
         return self._stroke_rate
 
@@ -31,6 +43,18 @@ class TestOftenMIModelRepository(OutcomeModelRepository):
     # override base class and always return a MI event
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
         return Outcome(OutcomeType.MI, False) if np.random.random() < self._mi_rate else None
+
+    def assign_cv_outcome_vectorized(self, x):
+        if np.random.random() < self._mi_rate:
+            x.miNext = True
+            x.strokeNext = False
+            x.deadNext = False
+            x.ageAtFirstMI = x.age if (x.ageAtFirstMI is None) or (np.isnan(x.ageAtFirstMI)) else x.ageAtFirstMI 
+        else:
+            x.miNext = False
+            x.strokeNext = False
+            x.deadNext = False
+        return x
 
     def get_risk_for_person(self, person, outcomeModelType, years=1, vectorized=False):
         return self._mi_rate
@@ -64,6 +88,7 @@ class addABPMedStrokeLargeEffectSize:
 
     def get_changes_vectorized(self, x):
         x.antiHypertensiveCountNext = x.antiHypertensiveCountNext + 1
+        x.bpMedsAddedNext = 1
         x.sbpNext = x.sbpNext - self._sbp_lowering
         x.dbpNext = x.dbpNext - self._dbp_lowering
         return x
@@ -91,7 +116,6 @@ class addABPMedMILargeEffectSize(addABPMedStrokeLargeEffectSize):
         return {OutcomeType.MI: 0.5, OutcomeType.STROKE: 0.92}
 
 
-@unittest.skip("Not passing reliably with vectorized code for reasons currently unknown")
 class TestTreatmentRecalibration(unittest.TestCase):
     def setUp(self):
         self.popSize = 1000
