@@ -117,7 +117,6 @@ class Population:
             alive = alive.apply(
                 self._outcome_model_repository.assign_cv_outcome_vectorized, axis='columns')
 
-            # reselect on survivors...because we don't want to set non-cv mortality on poepel that died from cv events.
             alive['gcp'] = alive.apply(
                 self._outcome_model_repository.get_gcp_vectorized, axis='columns')
             newDementia = alive.loc[~alive.dementia].apply(
@@ -125,9 +124,10 @@ class Population:
             alive['dementiaNext']  = newDementia
             alive.loc[alive['dementiaNext']==1, 'ageAtFirstDementia'] = alive.age
             alive['dementia'] = newDementia | alive['dementia']
-            nonCVDeath = alive.apply(
+            alive['nonCVDeathNext'] = alive.apply(
                 self._outcome_model_repository.assign_non_cv_mortality_vectorized, axis='columns')
-            alive['deadNext'] = nonCVDeath | alive['deadNext']
+            alive['cvDeathNext'] =  alive['deadNext']
+            alive['deadNext'] = alive['nonCVDeathNext'] | alive['cvDeathNext']
 
             alive['qalyNext'] = alive.apply(
                 QALYAssignmentStrategy().get_qalys_vectorized, axis='columns')
@@ -135,6 +135,14 @@ class Population:
             alive.loc[~alive.dead, 'age'] = alive.age + 1
             self._totalWavesAdvanced += 1
 
+            #### OK ...now i have it...
+            #### this is where it goes sideways...
+            ### we rollback the even ton the person...
+            ### but, then we don't include that person in the DF because they were already excluded from the DF
+            ### in the next wave...because theyr'e "dead" in teh alive DF, but alive on the peson.
+
+            ### fix #1 — recalibrate on teh DF adn then push to people after that.
+            ### fix #2 — after recalibration, track which people were recalibrated and update teh alive DF
             alive = self.move_people_df_forward(alive)
             # for efficieicny, we could try to do this all at the end...but, its a bit cleanear  to do it wave by wave
             alive.apply(self.push_updates_back_to_people, axis='columns')
@@ -151,6 +159,8 @@ class Population:
         return self.update_person(person, x)
 
     def update_person(self, person, x):
+        if person.is_dead():
+            raise Exception(f"Trying to update a dead person: {person}")
         for rf in self._riskFactors:
             attr = getattr(person, "_" + rf)
             attr.append(x[rf + str(self._currentWave)])
@@ -166,10 +176,11 @@ class Population:
                 person.add_outcome_event(Outcome(outcomeType, fatal))
 
         person._gcp.append(x.gcp)
-        person._alive.append(not x.deadNext)
         person._qalys.append(x.qalyNext)
         person._bpMedsAdded.append(x.bpMedsAddedNext)
-        if not person.is_dead():
+        if not x.cvDeathNext: # if they didn't have a fatal CV event, update mortality for non cv-detah
+            person._alive.append(not x.nonCVDeathNext)
+        if not x.deadNext:
             person._age.append(x.age)
         return person
 
