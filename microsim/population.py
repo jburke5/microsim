@@ -205,29 +205,6 @@ class Population:
 
         return df
 
-    def advance_person(self, person):
-        if not person.is_dead():
-            person.advance_year(self._risk_model_repository,
-                                self._outcome_model_repository,
-                                self._qaly_assignment_strategy)
-        return person
-
-    def advance_people(self, people):
-        return people.apply(self.advance_person)
-
-    def advance_multi_process(self, years):
-        for i in range(years):
-            self._currentWave += 1
-            logging.info(f"processing year: {i}")
-            data_split = np.array_split(self._people, self.num_of_processes)
-            pool = mp.Pool(self.num_of_processes)
-            self._people = pd.concat(pool.map(self.advance_people, data_split))
-            pool.close()
-            pool.join()
-
-            self.apply_recalibration_standards()
-            self._totalWavesAdvanced += 1
-
     def set_bp_treatment_strategy(self, bpTreatmentStrategy):
         self._bpTreatmentStrategy = bpTreatmentStrategy
         for person in self._people:
