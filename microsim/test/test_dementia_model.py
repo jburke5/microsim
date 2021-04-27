@@ -8,7 +8,6 @@ from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.dementia_model import DementiaModel
-from microsim.dementia_model_gompertz import DementiaModelGompertz
 from microsim.test.do_not_change_risk_factors_model_repository import DoNotChangeRiskFactorsModelRepository
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.initialization_repository import InitializationRepository
@@ -187,15 +186,3 @@ class TestDementiaModel(unittest.TestCase):
         actual_risk = DementiaModel().linear_predictor_vectorized(p2_data)
 
         self.assertAlmostEqual(-1.122424, actual_risk, places=5)
-
-    def test_dementia_after_one_year_gompertz(self):
-        self.assertAlmostEqual(-9.990598486, DementiaModelGompertz().linear_predictor(person=self._test_case_one_parameteric), places=1)
-        self.assertAlmostEqual(5.19E-05, DementiaModelGompertz().get_risk_for_person(person=self._test_case_one_parameteric, years=1), places=1)
-
-    def test_dementia_after_one_year_person_two_gompertz(self):
-        self.assertAlmostEqual(-5.804540672, DementiaModelGompertz().linear_predictor(person=self._test_case_two_parametric), places=1)
-        self.assertAlmostEqual(0.003411382, DementiaModelGompertz().get_risk_for_person(person=self._test_case_two_parametric, years=1), places=1)
-
-    def test_dementia_after_one_year_person_three_gompertz(self):
-        self.assertAlmostEqual(-6.018035196, DementiaModelGompertz().linear_predictor(person=self._test_case_three_parametric), places=1)
-        self.assertAlmostEqual(0.002755566, DementiaModelGompertz().get_risk_for_person(person=self._test_case_three_parametric, years=1), places=1)
