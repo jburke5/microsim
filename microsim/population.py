@@ -63,15 +63,6 @@ class Population:
         for person in self._people:
             person.reset_to_baseline()
 
-    def advance(self, years):
-        for yearIndex in range(years):
-            logging.info(f"processing year: {yearIndex}")
-            self._currentWave += 1
-            for person in self._people:
-                self.advance_person(person)
-            self.apply_recalibration_standards()
-            self._totalWavesAdvanced += 1
-
     # trying to work this out. if we do get it worked out, then we probably want to rebuild the person to use systematic data structrures
     # (i.e. static attributes, time-varying attributes)
     # also, will need to thikn about ways to make sure that the dataframe version of reality stays synced with teh "patient-based" version of reality
