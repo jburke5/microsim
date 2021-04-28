@@ -182,6 +182,7 @@ class Population:
         person._bpMedsAdded.append(x.bpMedsAddedNext)
         if not person.is_dead():
             person._age.append(x.age)
+            person._alive.append(True)
         return person
 
     def move_people_df_forward(self, df):
