@@ -94,6 +94,13 @@ class addABPMedStrokeLargeEffectSize:
         x.dbpNext = x.dbpNext - self._dbp_lowering
         return x
 
+    def rollback_changes_vectorized(self, x):
+        x.antiHypertensiveCountNext = x.antiHypertensiveCountNext - 1
+        x.sbpNext = x.sbpNext + self._sbp_lowering
+        x.dbpNext = x.dbpNext + self._dbp_lowering
+        x.bpMedsAddedNext = 0
+        return x     
+
 
 class addABPMedStrokeHarm(addABPMedStrokeLargeEffectSize):
     def get_treatment_recalibration_for_population(self):
