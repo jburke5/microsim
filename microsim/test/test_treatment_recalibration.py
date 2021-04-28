@@ -35,6 +35,8 @@ class TestOftenStrokeModelRepository(OutcomeModelRepository):
         return False
 
 
+
+
 class TestOftenMIModelRepository(OutcomeModelRepository):
     def __init__(self, mi_rate):
         super().__init__()
@@ -93,6 +95,13 @@ class addABPMedStrokeLargeEffectSize:
         x.dbpNext = x.dbpNext - self._dbp_lowering
         return x
 
+    def rollback_changes_vectorized(self, x):
+        x.antiHypertensiveCountNext = x.antiHypertensiveCountNext - 1
+        x.sbpNext = x.sbpNext + self._sbp_lowering
+        x.dbpNext = x.dbpNext + self._dbp_lowering
+        x.bpMedsAddedNext = 0
+        return x     
+
 
 class addABPMedStrokeHarm(addABPMedStrokeLargeEffectSize):
     def get_treatment_recalibration_for_population(self):
@@ -118,7 +127,7 @@ class addABPMedMILargeEffectSize(addABPMedStrokeLargeEffectSize):
 
 class TestTreatmentRecalibration(unittest.TestCase):
     def setUp(self):
-        self.popSize = 1000
+        self.popSize = 500
 
     # if we specify an effect size that is clinically smaller than the target...
     # then the test should rollback strokes so that we end up with fewer strokes...
@@ -147,6 +156,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
     def testRecalibrationReducesStrokesWhenEffectSizeIsClincallyLargerButNumericallySmaller(self):
         alwaysStrokePop = NHANESDirectSamplePopulation(self.popSize, 2001)
         alwaysStrokePop._outcome_model_repository = TestOftenStrokeModelRepository(0.5)
+
         alwaysStrokePop.advance_vectorized(1)
         # about half of people shoudl have strokes
         numberOfStrokesInBasePopulation = pd.Series(
@@ -159,6 +169,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         alwaysStrokePop.advance_vectorized(1)
         numberOfStrokesInRecalibratedPopulation = pd.Series(
             [person.has_stroke_during_simulation() for i, person in alwaysStrokePop._people.iteritems()]).sum()
+
         self.assertGreater(numberOfStrokesInBasePopulation, numberOfStrokesInRecalibratedPopulation)
 
     # if we specify an effect size that is clincally smaller than the target...
@@ -166,6 +177,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
     def testRecalibrationIncreasesSIsWhenEffectSizeIsClincallySmallerButNumericallyLarger(self):
         alwaysMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
         alwaysMIPop._outcome_model_repository = TestOftenMIModelRepository(0.5)
+
         alwaysMIPop.advance_vectorized(1)
         # about half of people have an MI at baseline
         numberOfMIsInBasePopulation = pd.Series(
@@ -178,6 +190,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         alwaysMIPop.advance_vectorized(1)
         numberOfMIsInRecalibratedPopulation = pd.Series(
             [person.has_mi_during_simulation() for i, person in alwaysMIPop._people.iteritems()]).sum()
+
         self.assertLess(numberOfMIsInBasePopulation,
                         numberOfMIsInRecalibratedPopulation)
 
@@ -186,6 +199,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
     def testRecalibrationReducesMIsWhenEffectSizeIsClincallyLargerButNumericallySmaller(self):
         neverMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
         neverMIPop._outcome_model_repository = TestOftenMIModelRepository(0.5)
+
         neverMIPop.advance_vectorized(1)
         # abou thalf of hte population has an MI at baseline
         numberOfMIsInBasePopulation = pd.Series(
@@ -198,6 +212,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         neverMIPop.advance_vectorized(1)
         numberOfMIsInRecalibratedPopulation = pd.Series(
             [person.has_mi_during_simulation() for i, person in neverMIPop._people.iteritems()]).sum()
+
         self.assertGreater(numberOfMIsInBasePopulation, numberOfMIsInRecalibratedPopulation)
 
 if __name__ == "__main__":

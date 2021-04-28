@@ -33,6 +33,13 @@ class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
         x.dbpNext = x.dbpNext - AddASingleBPMedTreatmentStrategy.dbpLowering
         return x
 
+    def rollback_changes_vectorized(self, x):
+        x.antiHypertensiveCountNext = x.antiHypertensiveCountNext - 1
+        x.sbpNext = x.sbpNext + AddASingleBPMedTreatmentStrategy.sbpLowering
+        x.dbpNext = x.dbpNext + AddASingleBPMedTreatmentStrategy.dbpLowering
+        x.bpMedsAddedNext = 0
+        return x     
+
 
 class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
     sbpLowering = 5.5
@@ -69,6 +76,13 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
         x.dbpNext = x.dbpNext - medsNeeded * AddBPTreatmentMedsToGoal120.dbpLowering
         return x
 
+    def rollback_changes_vectorized(self, x):
+        x.antiHypertensiveCountNext = x.antiHypertensiveCountNext -x.bpMedsAddedNext 
+        x.sbpNext = x.sbpNext + x.bpMedsAddedNext * AddBPTreatmentMedsToGoal120.sbpLowering
+        x.dbpNext = x.dbpNext + x.bpMedsAddedNext * AddBPTreatmentMedsToGoal120.dbpLowering
+        x.bpMedsAddedNext = 0
+        return x         
+
 
 class NoBPTreatmentNoBPChange(BaseTreatmentStrategy):
     def __init__(self):
@@ -91,7 +105,10 @@ class NoBPTreatmentNoBPChange(BaseTreatmentStrategy):
 
     def get_changes_vectorized(self, x):
         x.bpMedsAddedNext = 0
-        x.antiHypertensiveCountNext = 0
+        x.antiHypertensiveCountNext = x.antiHypertensiveCount
         x.sbpNext = x.sbp
         x.dbpNext = x.dbp
-        return x        
+        return x       
+
+    def rollback_changes_vectorized(self, x):
+        return x         

@@ -135,7 +135,6 @@ class Person:
         
 
         self._bpTreatmentStrategy = None
-        self._rolledBackOutcomes = []
 
     def reset_to_baseline(self):
         self._alive = [True]
@@ -374,7 +373,6 @@ class Person:
         if (outcome_rolled_back)[1].fatal:
             self._alive[-1] = True
             self._age.append(self._age[-1]+1)
-        self._rolledBackOutcomes.append(outcome_rolled_back) 
 
     def advance_treatment(self, risk_model_repository):
         if (risk_model_repository is not None):
