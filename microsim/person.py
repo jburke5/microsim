@@ -155,6 +155,9 @@ class Person:
         self._otherLipidLoweringMedicationCount = [self._otherLipidLoweringMedicationCount[0]]
         self._bpTreatmentStrategy = None
         self._gcp = [self._gcp[0]]
+        self._qalys = [self._qalys[0]]
+        self._afib = [self._afib[0]]
+        self._bpMedsAdded = [self._bpMedsAdded  [0]]
 
         # iterate through outcomes and remove those that occured after the simulation started
         for type, outcomes_for_type in self._outcomes.items():
@@ -274,7 +277,7 @@ class Person:
     def alive_at_start_of_wave(self, start_wave_num):
         if (self._alive[-1]) and (start_wave_num > (len(self._age))):
             raise Exception(
-                f"Trying to find status for a wave: {start_wave_num} beyond current wave: {len(self._age)}")
+                f"Trying to find status for a wave: {start_wave_num}, beyond current wave: {len(self._age)}, index: {self._populationIndex}, person: {self}")
 
         # we always know, regardless of what wave is being inquired about, that a person who was once dead
         # is still dead
@@ -315,7 +318,7 @@ class Person:
     def has_outcome_during_wave(self, wave, outcomeType):
         if (wave <= 0) or (self._alive[-1] and wave > len(self._age)-1):
             raise Exception(
-                f"Can not have an event in a wave ({wave}) before 1 or after last wave ({len(self._age)-1}) for person")
+                f"Can not have an event in a wave ({wave}) before 1 or after last wave ({len(self._age)-1}). On person ({self})")
         elif (not self._alive[-1]) and (wave > len(self._age)):
             return False
         return (len(self._outcomes[outcomeType]) != 0 and
@@ -367,7 +370,7 @@ class Person:
         rollbackAge = self._age[-1]-1 if self._alive[-1] else self._age[-1]
         if rollbackAge != outcome_rolled_back[0]:
             raise Exception(
-                f'# of outcomes: {len(outcomes_for_type)} while trying to rollback event at age {outcome_rolled_back[0]}, but current age is {rollbackAge} - can not roll back if age has changed')
+                f'# of outcomes: {len(outcomes_for_type)} while trying to rollback event at age {outcome_rolled_back[0]}, but current age is {rollbackAge} - can not roll back if age has changed, for person: {self}')
 
         # and, if it was fatal, reset the person to being alive.
         if (outcome_rolled_back)[1].fatal:
@@ -534,7 +537,8 @@ class Person:
                 f"education={Education(self._education)}, "
                 f"antiHypertensiveCount={self._antiHypertensiveCount[-1]}, "
                 f"otherLipid={self._otherLipidLoweringMedicationCount[-1]}, "
-                f"statin={self._statin[-1]}"
+                f"statin={self._statin[-1]}, "
+                f"index={self._populationIndex if self._populationIndex is not None else None}"
                 f")")
 
     def __ne__(self, obj):

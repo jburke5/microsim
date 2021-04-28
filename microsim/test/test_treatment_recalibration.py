@@ -27,12 +27,13 @@ class TestOftenStrokeModelRepository(OutcomeModelRepository):
             x.strokeNext = False
             x.deadNext = False
         return x
-
     def get_risk_for_person(self, person, outcomeModelType, years=1, vectorized=False):
         return self._stroke_rate
 
     def assign_non_cv_mortality(self, person):
         return False
+
+
 
 
 class TestOftenMIModelRepository(OutcomeModelRepository):
@@ -118,7 +119,7 @@ class addABPMedMILargeEffectSize(addABPMedStrokeLargeEffectSize):
 
 class TestTreatmentRecalibration(unittest.TestCase):
     def setUp(self):
-        self.popSize = 1000
+        self.popSize = 500
 
     # if we specify an effect size that is clinically smaller than the target...
     # then the test should rollback strokes so that we end up with fewer strokes...
@@ -159,6 +160,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         alwaysStrokePop.advance_vectorized(1)
         numberOfStrokesInRecalibratedPopulation = pd.Series(
             [person.has_stroke_during_simulation() for i, person in alwaysStrokePop._people.iteritems()]).sum()
+
         self.assertGreater(numberOfStrokesInBasePopulation, numberOfStrokesInRecalibratedPopulation)
 
     # if we specify an effect size that is clincally smaller than the target...
@@ -178,6 +180,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         alwaysMIPop.advance_vectorized(1)
         numberOfMIsInRecalibratedPopulation = pd.Series(
             [person.has_mi_during_simulation() for i, person in alwaysMIPop._people.iteritems()]).sum()
+
         self.assertLess(numberOfMIsInBasePopulation,
                         numberOfMIsInRecalibratedPopulation)
 
@@ -198,6 +201,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         neverMIPop.advance_vectorized(1)
         numberOfMIsInRecalibratedPopulation = pd.Series(
             [person.has_mi_during_simulation() for i, person in neverMIPop._people.iteritems()]).sum()
+
         self.assertGreater(numberOfMIsInBasePopulation, numberOfMIsInRecalibratedPopulation)
 
 if __name__ == "__main__":
