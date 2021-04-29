@@ -37,19 +37,22 @@ class TestOftenStrokeModelRepository(OutcomeModelRepository):
 
 
 class TestOftenMIModelRepository(OutcomeModelRepository):
-    def __init__(self, mi_rate):
+    def __init__(self, mi_rate, fatality_rate = 0.0, non_cv_mortality_rate = 0.0):
         super().__init__()
         self._mi_rate = mi_rate
+        self._fatality_rate = fatality_rate
+        self._non_cv_mortality_rate = non_cv_mortality_rate
 
     # override base class and always return a MI event
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
-        return Outcome(OutcomeType.MI, False) if np.random.random() < self._mi_rate else None
+        return Outcome(OutcomeType.MI, np.random.random() < self._fatality_rate) if np.random.random() < self._mi_rate else None
 
     def assign_cv_outcome_vectorized(self, x):
         if np.random.random() < self._mi_rate:
             x.miNext = True
             x.strokeNext = False
-            x.deadNext = False
+            x.deadNext = np.random.random() < self._fatality_rate
+            x.miFatal = x.deadNext
             x.ageAtFirstMI = x.age if (x.ageAtFirstMI is None) or (np.isnan(x.ageAtFirstMI)) else x.ageAtFirstMI
         else:
             x.miNext = False
@@ -61,7 +64,11 @@ class TestOftenMIModelRepository(OutcomeModelRepository):
         return self._mi_rate
 
     def assign_non_cv_mortality(self, person):
-        return False
+        return np.random.uniform(size=1)[0] < self._non_cv_mortality_rate
+
+    def assign_non_cv_mortality_vectorized(self, person, years=1):
+        return np.random.uniform(size=1)[0] < self._non_cv_mortality_rate
+
 
 
 # Can't inherit from BaseTreatmentStrategy/AddASingleBPMedTreatmentStrategy:
@@ -210,6 +217,55 @@ class TestTreatmentRecalibration(unittest.TestCase):
             [person.has_mi_during_simulation() for i, person in neverMIPop._people.iteritems()]).sum()
 
         self.assertGreater(numberOfMIsInBasePopulation, numberOfMIsInRecalibratedPopulation)
+
+    def testRollbackFatalEventsRollsBackDeath(self):
+        neverMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
+        neverMIPop._outcome_model_repository = TestOftenMIModelRepository(1.0, 1.0)
+        neverMIPop.advance_vectorized(1)
+        # the whole popuulation should have MIs at baseline
+        numberOfMIsInBasePopulation = pd.Series(
+            [person.has_mi_during_simulation() for i, person in neverMIPop._people.iteritems()]).sum()
+        self.assertEqual(self.popSize, numberOfMIsInBasePopulation)
+        numberOfFatalMIsInBasePopulation = pd.Series(
+            [person.has_mi_during_simulation() & person.is_dead() for i, person in neverMIPop._people.iteritems()]).sum()
+        self.assertEqual(self.popSize, numberOfFatalMIsInBasePopulation)
+
+        neverMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
+        neverMIPop._outcome_model_repository = TestOftenMIModelRepository(1.0, 1.0)
+        # this requires that we rollback a lot of events.
+        neverMIPop.set_bp_treatment_strategy(addABPMedMILargeEffectSize())
+        neverMIPop.advance_vectorized(1)
+
+        numberOfMIsAfterRecalibration = pd.Series(
+            [person.has_mi_during_simulation() for i, person in neverMIPop._people.iteritems()]).sum()
+        numberOfFatalMIsAfterRecalibration = pd.Series(
+            [person.has_mi_during_simulation() & person.is_dead() for i, person in neverMIPop._people.iteritems()]).sum()
+        
+        self.assertGreater(numberOfFatalMIsInBasePopulation, numberOfFatalMIsAfterRecalibration)
+
+    def testAdvanceAfterRollbackWorksOnWholePopulation(self):
+        oftenMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
+        oftenMIPop._outcome_model_repository = TestOftenMIModelRepository(0.2, 0.2, 0.2)
+        # this requires that we rollback a lot of events.
+        oftenMIPop.set_bp_treatment_strategy(addABPMedMILargeEffectSize())
+        print("ABOUT TO BREAK")
+        oftenMIPop.advance_vectorized(5)
+
+        ageLength = pd.Series([len(person._age) for i, person in oftenMIPop._people.iteritems()])
+        dead = pd.Series([person.is_dead() for i, person in oftenMIPop._people.iteritems()])
+        print(ageLength.value_counts())
+
+        print(pd.crosstab(ageLength, dead))
+
+        numberWithFullFollowup = pd.Series(
+            [person.is_dead() or len(person._age) == 6 for i, person in oftenMIPop._people.iteritems()]).sum()
+        # some people were getting "lost" when they had events to rollback of if the had non CV daeths...
+        # this way everybody either is clearly marekd as dead or has compelte follow up
+        self.assertEqual(self.popSize, numberWithFullFollowup)
+
+
+
+
 
 if __name__ == "__main__":
     unittest.main()

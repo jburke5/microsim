@@ -83,9 +83,21 @@ class Population:
         pandarallel.initialize(verbose=1)
         # might not need this row...depends o n whethe we do an bulk update on people or an wave-abased update
         waveAtStartOfAdvance = self._currentWave
+
+        #redtag: this is for reporting...
+        self.rolledBackEvents = []
+        self.aliveDFsBefore = []
+        self.aliveDFsAfter = []
+
+        
         for yearIndex in range(years):
             logging.info(f"processing year: {yearIndex}")
+            print(f"dead at start of wave: {alive.dead.sum()}")
             alive = alive.loc[alive.dead == False]
+            # if everybody has died, break out of the loop, no need to keep moving forward
+            if (len(alive) == 0):
+                break
+            print(f"year: {yearIndex}, number alive: {len(alive)}")
             self._currentWave += 1
 
             # advance risk factors
@@ -117,7 +129,6 @@ class Population:
             alive = alive.apply(
                 self._outcome_model_repository.assign_cv_outcome_vectorized, axis='columns')
             
-            # reselect on survivors...because we don't want to set non-cv mortality on poepel that died from cv events.
             alive['gcp'] = alive.apply(
                 self._outcome_model_repository.get_gcp_vectorized, axis='columns')
             newDementia = alive.loc[~alive.dementia].apply(
@@ -125,12 +136,16 @@ class Population:
             alive['dementiaNext']  = newDementia
             alive.loc[alive['dementiaNext']==1, 'ageAtFirstDementia'] = alive.age
             alive['dementia'] = newDementia | alive['dementia']
+
+            numberAliveBeforeRecal = len(alive)
+            alive = self.apply_recalibration_standards(alive)
+            if len(alive) != numberAliveBeforeRecal:
+                raise Exception(f"number alive: {len(alive)} not equal to alive before recal {numberAliveBeforeRecal}")
+            alive['cvDeathNext'] =  alive['deadNext']
             alive['nonCVDeathNext'] = alive.apply(
                 self._outcome_model_repository.assign_non_cv_mortality_vectorized, axis='columns')
-            alive['cvDeathNext'] =  alive['deadNext']
             alive['deadNext'] = alive['nonCVDeathNext'] | alive['cvDeathNext']
 
-            alive = self.apply_recalibration_standards(alive)
 
             alive['qalyNext'] = alive.apply(
                 QALYAssignmentStrategy().get_qalys_vectorized, axis='columns')
@@ -138,23 +153,15 @@ class Population:
             alive.loc[~alive.dead, 'age'] = alive.age + 1
             self._totalWavesAdvanced += 1
 
-            #### OK ...now i have it...
-            #### this is where it goes sideways...
-            ### we rollback the even ton the person...
-            ### but, then we don't include that person in the DF because they were already excluded from the DF
-            ### in the next wave...because theyr'e "dead" in teh alive DF, but alive on the peson.
-
-            ### fix #1 — recalibrate on teh DF adn then push to people after that.
-            ### fix #2 — after recalibration, track which people were recalibrated and update teh alive DF
+            self.aliveDFsBefore.append(alive.copy(deep=True))
             alive = self.move_people_df_forward(alive)
+            self.aliveDFsAfter.append(alive.copy(deep=True))
+            
             # for efficieicny, we could try to do this all at the end...but, its a bit cleanear  to do it wave by wave
             alive.apply(self.push_updates_back_to_people, axis='columns')
             nextCols = [col for col in alive.columns if "Next" in col]
             alive.drop(columns=nextCols, inplace=True)
-
-            # for efficiency...probaly  want to also push this forward
         return alive, df
-
 
     def push_updates_back_to_people(self, x):
         person = self._people.iloc[int(x.populationIndex)]
@@ -171,7 +178,7 @@ class Population:
             attr = getattr(person, "_" + treatment)
             attr.append(x[treatment + str(self._currentWave)])
 
-        # advance outcomes
+        # advance outcomes - this will add CV eath
         for outcomeName, outcomeType in {'stroke':  OutcomeType.STROKE, 'mi': OutcomeType.MI, 'dementia': OutcomeType.DEMENTIA}.items():
             if x[outcomeName + "Next"]:
                 fatal = False if outcomeName == "dementia" else x[outcomeName + "Fatal"]
@@ -180,9 +187,14 @@ class Population:
         person._gcp.append(x.gcp)
         person._qalys.append(x.qalyNext)
         person._bpMedsAdded.append(x.bpMedsAddedNext)
-        if not person.is_dead():
-            person._age.append(x.age)
-            person._alive.append(True)
+        
+        # add non CV death to person objects
+        if x.nonCVDeathNext:
+            person._alive.append(False)
+        
+        # only advance age in survivors
+        if not x.deadNext:
+            person._age.append(person._age[-1]+1)
         return person
 
     def move_people_df_forward(self, df):
@@ -271,7 +283,7 @@ class Population:
 
         # hacktag related to above — roll back the treatment effect...
         recalibration_df = recalibration_df.apply(self._bpTreatmentStrategy.get_changes_vectorized, axis='columns')
-
+        recalibration_df['rolledBackEventType'] = None
         maxMeds = 5
         # recalibrate within each group of added medicaitons so that we can stratify the treamtnet effects
         for i in range(1, maxMeds+1):
@@ -293,7 +305,9 @@ class Population:
 
                 recalibration_df.loc[recalibratedForMedCount.index, 'strokeNext'] = recalibratedForMedCount['strokeNext']
                 recalibration_df.loc[recalibratedForMedCount.index, 'strokeFatal'] = recalibratedForMedCount['strokeFatal']
+                recalibration_df.loc[recalibratedForMedCount.index, 'deadNext'] = recalibratedForMedCount['deadNext']
                 recalibration_df.loc[recalibratedForMedCount.index, 'ageAtFirstStroke'] = recalibratedForMedCount['ageAtFirstStroke']
+                recalibration_df.loc[recalibratedForMedCount.index, 'rolledBackEventType'] = recalibratedForMedCount['rolledBackEventType']
 
                 # recalibrate MI
                 recalibratedForMedCount = self.create_or_rollback_events_to_correct_calibration(recalibration_standard_for_med_count,
@@ -305,7 +319,10 @@ class Population:
                                                                       recalibrationPopForMedCount)
                 recalibration_df.loc[recalibratedForMedCount.index, 'miNext'] = recalibratedForMedCount['miNext']
                 recalibration_df.loc[recalibratedForMedCount.index, 'miFatal'] = recalibratedForMedCount['miFatal']
+                recalibration_df.loc[recalibratedForMedCount.index, 'deadNext'] = recalibratedForMedCount['deadNext']
                 recalibration_df.loc[recalibratedForMedCount.index, 'ageAtFirstMI'] = recalibratedForMedCount['ageAtFirstMI']
+                recalibration_df.loc[recalibratedForMedCount.index, 'rolledBackEventType'] = recalibratedForMedCount['rolledBackEventType']
+
         return recalibration_df
 
                 
@@ -360,6 +377,11 @@ class Population:
                                                                                    replace=False,
                                                                                    weights=1-eventsForPeople[untreatedRiskVar].values)
                 recalibration_pop.loc[events_to_rollback.index, nextEventVar] = False
+                recalibration_pop.loc[events_to_rollback.index, eventVar + 'Fatal'] = False
+                recalibration_pop.loc[events_to_rollback.index, 'deadNext'] = False
+                recalibration_pop.loc[events_to_rollback.index, ageAtFirstVar] = np.minimum(recalibration_pop.loc[events_to_rollback.index].age, recalibration_pop.loc[events_to_rollback.index][ageAtFirstVar])
+                recalibration_pop.loc[events_to_rollback.index, 'rolledBackEventType'] = eventVar 
+                self.rolledBackEvents.append({'type' : eventVar, 'events' : events_to_rollback})
         return recalibration_pop
 
     def get_people_alive_at_the_start_of_the_current_wave(self):

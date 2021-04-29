@@ -53,6 +53,8 @@ class QALYAssignmentStrategy:
             ageAtEvent = outcomeTuple[1]
             qalyListForOutcome = self._qalysForOutcome[outcomeType] if outcomeType in self._qalysForOutcome else None
             if qalyListForOutcome is not None and hasOutcome:
+                if (np.isnan(currentAge) or np.isnan(ageAtEvent)):
+                    print(f"ABOUT TO BREAK...current age: {currentAge}, age at event: {ageAtEvent}, outcomeTYpe: {outcomeType}, outcomeTuple: {outcomeTuple}")
                 yearsFromEvent = int(currentAge - ageAtEvent)
                 #print(f"current age: {currentAge}, age at event: {ageAtEvent}, outcome type: {outcomeType}, conditions: {conditions}, x: {x}")
                 if (yearsFromEvent >= len(qalyListForOutcome) and len(qalyListForOutcome) < 1):

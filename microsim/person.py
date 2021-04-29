@@ -538,7 +538,8 @@ class Person:
                 f"antiHypertensiveCount={self._antiHypertensiveCount[-1]}, "
                 f"otherLipid={self._otherLipidLoweringMedicationCount[-1]}, "
                 f"statin={self._statin[-1]}, "
-                f"index={self._populationIndex if self._populationIndex is not None else None}"
+                f"index={self._populationIndex if self._populationIndex is not None else None}, "
+                f"outcomes={self._outcomes}"
                 f")")
 
     def __ne__(self, obj):
