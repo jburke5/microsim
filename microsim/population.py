@@ -84,20 +84,12 @@ class Population:
         # might not need this row...depends o n whethe we do an bulk update on people or an wave-abased update
         waveAtStartOfAdvance = self._currentWave
 
-        #redtag: this is for reporting...
-        self.rolledBackEvents = []
-        self.aliveDFsBefore = []
-        self.aliveDFsAfter = []
-
-        
         for yearIndex in range(years):
             logging.info(f"processing year: {yearIndex}")
-            print(f"dead at start of wave: {alive.dead.sum()}")
             alive = alive.loc[alive.dead == False]
             # if everybody has died, break out of the loop, no need to keep moving forward
             if (len(alive) == 0):
                 break
-            print(f"year: {yearIndex}, number alive: {len(alive)}")
             self._currentWave += 1
 
             # advance risk factors
@@ -153,9 +145,7 @@ class Population:
             alive.loc[~alive.dead, 'age'] = alive.age + 1
             self._totalWavesAdvanced += 1
 
-            self.aliveDFsBefore.append(alive.copy(deep=True))
             alive = self.move_people_df_forward(alive)
-            self.aliveDFsAfter.append(alive.copy(deep=True))
             
             # for efficieicny, we could try to do this all at the end...but, its a bit cleanear  to do it wave by wave
             alive.apply(self.push_updates_back_to_people, axis='columns')
@@ -381,7 +371,6 @@ class Population:
                 recalibration_pop.loc[events_to_rollback.index, 'deadNext'] = False
                 recalibration_pop.loc[events_to_rollback.index, ageAtFirstVar] = np.minimum(recalibration_pop.loc[events_to_rollback.index].age, recalibration_pop.loc[events_to_rollback.index][ageAtFirstVar])
                 recalibration_pop.loc[events_to_rollback.index, 'rolledBackEventType'] = eventVar 
-                self.rolledBackEvents.append({'type' : eventVar, 'events' : events_to_rollback})
         return recalibration_pop
 
     def get_people_alive_at_the_start_of_the_current_wave(self):

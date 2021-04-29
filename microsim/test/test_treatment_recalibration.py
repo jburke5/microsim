@@ -248,14 +248,11 @@ class TestTreatmentRecalibration(unittest.TestCase):
         oftenMIPop._outcome_model_repository = TestOftenMIModelRepository(0.2, 0.2, 0.2)
         # this requires that we rollback a lot of events.
         oftenMIPop.set_bp_treatment_strategy(addABPMedMILargeEffectSize())
-        print("ABOUT TO BREAK")
         oftenMIPop.advance_vectorized(5)
 
         ageLength = pd.Series([len(person._age) for i, person in oftenMIPop._people.iteritems()])
         dead = pd.Series([person.is_dead() for i, person in oftenMIPop._people.iteritems()])
-        print(ageLength.value_counts())
 
-        print(pd.crosstab(ageLength, dead))
 
         numberWithFullFollowup = pd.Series(
             [person.is_dead() or len(person._age) == 6 for i, person in oftenMIPop._people.iteritems()]).sum()
