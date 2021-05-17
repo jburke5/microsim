@@ -340,6 +340,60 @@ class Population:
                 recalibration_pop.loc[events_to_rollback.index, 'rolledBackEventType'] = eventVar 
         return recalibration_pop
 
+    def get_people_alive_at_the_start_of_the_current_wave(self):
+        return self.get_people_alive_at_the_start_of_wave(self._currentWave)
+
+    def get_people_alive_at_the_start_of_wave(self, wave):
+        peopleAlive = []
+        for person in self._people:
+            if person.alive_at_start_of_wave(wave):
+                peopleAlive.append(person)
+        return pd.Series(peopleAlive)
+
+    def get_people_that_are_currently_alive(self):
+        return pd.Series([not person.is_dead() for _, person in self._people.iteritems()])
+
+    def get_number_of_patients_currently_alive(self):
+        self.get_people_that_are_currently_alive().sum()
+
+    def get_events_in_most_recent_wave(self, eventType):
+        peopleWithEvents = []
+        for _, person in self._people.iteritems():
+            if person.has_outcome_at_age(eventType, person._age[-1]):
+                peopleWithEvents.append(person)
+        return peopleWithEvents
+
+    def generate_starting_mean_patient(self):
+        df = self.get_people_initial_state_as_dataframe()
+        return Person(age=int(round(df.age.mean())),
+                      gender=NHANESGender(df.gender.mode()),
+                      raceEthnicity=NHANESRaceEthnicity(df.raceEthnicity.mode()),
+                      sbp=df.sbp.mean(),
+                      dbp=df.dbp.mean(),
+                      a1c=df.a1c.mean(),
+                      hdl=df.hdl.mean(),
+                      totChol=df.totChol.mean(),
+                      bmi=df.bmi.mean(),
+                      ldl=df.ldl.mean(),
+                      trig=df.trig.mean(),
+                      waist=df.waist.mean(),
+                      anyPhysicalActivity=df.anyPhysicalActivity.mode(),
+                      education=Education(df.education.mode()),
+                      smokingStatus=SmokingStatus(df.smokingStatus.mode()),
+                      antiHypertensiveCount=int(round(df.antiHypetensiveCount().mean())),
+                      statin=df.statin.mode(),
+                      otherLipidLoweringMedicationCount=int(
+                          round(df.otherLipidLoweringMedicationCount.mean())),
+                      initializeAfib=(lambda _: False),
+                      selfReportStrokeAge=None,
+                      selfReportMIAge=None,
+                      randomEffects=self._outcome_model_repository.get_random_effects())
+
+    def get_event_rate_in_simulation(self, eventType, duration):
+        events = [person.has_outcome_during_simulation_prior_to_wave(eventType, duration) for i, person in self._people.iteritems()]
+        totalTime = [person.years_in_simulation() if person.years_in_simulation() < duration  else duration for i, person in self._people.iteritems()]
+        return np.array(events).sum() / np.array(totalTime).sum()
+    
     def get_raw_incidence_by_age(self, eventType):
         popDF = self.get_people_current_state_as_dataframe()
 
@@ -596,6 +650,30 @@ class Population:
             df['mean' + var.capitalize()] = [pd.Series(getattr(person, "_" + var)).mean()
                                              for i, person in self._people.iteritems()]
         return df
+
+    def get_people_initial_state_as_dataframe(self):
+        return pd.DataFrame({'age': [person._age[0] for person in self._people],
+                             'gender': [person._gender for person in self._people],
+                             'raceEthnicity': [person._raceEthnicity for person in self._people],
+                             'sbp': [person._sbp[0] for person in self._people],
+                             'dbp': [person._dbp[0] for person in self._people],
+                             'a1c': [person._a1c[0] for person in self._people],
+                             'hdl': [person._hdl[0] for person in self._people],
+                             'ldl': [person._ldl[0] for person in self._people],
+                             'trig': [person._trig[0] for person in self._people],
+                             'totChol': [person._totChol[0] for person in self._people],
+                             'bmi': [person._bmi[0] for person in self._people],
+                             'anyPhysicalActivity': [person._anyPhysicalActivity[0] for person in self._people],
+                             'education': [person._education.value for person in self._people],
+                             'afib': [person._afib[0] for person in self._people],
+                             'antiHypertensiveCount': [person._antiHypertensiveCount[0] for person in self._people],
+                             'statin': [person._statin[0] for person in self._people],
+                             'otherLipidLoweringMedicationCount': [person._otherLipidLoweringMedicationCount[0] for person in self._people],
+                             'waist': [person._waist[0] for person in self._people],
+                             'smokingStatus': [person._smokingStatus for person in self._people],
+                             'miPriorToSim': [person._selfReportMIPriorToSim for person in self._people],
+                             'strokePriorToSim': [person._selfReportStrokePriorToSim for person in self._people],
+                             'totalQalys': [np.array(person._qalys).sum() for person in self._people]})
 
 
 def initializeAFib(person):
