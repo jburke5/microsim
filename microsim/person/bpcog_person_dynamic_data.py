@@ -5,7 +5,7 @@ from microsim.alcohol_category import AlcoholCategory
 @dataclass
 class BPCOGPersonDynamicData:
     """Dataclass containing dynamic data of a single Person during one tick."""
-    person_id: int
+    personId: int
     alive: bool
     age: int
     sbp: int
@@ -14,15 +14,15 @@ class BPCOGPersonDynamicData:
     hdl: int
     ldl: int
     trig: int
-    tot_chol: int
+    totChol: int
     bmi: float
     waist: int
-    any_physical_activity: bool
-    alcohol_per_week: AlcoholCategory
-    anti_hypertensive_count: int
+    anyPhysicalActivity: bool
+    alcoholPerWeek: AlcoholCategory
+    antiHypertensiveCount: int
     statin: int
-    other_lipid_lower_medication: int
-    bp_meds_added: int
+    otherLipidLowerMedication: int
+    bpMedsAdded: int
     afib: bool
     qalys: float
     gcp: float
