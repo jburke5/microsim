@@ -63,15 +63,6 @@ class Population:
         for person in self._people:
             person.reset_to_baseline()
 
-    def advance(self, years):
-        for yearIndex in range(years):
-            logging.info(f"processing year: {yearIndex}")
-            self._currentWave += 1
-            for person in self._people:
-                self.advance_person(person)
-            self.apply_recalibration_standards()
-            self._totalWavesAdvanced += 1
-
     # trying to work this out. if we do get it worked out, then we probably want to rebuild the person to use systematic data structrures
     # (i.e. static attributes, time-varying attributes)
     # also, will need to thikn about ways to make sure that the dataframe version of reality stays synced with teh "patient-based" version of reality
@@ -214,29 +205,6 @@ class Population:
 
         return df
 
-    def advance_person(self, person):
-        if not person.is_dead():
-            person.advance_year(self._risk_model_repository,
-                                self._outcome_model_repository,
-                                self._qaly_assignment_strategy)
-        return person
-
-    def advance_people(self, people):
-        return people.apply(self.advance_person)
-
-    def advance_multi_process(self, years):
-        for i in range(years):
-            self._currentWave += 1
-            logging.info(f"processing year: {i}")
-            data_split = np.array_split(self._people, self.num_of_processes)
-            pool = mp.Pool(self.num_of_processes)
-            self._people = pd.concat(pool.map(self.advance_people, data_split))
-            pool.close()
-            pool.join()
-
-            self.apply_recalibration_standards()
-            self._totalWavesAdvanced += 1
-
     def set_bp_treatment_strategy(self, bpTreatmentStrategy):
         self._bpTreatmentStrategy = bpTreatmentStrategy
         for person in self._people:
@@ -260,7 +228,6 @@ class Population:
     def recalibrate_bp_treatment(self, recalibration_df):
         treatment_outcome_standard = self._bpTreatmentStrategy.get_treatment_recalibration_for_population()
         # estimate risk for the people alive at the start of the wave
-        #recalibration_pop = self.get_people_alive_at_the_start_of_the_current_wave()
         self.estimate_risks(recalibration_df, "treated")
 
         # rollback the treatment effect.
