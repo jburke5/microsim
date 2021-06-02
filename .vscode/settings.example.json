@@ -8,6 +8,7 @@
     following command from the root of the repository:
     echo "$(poetry env info --path)/bin"
     */
+    "editor.formatOnSave": true,
     "python.pythonPath": "python",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": false,
