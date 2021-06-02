@@ -8,7 +8,7 @@ class Outcome:
         self.properties = {**kwargs}
 
     def __repr__(self):
-        return (f"Outcome type: {self.type}, fatal: {self.fatal}")
+        return f"Outcome type: {self.type}, fatal: {self.fatal}"
 
     def __eq__(self, other):
         if not isinstance(other, Outcome):

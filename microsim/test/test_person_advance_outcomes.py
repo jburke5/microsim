@@ -9,7 +9,7 @@ from microsim.education import Education
 from microsim.alcohol_category import AlcoholCategory
 from microsim.smoking_status import SmokingStatus
 from microsim.test.helper.init_vectorized_population_dataframe import (
-    init_vectorized_population_dataframe
+    init_vectorized_population_dataframe,
 )
 import unittest
 import copy
@@ -17,6 +17,7 @@ import copy
 
 def initializeAFib(person):
     return None
+
 
 class AlwaysPositiveOutcomeRepository(OutcomeModelRepository):
     def __init__(self):
@@ -37,7 +38,6 @@ class AlwaysNegativeOutcomeRepository(OutcomeModelRepository):
 
 
 class TestPersonAdvanceOutcomes(unittest.TestCase):
-
     def setUp(self):
         self.joe = Person(
             42,
@@ -59,7 +59,8 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             0,
             0,
             0,
-            initializeAFib)
+            initializeAFib,
+        )
 
         self.joe_with_mi = copy.deepcopy(self.joe)
         self.joe_with_mi.add_outcome_event(Outcome(OutcomeType.MI, False))
@@ -67,11 +68,10 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self.joe_with_stroke = copy.deepcopy(self.joe)
         self.joe_with_stroke.add_outcome_event(Outcome(OutcomeType.STROKE, False))
 
-        self._population_dataframe = init_vectorized_population_dataframe([
-            self.joe,
-            self.joe_with_mi,
-            self.joe_with_stroke
-        ], with_base_gcp=True,)
+        self._population_dataframe = init_vectorized_population_dataframe(
+            [self.joe, self.joe_with_mi, self.joe_with_stroke],
+            with_base_gcp=True,
+        )
 
         self._always_positive_repository = AlwaysPositiveOutcomeRepository()
         self._always_negative_repository = AlwaysNegativeOutcomeRepository()

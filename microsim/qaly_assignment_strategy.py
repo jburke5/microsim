@@ -19,12 +19,24 @@ class QALYAssignmentStrategy:
 
     def get_qalys_for_age_and_conditions(self, currentAge, conditions, dead, x=None):
         base = self.get_base_qaly_for_age(currentAge)
-        return 0 if dead else base * np.prod(self.get_multipliers_for_conditions(conditions, currentAge, x))
+        return (
+            0
+            if dead
+            else base * np.prod(self.get_multipliers_for_conditions(conditions, currentAge, x))
+        )
 
     def get_conditions_for_person(self, person):
-        return {OutcomeType.DEMENTIA: (person._dementia, person.get_age_at_first_outcome(OutcomeType.DEMENTIA)),
-                OutcomeType.STROKE: (person._stroke, person.get_age_at_first_outcome(OutcomeType.STROKE)),
-                OutcomeType.MI: (person._mi, person.get_age_at_first_outcome(OutcomeType.MI))}
+        return {
+            OutcomeType.DEMENTIA: (
+                person._dementia,
+                person.get_age_at_first_outcome(OutcomeType.DEMENTIA),
+            ),
+            OutcomeType.STROKE: (
+                person._stroke,
+                person.get_age_at_first_outcome(OutcomeType.STROKE),
+            ),
+            OutcomeType.MI: (person._mi, person.get_age_at_first_outcome(OutcomeType.MI)),
+        }
 
     # simple age-based approximation that after age 70, you lose about 0.01 QALYs per year
     # from: Netuveli, G. (2006). Quality of life at older ages: evidence from the English longitudinal study of aging (wave 1).
@@ -51,24 +63,37 @@ class QALYAssignmentStrategy:
         for outcomeType, outcomeTuple in conditions.items():
             hasOutcome = outcomeTuple[0]
             ageAtEvent = outcomeTuple[1]
-            qalyListForOutcome = self._qalysForOutcome[outcomeType] if outcomeType in self._qalysForOutcome else None
+            qalyListForOutcome = (
+                self._qalysForOutcome[outcomeType]
+                if outcomeType in self._qalysForOutcome
+                else None
+            )
             if qalyListForOutcome is not None and hasOutcome:
-                if (np.isnan(currentAge) or np.isnan(ageAtEvent)):
-                    print(f"ABOUT TO BREAK...current age: {currentAge}, age at event: {ageAtEvent}, outcomeTYpe: {outcomeType}, outcomeTuple: {outcomeTuple}")
+                if np.isnan(currentAge) or np.isnan(ageAtEvent):
+                    print(
+                        f"ABOUT TO BREAK...current age: {currentAge}, age at event: {ageAtEvent}, outcomeTYpe: {outcomeType}, outcomeTuple: {outcomeTuple}"
+                    )
                 yearsFromEvent = int(currentAge - ageAtEvent)
-                #print(f"current age: {currentAge}, age at event: {ageAtEvent}, outcome type: {outcomeType}, conditions: {conditions}, x: {x}")
-                if (yearsFromEvent >= len(qalyListForOutcome) and len(qalyListForOutcome) < 1):
+                # print(f"current age: {currentAge}, age at event: {ageAtEvent}, outcome type: {outcomeType}, conditions: {conditions}, x: {x}")
+                if yearsFromEvent >= len(qalyListForOutcome) and len(qalyListForOutcome) < 1:
                     raise RuntimeError(f"error 1: qalyListForOutcome: {qalyListForOutcome}")
-                elif (yearsFromEvent < len(qalyListForOutcome) and yearsFromEvent < 0):
-                    raise RuntimeError(f"error 2 qalyListForOutcome: {qalyListForOutcome} years from event: {yearsFromEvent} currentAge : {currentAge}, age at event: {ageAtEvent}")
-                qalys = qalyListForOutcome[-1] if yearsFromEvent >= len(
-                    qalyListForOutcome) else qalyListForOutcome[yearsFromEvent]
+                elif yearsFromEvent < len(qalyListForOutcome) and yearsFromEvent < 0:
+                    raise RuntimeError(
+                        f"error 2 qalyListForOutcome: {qalyListForOutcome} years from event: {yearsFromEvent} currentAge : {currentAge}, age at event: {ageAtEvent}"
+                    )
+                qalys = (
+                    qalyListForOutcome[-1]
+                    if yearsFromEvent >= len(qalyListForOutcome)
+                    else qalyListForOutcome[yearsFromEvent]
+                )
                 multipliers.append(qalys)
 
         return multipliers
 
     def get_qalys_vectorized(self, x):
-        conditions = {OutcomeType.DEMENTIA: (x.dementia or x.dementiaNext, x.ageAtFirstDementia),
-                      OutcomeType.STROKE: (x.strokeNext or x.stroke, x.ageAtFirstStroke),
-                      OutcomeType.MI: (x.miNext or x.mi, x.ageAtFirstMI)}
+        conditions = {
+            OutcomeType.DEMENTIA: (x.dementia or x.dementiaNext, x.ageAtFirstDementia),
+            OutcomeType.STROKE: (x.strokeNext or x.stroke, x.ageAtFirstStroke),
+            OutcomeType.MI: (x.miNext or x.mi, x.ageAtFirstMI),
+        }
         return self.get_qalys_for_age_and_conditions(x.age, conditions, x.dead, x)

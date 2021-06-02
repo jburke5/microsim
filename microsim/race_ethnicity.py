@@ -7,6 +7,7 @@ class NHANESRaceEthnicity(IntEnum):
 
     Follows RIDRETH1.
     """
+
     MEXICAN_AMERICAN = 1
     OTHER_HISPANIC = 2
     NON_HISPANIC_WHITE = 3

@@ -1,5 +1,4 @@
 class RiskModelRepository:
-
     def __init__(self):
         self._repository = {}
 

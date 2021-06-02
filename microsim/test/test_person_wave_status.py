@@ -44,14 +44,13 @@ class NonFatalStrokeAndNonCVMortality(OutcomeModelRepository):
         self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
 
-
     # override super to alays return a probability of each outcom eas 1
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
         return Outcome(OutcomeType.STROKE, 0)
 
     def assign_non_cv_mortality(self, person, years=1):
         return True
-    
+
     def get_gcp(self, person):
         return 50
 
@@ -62,7 +61,6 @@ class AgeOver50CausesNonCVMortality(OutcomeModelRepository):
         self._models = {}
         self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
-
 
     # override super to alays return a probability of each outcom eas 1
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
@@ -76,25 +74,52 @@ class AgeOver50CausesNonCVMortality(OutcomeModelRepository):
 
 
 class TestPersonWaveStatus(unittest.TestCase):
-
     def setUp(self):
-        self.oldJoe = Person(age=60, gender=NHANESGender.MALE,
-                             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
-                             sbp=140, dbp=90, a1c=5.5, hdl=50, totChol=200, bmi=25, ldl=90,
-                             trig=150, waist=45, anyPhysicalActivity=0,
-                             education=Education.COLLEGEGRADUATE,
-                             smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
-                             antiHypertensiveCount=0, statin=0, otherLipidLoweringMedicationCount=0,
-                             initializeAfib=initializeAFib)
+        self.oldJoe = Person(
+            age=60,
+            gender=NHANESGender.MALE,
+            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
+            sbp=140,
+            dbp=90,
+            a1c=5.5,
+            hdl=50,
+            totChol=200,
+            bmi=25,
+            ldl=90,
+            trig=150,
+            waist=45,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAFib,
+        )
 
-        self.youngJoe = Person(age=40, gender=NHANESGender.MALE,
-                               raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
-                               sbp=140, dbp=90, a1c=5.5, hdl=50, totChol=200, bmi=25, ldl=90,
-                               trig=150, waist=45, anyPhysicalActivity=0,
-                               education=Education.COLLEGEGRADUATE,
-                               smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
-                               antiHypertensiveCount=0, statin=0,
-                               otherLipidLoweringMedicationCount=0, initializeAfib=initializeAFib)
+        self.youngJoe = Person(
+            age=40,
+            gender=NHANESGender.MALE,
+            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
+            sbp=140,
+            dbp=90,
+            a1c=5.5,
+            hdl=50,
+            totChol=200,
+            bmi=25,
+            ldl=90,
+            trig=150,
+            waist=45,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAFib,
+        )
 
     def testStatusAfterFatalStroke(self):
         self.youngJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesFatalStroke())
@@ -162,6 +187,7 @@ class TestPersonWaveStatus(unittest.TestCase):
         self.assertEqual(True, self.oldJoe.has_stroke_during_simulation())
         self.assertEqual(True, self.oldJoe.has_stroke_during_wave(1))
         self.assertEqual(True, self.oldJoe.is_dead())
+
 
 if __name__ == "__main__":
     unittest.main()

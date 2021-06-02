@@ -1,4 +1,3 @@
-
 import unittest
 
 from microsim.population import NHANESDirectSamplePopulation

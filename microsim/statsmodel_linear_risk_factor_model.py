@@ -7,23 +7,25 @@ from microsim.model_argument_transform import get_all_argument_transforms
 
 INTERACTION_INDICATOR = "#"
 
+
 class StatsModelLinearRiskFactorModel:
     def __init__(self, regression_model, log_transform=False):
         self.standard_errors = regression_model._coefficient_standard_errors
         self.log_transform = log_transform
-        if (
-            hasattr(regression_model, "_residual_mean")
-            and hasattr(regression_model, "_residual_standard_deviation")
+        if hasattr(regression_model, "_residual_mean") and hasattr(
+            regression_model, "_residual_standard_deviation"
         ):
             self.residual_mean = regression_model._residual_mean
             self.residual_standard_deviation = regression_model._residual_standard_deviation
 
         self.parameters = {**(regression_model._coefficients)}
-        self.non_intercept_params = {k: v for k, v in self.parameters.items() if k != 'Intercept'}
+        self.non_intercept_params = {k: v for k, v in self.parameters.items() if k != "Intercept"}
         self.argument_transforms = get_all_argument_transforms(self.get_keys_for_transforms())
-        self.argument_transforms_vectorized = get_all_argument_transforms(self.get_keys_for_transforms(), True)
+        self.argument_transforms_vectorized = get_all_argument_transforms(
+            self.get_keys_for_transforms(), True
+        )
 
-    # method to be overriden by models that want to, in addition to the risks estimated by 
+    # method to be overriden by models that want to, in addition to the risks estimated by
     # the regression coefficients loaded from a model, also be able to apply some manual parameters.
     def get_manual_parameters(self, vectorized):
         return {}
@@ -39,15 +41,16 @@ class StatsModelLinearRiskFactorModel:
 
     def draw_from_residual_distribution(self):
         if not hasattr(self, "residual_mean") and hasattr(self, "residual_standard_deviation"):
-            raise RuntimeError("Cannot draw from residual distribution: model does not have"
-                               " residual information")
+            raise RuntimeError(
+                "Cannot draw from residual distribution: model does not have"
+                " residual information"
+            )
         return np.random.normal(
-            loc=self.residual_mean,
-            scale=self.residual_standard_deviation,
-            size=1)[0]
+            loc=self.residual_mean, scale=self.residual_standard_deviation, size=1
+        )[0]
 
     def get_intercept(self):
-        return self.parameters['Intercept']
+        return self.parameters["Intercept"]
 
     def get_model_argument_for_coeff_name(self, coeff_name, person):
         if coeff_name not in self.argument_transforms:
@@ -59,13 +62,13 @@ class StatsModelLinearRiskFactorModel:
         if isinstance(model_argument, list) or isinstance(model_argument, np.ndarray):
             model_argument = model_argument[-1]
         return model_argument
-    
+
     def contains_interaction(self, coeff_name):
         return INTERACTION_INDICATOR in coeff_name
 
     def get_interactions(self, coeff_name):
         return coeff_name.split(INTERACTION_INDICATOR)
-    
+
     def estimate_next_risk(self, person):
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
         linearPredictor = self.get_intercept()
@@ -78,16 +81,15 @@ class StatsModelLinearRiskFactorModel:
                 model_argument = reduce(lambda x, y: x * y, interactions, 1)
             else:
                 model_argument = self.get_model_argument_for_coeff_name(coeff_name, person)
-            
+
             linearPredictor += coeff_val * model_argument
-        
+
         for coeff_name, manual_tuple in self.get_manual_parameters(False).items():
-            # the tuple gives one item as the regression coefficent and the second item as a method 
+            # the tuple gives one item as the regression coefficent and the second item as a method
             # to get the values from a person
             linearPredictor += manual_tuple[0] * manual_tuple[1](person)
-        
-        
-        if (self.log_transform):
+
+        if self.log_transform:
             linearPredictor = np.exp(linearPredictor)
 
         return linearPredictor
@@ -101,20 +103,21 @@ class StatsModelLinearRiskFactorModel:
             if self.contains_interaction(coeff_name):
                 interactions = []
                 for interact in self.get_interactions(coeff_name):
-                    interactions.append(self.get_model_argument_for_coeff_name_vectorized(interact, x))
+                    interactions.append(
+                        self.get_model_argument_for_coeff_name_vectorized(interact, x)
+                    )
                 model_argument = reduce(lambda x, y: x * y, interactions, 1)
             else:
                 model_argument = self.get_model_argument_for_coeff_name_vectorized(coeff_name, x)
-            
+
             linearPredictor += coeff_val * model_argument
-        
+
         for coeff_name, manual_tuple in self.get_manual_parameters(True).items():
-            # the tuple gives one item as the regression coefficent and the second item as a method 
+            # the tuple gives one item as the regression coefficent and the second item as a method
             # to get the values from a person
             linearPredictor += manual_tuple[0] * manual_tuple[1](x)
-        
-        
-        if (self.log_transform):
+
+        if self.log_transform:
             linearPredictor = np.exp(linearPredictor)
 
         return linearPredictor
@@ -128,4 +131,3 @@ class StatsModelLinearRiskFactorModel:
                 transform.prop_name = prop_name
             model_argument = reduce(lambda v, t: t.apply(v), transforms, x)
         return model_argument
-

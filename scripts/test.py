@@ -10,7 +10,7 @@ def main():
         "--start-directory",
         "./microsim/test",
         "--pattern",
-        "test_*.py"
+        "test_*.py",
     ]
     proc = subprocess.run(args)
     exit(proc.returncode)

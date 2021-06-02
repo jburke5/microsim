@@ -81,219 +81,543 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
         self.baseAge = 55
         self.baseSBP = 120
         self._white_male = Person(
-            age=self.baseAge, gender=NHANESGender.MALE,
+            age=self.baseAge,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_copy_paste = Person(
-            age=self.baseAge, gender=NHANESGender.MALE,
+            age=self.baseAge,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_one_year = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_female = Person(
-            age=self.baseAge, gender=NHANESGender.FEMALE,
+            age=self.baseAge,
+            gender=NHANESGender.FEMALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._black_female = Person(
-            age=self.baseAge, gender=NHANESGender.FEMALE,
+            age=self.baseAge,
+            gender=NHANESGender.FEMALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_sbp = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP+10, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP + 10,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_dbp = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=90, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=90,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_a1c = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=7, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=7,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
             smokingStatus=SmokingStatus.NEVER,
-            alcohol=AlcoholCategory.NONE, antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_hdl = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=60, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=60,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_totChol = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=223, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=223,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_ldl = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=100, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=100,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_trig = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=160,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=160,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_bmi = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=25, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=25,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_waist = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=36, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=36,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_activity = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=1, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=1,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_minus_edudcation = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=1, education=Education.HIGHSCHOOLGRADUATE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=1,
+            education=Education.HIGHSCHOOLGRADUATE,
             smokingStatus=SmokingStatus.NEVER,
-            alcohol=AlcoholCategory.NONE, antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            alcohol=AlcoholCategory.NONE,
+            antiHypertensiveCount=0,
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_smoking = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=1, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.CURRENT, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=1,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.CURRENT,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_bpMed = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=1,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_statin = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=1, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib)
+            statin=1,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_lipid = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=1, initializeAfib=initializeAfib)
+            statin=0,
+            otherLipidLoweringMedicationCount=1,
+            initializeAfib=initializeAfib,
+        )
 
         self._white_male_plus_afib = Person(
-            age=self.baseAge+1, gender=NHANESGender.MALE,
+            age=self.baseAge + 1,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfibAlwaysPositive)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfibAlwaysPositive,
+        )
 
         self._baseline_stroke_person = Person(
-            age=self.baseAge, gender=NHANESGender.MALE,
+            age=self.baseAge,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib,
-            selfReportStrokeAge=50)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+            selfReportStrokeAge=50,
+        )
 
         self._baseline_stroke_person_copy_paste = Person(
-            age=self.baseAge, gender=NHANESGender.MALE,
+            age=self.baseAge,
+            gender=NHANESGender.MALE,
             raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=self.baseSBP, dbp=80, a1c=6, hdl=50, totChol=213, ldl=90, trig=150,
-            bmi=22, waist=34, anyPhysicalActivity=0, education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER, alcohol=AlcoholCategory.NONE,
+            sbp=self.baseSBP,
+            dbp=80,
+            a1c=6,
+            hdl=50,
+            totChol=213,
+            ldl=90,
+            trig=150,
+            bmi=22,
+            waist=34,
+            anyPhysicalActivity=0,
+            education=Education.COLLEGEGRADUATE,
+            smokingStatus=SmokingStatus.NEVER,
+            alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
-            statin=0, otherLipidLoweringMedicationCount=0, initializeAfib=initializeAfib,
-            selfReportStrokeAge=50)
+            statin=0,
+            otherLipidLoweringMedicationCount=0,
+            initializeAfib=initializeAfib,
+            selfReportStrokeAge=50,
+        )
 
     def testResetBasicAttributes(self):
-        self._white_male.advance_year(TestRiskModelRepository(),
-                                      AlwaysNonFatalStrokeOutcomeRepository())
-        self._baseline_stroke_person.advance_year(TestRiskModelRepository(),
-                                                  AlwaysFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+        )
+        self._baseline_stroke_person.advance_year(
+            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository()
+        )
         self.assertEqual(2, len(self._white_male._dbp))
 
         self._white_male.reset_to_baseline()
@@ -308,28 +632,34 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
         self.assertEqual(self.baseAge, self._white_male._age[-1])
 
     def testResetOutcomes(self):
-        self._white_male.advance_year(TestRiskModelRepository(),
-                                      AlwaysNonFatalStrokeOutcomeRepository())
-        self._baseline_stroke_person.advance_year(TestRiskModelRepository(),
-                                                  AlwaysFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+        )
+        self._baseline_stroke_person.advance_year(
+            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository()
+        )
         self.assertEqual(1, len(self._white_male._outcomes[OutcomeType.STROKE]))
         self._white_male.reset_to_baseline()
         self.assertEqual(0, len(self._white_male._outcomes[OutcomeType.STROKE]))
 
     def testResetOutcomesPreservesPreSimOutcomes(self):
-        self._white_male.advance_year(TestRiskModelRepository(),
-                                      AlwaysNonFatalStrokeOutcomeRepository())
-        self._baseline_stroke_person.advance_year(TestRiskModelRepository(),
-                                                  AlwaysFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+        )
+        self._baseline_stroke_person.advance_year(
+            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository()
+        )
         self.assertEqual(2, len(self._baseline_stroke_person._outcomes[OutcomeType.STROKE]))
         self._baseline_stroke_person.reset_to_baseline()
         self.assertEqual(1, len(self._baseline_stroke_person._outcomes[OutcomeType.STROKE]))
 
     def testRollbackNonFatalEvent(self):
-        self._white_male.advance_year(TestRiskModelRepository(),
-                                      AlwaysNonFatalStrokeOutcomeRepository())
-        self._baseline_stroke_person.advance_year(TestRiskModelRepository(),
-                                                  AlwaysFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+        )
+        self._baseline_stroke_person.advance_year(
+            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository()
+        )
         self.assertEqual(False, self._white_male.has_stroke_prior_to_simulation())
         self.assertEqual(True, self._white_male.has_stroke_during_simulation())
         self.assertEqual(True, self._white_male.has_stroke_during_wave(1))
@@ -341,10 +671,12 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
         self.assertEqual(False, self._white_male.has_stroke_during_simulation())
 
     def testRollbackFatalEvent(self):
-        self._white_male.advance_year(TestRiskModelRepository(),
-                                      AlwaysNonFatalStrokeOutcomeRepository())
-        self._baseline_stroke_person.advance_year(TestRiskModelRepository(),
-                                                  AlwaysFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+        )
+        self._baseline_stroke_person.advance_year(
+            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository()
+        )
         self.assertEqual(True, self._baseline_stroke_person.has_stroke_during_simulation())
         self.assertEqual(True, self._baseline_stroke_person.has_stroke_prior_to_simulation())
         self.assertEqual(True, self._baseline_stroke_person.has_stroke_during_wave(1))
@@ -356,7 +688,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
         self.assertEqual(False, self._baseline_stroke_person.has_stroke_during_wave(1))
         self.assertEqual(False, self._baseline_stroke_person.has_stroke_during_simulation())
         self.assertEqual(False, self._baseline_stroke_person.is_dead())
-        self.assertEqual(self.baseAge+1, self._baseline_stroke_person._age[-1])
+        self.assertEqual(self.baseAge + 1, self._baseline_stroke_person._age[-1])
 
     def testBasePatientEquals(self):
         self.assertTrue(self._white_male == self._white_male_copy_paste)
@@ -383,25 +715,30 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
     def testBaselineEqualityAfterAdvancingAYear(self):
         self._white_male.advance_year(TestRiskModelRepository(), NothingHappensRepository())
         self._white_male_copy_paste.advance_year(
-            TestRiskModelRepository(), NothingHappensRepository())
+            TestRiskModelRepository(), NothingHappensRepository()
+        )
         self.assertEqual(self._white_male, self._white_male_copy_paste)
 
     def testBasePatientWithBaselineStroke(self):
         self.assertNotEqual(self._white_male, self._baseline_stroke_person)
         self.assertEqual(self._baseline_stroke_person, self._baseline_stroke_person_copy_paste)
         self._baseline_stroke_person.advance_year(
-            TestRiskModelRepository(), NothingHappensRepository())
+            TestRiskModelRepository(), NothingHappensRepository()
+        )
         self._baseline_stroke_person_copy_paste.advance_year(
-            TestRiskModelRepository(), NothingHappensRepository())
+            TestRiskModelRepository(), NothingHappensRepository()
+        )
         self.assertEqual(self._baseline_stroke_person, self._baseline_stroke_person_copy_paste)
 
     def testBasePatientWithCVEvents(self):
         self.assertEqual(self._white_male_copy_paste, self._white_male)
-        self._white_male.advance_year(TestRiskModelRepository(),
-                                      AlwaysNonFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+        )
         self.assertNotEqual(self._white_male, self._white_male_copy_paste)
         self._white_male_copy_paste.advance_year(
-            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository())
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+        )
         self.assertEqual(self._white_male_copy_paste, self._white_male)
 
     def testBasePatientWithNonCVDeath(self):
@@ -409,7 +746,8 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
         self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository())
         self.assertNotEqual(self._white_male, self._white_male_copy_paste)
         self._white_male_copy_paste.advance_year(
-            TestRiskModelRepository(), NothingHappensRepository())
+            TestRiskModelRepository(), NothingHappensRepository()
+        )
         self.assertNotEqual(self._white_male_copy_paste, self._white_male)
 
     def testBasePatientWithNonCVDeathOtherWay(self):
@@ -417,15 +755,17 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
         self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository())
         self.assertNotEqual(self._white_male, self._white_male_copy_paste)
         self._white_male_copy_paste.advance_year(
-            TestRiskModelRepository(), AlwaysNonCVDeathRepository())
+            TestRiskModelRepository(), AlwaysNonCVDeathRepository()
+        )
         self.assertEqual(self._white_male_copy_paste, self._white_male)
 
     def testDeepCopy(self):
         self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
         self._white_male.advance_year(TestRiskModelRepository(), NothingHappensRepository())
         self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
-        self._white_male.advance_year(TestRiskModelRepository(),
-                                      AlwaysNonFatalStrokeOutcomeRepository())
+        self._white_male.advance_year(
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+        )
         self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
         self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository())
         self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
