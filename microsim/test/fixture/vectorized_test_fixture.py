@@ -8,7 +8,7 @@ from microsim.person import Person
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.test.helper.init_vectorized_population_dataframe import (
-    init_vectorized_population_dataframe
+    init_vectorized_population_dataframe,
 )
 
 
@@ -43,13 +43,14 @@ class VectorizedTestFixture(unittest.TestCase):
                 statin=0,
                 otherLipidLoweringMedicationCount=0,
                 initializeAfib=(lambda _: None),
-                randomEffects={'gcp': 0},
+                randomEffects={"gcp": 0},
             )
             base_gcp = GCPModel().calc_linear_predictor(test_person)
             test_person._gcp.append([base_gcp])
 
-            VectorizedTestFixture._population_dataframe = \
-                init_vectorized_population_dataframe([test_person])
+            VectorizedTestFixture._population_dataframe = init_vectorized_population_dataframe(
+                [test_person]
+            )
         return VectorizedTestFixture._population_dataframe
 
     def setUp(self):

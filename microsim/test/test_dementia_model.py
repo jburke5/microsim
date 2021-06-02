@@ -8,11 +8,13 @@ from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.dementia_model import DementiaModel
-from microsim.test.do_not_change_risk_factors_model_repository import DoNotChangeRiskFactorsModelRepository
+from microsim.test.do_not_change_risk_factors_model_repository import (
+    DoNotChangeRiskFactorsModelRepository,
+)
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.initialization_repository import InitializationRepository
 from microsim.test.helper.init_vectorized_population_dataframe import (
-    init_vectorized_population_dataframe
+    init_vectorized_population_dataframe,
 )
 
 
@@ -56,9 +58,10 @@ class TestDementiaModel(unittest.TestCase):
             statin=0,
             otherLipidLoweringMedicationCount=0,
             initializeAfib=TestDementiaModel.initializeAfib,
-            initializationRepository=InitializationRepository())
+            initializationRepository=InitializationRepository(),
+        )
         self._test_case_one._gcp[0] = 58.68
-        self._test_case_one._gcp.append(self._test_case_one._gcp[0] -1.1078128)
+        self._test_case_one._gcp.append(self._test_case_one._gcp[0] - 1.1078128)
 
         # 2740201178fos
         self._test_case_two = Person(
@@ -83,9 +86,10 @@ class TestDementiaModel(unittest.TestCase):
             statin=0,
             otherLipidLoweringMedicationCount=0,
             initializeAfib=TestDementiaModel.initializeAfib,
-            initializationRepository=InitializationRepository())
+            initializationRepository=InitializationRepository(),
+        )
         self._test_case_two._gcp[0] = 58.68
-        self._test_case_two._gcp.append(self._test_case_two._gcp[0] -1.7339989)
+        self._test_case_two._gcp.append(self._test_case_two._gcp[0] - 1.7339989)
 
         self._test_case_one_parameteric = Person(
             age=40,
@@ -109,7 +113,8 @@ class TestDementiaModel(unittest.TestCase):
             statin=0,
             otherLipidLoweringMedicationCount=0,
             initializeAfib=TestDementiaModel.initializeAfib,
-            initializationRepository=InitializationRepository())
+            initializationRepository=InitializationRepository(),
+        )
         self._test_case_one_parameteric._gcp[0] = 25
         # GCP slope is zero
         self._test_case_one_parameteric._gcp.append(self._test_case_one._gcp[0])
@@ -137,7 +142,8 @@ class TestDementiaModel(unittest.TestCase):
             statin=0,
             otherLipidLoweringMedicationCount=0,
             initializeAfib=TestDementiaModel.initializeAfib,
-            initializationRepository=InitializationRepository())
+            initializationRepository=InitializationRepository(),
+        )
         self._test_case_two_parametric._gcp[0] = 75
         self._test_case_two_parametric._gcp.append(self._test_case_two._gcp[0])
 
@@ -164,14 +170,17 @@ class TestDementiaModel(unittest.TestCase):
             statin=0,
             otherLipidLoweringMedicationCount=0,
             initializeAfib=TestDementiaModel.initializeAfib,
-            initializationRepository=InitializationRepository())
+            initializationRepository=InitializationRepository(),
+        )
         self._test_case_three_parametric._gcp[0] = 75
         self._test_case_three_parametric._gcp.append(self._test_case_two._gcp[0])
 
-        self._population_dataframe = init_vectorized_population_dataframe([
-            self._test_case_one,
-            self._test_case_two,
-        ])
+        self._population_dataframe = init_vectorized_population_dataframe(
+            [
+                self._test_case_one,
+                self._test_case_two,
+            ]
+        )
 
     def test_dementia_after_one_year(self):
         p1_data = self._population_dataframe.iloc[0]

@@ -19,16 +19,17 @@ class TestPopulation(unittest.TestCase):
         full_nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         test_nhanes = full_nhanes.loc[full_nhanes.year == 2015]
         self.test_sample = test_nhanes.sample(
-            self.test_n, weights=test_nhanes.WTINT2YR, random_state=self.pandas_seed, replace=True)
+            self.test_n, weights=test_nhanes.WTINT2YR, random_state=self.pandas_seed, replace=True
+        )
 
     def test_people_from_population(self):
         test_population = NHANESDirectSamplePopulation(
-            n=self.test_n, year=2015, random_seed=self.pandas_seed)
+            n=self.test_n, year=2015, random_seed=self.pandas_seed
+        )
         test_people = test_population._people
 
         test_ages = [x._age[0] for x in test_people]
-        self.assertAlmostEqual(
-            np.mean(test_ages), self.test_sample.age.mean(), delta=0.000001)
+        self.assertAlmostEqual(np.mean(test_ages), self.test_sample.age.mean(), delta=0.000001)
 
 
 def initializeAFib(person):
@@ -36,7 +37,6 @@ def initializeAFib(person):
 
 
 class TestPopulationAdvanceOutcomes(unittest.TestCase):
-
     def setUp(self):
         self.joe = Person(
             42,
@@ -62,7 +62,8 @@ class TestPopulationAdvanceOutcomes(unittest.TestCase):
             selfReportStrokeAge=None,
             selfReportMIAge=None,
             dfIndex=1,
-            diedBy2015=0)
+            diedBy2015=0,
+        )
 
     def test_dont_advance_dead_people_in_population(self):
         # add GCP to advance successfully

@@ -4,7 +4,9 @@ from microsim.person import Person
 from microsim.test.test_risk_model_repository import TestRiskModelRepository
 from microsim.education import Education
 from microsim.outcome import Outcome, OutcomeType
-from microsim.test.do_not_change_risk_factors_model_repository import DoNotChangeRiskFactorsModelRepository
+from microsim.test.do_not_change_risk_factors_model_repository import (
+    DoNotChangeRiskFactorsModelRepository,
+)
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.outcome_model_type import OutcomeModelType
 from microsim.dementia_model import DementiaModel
@@ -71,7 +73,6 @@ class AlwaysDementia(OutcomeModelRepository):
 
 
 class TestQALYAssignment(unittest.TestCase):
-
     def initializeAfib(person):
         return None
 
@@ -97,7 +98,8 @@ class TestQALYAssignment(unittest.TestCase):
             statin=0,
             otherLipidLoweringMedicationCount=0,
             initializeAfib=TestQALYAssignment.initializeAfib,
-            initializationRepository=InitializationRepository())
+            initializationRepository=InitializationRepository(),
+        )
 
     def setUp(self):
         self._hasNoConditions = self.getPerson()
@@ -114,11 +116,14 @@ class TestQALYAssignment(unittest.TestCase):
     def testStrokeQALYS(self):
         self.assertEqual(1, self._hasStroke._qalys[0])
         self._hasStroke.advance_year(
-            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke())
+            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke()
+        )
         self._hasStroke.advance_year(
-            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke())
+            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke()
+        )
         self._hasStroke.advance_year(
-            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke())
+            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke()
+        )
         self.assertEqual(1, self._hasStroke._qalys[0])
         self.assertEqual(0.67, self._hasStroke._qalys[1])
         self.assertEqual(0.9, self._hasStroke._qalys[2])
@@ -159,10 +164,11 @@ class TestQALYAssignment(unittest.TestCase):
     def testQALYsWithDeath(self):
         self.assertEqual(1, self._hasFatalStroke._qalys[0])
         self._hasFatalStroke.advance_year(
-            DoNotChangeRiskFactorsModelRepository(), AlwaysFatalStroke())
+            DoNotChangeRiskFactorsModelRepository(), AlwaysFatalStroke()
+        )
         self.assertEqual(1, self._hasFatalStroke._qalys[0])
         self.assertEqual(0, self._hasFatalStroke._qalys[1])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
