@@ -6,7 +6,6 @@ from microsim.alcohol_category import AlcoholCategory
 class BPCOGPersonDynamicData:
     """Dataclass containing dynamic data of a single Person during one tick."""
 
-    personId: int
     alive: bool
     age: int
     sbp: int

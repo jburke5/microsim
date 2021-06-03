@@ -9,7 +9,6 @@ from microsim.smoking_status import SmokingStatus
 class BPCOGPersonStaticData:
     """Dataclass containing static data of a single Person."""
 
-    personId: int
     gender: NHANESGender
     raceEthnicity: NHANESRaceEthnicity
     education: Education
