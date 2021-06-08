@@ -19,5 +19,5 @@ class BPCOGPersonStaticData:
 
     @property
     def dtype(self):
-        field_specs = [(f.name, pytype_to_nptype(f.type), 1) for f in fields(self)]
-        return field_specs
+        field_specs = [(f.name, pytype_to_nptype(f.type)) for f in fields(self)]
+        return np.dtype(field_specs)
