@@ -17,7 +17,16 @@ class BPCOGPersonStaticData:
     smokingStatus: SmokingStatus
     randomEffectsGcp: float
 
-    @property
-    def dtype(self):
-        field_specs = [(f.name, pytype_to_nptype(f.type)) for f in fields(self)]
+    @classmethod
+    def get_numpy_dtype(cls):
+        """Returns np.dtype that numpy can use to represent this class' data."""
+        field_specs = [(f.name, pytype_to_nptype(f.type)) for f in fields(cls)]
         return np.dtype(field_specs)
+
+    def as_numpy_arraylike(self):
+        """
+        Returns a tuple that, along with `get_numpy_dtype()`, numpy can use to create an array.
+        """
+        dtype = self.get_numpy_dtype()
+        values = tuple(getattr(self, name) for name in dtype.names)
+        return values
