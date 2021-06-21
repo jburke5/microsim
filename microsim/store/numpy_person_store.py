@@ -1,5 +1,6 @@
-from typing import Generic, TypeVar, List
+from typing import Generic, List, TypeVar
 import numpy as np
+
 
 
 S = TypeVar("S")  # _S_tatic data type
