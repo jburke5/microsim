@@ -8,7 +8,9 @@ from microsim.store.base_numpy_data_converter import BaseNumpyDataConverter
 class DataclassNumpyDataConverter(BaseNumpyDataConverter):
     """Converts dataclasses into Numpy array rows."""
 
-    def __init__(self, type: Type, *, field_pytype_to_nptype: Optional[Callable[[Type], Any]]):
+    def __init__(
+        self, type: Type, *, field_pytype_to_nptype: Optional[Callable[[Type], Any]] = None
+    ):
         if not is_dataclass(type):
             raise TypeError(f"Given argument `type` is not a dataclass: {type}")
         self._type = type
