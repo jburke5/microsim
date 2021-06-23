@@ -2,10 +2,10 @@ from dataclasses import fields, is_dataclass
 from typing import Any, Callable, Optional, Type
 import numpy as np
 from microsim.person.pytype_to_nptype import pytype_to_nptype
-from microsim.store.numpy_data_converter_protocol import NumpyDataConverterProtocol
+from microsim.store.base_numpy_data_converter import BaseNumpyDataConverter
 
 
-class DataclassNumpyDataConverter(NumpyDataConverterProtocol):
+class DataclassNumpyDataConverter(BaseNumpyDataConverter):
     """Converts dataclasses into Numpy array rows."""
 
     def __init__(self, type: Type, *, field_pytype_to_nptype: Optional[Callable[[Type], Any]]):
