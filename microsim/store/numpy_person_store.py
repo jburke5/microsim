@@ -10,7 +10,6 @@ class NumpyPersonStore(Generic[S]):
     """Holds Person data in numpy ndarrays."""
 
     def __init__(self, static_data: List[S], static_data_converter: BaseNumpyDataConverter[S]):
-        self._static_data_array = np.array(
-            [static_data_converter.to_row_tuple(s) for s in static_data],
-            dtype=static_data_converter.get_dtype(),
-        )
+        static_dtype = static_data_converter.get_dtype()
+        static_data_arraylike = [static_data_converter.to_row_tuple(d) for d in static_data]
+        self._static_data_array = np.array(static_data_arraylike, dtype=static_dtype)
