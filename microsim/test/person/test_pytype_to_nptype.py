@@ -2,16 +2,8 @@ from enum import IntEnum
 import unittest
 import numpy as np
 from microsim.person.pytype_to_nptype import pytype_to_nptype
-
-
-class PartialAlphabet(IntEnum):
-    A = 1
-    B = 2
-    C = 3
-
-
-class OtherType:
-    pass
+from microsim.test.helper.other_type import OtherType
+from microsim.test.helper.partial_alphabet import PartialAlphabet
 
 
 class TestPytypeToNptype(unittest.TestCase):
