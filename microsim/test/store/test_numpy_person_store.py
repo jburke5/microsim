@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from itertools import product
 from unittest import TestCase
 from microsim.store.numpy_person_store import NumpyPersonStore
 from microsim.store.dataclass_numpy_data_converter import DataclassNumpyDataConverter
@@ -44,26 +45,27 @@ class TestNumpyPersonStore(TestCase):
         actual_num_persons = store.get_num_persons()
         self.assertEqual(expected_num_persons, actual_num_persons)
 
-    def test_init_static_data_shorter_raises_error(self):
-        static_data = self._static_data[:2]
-        expected_msg = "Lengths of `static_data` and `dynamic_data` args do not match: 2 != 3"
+    def test_init_data_length_mismatch_raises_error(self):
+        # exhaustively test all permutations with mismatched lengths for 3 list of length 3
+        mistmatched_lengths = [
+            (i + 1, j + 1, k + 1) for i, j, k in product(range(3), repeat=3) if not (i == j == k)
+        ]
 
-        with self.assertRaises(ValueError, msg=expected_msg):
-            NumpyPersonStore(
-                static_data,
-                self._static_data_converter,
-                self._dynamic_data,
-                self._dynamic_data_converter,
+        for i, j, k in mistmatched_lengths:
+            static_data = self._static_data[:i]
+            dynamic_data = self._static_data[:j]
+            event_data = self._event_data[:k]
+            expected_msg = (
+                "Lengths of `static_data`, `dynamic_data`, and `event_data` args do not match:"
+                f" {i}, {j}, {k}"
             )
 
-    def test_init_dynamic_data_shorter_raises_error(self):
-        dynamic_data = self._dynamic_data[:1]
-        expected_msg = "Lengths of `static_data` and `dynamic_data` args do not match: 3 != 1"
-
-        with self.assertRaises(ValueError, msg=expected_msg):
-            NumpyPersonStore(
-                self._static_data,
-                self._static_data_converter,
-                dynamic_data,
-                self._dynamic_data_converter,
-            )
+            with self.assertRaises(ValueError, msg=expected_msg):
+                NumpyPersonStore(
+                    static_data,
+                    self._static_data_converter,
+                    dynamic_data,
+                    self._dynamic_data_converter,
+                    event_data,
+                    self._event_data_converter,
+                )
