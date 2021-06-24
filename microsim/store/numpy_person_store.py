@@ -27,7 +27,7 @@ class NumpyPersonStore(Generic[S, D]):
         self._num_persons = len_static
 
         static_dtype = static_data_converter.get_dtype()
-        static_data_arraylike = [static_data_converter.to_row_tuple(d) for d in static_data]
+        static_data_arraylike = [static_data_converter.to_row_tuple(s) for s in static_data]
         self._static_data_array = np.array(static_data_arraylike, dtype=static_dtype)
 
         dynamic_dtype = dynamic_data_converter.get_dtype()
