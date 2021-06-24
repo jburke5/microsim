@@ -9,11 +9,20 @@ class StaticTestData:
     starting_age: int
 
 
+@dataclass
+class DynamicTestData:
+    age: int
+
+
 class TestNumpyPersonStore(TestCase):
     def test_get_num_persons_canonical_returns_num_persons(self):
-        data = [StaticTestData(20), StaticTestData(40), StaticTestData(80)]
+        static_data = [StaticTestData(20), StaticTestData(40), StaticTestData(80)]
         static_data_converter = DataclassNumpyDataConverter(StaticTestData)
-        store = NumpyPersonStore(data, static_data_converter)
+        dynamic_data = [DynamicTestData(s.starting_age) for s in static_data]
+        dynamic_data_converter = DataclassNumpyDataConverter(DynamicTestData)
+        store = NumpyPersonStore(
+            static_data, static_data_converter, dynamic_data, dynamic_data_converter
+        )
         expected_num_persons = 3
 
         actual_num_persons = store.get_num_persons()
