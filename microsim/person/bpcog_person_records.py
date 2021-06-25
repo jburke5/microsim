@@ -48,3 +48,9 @@ class BPCOGPersonEventRecord(BasePersonRecord):
     mi: Outcome
     stroke: Outcome
     dementia: Outcome
+
+
+class BPCOGPersonRecord(BPCOGPersonStaticRecord, BPCOGPersonDynamicRecord, BPCOGPersonEventRecord):
+    """Contains all data for one Person during one tick."""
+
+    pass
