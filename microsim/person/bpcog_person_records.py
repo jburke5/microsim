@@ -1,5 +1,5 @@
+from typing_extensions import Protocol
 from microsim.alcohol_category import AlcoholCategory
-from microsim.person.base_person_record import BasePersonRecord
 from microsim.gender import NHANESGender
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.education import Education
@@ -7,7 +7,7 @@ from microsim.smoking_status import SmokingStatus
 from microsim.outcome import Outcome
 
 
-class BPCOGPersonStaticRecord(BasePersonRecord):
+class BPCOGPersonStaticRecordProtocol(Protocol):
     """Contains static data for one Person."""
 
     gender: NHANESGender
@@ -17,7 +17,7 @@ class BPCOGPersonStaticRecord(BasePersonRecord):
     randomEffectsGcp: float
 
 
-class BPCOGPersonDynamicRecord(BasePersonRecord):
+class BPCOGPersonDynamicRecordProtocol(Protocol):
     """Contains dynamic data for one Person at one tick."""
 
     alive: bool
@@ -42,7 +42,7 @@ class BPCOGPersonDynamicRecord(BasePersonRecord):
     gcp: float
 
 
-class BPCOGPersonEventRecord(BasePersonRecord):
+class BPCOGPersonEventRecordProtocol(Protocol):
     """Contains events that happened to one Person during one tick."""
 
     mi: Outcome
@@ -50,7 +50,12 @@ class BPCOGPersonEventRecord(BasePersonRecord):
     dementia: Outcome
 
 
-class BPCOGPersonRecord(BPCOGPersonStaticRecord, BPCOGPersonDynamicRecord, BPCOGPersonEventRecord):
+class BPCOGPersonRecordProtocol(
+    BPCOGPersonStaticRecordProtocol,
+    BPCOGPersonDynamicRecordProtocol,
+    BPCOGPersonEventRecordProtocol,
+    Protocol,  # need to explicitly inherit from `Protocol` to make this class a `Protocol`
+):
     """Contains all data for one Person during one tick."""
 
     pass
