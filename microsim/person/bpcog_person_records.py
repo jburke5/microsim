@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from microsim.person.inherit_annotations import inherit_annotations
 from typing_extensions import Protocol
 from microsim.alcohol_category import AlcoholCategory
 from microsim.gender import NHANESGender
@@ -58,4 +60,28 @@ class BPCOGPersonRecordProtocol(
 ):
     """Contains all data for one Person during one tick."""
 
+    pass
+
+
+@dataclass
+@inherit_annotations
+class BPCOGPersonStaticRecord(BPCOGPersonStaticRecordProtocol):
+    pass
+
+
+@dataclass
+@inherit_annotations
+class BPCOGPersonDynamicRecord(BPCOGPersonDynamicRecordProtocol):
+    pass
+
+
+@dataclass
+@inherit_annotations
+class BPCOGPersonEventRecord(BPCOGPersonEventRecordProtocol):
+    pass
+
+
+@dataclass
+@inherit_annotations
+class BPCOGPersonRecord(BPCOGPersonRecordProtocol):
     pass
