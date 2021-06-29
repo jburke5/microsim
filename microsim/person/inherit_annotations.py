@@ -8,6 +8,9 @@ def inherit_annotations(cls):
 
     annotations = {}
     for base_class in reversed(cls.__mro__):
-        annotations.update(base_class.__annotations__)
+        try:
+            annotations.update(base_class.__annotations__)
+        except AttributeError:
+            pass  # okay if not all classes have __annotations__
     cls.__annotations__ = annotations
     return cls
