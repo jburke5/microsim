@@ -41,32 +41,81 @@ class NHANESPersonRecordFactory:
         self._init_gcp = init_gcp
         self._init_qalys = init_qalys
 
-    def from_nhanes_dataset_row(self, row):
+    @property
+    def required_nhanes_column_names(self):
+        return [
+            "gender",
+            "raceEthnicity",
+            "education",
+            "smokingStatus",
+            "selfReportMIAge",
+            "selfReportStrokeAge",
+            "age",
+            "meanSBP",
+            "meanDBP",
+            "a1c",
+            "hdl",
+            "ldl",
+            "trig",
+            "tot_chol",
+            "bmi",
+            "waist",
+            "anyPhysicalActivity",
+            "alcoholPerWeek",
+            "antiHypertensive",
+            "statin",
+            "otherLipidLowering",
+        ]
+
+    def from_nhanes_dataset_row(
+        self,
+        gender,
+        raceEthnicity,
+        education,
+        smokingStatus,
+        selfReportMIAge,
+        selfReportStrokeAge,
+        age,
+        meanSBP,
+        meanDBP,
+        a1c,
+        hdl,
+        ldl,
+        trig,
+        tot_chol,
+        bmi,
+        waist,
+        anyPhysicalActivity,
+        alcoholPerWeek,
+        antiHypertensive,
+        statin,
+        otherLipidLowering,
+    ):
         random_effects = self._init_random_effects()
-        prior_mi = build_prior_mi_event(row.selfReportMIAge, row.age)
-        prior_stroke = build_prior_stroke_event(row.selfReportStrokeAge, row.age)
+        prior_mi = build_prior_mi_event(selfReportMIAge, age)
+        prior_stroke = build_prior_stroke_event(selfReportStrokeAge, age)
         person_record = BPCOGPersonRecord(
-            gender=NHANESGender(int(row.gender)),
-            raceEthnicity=NHANESRaceEthnicity(int(row.raceEthnicity)),
-            education=Education(int(row.education)),
-            smokingStatus=SmokingStatus(int(row.smokingStatus)),
+            gender=NHANESGender(int(gender)),
+            raceEthnicity=NHANESRaceEthnicity(int(raceEthnicity)),
+            education=Education(int(education)),
+            smokingStatus=SmokingStatus(int(smokingStatus)),
             randomEffectsGcp=random_effects["gcp"],
             alive=True,
-            age=row.age,
-            sbp=row.meanSBP,
-            dbp=row.meanDBP,
-            a1c=row.a1c,
-            hdl=row.hdl,
-            ldl=row.ldl,
-            trig=row.trig,
-            totChol=row.tot_chol,
-            bmi=row.bmi,
-            waist=row.waist,
-            anyPhysicalActivity=row.anyPhysicalActivity,
-            alcoholPerWeek=AlcoholCategory.get_category_for_consumption(row.alcoholPerWeek),
-            antiHypertensiveCount=row.antiHypertensive,
-            statin=row.statin,
-            otherLipidLowerMedication=row.otherLipidLowering,
+            age=age,
+            sbp=meanSBP,
+            dbp=meanDBP,
+            a1c=a1c,
+            hdl=hdl,
+            ldl=ldl,
+            trig=trig,
+            totChol=tot_chol,
+            bmi=bmi,
+            waist=waist,
+            anyPhysicalActivity=anyPhysicalActivity,
+            alcoholPerWeek=AlcoholCategory.get_category_for_consumption(alcoholPerWeek),
+            antiHypertensiveCount=antiHypertensive,
+            statin=statin,
+            otherLipidLowerMedication=otherLipidLowering,
             bpMedsAdded=0,
             afib=False,
             qalys=0,
@@ -103,6 +152,7 @@ class NHANESPersonRecordLoader:
         sample = self._nhanes_dataset.sample(
             self._n, weights=self._weights, random_state=self._random_state, replace=True
         )
-        for _, row in sample.iterrows():
-            person_record = self._factory.from_nhanes_dataset_row(row)
+        column_names = self._factory.required_nhanes_column_names
+        for row_data in zip(*[sample[k] for k in column_names]):
+            person_record = self._factory.from_nhanes_dataset_row(*row_data)
             yield person_record
