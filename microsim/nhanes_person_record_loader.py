@@ -44,7 +44,7 @@ class NHANESPersonRecordFactory:
     def from_nhanes_dataset_row(self, row):
         random_effects = self._init_random_effects()
         prior_mi = build_prior_mi_event(row.selfReportMIAge, row.age)
-        prior_stroke = build_prior_stroke_event(row.selfReportStrokeAge)
+        prior_stroke = build_prior_stroke_event(row.selfReportStrokeAge, row.age)
         person_record = BPCOGPersonRecord(
             gender=NHANESGender(int(row.gender)),
             raceEthnicity=NHANESRaceEthnicity(int(row.raceEthnicity)),
@@ -59,7 +59,7 @@ class NHANESPersonRecordFactory:
             hdl=row.hdl,
             ldl=row.ldl,
             trig=row.trig,
-            totChol=row.totChol,
+            totChol=row.tot_chol,
             bmi=row.bmi,
             waist=row.waist,
             anyPhysicalActivity=row.anyPhysicalActivity,
@@ -78,10 +78,10 @@ class NHANESPersonRecordFactory:
 
         afib = self._init_afib(person_record)
         gcp = self._init_gcp(person_record)
-        person_record = dataclasses.replace(person_record, {"afib": afib, "gcp": gcp})
+        person_record = dataclasses.replace(person_record, afib=afib, gcp=gcp)
 
         qalys = self._init_qalys(person_record)
-        person_record = dataclasses.replace(person_record, {"qalys": qalys})
+        person_record = dataclasses.replace(person_record, qalys=qalys)
 
         return person_record
 
