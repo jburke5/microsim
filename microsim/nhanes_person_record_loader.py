@@ -89,11 +89,11 @@ class NHANESPersonRecordFactory:
 class NHANESPersonRecordLoader:
     """Loads PersonRecords from a sample of a given NHANES year."""
 
-    def __init__(self, n, year, nhanes_person_record_factory, weights=None, random_seed=None):
+    def __init__(self, n, year, nhanes_person_record_factory, weights=None, random_state=None):
         self._nhanes_dataset = get_nhanes_imputed_dataset(year)
         self._n = n
         self._weights = weights
-        self._random_seed = random_seed
+        self._random_state = random_state
         self._factory = nhanes_person_record_factory
 
     def get_num_people(self):
@@ -101,7 +101,7 @@ class NHANESPersonRecordLoader:
 
     def iter_person_records(self):
         sample = self._nhanes_dataset.sample(
-            self._n, weights=self._weights, random_state=self._random_seed, replace=True
+            self._n, weights=self._weights, random_state=self._random_state, replace=True
         )
         for _, row in sample.iterrows():
             person_record = self._factory.from_nhanes_dataset_row(row)
