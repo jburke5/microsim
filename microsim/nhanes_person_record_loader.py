@@ -99,11 +99,10 @@ class NHANESPersonRecordLoader:
     def get_num_people(self):
         return self._n
 
-    def get_all_people(self):
+    def iter_person_records(self):
         sample = self._nhanes_dataset.sample(
             self._n, weights=self._weights, random_state=self._random_seed, replace=True
         )
-        person_records = [
-            self._factory.from_nhanes_dataset_row(row) for _, row in sample.iterrows()
-        ]
-        return person_records
+        for _, row in sample.iterrows():
+            person_record = self._factory.from_nhanes_dataset_row(row)
+            yield person_record
