@@ -96,7 +96,7 @@ class NHANESPersonRecordLoader:
         self._random_state = random_state
         self._factory = nhanes_person_record_factory
 
-    def get_num_people(self):
+    def get_num_persons(self):
         return self._n
 
     def iter_person_records(self):
