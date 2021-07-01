@@ -35,14 +35,14 @@ def build_prior_stroke_event(prior_stroke_age, current_age):
 
 
 class NHANESPersonRecordFactory:
-    def __init__(self, outcome_model_repository, init_afib, init_gcp, init_qalys):
-        self._outcome_model_repository = outcome_model_repository
+    def __init__(self, init_random_effects, init_afib, init_gcp, init_qalys):
+        self._init_random_effects = init_random_effects
         self._init_afib = init_afib
         self._init_gcp = init_gcp
         self._init_qalys = init_qalys
 
     def from_nhanes_dataset_row(self, row):
-        random_effects = self._outcome_model_repository.get_random_effects()
+        random_effects = self._init_random_effects()
         prior_mi = build_prior_mi_event(row.selfReportMIAge, row.age)
         prior_stroke = build_prior_stroke_event(row.selfReportStrokeAge)
         person_record = BPCOGPersonRecord(
