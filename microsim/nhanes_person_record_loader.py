@@ -19,7 +19,7 @@ def get_nhanes_imputed_dataset(year):
 
 
 def build_prior_mi_event(prior_mi_age, current_age):
-    if prior_mi_age is None or prior_mi_age <= 1:
+    if np.isnan(prior_mi_age) or prior_mi_age is None or prior_mi_age <= 1:
         return None
     if prior_mi_age == 99999:
         prior_mi_age = np.random.randint(18, current_age)
@@ -28,7 +28,7 @@ def build_prior_mi_event(prior_mi_age, current_age):
 
 
 def build_prior_stroke_event(prior_stroke_age, current_age):
-    if prior_stroke_age is None or prior_stroke_age <= 1:
+    if np.isnan(prior_stroke_age) or prior_stroke_age is None or prior_stroke_age <= 1:
         return None
     prior_stroke_age = prior_stroke_age if prior_stroke_age <= current_age else current_age
     return Outcome(OutcomeType.STROKE, False, age=prior_stroke_age)
