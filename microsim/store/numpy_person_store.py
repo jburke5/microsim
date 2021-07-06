@@ -1,24 +1,17 @@
-from typing import Generic, List, TypeVar
 import numpy as np
-from microsim.store.base_numpy_data_converter import BaseNumpyDataConverter
 
 
-S = TypeVar("S")  # _S_tatic data type
-D = TypeVar("D")  # _D_ynamic data type
-E = TypeVar("E")  # _E_vent data type
-
-
-class NumpyPersonStore(Generic[S, D, E]):
+class NumpyPersonStore:
     """Holds Person data in numpy ndarrays."""
 
     def __init__(
         self,
-        static_data: List[S],
-        static_data_converter: BaseNumpyDataConverter[S],
-        dynamic_data: List[D],
-        dynamic_data_converter: BaseNumpyDataConverter[D],
-        event_data: List[E],
-        event_data_converter: BaseNumpyDataConverter[E],
+        static_data,
+        static_data_converter,
+        dynamic_data,
+        dynamic_data_converter,
+        event_data,
+        event_data_converter,
     ):
         len_static = len(static_data)
         len_dynamic = len(dynamic_data)
