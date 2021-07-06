@@ -6,34 +6,36 @@ class NumpyPersonStore:
 
     def __init__(
         self,
-        static_data,
+        num_persons,
+        iter_person_records,
+        num_years,
         static_data_converter,
-        dynamic_data,
         dynamic_data_converter,
-        event_data,
         event_data_converter,
     ):
-        len_static = len(static_data)
-        len_dynamic = len(dynamic_data)
-        len_event = len(event_data)
-        if not (len_static == len_dynamic == len_event):
-            raise ValueError(
-                "Lengths of `static_data`, `dynamic_data`, and `event_data` args do not match:"
-                f" {len_static}, {len_dynamic}, {len_event}"
-            )
-        self._num_persons = len_static  # lengths asserts to be the same: chose static arbitrarily
+        self._num_persons = num_persons
+        self._num_years = num_years
 
-        static_dtype = static_data_converter.get_dtype()
-        static_data_arraylike = [static_data_converter.to_row_tuple(s) for s in static_data]
-        self._static_data_array = np.array(static_data_arraylike, dtype=static_dtype)
+        self._static_data_converter = static_data_converter
+        self._dynamic_data_converter = dynamic_data_converter
+        self._event_data_converter = event_data_converter
 
-        dynamic_dtype = dynamic_data_converter.get_dtype()
-        dynamic_data_arraylike = [dynamic_data_converter.to_row_tuple(d) for d in dynamic_data]
-        self._dynamic_data_array = np.array(dynamic_data_arraylike, dtype=dynamic_dtype, ndmin=3)
+        static_dtype = self._static_data_converter.get_dtype()
+        static_shape = (self._num_persons,)
+        self._static_data_array = np.empty(static_shape, dtype=static_dtype)
 
-        event_dtype = event_data_converter.get_dtype()
-        event_data_arraylike = [event_data_converter.to_row_tuple(e) for e in event_data]
-        self._event_data_array = np.array(event_data_arraylike, dtype=event_dtype, ndmin=3)
+        dynamic_dtype = self._dynamic_data_converter.get_dtype()
+        dynamic_shape = (self._num_persons, self._num_years)
+        self._dynamic_data_array = np.empty(dynamic_shape, dtype=dynamic_dtype)
+
+        event_dtype = self._event_data_converter.get_dtype()
+        event_shape = (self._num_persons, self._num_years)
+        self._event_data_array = np.empty(event_shape, dtype=event_dtype)
+
+        for i, person_record in enumerate(iter_person_records):
+            self._static_data_array[i] = self._static_data_converter.to_row_tuple(person_record)
+            self._dynamic_data_array[i] = self._dynamic_data_converter.to_row_tuple(person_record)
+            self._event_data_array[i] = self._event_data_converter.to_row_tuple(person_record)
 
     def get_num_persons(self):
         """Returns the number of people held in this store."""
