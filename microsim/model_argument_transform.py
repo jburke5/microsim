@@ -12,6 +12,7 @@ categorical_param_name_regex = re.compile(categorical_param_name_pattern)
 
 class AbstractBaseTransform(metaclass=ABCMeta):
     """Interface definition for model argument transforms."""
+
     @abstractmethod
     def apply(self, value):
         raise NotImplementedError()
@@ -89,7 +90,7 @@ class MeanTransform(AbstractBaseTransform):
 
 class MeanTransformVectorized(AbstractBaseTransform):
     def apply(self, value):
-        return value['mean' + self.prop_name.capitalize()]
+        return value["mean" + self.prop_name.capitalize()]
 
     def isFinal(self):
         return True
@@ -116,7 +117,7 @@ class FirstElementTransformVectorized(AbstractBaseTransform):
     """Returns the first element of the given value."""
 
     def apply(self, value):
-        return value['base' + self.prop_name.capitalize()]
+        return value["base" + self.prop_name.capitalize()]
 
     def extractsData(self):
         return True
@@ -139,9 +140,7 @@ Transform = AbstractBaseTransform
 
 
 def get_argument_transforms(
-    parameter_name: str,
-    vectorized=False,
-    max_num_transforms: int = 10
+    parameter_name: str, vectorized=False, max_num_transforms: int = 10
 ) -> Tuple[str, List[Transform]]:
     trimmed_param_name = parameter_name
     prop_transforms = []
@@ -150,27 +149,31 @@ def get_argument_transforms(
         folded_param_name = trimmed_param_name.casefold()
         categorical_match = categorical_param_name_regex.match(parameter_name)
         if categorical_match is not None:
-            expected_prop_name = categorical_match['propname']
-            matching_categorical_value = int(categorical_match['matchingval'])
-            prop_transforms.append(IndicatorTransformVectorized(
-                matching_categorical_value) if vectorized else IndicatorTransform(matching_categorical_value))
+            expected_prop_name = categorical_match["propname"]
+            matching_categorical_value = int(categorical_match["matchingval"])
+            prop_transforms.append(
+                IndicatorTransformVectorized(matching_categorical_value)
+                if vectorized
+                else IndicatorTransform(matching_categorical_value)
+            )
             reached_base_case = True
             break
         elif folded_param_name.startswith("log"):
-            trimmed_param_name = trimmed_param_name[len("log"):]
+            trimmed_param_name = trimmed_param_name[len("log") :]
             prop_transforms.append(LogTransform())
         elif folded_param_name.startswith("mean"):
-            trimmed_param_name = trimmed_param_name[len("mean"):]
+            trimmed_param_name = trimmed_param_name[len("mean") :]
             prop_transforms.append(MeanTransformVectorized() if vectorized else MeanTransform())
         elif folded_param_name.startswith("square"):
-            trimmed_param_name = trimmed_param_name[len("square"):]
+            trimmed_param_name = trimmed_param_name[len("square") :]
             prop_transforms.append(SquareTransform())
         elif folded_param_name.startswith("base"):
-            trimmed_param_name = trimmed_param_name[len("base"):]
-            prop_transforms.append(FirstElementTransformVectorized()
-                                   if vectorized else FirstElementTransform())
+            trimmed_param_name = trimmed_param_name[len("base") :]
+            prop_transforms.append(
+                FirstElementTransformVectorized() if vectorized else FirstElementTransform()
+            )
         elif folded_param_name.startswith("lag"):
-            trimmed_param_name = trimmed_param_name[len("lag"):]
+            trimmed_param_name = trimmed_param_name[len("lag") :]
             expected_prop_name = trimmed_param_name[0].casefold() + trimmed_param_name[1:]
             if vectorized and len(get_final_extracting_transforms(prop_transforms)) == 0:
                 prop_transforms.append(IdentityTransformVectorized())
@@ -196,7 +199,9 @@ def get_argument_transforms(
     return (expected_prop_name, list(reversed(prop_transforms)))
 
 
-def get_all_argument_transforms(parameter_names: Iterable[str], vectorized=False) -> Dict[str, List[Transform]]:
+def get_all_argument_transforms(
+    parameter_names: Iterable[str], vectorized=False
+) -> Dict[str, List[Transform]]:
     """Return transform functions for each model parameter, if any"""
     param_transforms = {}
     for param_name in parameter_names:
@@ -222,8 +227,9 @@ def reorganize_transforms_vectorized(transforms):
         transforms.insert(0, data_extractor)
     return transforms
 
+
 def get_final_extracting_transforms(transforms):
-    return  [t for t in transforms if t.extractsData() and t.isFinal()]
+    return [t for t in transforms if t.extractsData() and t.isFinal()]
 
 
 def get_primary_extracting_transform(transforms):
@@ -231,8 +237,14 @@ def get_primary_extracting_transform(transforms):
     finalExtracting = get_final_extracting_transforms(transforms)
     all_extracting = [t for t in transforms if t.extractsData()]
 
-    if len(finalExtracting) > 1 or (len(finalExtracting) == 0 and len(all_extracting) > 1) or (len(finalExtracting) ==0 and len(all_extracting)==0):
-        raise RuntimeError(f"Either too many or too few extractors, final extractors: {len(finalExtracting)}, all extractors: {len(all_extracting)}, transforms: {transforms}")
+    if (
+        len(finalExtracting) > 1
+        or (len(finalExtracting) == 0 and len(all_extracting) > 1)
+        or (len(finalExtracting) == 0 and len(all_extracting) == 0)
+    ):
+        raise RuntimeError(
+            f"Either too many or too few extractors, final extractors: {len(finalExtracting)}, all extractors: {len(all_extracting)}, transforms: {transforms}"
+        )
 
     primaryExtracting = finalExtracting[0] if len(finalExtracting) > 0 else None
     if primaryExtracting is None:

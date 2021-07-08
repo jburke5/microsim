@@ -6,7 +6,6 @@ from microsim.gender import NHANESGender
 
 
 class GCPModel:
-
     def __init__(self):
         pass
 
@@ -21,8 +20,8 @@ class GCPModel:
         if person._gender == NHANESGender.FEMALE:
             xb += 2.0863
             xb += person.years_in_simulation() * -0.06184
-        xb += -2.0109 * (person._age[0]-65)/10
-        xb += -0.1266 * person.years_in_simulation() * (person._age[0]-65)/10
+        xb += -2.0109 * (person._age[0] - 65) / 10
+        xb += -0.1266 * person.years_in_simulation() * (person._age[0] - 65) / 10
 
         # are we sure that the educatino categories align?
         if person._education == Education.LESSTHANHIGHSCHOOL:
@@ -39,18 +38,18 @@ class GCPModel:
 
         if person._smokingStatus == SmokingStatus.CURRENT:
             xb += -1.1678
-        xb += (person._bmi[-1]-26.6) * 0.1309
-        xb += (person._waist[-1]-94) * -0.05754
+        xb += (person._bmi[-1] - 26.6) * 0.1309
+        xb += (person._waist[-1] - 94) * -0.05754
         # note...not 100% sure if this should be LDL vs. tot chol...
-        xb += (person._totChol[-1]-127)/10 * 0.002690
-        xb += (np.array(person._sbp).mean()-120)/10 * -0.2663
-        xb += (np.array(person._sbp).mean()-120)/10 * person.years_in_simulation() * -0.01953
+        xb += (person._totChol[-1] - 127) / 10 * 0.002690
+        xb += (np.array(person._sbp).mean() - 120) / 10 * -0.2663
+        xb += (np.array(person._sbp).mean() - 120) / 10 * person.years_in_simulation() * -0.01953
 
         xb += (person._antiHypertensiveCount[-1] > 0) * 0.04410
         xb += (person._antiHypertensiveCount[-1] > 0) * person.years_in_simulation() * 0.01984
 
         # need to turn off the residual for hte simulation...also need to make sure that we're correctly centered...
-        xb += (person.get_fasting_glucose(not test)-100)/10 * - 0.09362
+        xb += (person.get_fasting_glucose(not test) - 100) / 10 * -0.09362
         if person._anyPhysicalActivity[-1]:
             xb += 0.6065
         if person._afib[-1]:
@@ -58,6 +57,6 @@ class GCPModel:
         return xb
 
     def get_risk_for_person(self, person, years=1, test=False):
-        random_effect = person._randomEffects['gcp'] if 'gcp' in person._randomEffects else 0  
+        random_effect = person._randomEffects["gcp"] if "gcp" in person._randomEffects else 0
         residual = 0 if test else np.random.normal(0.38, 6.99)
         return self.calc_linear_predictor(person, test) + random_effect + residual

@@ -1,7 +1,11 @@
 from microsim.risk_model_repository import RiskModelRepository
 from microsim.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
-from microsim.stats_model_linear_probability_risk_factor_model import StatsModelLinearProbabilityRiskFactorModel
-from microsim.stats_model_rounded_linear_risk_factor_model import StatsModelRoundedLinearRiskFactorModel
+from microsim.stats_model_linear_probability_risk_factor_model import (
+    StatsModelLinearProbabilityRiskFactorModel,
+)
+from microsim.stats_model_rounded_linear_risk_factor_model import (
+    StatsModelRoundedLinearRiskFactorModel,
+)
 from microsim.data_loader import load_regression_model
 from microsim.alcohol_category import AlcoholCategory
 
@@ -16,11 +20,17 @@ class CohortRiskModelRepository(RiskModelRepository):
         self._initialize_linear_risk_model("a1c", "a1cCohortModel")
         self._initialize_linear_risk_model("ldl", "ldlCohortModel")
         self._initialize_linear_risk_model("waist", "waistCohortModel")
-        self._initialize_linear_probability_risk_model("anyPhysicalActivity", "anyPhysicalActivityCohortModel")
+        self._initialize_linear_probability_risk_model(
+            "anyPhysicalActivity", "anyPhysicalActivityCohortModel"
+        )
         self._initialize_linear_probability_risk_model("afib", "afibCohortModel")
         self._initialize_linear_probability_risk_model("statin", "statinCohortModel")
-        self._initialize_int_rounded_linear_risk_model("antiHypertensiveCount", "antiHypertensiveCountCohortModel")
-        self._repository['alcoholPerWeek'] = AlcoholCategoryModel(load_regression_model('alcoholPerWeekCohortModel'))
+        self._initialize_int_rounded_linear_risk_model(
+            "antiHypertensiveCount", "antiHypertensiveCountCohortModel"
+        )
+        self._repository["alcoholPerWeek"] = AlcoholCategoryModel(
+            load_regression_model("alcoholPerWeekCohortModel")
+        )
         self._initialize_linear_risk_model("sbp", "logSbpCohortModel", log=True)
         self._initialize_linear_risk_model("dbp", "logDbpCohortModel", log=True)
 
@@ -43,7 +53,7 @@ class AlcoholCategoryModel(StatsModelRoundedLinearRiskFactorModel):
         return AlcoholCategory.get_category_for_consumption(drinks if drinks > 0 else 0)
 
     def estimate_next_risk_vectorized(self, x):
-        drinks = super(StatsModelRoundedLinearRiskFactorModel, self).estimate_next_risk_vectorized(x)
+        drinks = super(StatsModelRoundedLinearRiskFactorModel, self).estimate_next_risk_vectorized(
+            x
+        )
         return AlcoholCategory.get_category_for_consumption(drinks if drinks > 0 else 0)
-
-

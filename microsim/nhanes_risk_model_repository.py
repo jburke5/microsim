@@ -19,9 +19,11 @@ class NHANESRiskModelRepository(RiskModelRepository):
     def _initialize_linear_risk_model(self, referenceName, modelName):
         modelResults = OLSResults.load("microsim/data/" + modelName + ".pickle")
         self._repository[referenceName] = NHANESLinearRiskFactorModel(
-            referenceName, modelResults.params, modelResults.bse, modelResults.resid)
+            referenceName, modelResults.params, modelResults.bse, modelResults.resid
+        )
 
     def _initialize_log_linear_risk_model(self, referenceName, modelName):
         modelResults = OLSResults.load("microsim/data/" + modelName + ".pickle")
         self._repository[referenceName] = LogLinearRiskFactorModel(
-            referenceName, modelResults.params, modelResults.bse, modelResults.resid)
+            referenceName, modelResults.params, modelResults.bse, modelResults.resid
+        )

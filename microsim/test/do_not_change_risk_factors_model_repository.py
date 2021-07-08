@@ -6,7 +6,7 @@ class DoNotChangeRiskFactorModel:
         self.varName = varName
 
     def estimate_next_risk(self, person):
-        return getattr(person, "_"+self.varName)[-1]
+        return getattr(person, "_" + self.varName)[-1]
 
     def estimate_next_risk_vectorized(self, person):
         return getattr(person, self.varName)

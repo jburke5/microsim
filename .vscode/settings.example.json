@@ -3,19 +3,19 @@
     Copy this file to `settings.json` under the `.vscode` directory at the root of the repository
     to use as a starting point for your workspace settings.
 
-    Prefix the "python.(python|flake8|autopep8)Path" settings with the path to the virtualenv bin
+    Prefix the "python.(python|flake8|black)Path" settings with the path to the virtualenv bin
     directory. Using Poetry version 1.0 or later, this will be path returned by running the
     following command from the root of the repository:
     echo "$(poetry env info --path)/bin"
     */
+    "editor.formatOnSave": true,
     "python.pythonPath": "python",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": false,
     "python.linting.flake8Enabled": true,
     "python.linting.flake8Path": "flake8",
-    "python.formatting.provider": "autopep8",
-    "python.formatting.autopep8Path": "autopep8",
-    "python.formatting.autopep8Args": ["--aggressive", "--aggressive"],
+    "python.formatting.provider": "black",
+    "python.formatting.blackPath": "black",
     "python.unitTest.unittestEnabled": true,
     "python.unitTest.unittestArgs": ["--start-directory", "./microsim/test", "--pattern", "test_*.py"],
 }

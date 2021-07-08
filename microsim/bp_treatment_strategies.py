@@ -15,7 +15,14 @@ class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
         pass
 
     def get_changes_for_person(self, person):
-        return {'_antiHypertensiveCount': 1}, {'_bpMedsAdded': 1}, {'_sbp': -1 * AddASingleBPMedTreatmentStrategy.sbpLowering, '_dbp': -1 * AddASingleBPMedTreatmentStrategy.dbpLowering}
+        return (
+            {"_antiHypertensiveCount": 1},
+            {"_bpMedsAdded": 1},
+            {
+                "_sbp": -1 * AddASingleBPMedTreatmentStrategy.sbpLowering,
+                "_dbp": -1 * AddASingleBPMedTreatmentStrategy.dbpLowering,
+            },
+        )
 
     def get_treatment_recalibration_for_population(self):
         return {OutcomeType.STROKE: 0.79, OutcomeType.MI: 0.87}
@@ -38,7 +45,7 @@ class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
         x.sbpNext = x.sbpNext + AddASingleBPMedTreatmentStrategy.sbpLowering
         x.dbpNext = x.dbpNext + AddASingleBPMedTreatmentStrategy.dbpLowering
         x.bpMedsAddedNext = 0
-        return x     
+        return x
 
 
 class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
@@ -49,21 +56,28 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
         pass
 
     def get_meds_needed_for_goal(self, sbp, dbp):
-        sbpMedCount = int((sbp - 120)/AddBPTreatmentMedsToGoal120.sbpLowering)
-        dbpMedCount = int((dbp - 65)/AddBPTreatmentMedsToGoal120.dbpLowering)
+        sbpMedCount = int((sbp - 120) / AddBPTreatmentMedsToGoal120.sbpLowering)
+        dbpMedCount = int((dbp - 65) / AddBPTreatmentMedsToGoal120.dbpLowering)
         medCount = dbpMedCount if dbpMedCount < sbpMedCount else sbpMedCount
         return 0 if medCount < 0 else medCount
 
     def get_changes_for_person(self, person):
         medsForGoal = self.get_meds_needed_for_goal(person._sbp[-1], person._dbp[-1])
-        return {'_antiHypertensiveCount': medsForGoal}, {'_bpMedsAdded': medsForGoal}, {'_sbp': -1 * medsForGoal * AddBPTreatmentMedsToGoal120.sbpLowering, '_dbp': -1 * medsForGoal * AddBPTreatmentMedsToGoal120.dbpLowering}
+        return (
+            {"_antiHypertensiveCount": medsForGoal},
+            {"_bpMedsAdded": medsForGoal},
+            {
+                "_sbp": -1 * medsForGoal * AddBPTreatmentMedsToGoal120.sbpLowering,
+                "_dbp": -1 * medsForGoal * AddBPTreatmentMedsToGoal120.dbpLowering,
+            },
+        )
 
     def get_treatment_recalibration_for_population(self):
         return {OutcomeType.STROKE: 0.79, OutcomeType.MI: 0.87}
 
     def get_treatment_recalibration_for_person(self, person):
         medsForGoal = self.get_meds_needed_for_goal(person.sbp[-1], person.dbp[-1])
-        return {OutcomeType.STROKE: 0.79**medsForGoal, OutcomeType.MI: 0.87**medsForGoal}
+        return {OutcomeType.STROKE: 0.79 ** medsForGoal, OutcomeType.MI: 0.87 ** medsForGoal}
 
     def repeat_treatment_strategy(self):
         return True
@@ -77,11 +91,11 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
         return x
 
     def rollback_changes_vectorized(self, x):
-        x.antiHypertensiveCountNext = x.antiHypertensiveCountNext -x.bpMedsAddedNext 
+        x.antiHypertensiveCountNext = x.antiHypertensiveCountNext - x.bpMedsAddedNext
         x.sbpNext = x.sbpNext + x.bpMedsAddedNext * AddBPTreatmentMedsToGoal120.sbpLowering
         x.dbpNext = x.dbpNext + x.bpMedsAddedNext * AddBPTreatmentMedsToGoal120.dbpLowering
         x.bpMedsAddedNext = 0
-        return x         
+        return x
 
 
 class NoBPTreatmentNoBPChange(BaseTreatmentStrategy):
@@ -92,7 +106,11 @@ class NoBPTreatmentNoBPChange(BaseTreatmentStrategy):
         current = person._antiHypertensiveCount[-1]
         changeSBP = person._sbp[-1] - person._sbp[-2]
         changeDBP = person._dbp[-1] - person._dbp[-2]
-        return {'_antiHypertensiveCount': -1*current}, {'_bpMedsAdded': -1*current}, {'_sbp': -1*changeSBP, '_dbp': -1*changeDBP}
+        return (
+            {"_antiHypertensiveCount": -1 * current},
+            {"_bpMedsAdded": -1 * current},
+            {"_sbp": -1 * changeSBP, "_dbp": -1 * changeDBP},
+        )
 
     def get_treatment_recalibration_for_population(self):
         return None
@@ -108,7 +126,7 @@ class NoBPTreatmentNoBPChange(BaseTreatmentStrategy):
         x.antiHypertensiveCountNext = 0
         x.sbpNext = x.sbp
         x.dbpNext = x.dbp
-        return x       
+        return x
 
     def rollback_changes_vectorized(self, x):
-        return x         
+        return x

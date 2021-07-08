@@ -15,14 +15,16 @@ pandarallel = "^1.5.1"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.7.8"
-autopep8 = "^1.4.4"
 ipython = "^7.7.0"
+black = "^21.5b2"
 
 [tool.poetry.scripts]
 test = "scripts.test:main"
 lint = "scripts.lint:main"
 format = "scripts.format:main"
-format-diff = "scripts.format:diffmain"
+
+[tool.black]
+line-length = 99
 
 [build-system]
 requires = ["poetry>=0.12"]
