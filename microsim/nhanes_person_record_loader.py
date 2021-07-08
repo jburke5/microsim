@@ -8,7 +8,12 @@ from microsim.gender import NHANESGender
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.data_loader import get_absolute_datafile_path
 from microsim.outcome import Outcome, OutcomeType
-from microsim.person.bpcog_person_records import BPCOGPersonRecord
+from microsim.person.bpcog_person_records import (
+    BPCOGPersonRecord,
+    BPCOGPersonDynamicRecord,
+    BPCOGPersonEventRecord,
+    BPCOGPersonStaticRecord,
+)
 
 
 def get_nhanes_imputed_dataset(year):
@@ -32,6 +37,13 @@ def build_prior_stroke_event(prior_stroke_age, current_age):
         return None
     prior_stroke_age = prior_stroke_age if prior_stroke_age <= current_age else current_age
     return Outcome(OutcomeType.STROKE, False, age=prior_stroke_age)
+
+
+def init_dataclass_from_dict(dataclass_type, init_values):
+    """Creates a new dataclass instance from a subset of dict values"""
+    field_names = set(f.name for f in dataclasses.fields(dataclass_type))
+    init_kwargs = {k: init_values[k] for k in field_names}
+    return dataclass_type(**init_kwargs)
 
 
 class NHANESPersonRecordFactory:
@@ -132,7 +144,12 @@ class NHANESPersonRecordFactory:
         qalys = self._init_qalys(person_record)
         person_record = dataclasses.replace(person_record, qalys=qalys)
 
-        return person_record
+        record_dict = dataclasses.asdict(person_record)
+        static_record = init_dataclass_from_dict(BPCOGPersonStaticRecord, record_dict)
+        dynamic_record = init_dataclass_from_dict(BPCOGPersonDynamicRecord, record_dict)
+        event_record = init_dataclass_from_dict(BPCOGPersonEventRecord, record_dict)
+
+        return (static_record, dynamic_record, event_record)
 
 
 class NHANESPersonRecordLoader:
@@ -154,5 +171,5 @@ class NHANESPersonRecordLoader:
         )
         column_names = self._factory.required_nhanes_column_names
         for row_data in zip(*[sample[k] for k in column_names]):
-            person_record = self._factory.from_nhanes_dataset_row(*row_data)
-            yield person_record
+            split_person_records = self._factory.from_nhanes_dataset_row(*row_data)
+            yield split_person_records
