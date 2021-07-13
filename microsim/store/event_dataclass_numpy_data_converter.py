@@ -14,11 +14,9 @@ class EventDataclassNumpyDataConverter(BaseNumpyDataConverter):
 
     def get_dtype(self):
         field_specs = [
-            ("has_mi": np.bool_),
-            ("mi_fatal", np.bool_),
-            ("has_stroke", np.bool_),
-            ("stroke_fatal", np.bool_),
-            ("has_dementia", np.bool_),
+            ("mi", [("type", np.unicode_, 9), ("fatal", np.bool_)]),
+            ("stroke", [("type", np.unicode_, 9), ("fatal", np.bool_)]),
+            ("dementia", [("type", np.unicode_, 9), ("fatal", np.bool_)]),
         ]
         return np.dtype(field_specs)
 
@@ -29,18 +27,20 @@ class EventDataclassNumpyDataConverter(BaseNumpyDataConverter):
             )
 
         has_mi = obj.mi is not None
+        mi_type = obj.mi.type.value if has_mi else None
         mi_fatal = obj.mi.fatal if has_mi else False
 
         has_stroke = obj.stroke is not None
+        stroke_type = obj.stroke.type.value if has_stroke else None
         stroke_fatal = obj.stroke.fatal if has_stroke else False
 
         has_dementia = obj.dementia is not None
+        dementia_type = obj.dementia.type.value if has_dementia else None
+        dementia_fatal = obj.dementia.fatal if has_dementia else False
 
         values = (
-            has_mi,
-            mi_fatal,
-            has_stroke,
-            stroke_fatal,
-            has_dementia,
+            (mi_type, mi_fatal),
+            (stroke_type, stroke_fatal),
+            (dementia_type, dementia_fatal),
         )
         return values
