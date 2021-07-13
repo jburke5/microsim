@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 from microsim.person.inherit_annotations import inherit_annotations
 from typing_extensions import Protocol
 from microsim.alcohol_category import AlcoholCategory
@@ -47,9 +48,9 @@ class BPCOGPersonDynamicRecordProtocol(Protocol):
 class BPCOGPersonEventRecordProtocol(Protocol):
     """Contains events that happened to one Person during one tick."""
 
-    mi: Outcome
-    stroke: Outcome
-    dementia: Outcome
+    mi: Optional[Outcome]
+    stroke: Optional[Outcome]
+    dementia: Optional[Outcome]
 
 
 class BPCOGPersonRecordProtocol(
