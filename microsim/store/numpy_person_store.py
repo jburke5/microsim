@@ -12,6 +12,7 @@ class NumpyPersonStore:
         dynamic_data_converter,
         event_data,
         event_data_converter,
+        num_years,
     ):
         len_static = len(static_data)
         len_dynamic = len(dynamic_data)
@@ -22,6 +23,8 @@ class NumpyPersonStore:
                 f" {len_static}, {len_dynamic}, {len_event}"
             )
         self._num_persons = len_static  # lengths asserts to be the same: chose static arbitrarily
+
+        self._num_years = int(num_years)
 
         static_dtype = static_data_converter.get_dtype()
         static_data_arraylike = [static_data_converter.to_row_tuple(s) for s in static_data]
