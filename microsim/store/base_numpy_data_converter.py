@@ -18,3 +18,12 @@ class BaseNumpyDataConverter(Generic[T], metaclass=ABCMeta):
     def to_row_tuple(self, obj: T) -> Tuple:
         """Returns `obj` as a tuple that `np.array` can use as a row."""
         raise NotImplementedError("Abstract method not implemented: to_row_tuple")
+
+    @abstractmethod
+    def get_value_from_row(self, row, field_name):
+        """
+        Returns value for given field from a Numpy row.
+
+        Inverse of `to_row_tuple` for each field for which this converter is responsible.
+        """
+        raise NotImplementedError("Abstract method not implemented: get_value_from_row")
