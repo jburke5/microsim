@@ -45,3 +45,23 @@ class NumpyPersonStore:
     def get_num_persons(self):
         """Returns the number of people held in this store."""
         return self._num_persons
+
+    def get_person_record_at(self, i, t):
+        """Returns the combined record for Person `i` at time `t`."""
+        records_tuple = (
+            self._static_data_array[i],
+            self._dynamic_data_array[t, i],
+            self._event_data_array[t, i],
+        )
+        combined_record = np.hstack(records_tuple)
+        return combined_record
+
+    def get_population_at(self, t):
+        """Returns the combined record for all Persons at time `t`."""
+        records_tuple = (
+            self._static_data_array,
+            self._dynamic_data_array[t],
+            self._event_data_array[t],
+        )
+        combined_record = np.hstack(records_tuple)
+        return combined_record
