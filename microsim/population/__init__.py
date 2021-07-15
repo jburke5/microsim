@@ -1,1 +1,6 @@
-from microsim.population.population import Population  # noqa
+from microsim.population.population import (  # noqa
+    Population,
+    NHANESDirectSamplePopulation,
+    NHANESAgeStandardPopulation,
+    ClonePopulation,
+)
