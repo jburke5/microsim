@@ -52,6 +52,10 @@ class NumpyPersonStore:
         """Returns the number of people held in this store."""
         return self._num_persons
 
+    def get_num_ticks(self):
+        """Returns the number of ticks for which store can hold data."""
+        return self._num_ticks
+
     def get_person_record_at(self, i, t):
         """Returns the combined record for Person `i` at time `t`."""
         static_row = self._static_data_array[i]
