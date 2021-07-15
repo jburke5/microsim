@@ -4,3 +4,4 @@ from microsim.population.population import (  # noqa
     NHANESAgeStandardPopulation,
     ClonePopulation,
 )
+from microsim.population.store_population import StorePopulation  # noqa
