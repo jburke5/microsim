@@ -13,7 +13,7 @@ class NumpyPersonStore:
         dynamic_data_converter,
         event_data,
         event_data_converter,
-        num_years,
+        num_ticks,
     ):
         len_static = len(static_data)
         len_dynamic = len(dynamic_data)
@@ -25,7 +25,7 @@ class NumpyPersonStore:
             )
         self._num_persons = len_static  # lengths asserts to be the same: chose static arbitrarily
 
-        self._num_years = int(num_years)
+        self._num_ticks = int(num_ticks)
 
         self._static_data_converter = static_data_converter
         static_dtype = self._static_data_converter.get_dtype()
@@ -37,14 +37,14 @@ class NumpyPersonStore:
         dynamic_data_arraylike = [
             self._dynamic_data_converter.to_row_tuple(d) for d in dynamic_data
         ]
-        dynamic_shape = (self._num_years, self._num_persons)
+        dynamic_shape = (self._num_ticks, self._num_persons)
         self._dynamic_data_array = np.rec.array(np.zeros(dynamic_shape, dtype=dynamic_dtype))
         self._dynamic_data_array[0] = dynamic_data_arraylike
 
         self._event_data_converter = event_data_converter
         event_dtype = self._event_data_converter.get_dtype()
         event_data_arraylike = [self._event_data_converter.to_row_tuple(e) for e in event_data]
-        event_shape = (self._num_years, self._num_persons)
+        event_shape = (self._num_ticks, self._num_persons)
         self._event_data_array = np.rec.array(np.zeros(event_shape, dtype=event_dtype))
         self._event_data_array[0] = event_data_arraylike
 
