@@ -25,7 +25,13 @@ class NumpyPersonStore:
             )
         self._num_persons = len_static  # lengths asserts to be the same: chose static arbitrarily
 
-        self._num_ticks = int(num_ticks)
+        int_num_ticks = int(num_ticks)
+        if int_num_ticks <= 0:
+            raise ValueError(
+                f"Expected num_ticks to be positive integer; received: {int_num_ticks}"
+                f" (value before `int()`: {num_ticks})"
+            )
+        self._num_ticks = int_num_ticks
 
         self._static_data_converter = static_data_converter
         static_dtype = self._static_data_converter.get_dtype()
