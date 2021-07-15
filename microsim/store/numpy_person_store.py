@@ -66,13 +66,3 @@ class NumpyPersonStore:
             self._event_data_converter,
         )
         return record_proxy
-
-    def get_population_at(self, t):
-        """Returns the combined record for all Persons at time `t`."""
-        records_tuple = (
-            self._static_data_array,
-            self._dynamic_data_array[t],
-            self._event_data_array[t],
-        )
-        combined_record = np.hstack(records_tuple)
-        return combined_record
