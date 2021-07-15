@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from dataclasses import fields, is_dataclass
 from typing import Any, Callable, Optional, Type
 import numpy as np
@@ -18,8 +19,15 @@ class DataclassNumpyDataConverter(BaseNumpyDataConverter):
             field_pytype_to_nptype if field_pytype_to_nptype is not None else pytype_to_nptype
         )
 
+        self._property_dtypes = OrderedDict(
+            [(f.name, self._field_pytype_to_nptype(f.type)) for f in fields(self._type)]
+        )
+
+    def get_property_names(self):
+        return list(self._property_dtypes.keys())
+
     def get_dtype(self):
-        field_specs = [(f.name, self._field_pytype_to_nptype(f.type)) for f in fields(self._type)]
+        field_specs = list(self._property_dtypes.items())
         return np.dtype(field_specs)
 
     def to_row_tuple(self, obj):
