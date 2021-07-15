@@ -12,6 +12,9 @@ class EventDataclassNumpyDataConverter(BaseNumpyDataConverter):
     structure of NumpyPersonStore.
     """
 
+    def get_property_names(self):
+        return ["mi", "stroke", "dementia"]
+
     def get_dtype(self):
         field_specs = [
             ("mi", [("type", np.unicode_, 9), ("fatal", np.bool_)]),
