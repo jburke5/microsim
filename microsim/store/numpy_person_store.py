@@ -37,14 +37,14 @@ class NumpyPersonStore:
         dynamic_data_arraylike = [
             self._dynamic_data_converter.to_row_tuple(d) for d in dynamic_data
         ]
-        dynamic_shape = (self._num_ticks, self._num_persons)
+        dynamic_shape = (self._num_ticks + 1, self._num_persons)  # + 1 for initial data + k ticks
         self._dynamic_data_array = np.rec.array(np.zeros(dynamic_shape, dtype=dynamic_dtype))
         self._dynamic_data_array[0] = dynamic_data_arraylike
 
         self._event_data_converter = event_data_converter
         event_dtype = self._event_data_converter.get_dtype()
         event_data_arraylike = [self._event_data_converter.to_row_tuple(e) for e in event_data]
-        event_shape = (self._num_ticks, self._num_persons)
+        event_shape = (self._num_ticks + 1, self._num_persons)  # + 1 for initial data + k ticks
         self._event_data_array = np.rec.array(np.zeros(event_shape, dtype=event_dtype))
         self._event_data_array[0] = event_data_arraylike
 
