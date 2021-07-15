@@ -36,6 +36,5 @@ class DataclassNumpyDataConverter(BaseNumpyDataConverter):
                 f"Given argument `obj` is not an instance of the configured type ({self._type}):"
                 f" {obj}"
             )
-        dtype = self.get_dtype()
-        values = tuple(getattr(obj, name) for name in dtype.names)
+        values = tuple(getattr(obj, name) for name in self.get_property_names())
         return values
