@@ -1,5 +1,5 @@
-from microsim.store.numpy_person_record_proxy import NumpyPersonRecordProxy
 import numpy as np
+from microsim.store.numpy_person_record_proxy import NumpyPersonRecordProxy
 
 
 class NumpyPersonStore:
@@ -25,13 +25,16 @@ class NumpyPersonStore:
             )
         self._num_persons = len_static  # lengths asserts to be the same: chose static arbitrarily
 
-        int_num_ticks = int(num_ticks)
-        if int_num_ticks <= 0:
-            raise ValueError(
-                f"Expected num_ticks to be positive integer; received: {int_num_ticks}"
-                f" (value before `int()`: {num_ticks})"
+        if not isinstance(num_ticks, int):
+            raise TypeError(
+                f"Expected `num_ticks` to be an `int`: received: {num_ticks}"
+                f" (type: {type(num_ticks)})"
             )
-        self._num_ticks = int_num_ticks
+        if num_ticks <= 0:
+            raise ValueError(
+                f"Expected `num_ticks` to be a positive integer; received: {num_ticks}"
+            )
+        self._num_ticks = num_ticks
 
         self._static_data_converter = static_data_converter
         static_dtype = self._static_data_converter.get_dtype()
