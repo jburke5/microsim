@@ -47,6 +47,32 @@ class TestNumpyPersonStore(TestCase):
         actual_num_persons = store.get_num_persons()
         self.assertEqual(expected_num_persons, actual_num_persons)
 
+    def test_init_data_length_mismatch_raises_error(self):
+        # exhaustively test all permutations with mismatched lengths for 3 list of length 3
+        mistmatched_lengths = [
+            (i + 1, j + 1, k + 1) for i, j, k in product(range(3), repeat=3) if not (i == j == k)
+        ]
+
+        for i, j, k in mistmatched_lengths:
+            static_data = self._static_data[:i]
+            dynamic_data = self._static_data[:j]
+            event_data = self._event_data[:k]
+            expected_msg = (
+                "Lengths of `static_data`, `dynamic_data`, and `event_data` args do not match:"
+                f" {i}, {j}, {k}"
+            )
+
+            with self.assertRaises(ValueError, msg=expected_msg):
+                NumpyPersonStore(
+                    static_data,
+                    self._static_data_converter,
+                    dynamic_data,
+                    self._dynamic_data_converter,
+                    event_data,
+                    self._event_data_converter,
+                    self._num_ticks,
+                )
+
     def test_get_num_ticks_canonical_returns_num_ticks(self):
         store = NumpyPersonStore(
             self._static_data,
@@ -97,30 +123,4 @@ class TestNumpyPersonStore(TestCase):
                     self._event_data,
                     self._event_data_converter,
                     num_ticks,
-                )
-
-    def test_init_data_length_mismatch_raises_error(self):
-        # exhaustively test all permutations with mismatched lengths for 3 list of length 3
-        mistmatched_lengths = [
-            (i + 1, j + 1, k + 1) for i, j, k in product(range(3), repeat=3) if not (i == j == k)
-        ]
-
-        for i, j, k in mistmatched_lengths:
-            static_data = self._static_data[:i]
-            dynamic_data = self._static_data[:j]
-            event_data = self._event_data[:k]
-            expected_msg = (
-                "Lengths of `static_data`, `dynamic_data`, and `event_data` args do not match:"
-                f" {i}, {j}, {k}"
-            )
-
-            with self.assertRaises(ValueError, msg=expected_msg):
-                NumpyPersonStore(
-                    static_data,
-                    self._static_data_converter,
-                    dynamic_data,
-                    self._dynamic_data_converter,
-                    event_data,
-                    self._event_data_converter,
-                    self._num_ticks,
                 )
