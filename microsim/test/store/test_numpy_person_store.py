@@ -62,6 +62,26 @@ class TestNumpyPersonStore(TestCase):
         actual_num_ticks = store.get_num_ticks()
         self.assertEqual(expected_num_ticks, actual_num_ticks)
 
+    def test_num_ticks_non_int_raises_error(self):
+        non_int_num_ticks = [[], {}, None, float("NaN"), float("inf"), float("-inf"), float(0)]
+
+        for num_ticks in non_int_num_ticks:
+            expected_msg = (
+                f"Expected `num_ticks` to be int-like: received: {num_ticks}"
+                f" (type: {type(num_ticks)})"
+            )
+
+            with self.assertRaises(TypeError, msg=expected_msg):
+                NumpyPersonStore(
+                    self._static_data,
+                    self._static_data_converter,
+                    self._dynamic_data,
+                    self._dynamic_data_converter,
+                    self._event_data,
+                    self._event_data_converter,
+                    num_ticks,
+                )
+
     def test_init_data_length_mismatch_raises_error(self):
         # exhaustively test all permutations with mismatched lengths for 3 list of length 3
         mistmatched_lengths = [
