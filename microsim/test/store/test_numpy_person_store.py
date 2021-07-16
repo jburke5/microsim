@@ -30,6 +30,7 @@ class TestNumpyPersonStore(TestCase):
 
         self._event_data = [EventTestData() for _ in range(len(self._static_data))]
         self._event_data_converter = DataclassNumpyDataConverter(EventTestData)
+        self._num_ticks = 1
 
     def test_get_num_persons_canonical_returns_num_persons(self):
         store = NumpyPersonStore(
@@ -39,6 +40,7 @@ class TestNumpyPersonStore(TestCase):
             self._dynamic_data_converter,
             self._event_data,
             self._event_data_converter,
+            self._num_ticks,
         )
         expected_num_persons = 3
 
@@ -68,4 +70,5 @@ class TestNumpyPersonStore(TestCase):
                     self._dynamic_data_converter,
                     event_data,
                     self._event_data_converter,
+                    self._num_ticks,
                 )
