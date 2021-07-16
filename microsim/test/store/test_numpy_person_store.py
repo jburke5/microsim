@@ -47,6 +47,21 @@ class TestNumpyPersonStore(TestCase):
         actual_num_persons = store.get_num_persons()
         self.assertEqual(expected_num_persons, actual_num_persons)
 
+    def test_get_num_ticks_canonical_returns_num_ticks(self):
+        store = NumpyPersonStore(
+            self._static_data,
+            self._static_data_converter,
+            self._dynamic_data,
+            self._dynamic_data_converter,
+            self._event_data,
+            self._event_data_converter,
+            self._num_ticks,
+        )
+        expected_num_ticks = 1
+
+        actual_num_ticks = store.get_num_ticks()
+        self.assertEqual(expected_num_ticks, actual_num_ticks)
+
     def test_init_data_length_mismatch_raises_error(self):
         # exhaustively test all permutations with mismatched lengths for 3 list of length 3
         mistmatched_lengths = [
