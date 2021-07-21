@@ -1,6 +1,6 @@
 from itertools import repeat
-from microsim.store.numpy_person_record_proxy import NumpyPersonRecordProxy
 import numpy as np
+from microsim.store.numpy_person_record_proxy import NumpyPersonRecordProxy
 
 
 class NumpyPopulationRecordProxy:
