@@ -83,6 +83,27 @@ class NumpyPersonStore:
         )
         return population_proxy
 
+    def get_population_advance_record_window(self, t, condition=None, active_indices=None):
+        """
+        Returns a tuple of population records at times `t` and `t+1`.
+
+        Intended for `StorePopulation.advance` or other `advance` functions
+        that read from the first population record and write to the second one.
+
+        Note that to guarantee alignment of the two population records,
+        `condition` and `active_indices` are only used to construct the first
+        (i.e., current, or read) population record. The `active_indices` property
+        of this record is used to construct the second (next, or write) record via
+        the `active_indices` parameter.
+        """
+
+        current_record = self.get_population_record_at(t, condition, active_indices)
+        next_record = self.get_population_record_at(
+            t + 1,
+            active_indices=current_record.active_indices,
+        )
+        return (current_record, next_record)
+
     def get_person_record_at(self, i, t):
         """Returns the combined record for Person `i` at time `t`."""
         static_row = self._static_data_array[i]
