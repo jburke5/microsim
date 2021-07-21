@@ -29,6 +29,10 @@ class NumpyPopulationRecordProxy:
         else:
             raise ValueError("Expected to receive one of: `active_indices`, `active_condition`")
 
+    @property
+    def active_indices(self):
+        return self._active_indices
+
     def _unconditional_apply(self, func, out_dtype=np.float64, **kwargs):
         """
         Applies `func` to each person record, then returns the result.
