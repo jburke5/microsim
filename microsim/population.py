@@ -203,6 +203,7 @@ class Population:
         # only advance age in survivors
         if not x.deadNext:
             person._age.append(person._age[-1] + 1)
+            person._alive.append(True)
         return person
 
     def move_people_df_forward(self, df):
