@@ -66,7 +66,7 @@ class NumpyPersonStore:
         """Returns the number of ticks for which store can hold data."""
         return self._num_ticks
 
-    def get_population_record_at(self, t, condition):
+    def get_population_record_at(self, t, condition=None, active_indices=None):
         """Returns all records at time `t` that satisfy `condition`."""
         static_rows = self._static_data_array
         dynamic_rows = self._dynamic_data_array[t]
@@ -79,6 +79,7 @@ class NumpyPersonStore:
             self._dynamic_data_converter,
             self._event_data_converter,
             active_condition=condition,
+            active_indices=active_indices,
         )
         return population_proxy
 
