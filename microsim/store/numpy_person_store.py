@@ -1,5 +1,6 @@
 import numpy as np
 from microsim.store.numpy_person_record_proxy import NumpyPersonRecordProxy
+from microsim.store.numpy_population_record_proxy import NumpyPopulationRecordProxy
 
 
 class NumpyPersonStore:
@@ -64,6 +65,21 @@ class NumpyPersonStore:
     def get_num_ticks(self):
         """Returns the number of ticks for which store can hold data."""
         return self._num_ticks
+
+    def get_population_record_at(self, t):
+        """Returns combined records for all Persons at time `t`."""
+        static_rows = self._static_data_array
+        dynamic_rows = self._dynamic_data_array[t]
+        event_rows = self._event_data_array[t]
+        population_proxy = NumpyPopulationRecordProxy(
+            static_rows,
+            dynamic_rows,
+            event_rows,
+            self._static_data_converter,
+            self._dynamic_data_converter,
+            self._event_data_converter,
+        )
+        return population_proxy
 
     def get_person_record_at(self, i, t):
         """Returns the combined record for Person `i` at time `t`."""
