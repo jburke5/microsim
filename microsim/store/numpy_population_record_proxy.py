@@ -57,7 +57,7 @@ class NumpyPopulationRecordProxy:
                     s, d, e, self._static_converter, self._dynamic_converter, self._event_converter
                 )
                 out[...] = func(record_proxy, **kwargs)
-            return it.operators[3]
+            return it.operands[3]
 
     def apply(self, func, out_dtype=np.float64, **kwargs):
         """
@@ -86,4 +86,4 @@ class NumpyPopulationRecordProxy:
                     self._event_converter,
                 )
                 out[...] = func(record_proxy, **kwargs)
-            return it.operators[1]
+            return it.operands[1]
