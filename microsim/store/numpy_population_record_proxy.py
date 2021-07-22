@@ -44,7 +44,7 @@ class NumpyPopulationRecordProxy:
         """
         ops = [self._static_rows, self._dynamic_rows, self._event_rows, None]
         flags = []
-        op_flags = [["readonly"], ["readonly"], ["readonly"], ["writeonly"]]
+        op_flags = [["readonly"], ["readonly"], ["readonly"], ["writeonly", "allocate"]]
         op_dtypes = [
             self._static_rows.dtype,
             self._dynamic_rows.dtype,
@@ -67,7 +67,7 @@ class NumpyPopulationRecordProxy:
         """
         ops = [self._active_indices, None]
         flags = []
-        op_flags = [["readonly"], ["writeonly"]]
+        op_flags = [["readonly"], ["writeonly", "allocate"]]
         op_dtypes = [
             self._active_indices.dtype,
             out_dtype,
