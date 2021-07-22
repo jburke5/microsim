@@ -76,7 +76,7 @@ class NumpyPopulationRecordProxy:
             for i, out in it:
                 static_record = self._static_rows[i]
                 dynamic_record = self._dynamic_rows[i]
-                event_record = self._dynamic_rows[i]
+                event_record = self._event_rows[i]
                 record_proxy = NumpyPersonRecordProxy(
                     static_record,
                     dynamic_record,
