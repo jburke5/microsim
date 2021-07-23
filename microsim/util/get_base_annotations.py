@@ -1,4 +1,4 @@
-def get_subclass_annotations(cls):
+def get_base_annotations(cls):
     """Returns dict of class attr annotations from all base classes."""
 
     annotations = {}
