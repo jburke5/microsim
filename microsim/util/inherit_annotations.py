@@ -1,4 +1,4 @@
-from microsim.person.get_subclass_annotations import get_subclass_annotations
+from microsim.util.get_subclass_annotations import get_subclass_annotations
 
 
 def inherit_annotations(cls):

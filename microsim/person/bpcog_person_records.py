@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from microsim.person.inherit_annotations import inherit_annotations
+from microsim.util.inherit_annotations import inherit_annotations
 from typing_extensions import Protocol
 from microsim.alcohol_category import AlcoholCategory
 from microsim.gender import NHANESGender

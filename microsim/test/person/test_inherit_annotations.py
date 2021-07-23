@@ -1,4 +1,4 @@
-from microsim.person.inherit_annotations import inherit_annotations
+from microsim.util.inherit_annotations import inherit_annotations
 from unittest import TestCase
 
 
