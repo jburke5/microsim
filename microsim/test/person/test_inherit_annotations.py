@@ -1,5 +1,6 @@
-from microsim.util.inherit_annotations import inherit_annotations
+from typing import get_type_hints
 from unittest import TestCase
+from microsim.util.inherit_annotations import inherit_annotations
 
 
 class Baseless:
@@ -75,7 +76,7 @@ class TestInheritAnnotations(TestCase):
 
         decorated_cls = inherit_annotations(cls)
 
-        self.assertDictEqual(expected_annotations, decorated_cls.__annotations__)
+        self.assertDictEqual(expected_annotations, get_type_hints(decorated_cls))
 
     def test_no_bases_no_attrs_annotations_not_set(self):
         cls = Baseless
@@ -83,7 +84,7 @@ class TestInheritAnnotations(TestCase):
 
         decorated_cls = inherit_annotations(cls)
 
-        self.assertEqual(expected_annotations, decorated_cls.__annotations__)
+        self.assertEqual(expected_annotations, get_type_hints(decorated_cls))
 
     def test_single_base_inherits_all(self):
         cls = NaturalNumberLine
@@ -91,7 +92,7 @@ class TestInheritAnnotations(TestCase):
 
         decorated_cls = inherit_annotations(cls)
 
-        self.assertDictEqual(expected_annotations, decorated_cls.__annotations__)
+        self.assertDictEqual(expected_annotations, get_type_hints(decorated_cls))
 
     def test_multiple_bases_inherits_all(self):
         cls = Point3D
@@ -99,7 +100,7 @@ class TestInheritAnnotations(TestCase):
 
         decorated_cls = inherit_annotations(cls)
 
-        self.assertDictEqual(expected_annotations, decorated_cls.__annotations__)
+        self.assertDictEqual(expected_annotations, get_type_hints(decorated_cls))
 
     def test_nested_bases_still_inherits_all(self):
         cls = Point3DNatX
@@ -107,7 +108,7 @@ class TestInheritAnnotations(TestCase):
 
         decorated_cls = inherit_annotations(cls)
 
-        self.assertDictEqual(expected_annotations, decorated_cls.__annotations__)
+        self.assertDictEqual(expected_annotations, get_type_hints(decorated_cls))
 
     def test_multiple_bases_last_base_overriden(self):
         cls = Point3DStillIntZ
@@ -115,7 +116,7 @@ class TestInheritAnnotations(TestCase):
 
         decorated_cls = inherit_annotations(cls)
 
-        self.assertDictEqual(expected_annotations, decorated_cls.__annotations__)
+        self.assertDictEqual(expected_annotations, get_type_hints(decorated_cls))
 
     def test_multiple_bases_first_base_overrides(self):
         cls = Point3DRealZ
@@ -123,4 +124,4 @@ class TestInheritAnnotations(TestCase):
 
         decorated_cls = inherit_annotations(cls)
 
-        self.assertDictEqual(expected_annotations, decorated_cls.__annotations__)
+        self.assertDictEqual(expected_annotations, get_type_hints(decorated_cls))
