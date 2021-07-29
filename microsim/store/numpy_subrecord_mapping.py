@@ -71,7 +71,7 @@ class NumpySubrecordMapping:
 
         dtype_fields = []
         annotations = get_record_properties(protocol)
-        for attr_name, attr_type in annotations:
+        for attr_name, attr_type in annotations.items():
             field_name = attr_name
             mapping = scalar_mapping_factory(field_name, attr_type)
             dtype_fields.append((mapping.field_name, mapping.field_type))
