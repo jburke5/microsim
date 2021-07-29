@@ -1,6 +1,5 @@
-from microsim.store.numpy_field_proxy import NumpyFieldProxy
 import numpy as np
-from microsim.store.numpy_person_record_proxy import NumpyPersonRecordProxy
+from microsim.store.numpy_field_proxy import NumpyFieldProxy
 from microsim.store.numpy_population_record_proxy import NumpyPopulationRecordProxy
 
 
@@ -141,12 +140,5 @@ class NumpyPersonStore:
         static_row = self._static_data_array[i]
         dynamic_row = self._dynamic_data_array[t, i]
         event_row = self._event_data_array[t, i]
-        record_proxy = NumpyPersonRecordProxy(
-            static_row,
-            dynamic_row,
-            event_row,
-            self._static_data_converter,
-            self._dynamic_data_converter,
-            self._event_data_converter,
-        )
+        record_proxy = self._person_record_proxy_class(static_row, dynamic_row, event_row)
         return record_proxy
