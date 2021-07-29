@@ -144,12 +144,7 @@ class NHANESPersonRecordFactory:
         qalys = self._init_qalys(person_record)
         person_record = dataclasses.replace(person_record, qalys=qalys)
 
-        record_dict = dataclasses.asdict(person_record)
-        static_record = init_dataclass_from_dict(BPCOGPersonStaticRecord, record_dict)
-        dynamic_record = init_dataclass_from_dict(BPCOGPersonDynamicRecord, record_dict)
-        event_record = init_dataclass_from_dict(BPCOGPersonEventRecord, record_dict)
-
-        return (static_record, dynamic_record, event_record)
+        return person_record
 
 
 class NHANESPersonRecordLoader:
@@ -171,5 +166,5 @@ class NHANESPersonRecordLoader:
         )
         column_names = self._factory.required_nhanes_column_names
         for row_data in zip(*[sample[k] for k in column_names]):
-            split_person_records = self._factory.from_nhanes_dataset_row(*row_data)
-            yield split_person_records
+            person_record = self._factory.from_nhanes_dataset_row(*row_data)
+            yield person_record
