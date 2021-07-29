@@ -20,7 +20,7 @@ class NumpyPopulationRecordProxy:
             self._active_indices = active_indices
         elif active_condition is not None:
             active_mask = self._unconditional_apply(active_condition, out_dtype=np.bool8)
-            self._active_indices = active_mask.nonzero()
+            (self._active_indices,) = active_mask.nonzero()
         else:
             raise ValueError("Expected to receive one of: `active_indices`, `active_condition`")
 
