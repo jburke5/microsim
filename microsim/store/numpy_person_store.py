@@ -43,7 +43,14 @@ def new_person_record_proxy_class(static_props, dynamic_props, event_props):
     static_attrs = proxy_attrs_from_props(static_props, "_static_row")
     dynamic_attrs = proxy_attrs_from_props(dynamic_props, "_dynamic_row")
     event_attrs = proxy_attrs_from_props(event_props, "_event_row")
-    proxy_class_attrs = {**static_attrs, **dynamic_attrs, **event_attrs}
+
+    def person_record_proxy_init(self, static_row, dynamic_row, event_row):
+        self._static_row = static_row
+        self._dynamic_row = dynamic_row
+        self._event_row = event_row
+
+    base_attrs = {"__init__": person_record_proxy_init}
+    proxy_class_attrs = {**static_attrs, **dynamic_attrs, **event_attrs, **base_attrs}
     person_record_proxy_class = type("NumpyPersonRecordProxy", tuple(), proxy_class_attrs)
     return person_record_proxy_class
 
