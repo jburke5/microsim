@@ -51,18 +51,23 @@ class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
 class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
     sbpLowering = 5.5
     dbpLowering = 3.1
+    sbpGoal = 120
+    dbpGoal = 65
 
     def __init__(self):
         pass
 
-    def get_meds_needed_for_goal(self, sbp, dbp):
-        sbpMedCount = int((sbp - 120) / AddBPTreatmentMedsToGoal120.sbpLowering)
-        dbpMedCount = int((dbp - 65) / AddBPTreatmentMedsToGoal120.dbpLowering)
+    def getGoal(self, person):
+        return {'sbp' : 120, 'dbp' : 65}
+    
+    def get_meds_needed_for_goal(self, sbp, dbp, goal):
+        sbpMedCount = int((sbp - goal['sbp']) / AddBPTreatmentMedsToGoal120.sbpLowering)
+        dbpMedCount = int((dbp - goal['dbp']) / AddBPTreatmentMedsToGoal120.dbpLowering)
         medCount = dbpMedCount if dbpMedCount < sbpMedCount else sbpMedCount
         return 0 if medCount < 0 else medCount
 
     def get_changes_for_person(self, person):
-        medsForGoal = self.get_meds_needed_for_goal(person._sbp[-1], person._dbp[-1])
+        medsForGoal = self.get_meds_needed_for_goal(person._sbp[-1], person._dbp[-1], self.getGoal(person))
         return (
             {"_antiHypertensiveCount": medsForGoal},
             {"_bpMedsAdded": medsForGoal},

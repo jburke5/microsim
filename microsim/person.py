@@ -13,6 +13,7 @@ from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
+from microsim.gfr_equation import GFREquation
 
 # luciana-tag...lne thing that tripped me up was probable non clear communication regarding "waves"
 # so, i'm going to spell it out here and try to make the code consistent.
@@ -182,6 +183,18 @@ class Person:
     @property
     def _current_diabetes(self):
         return self.has_diabetes()
+
+    # will use the CKD-EPI equation: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2763564/
+    # because it prediicts better in blacks, https://bmcnephrol.biomedcentral.com/articles/10.1186/s12882-017-0788-y
+    #  Levey, A. S. et al. A New Equation to Estimate Glomerular Filtration Rate. Ann Intern Med 150, 604 (2009).
+  
+    @property
+    def _gfr(self):
+        return GFREquation().get_gfr_for_person(self)
+    
+    @property
+    def _current_ckd(self):
+        return self._gfr < 60 
 
     # generlized logistic function mapping GCP to MMSE in combined cohrot data
     def get_current_mmse(self):
