@@ -64,6 +64,7 @@ class NumpyPersonStore:
         static_mapping,
         dynamic_mapping,
         event_mapping,
+        iter_person_records,
     ):
         assert_positive_int(num_persons, "num_persons")
         self._num_persons = num_persons
@@ -88,6 +89,17 @@ class NumpyPersonStore:
             dynamic_mapping.property_mappings,
             event_mapping.property_mappings,
         )
+
+        all_person_record_property_names = (
+            static_mapping.property_mappings.keys()
+            | dynamic_mapping.property_mappings.keys()
+            | event_mapping.property_mappings.keys()
+        )
+        for i, record in enumerate(iter_person_records()):
+            record_proxy = self.get_person_record_at(i, 0)
+            for prop_name in all_person_record_property_names:
+                value = getattr(record, prop_name)
+                setattr(record_proxy, prop_name, value)
 
     def get_num_persons(self):
         """Returns the number of people held in this store."""
