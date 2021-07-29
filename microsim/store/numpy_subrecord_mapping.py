@@ -2,7 +2,6 @@ from enum import IntEnum
 from types import MappingProxyType
 import numpy as np
 from microsim.store.numpy_scalar_mapping import NumpyScalarMapping
-from microsim.store.numpy_struct_mapping import NumpyStructMapping
 from microsim.util.get_base_annotations import get_base_annotations
 
 
@@ -14,12 +13,20 @@ def identity(x):
     return x
 
 
+def outcome_to_np(outcome):
+    if outcome is None:
+        return ("", False)
+    return (outcome.type, outcome.fatal)
+
+
+def outcome_from_np(row):
+    if row.type == "":
+        return None
+
+
 def new_outcome_struct_mapping(field_name):
-    scalar_mappings = [
-        NumpyScalarMapping("type", "U9", identity, identity),
-        NumpyScalarMapping("fatal", np.bool8, identity, bool),
-    ]
-    return NumpyStructMapping(field_name, scalar_mappings)
+    outcome_dtype = [("type", "U9"), ("fatal", np.bool8)]
+    return NumpyScalarMapping(field_name, outcome_dtype, outcome_to_np, outcome_from_np)
 
 
 def get_scalar_mapping(field_name, pytype):
@@ -38,12 +45,9 @@ def get_scalar_mapping(field_name, pytype):
 class NumpyEventSubrecordMapping:
     def __init__(self):
         self._property_mappings = {
-            p: new_outcome_struct_mapping(p) for p in ["mi", "stroke", "dementia"]
+            f: new_outcome_struct_mapping(f) for f in ["mi", "stroke", "dementia"]
         }
-        dtype_fields = [
-            (p, [(s.field_name, s.field_name) for s in m.scalar_fields])
-            for p, m in self._property_mappings.items()
-        ]
+        dtype_fields = [(m.field_name, m.field_type) for m in self._property_mappings.values()]
         self._dtype = np.dtype(dtype_fields)
 
     @property
