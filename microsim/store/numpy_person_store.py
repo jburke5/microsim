@@ -28,12 +28,15 @@ def assert_unique_prop_names(static_prop_names, dynamic_prop_names, event_prop_n
 
 
 def proxy_attrs_from_props(property_mappings, row_attr_name):
-    return {
-        prop_name: NumpyFieldProxy(
-            row_attr_name, mapping.field_name, mapping.to_np, mapping.from_np
+    attrs = {}
+    for prop_name, mapping in property_mappings.items():
+        attrs[prop_name] = NumpyFieldProxy(
+            row_attr_name,
+            mapping.field_name,
+            mapping.to_np,
+            mapping.from_np,
         )
-        for prop_name, mapping in property_mappings.items()
-    }
+    return attrs
 
 
 def new_person_record_proxy_class(static_props, dynamic_props, event_props):
