@@ -60,6 +60,7 @@ class Population:
             "afib",
             "waist",
             "alcoholPerWeek",
+            "creatinine"
         ]
         # , 'otherLipidLoweringMedicationCount']
         self._treatments = ["antiHypertensiveCount", "statin"]
@@ -97,7 +98,7 @@ class Population:
 
             # advance risk factors
             for rf in self._riskFactors:
-                # print(f"### Risk Factor: {rf}")
+                #print(f"### Risk Factor: {rf}")
                 alive[rf + "Next"] = alive.parallel_apply(
                     self._risk_model_repository.get_model(rf).estimate_next_risk_vectorized,
                     axis="columns",
@@ -735,6 +736,7 @@ class Population:
             "education": person._education.value,
             "afib": person._afib[-1],
             "alcoholPerWeek": person._alcoholPerWeek[-1],
+            "creatinine": person._creatinine[-1],
             "antiHypertensiveCount": person._antiHypertensiveCount[-1],
             "current_bp_treatment": person._antiHypertensiveCount[-1] > 0,
             "statin": person._statin[-1],
@@ -812,6 +814,7 @@ class Population:
                 "ldl": [person._ldl[0] for person in self._people],
                 "trig": [person._trig[0] for person in self._people],
                 "totChol": [person._totChol[0] for person in self._people],
+                "creatinine": [person._creatinine[0] for person in self._people],
                 "bmi": [person._bmi[0] for person in self._people],
                 "anyPhysicalActivity": [person._anyPhysicalActivity[0] for person in self._people],
                 "education": [person._education.value for person in self._people],
@@ -861,6 +864,7 @@ def build_person(x, outcome_model_repository):
         antiHypertensiveCount=x.antiHypertensive,
         statin=x.statin,
         otherLipidLoweringMedicationCount=x.otherLipidLowering,
+        creatinine=x.serumCreatinine,
         initializeAfib=initializeAFib,
         initializationRepository=InitializationRepository(),
         selfReportStrokeAge=x.selfReportStrokeAge,

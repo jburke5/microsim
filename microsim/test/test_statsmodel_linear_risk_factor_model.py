@@ -57,6 +57,7 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
+            creatinine = 0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -81,6 +82,7 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                 antiHypertensiveCount=0,
                 statin=0,
                 otherLipidLoweringMedicationCount=0,
+                creatinine=0.0,
                 initializeAfib=initializeAfib,
             )
             for bpinstance in sbp

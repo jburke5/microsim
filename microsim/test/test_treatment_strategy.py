@@ -34,6 +34,7 @@ class TestTreatmentStrategy(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
+            creatinine=0.0,
             initializeAfib=TestTreatmentStrategy.initializeAfib,
         )
 

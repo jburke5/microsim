@@ -48,6 +48,7 @@ class TestGCPModel(unittest.TestCase):
             antiHypertensiveCount=1,
             statin=0,
             otherLipidLoweringMedicationCount=0,
+            creatinine = 0,        
             initializeAfib=TestGCPModel.initializeAfib,
         )
 
@@ -72,6 +73,7 @@ class TestGCPModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
+            creatinine = 0,        
             initializeAfib=TestGCPModel.initializeAfib,
         )
 
@@ -96,6 +98,7 @@ class TestGCPModel(unittest.TestCase):
             antiHypertensiveCount=1,
             statin=0,
             otherLipidLoweringMedicationCount=0,
+            creatinine = 0,
             initializeAfib=TestGCPModel.initializeAfib,
         )
         self._test_case_one._randomEffects["gcp"] = 0

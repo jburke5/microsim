@@ -95,6 +95,7 @@ class TestPersonWaveStatus(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
+            creatinine = 0,
             initializeAfib=initializeAFib,
         )
 
@@ -118,6 +119,7 @@ class TestPersonWaveStatus(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
+            creatinine = 0,
             initializeAfib=initializeAFib,
         )
 
