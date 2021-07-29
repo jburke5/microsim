@@ -3,38 +3,30 @@ from microsim.store.numpy_person_record_proxy import NumpyPersonRecordProxy
 from microsim.store.numpy_population_record_proxy import NumpyPopulationRecordProxy
 
 
+def assert_positive_int(value, name):
+    if not isinstance(value, int):
+        raise TypeError(
+            f"Expected `{name}` to be an `int`: received: {value}" f" (type: {type(value)})"
+        )
+    if value <= 0:
+        raise ValueError(f"Expected `{name}` to be a positive integer; received: {value}")
+
+
 class NumpyPersonStore:
     """Holds Person data in numpy ndarrays."""
 
     def __init__(
         self,
-        static_data,
-        dynamic_data,
-        event_data,
+        num_persons,
+        num_ticks,
         static_mapping,
         dynamic_mapping,
         event_mapping,
-        num_ticks,
     ):
-        len_static = len(static_data)
-        len_dynamic = len(dynamic_data)
-        len_event = len(event_data)
-        if not (len_static == len_dynamic == len_event):
-            raise ValueError(
-                "Lengths of `static_data`, `dynamic_data`, and `event_data` args do not match:"
-                f" {len_static}, {len_dynamic}, {len_event}"
-            )
-        self._num_persons = len_static  # lengths asserts to be the same: chose static arbitrarily
+        assert_positive_int(num_persons, "num_persons")
+        self._num_persons = num_persons
 
-        if not isinstance(num_ticks, int):
-            raise TypeError(
-                f"Expected `num_ticks` to be an `int`: received: {num_ticks}"
-                f" (type: {type(num_ticks)})"
-            )
-        if num_ticks <= 0:
-            raise ValueError(
-                f"Expected `num_ticks` to be a positive integer; received: {num_ticks}"
-            )
+        assert_positive_int(num_ticks, "num_ticks")
         self._num_ticks = num_ticks
 
         static_shape = (self._num_persons,)
