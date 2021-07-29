@@ -39,13 +39,6 @@ def build_prior_stroke_event(prior_stroke_age, current_age):
     return Outcome(OutcomeType.STROKE, False, age=prior_stroke_age)
 
 
-def init_dataclass_from_dict(dataclass_type, init_values):
-    """Creates a new dataclass instance from a subset of dict values"""
-    field_names = set(f.name for f in dataclasses.fields(dataclass_type))
-    init_kwargs = {k: init_values[k] for k in field_names}
-    return dataclass_type(**init_kwargs)
-
-
 class NHANESPersonRecordFactory:
     def __init__(self, init_random_effects, init_afib, init_gcp, init_qalys):
         self._init_random_effects = init_random_effects
