@@ -106,9 +106,7 @@ class NumpyPersonStore:
             static_rows,
             dynamic_rows,
             event_rows,
-            self._static_data_converter,
-            self._dynamic_data_converter,
-            self._event_data_converter,
+            self._person_record_proxy_class,
             active_condition=condition,
             active_indices=active_indices,
         )

@@ -1,5 +1,4 @@
 import numpy as np
-from microsim.store.numpy_person_record_proxy import NumpyPersonRecordProxy
 
 
 class NumpyPopulationRecordProxy:
@@ -8,18 +7,14 @@ class NumpyPopulationRecordProxy:
         static_rows,
         dynamic_rows,
         event_rows,
-        static_converter,
-        dynamic_converter,
-        event_converter,
+        new_person_record_proxy,
         active_indices=None,
         active_condition=None,
     ):
         self._static_rows = static_rows
         self._dynamic_rows = dynamic_rows
         self._event_rows = event_rows
-        self._static_converter = static_converter
-        self._dynamic_converter = dynamic_converter
-        self._event_converter = event_converter
+        self._new_person_record_proxy = new_person_record_proxy
 
         if active_indices is not None:
             self._active_indices = active_indices
@@ -53,9 +48,7 @@ class NumpyPopulationRecordProxy:
         ]
         with np.nditer(ops, flags, op_flags, op_dtypes) as it:
             for s, d, e, out in it:
-                record_proxy = NumpyPersonRecordProxy(
-                    s, d, e, self._static_converter, self._dynamic_converter, self._event_converter
-                )
+                record_proxy = self._new_person_record_proxy(s, d, e)
                 out[...] = func(record_proxy, **kwargs)
             return it.operands[3]
 
@@ -77,13 +70,10 @@ class NumpyPopulationRecordProxy:
                 static_record = self._static_rows[i]
                 dynamic_record = self._dynamic_rows[i]
                 event_record = self._event_rows[i]
-                record_proxy = NumpyPersonRecordProxy(
+                record_proxy = self._new_person_record_proxy(
                     static_record,
                     dynamic_record,
                     event_record,
-                    self._static_converter,
-                    self._dynamic_converter,
-                    self._event_converter,
                 )
                 out[...] = func(record_proxy, **kwargs)
             return it.operands[1]
