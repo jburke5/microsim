@@ -9,11 +9,11 @@ class NumpyPersonStore:
     def __init__(
         self,
         static_data,
-        static_data_converter,
         dynamic_data,
-        dynamic_data_converter,
         event_data,
-        event_data_converter,
+        static_mapping,
+        dynamic_mapping,
+        event_mapping,
         num_ticks,
     ):
         len_static = len(static_data)
@@ -37,26 +37,17 @@ class NumpyPersonStore:
             )
         self._num_ticks = num_ticks
 
-        self._static_data_converter = static_data_converter
-        static_dtype = self._static_data_converter.get_dtype()
-        static_data_arraylike = [self._static_data_converter.to_row_tuple(s) for s in static_data]
-        self._static_data_array = np.array(static_data_arraylike, dtype=static_dtype)
+        static_shape = (self._num_persons,)
+        static_dtype = static_mapping.dtype
+        self._static_data_array = np.zeros(static_shape, static_dtype)
 
-        self._dynamic_data_converter = dynamic_data_converter
-        dynamic_dtype = self._dynamic_data_converter.get_dtype()
-        dynamic_data_arraylike = [
-            self._dynamic_data_converter.to_row_tuple(d) for d in dynamic_data
-        ]
         dynamic_shape = (self._num_ticks + 1, self._num_persons)  # + 1 for initial data + k ticks
-        self._dynamic_data_array = np.zeros(dynamic_shape, dtype=dynamic_dtype)
-        self._dynamic_data_array[0] = dynamic_data_arraylike
+        dynamic_dtype = dynamic_mapping.dtype
+        self._dynamic_data_array = np.zeros(dynamic_shape, dynamic_dtype)
 
-        self._event_data_converter = event_data_converter
-        event_dtype = self._event_data_converter.get_dtype()
-        event_data_arraylike = [self._event_data_converter.to_row_tuple(e) for e in event_data]
         event_shape = (self._num_ticks + 1, self._num_persons)  # + 1 for initial data + k ticks
-        self._event_data_array = np.zeros(event_shape, dtype=event_dtype)
-        self._event_data_array[0] = event_data_arraylike
+        event_dtype = event_mapping.dtype
+        self._event_data_array = np.zeros(event_shape, event_dtype)
 
     def get_num_persons(self):
         """Returns the number of people held in this store."""
