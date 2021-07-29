@@ -44,15 +44,15 @@ def get_scalar_mapping(field_name, pytype):
 
 class NumpyEventSubrecordMapping:
     def __init__(self):
-        self._property_mappings = {
-            f: new_outcome_struct_mapping(f) for f in ["mi", "stroke", "dementia"]
-        }
+        self._property_mappings = MappingProxyType(
+            {f: new_outcome_struct_mapping(f) for f in ["mi", "stroke", "dementia"]}
+        )
         dtype_fields = [(m.field_name, m.field_type) for m in self._property_mappings.values()]
         self._dtype = np.dtype(dtype_fields)
 
     @property
     def property_mappings(self):
-        return MappingProxyType(self._property_mappings)
+        return self._property_mappings
 
     @property
     def dtype(self):
