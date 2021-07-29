@@ -28,6 +28,9 @@ class NumpyPopulationRecordProxy:
     def active_indices(self):
         return self._active_indices
 
+    def __len__(self):
+        return self._active_indices.shape[0]
+
     def _unconditional_apply(self, func, out_dtype=np.float64, **kwargs):
         """
         Applies `func` to each person record, then returns the result.
