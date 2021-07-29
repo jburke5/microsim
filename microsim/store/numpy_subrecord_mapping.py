@@ -1,4 +1,5 @@
 from enum import IntEnum
+from types import MappingProxyType
 import numpy as np
 from microsim.store.numpy_scalar_mapping import NumpyScalarMapping
 from microsim.store.numpy_struct_mapping import NumpyStructMapping
@@ -47,7 +48,7 @@ class NumpyEventSubrecordMapping:
 
     @property
     def property_mappings(self):
-        return self._property_mappings
+        return MappingProxyType(self._property_mappings)
 
     @property
     def dtype(self):
@@ -71,6 +72,8 @@ class NumpySubrecordMapping:
             mapping = scalar_mapping_factory(field_name, attr_type)
             dtype_fields.append((mapping.field_name, mapping.field_type))
             self._property_mappings[attr_name] = mapping
+
+        self._property_mappings = MappingProxyType(self._property_mappings)
         self._dtype = np.dtype(dtype_fields)
 
     @property
