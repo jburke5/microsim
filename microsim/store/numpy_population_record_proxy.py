@@ -28,7 +28,8 @@ class NumpyPopulationRecordProxy:
     def active_indices(self):
         return self._active_indices
 
-    def __len__(self):
+    @property
+    def num_persons(self):
         return self._active_indices.shape[0]
 
     def __iter__(self):
