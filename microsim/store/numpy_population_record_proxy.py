@@ -1,3 +1,4 @@
+from microsim.store.numpy_population_iterator import NumpyPopulationIterator
 import numpy as np
 
 
@@ -33,20 +34,13 @@ class NumpyPopulationRecordProxy:
         return self._active_indices.shape[0]
 
     def __iter__(self):
-        ops = [self._active_indices]
-        flags = []
-        op_flags = ["readonly"]
-        op_dtypes = [self._active_indices.dtype]
-        with np.nditer(ops, flags, op_flags, op_dtypes) as it:
-            for abs_idx in it:
-                static_record = self._static_rows[abs_idx]
-                dynamic_record = self._dynamic_rows[abs_idx]
-                event_record = self._event_rows[abs_idx]
-                person_record_proxy = self._new_person_record_proxy(
-                    static_record, dynamic_record, event_record
-                )
-                yield person_record_proxy
-        return
+        return NumpyPopulationIterator(
+            self._static_rows,
+            self._dynamic_rows,
+            self._event_rows,
+            self._active_indices,
+            self._new_person_record_proxy,
+        )
 
     def _unconditional_apply(self, func, out_dtype=np.float64, **kwargs):
         """
