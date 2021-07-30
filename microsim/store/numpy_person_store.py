@@ -147,11 +147,3 @@ class NumpyPersonStore:
             active_indices=current_record.active_indices,
         )
         return (current_record, next_record)
-
-    def get_person_record_at(self, i, t):
-        """Returns the combined record for Person `i` at time `t`."""
-        static_row = self._static_data_array[i]
-        dynamic_row = self._dynamic_data_array[t, i]
-        event_row = self._event_data_array[t, i]
-        record_proxy = self._person_record_proxy_class(static_row, dynamic_row, event_row)
-        return record_proxy
