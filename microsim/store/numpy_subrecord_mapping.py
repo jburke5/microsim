@@ -1,4 +1,5 @@
 from enum import IntEnum
+from microsim.outcome import Outcome, OutcomeType
 from types import MappingProxyType
 import numpy as np
 from microsim.store.numpy_scalar_mapping import NumpyScalarMapping
@@ -16,12 +17,14 @@ def identity(x):
 def outcome_to_np(outcome):
     if outcome is None:
         return ("", False)
-    return (outcome.type, outcome.fatal)
+    return (outcome.type.value, outcome.fatal)
 
 
-def outcome_from_np(row):
-    if row.type == "":
+def outcome_from_np(np_outcome_values):
+    np_type, np_is_fatal = np_outcome_values
+    if np_type == "":
         return None
+    return Outcome(OutcomeType(str(np_type)), bool(np_is_fatal))
 
 
 def new_outcome_struct_mapping(field_name):
