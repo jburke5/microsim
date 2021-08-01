@@ -14,6 +14,7 @@ from microsim.cv_outcome_determination import CVOutcomeDetermination
 from microsim.outcome import Outcome, OutcomeType
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 from microsim.initialization_repository import InitializationRepository
+from microsim.gfr_equation import GFREquation
 
 import pandas as pd
 from pandarallel import pandarallel
@@ -60,8 +61,7 @@ class Population:
             "afib",
             "waist",
             "alcoholPerWeek",
-            "creatinine"
-        ]
+            "creatinine"        ]
         # , 'otherLipidLoweringMedicationCount']
         self._treatments = ["antiHypertensiveCount", "statin"]
         self._timeVaryingCovariates = copy.copy(self._riskFactors)
@@ -226,6 +226,7 @@ class Population:
 
         df["totalYearsInSim"] = df["totalYearsInSim"] + 1
         df["current_diabetes"] = df["a1c"] > 6.5
+        df["gfr"] = df.apply(GFREquation().get_gfr_for_person_vectorized, axis='columns')
         df["current_bp_treatment"] = df["antiHypertensiveCount"] >= 1
         df["totalQalys"] = df["totalQalys"] + df["qalyNext"]
         # assign ages for new events
@@ -727,6 +728,7 @@ class Population:
             "dbp": person._dbp[-1],
             "a1c": person._a1c[-1],
             "current_diabetes": person._a1c[-1] > 6.5,
+            "gfr": person._gfr,
             "hdl": person._hdl[-1],
             "ldl": person._ldl[-1],
             "trig": person._trig[-1],

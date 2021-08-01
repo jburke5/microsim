@@ -184,9 +184,6 @@ class Person:
     def _current_diabetes(self):
         return self.has_diabetes()
 
-    # will use the CKD-EPI equation: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2763564/
-    # because it prediicts better in blacks, https://bmcnephrol.biomedcentral.com/articles/10.1186/s12882-017-0788-y
-    #  Levey, A. S. et al. A New Equation to Estimate Glomerular Filtration Rate. Ann Intern Med 150, 604 (2009).
   
     @property
     def _gfr(self):
