@@ -15,12 +15,14 @@ class StorePopulation:
         self,
         person_store,
         risk_model_repository,
+        bp_treatment_strategy,
         risk_factor_prop_names,
         treatment_prop_names,
         outcome_prop_names,
     ):
         self._person_store = person_store
         self._risk_model_repository = risk_model_repository
+        self._bp_treatment_strategy = bp_treatment_strategy
 
         self._risk_factor_prop_names = risk_factor_prop_names
         self._treatment_prop_names = treatment_prop_names
@@ -51,6 +53,7 @@ class StorePopulation:
             for cur_record, next_record in zip(cur_pop, next_pop):
                 self._advance_person_risk_factors(cur_record, next_record)
                 self._advance_person_treatments(cur_record, next_record)
+                self._bp_treatment_strategy.apply_treatment(cur_record, next_record)
 
         self._current_tick = end_tick
 

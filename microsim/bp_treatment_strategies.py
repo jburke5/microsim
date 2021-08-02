@@ -14,6 +14,12 @@ class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
     def __init__(self):
         pass
 
+    def apply_treatment(self, cur_record, next_record):
+        next_record.bpMedsAdded = 1
+        next_record.antiHypertensiveCount = 1
+        next_record.sbp -= AddBPTreatmentMedsToGoal120.sbpLowering
+        next_record.dbp -= AddBPTreatmentMedsToGoal120.dbpLowering
+
     def get_changes_for_person(self, person):
         return (
             {"_antiHypertensiveCount": 1},
@@ -54,6 +60,13 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
 
     def __init__(self):
         pass
+
+    def apply_treatment(self, cur_record, next_record):
+        meds_needed = self.get_meds_needed_for_goal(next_record.sbp, next_record.dbp)
+        next_record.bpMedsAdded = meds_needed
+        next_record.antiHypertensiveCount = meds_needed
+        next_record.sbp -= meds_needed * AddBPTreatmentMedsToGoal120.sbpLowering
+        next_record.dbp -= meds_needed * AddBPTreatmentMedsToGoal120.dbpLowering
 
     def get_meds_needed_for_goal(self, sbp, dbp):
         sbpMedCount = int((sbp - 120) / AddBPTreatmentMedsToGoal120.sbpLowering)
@@ -101,6 +114,12 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
 class NoBPTreatmentNoBPChange(BaseTreatmentStrategy):
     def __init__(self):
         pass
+
+    def apply_treatment(self, cur_record, next_record):
+        next_record.bpMedsAdded = 0
+        next_record.antiHypertensiveCount = 0
+        next_record.sbp = cur_record.sbp
+        next_record.dbp = cur_record.dbp
 
     def get_changes_for_person(self, person):
         current = person._antiHypertensiveCount[-1]
