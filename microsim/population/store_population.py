@@ -11,8 +11,21 @@ class StorePopulation:
     and analyzing.
     """
 
-    def __init__(self, person_store):
+    def __init__(
+        self,
+        person_store,
+        risk_model_repository,
+        risk_factor_prop_names,
+        treatment_prop_names,
+        outcome_prop_names,
+    ):
         self._person_store = person_store
+        self._risk_model_repository = risk_model_repository
+
+        self._risk_factor_prop_names = risk_factor_prop_names
+        self._treatment_prop_names = treatment_prop_names
+        self._outcome_prop_names = outcome_prop_names
+
         self._current_tick = 0
 
     @property
@@ -35,6 +48,20 @@ class StorePopulation:
             if cur_pop.num_persons == 0:
                 break
 
-            # TODO: the rest of `advance` goes here
+            for cur_record, next_record in zip(cur_pop, next_pop):
+                self._advance_person_risk_factors(cur_record, next_record)
+                self._advance_person_treatments(cur_record, next_record)
 
         self._current_tick = end_tick
+
+    def _advance_person_risk_factors(self, cur_record, next_record):
+        for rf in self._risk_factor_prop_names:
+            rf_model = self._risk_model_repository.get_model(rf)
+            next_value = rf_model.get_estimate_next_risk_vectorized(cur_record)
+            setattr(next_record, rf, next_value)
+
+    def _advance_person_treatments(self, cur_record, next_record):
+        for treatment in self._treatment_prop_names:
+            treatment_model = self._risk_model_repository.get_model(treatment)
+            next_value = treatment_model.get_estimate_next_risk_vectorized(cur_record)
+            setattr(next_record, treatment, next_value)
