@@ -1,3 +1,7 @@
+def is_alive(person_record):
+    return person_record.alive
+
+
 class StorePopulation:
     """
     Population that uses a PersonStore to store its people.
@@ -24,8 +28,7 @@ class StorePopulation:
         for tick_index in range(num_ticks):
             t = self._current_tick + tick_index + 1
             advance_record_window = self._person_store.get_population_advance_record_window(
-                t,
-                condition=lambda p: p.alive,
+                t, condition=is_alive
             )
             current_population_record, next_population_record = advance_record_window
 
