@@ -53,7 +53,6 @@ class StorePopulation:
             for cur_record, next_record in zip(cur_pop, next_pop):
                 self._advance_person_risk_factors(cur_record, next_record)
                 self._advance_person_treatments(cur_record, next_record)
-                self._bp_treatment_strategy.apply_treatment(cur_record, next_record)
 
         self._current_tick = end_tick
 
@@ -68,3 +67,4 @@ class StorePopulation:
             treatment_model = self._risk_model_repository.get_model(treatment)
             next_value = treatment_model.get_estimate_next_risk_vectorized(cur_record)
             setattr(next_record, treatment, next_value)
+        self._bp_treatment_strategy.apply_treatment(cur_record, next_record)
