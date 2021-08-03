@@ -17,7 +17,7 @@ class BPCOGPersonStaticRecordProtocol(Protocol):
     raceEthnicity: NHANESRaceEthnicity
     education: Education
     smokingStatus: SmokingStatus
-    randomEffectsGcp: float
+    gcpRandomEffect: float
 
 
 class BPCOGPersonDynamicRecordProtocol(Protocol):

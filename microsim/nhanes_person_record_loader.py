@@ -104,7 +104,7 @@ class NHANESPersonRecordFactory:
             raceEthnicity=NHANESRaceEthnicity(int(raceEthnicity)),
             education=Education(int(education)),
             smokingStatus=SmokingStatus(int(smokingStatus)),
-            randomEffectsGcp=random_effects["gcp"],
+            gcpRandomEffect=random_effects["gcp"],
             alive=True,
             age=age,
             sbp=meanSBP,
