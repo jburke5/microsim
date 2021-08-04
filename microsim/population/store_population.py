@@ -40,9 +40,9 @@ class StorePopulation:
 
     def advance(self, num_ticks=1):
         """Advance population by a given number of ticks (default: 1)."""
-        start_tick = self._current_tick + 1
+        start_tick = self._current_tick
         end_tick = start_tick + num_ticks
-        for t in range(start_tick, end_tick + 1):
+        for t in range(start_tick, end_tick):
             cur_pop, next_pop = self._person_store.get_population_advance_record_window(
                 t, condition=is_alive
             )
