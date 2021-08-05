@@ -59,12 +59,12 @@ class StorePopulation:
     def _advance_person_risk_factors(self, cur_record, next_record):
         for rf in self._risk_factor_prop_names:
             rf_model = self._risk_model_repository.get_model(rf)
-            next_value = rf_model.get_estimate_next_risk_vectorized(cur_record)
+            next_value = rf_model.estimate_next_risk_vectorized(cur_record)
             setattr(next_record, rf, next_value)
 
     def _advance_person_treatments(self, cur_record, next_record):
         for treatment in self._treatment_prop_names:
             treatment_model = self._risk_model_repository.get_model(treatment)
-            next_value = treatment_model.get_estimate_next_risk_vectorized(cur_record)
+            next_value = treatment_model.estimate_next_risk_vectorized(cur_record)
             setattr(next_record, treatment, next_value)
         self._bp_treatment_strategy.apply_treatment(cur_record, next_record)
