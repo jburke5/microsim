@@ -63,7 +63,7 @@ class IndicatorTransformVectorized(AbstractBaseTransform):
         return self._matching_value
 
     def apply(self, value):
-        return 1 if value[self.prop_name] == self._matching_value else 0
+        return 1 if getattr(value, self.prop_name) == self._matching_value else 0
 
     def __eq__(self, other):
         if issubclass(type(other), IndicatorTransformVectorized):
@@ -90,7 +90,7 @@ class MeanTransform(AbstractBaseTransform):
 
 class MeanTransformVectorized(AbstractBaseTransform):
     def apply(self, value):
-        return value["mean" + self.prop_name.capitalize()]
+        return getattr(value, "mean" + self.prop_name.capitalize())
 
     def isFinal(self):
         return True
@@ -117,7 +117,7 @@ class FirstElementTransformVectorized(AbstractBaseTransform):
     """Returns the first element of the given value."""
 
     def apply(self, value):
-        return value["base" + self.prop_name.capitalize()]
+        return getattr(value, "base" + self.prop_name.capitalize())
 
     def extractsData(self):
         return True
@@ -130,7 +130,7 @@ class IdentityTransformVectorized(AbstractBaseTransform):
     """Returns the first element of the given value."""
 
     def apply(self, value):
-        return value[self.prop_name]
+        return getattr(value, self.prop_name)
 
     def extractsData(self):
         return True

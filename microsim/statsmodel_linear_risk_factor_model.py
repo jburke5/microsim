@@ -124,7 +124,7 @@ class StatsModelLinearRiskFactorModel:
 
     def get_model_argument_for_coeff_name_vectorized(self, coeff_name, x):
         if coeff_name not in self.argument_transforms_vectorized:
-            model_argument = x[coeff_name]
+            model_argument = getattr(x, coeff_name)
         else:
             prop_name, transforms = self.argument_transforms_vectorized[coeff_name]
             for transform in list(transforms):
