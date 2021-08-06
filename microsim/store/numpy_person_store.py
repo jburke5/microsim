@@ -1,6 +1,6 @@
 import numpy as np
 from microsim.store.numpy_field_proxy import NumpyFieldProxy
-from microsim.store.numpy_population_record_proxy import NumpyPopulationRecordProxy
+from microsim.store.numpy_population_record_proxy import NumpyPopulationProxy
 
 
 def assert_positive_int(value, name):
@@ -117,7 +117,7 @@ class NumpyPersonStore:
         static_rows = self._static_data_array
         dynamic_rows = self._dynamic_data_array[t]
         event_rows = self._event_data_array[t]
-        population_proxy = NumpyPopulationRecordProxy(
+        population_proxy = NumpyPopulationProxy(
             static_rows,
             dynamic_rows,
             event_rows,

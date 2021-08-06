@@ -2,7 +2,7 @@ from microsim.store.numpy_population_iterator import NumpyPopulationIterator
 import numpy as np
 
 
-class NumpyPopulationRecordProxy:
+class NumpyPopulationProxy:
     def __init__(
         self,
         static_rows,
