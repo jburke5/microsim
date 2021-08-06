@@ -98,9 +98,7 @@ class NumpyPersonStore:
             | dynamic_mapping.property_mappings.keys()
             | event_mapping.property_mappings.keys()
         )
-        pop_proxy = self.get_population_record_at(
-            0, active_indices=np.arange(0, self._num_persons)
-        )
+        pop_proxy = self.get_population_at(0, active_indices=np.arange(0, self._num_persons))
         for record, dest_proxy in zip(iter_person_records(), pop_proxy):
             for prop_name in all_person_record_property_names:
                 value = getattr(record, prop_name)
@@ -114,7 +112,7 @@ class NumpyPersonStore:
         """Returns the number of ticks for which store can hold data."""
         return self._num_ticks
 
-    def get_population_record_at(self, t, condition=None, active_indices=None):
+    def get_population_at(self, t, condition=None, active_indices=None):
         """Returns all records at time `t` that satisfy `condition`."""
         static_rows = self._static_data_array
         dynamic_rows = self._dynamic_data_array[t]
@@ -128,24 +126,3 @@ class NumpyPersonStore:
             active_indices=active_indices,
         )
         return population_proxy
-
-    def get_population_advance_record_window(self, t, condition=None, active_indices=None):
-        """
-        Returns a tuple of population records at times `t` and `t+1`.
-
-        Intended for `StorePopulation.advance` or other `advance` functions
-        that read from the first population record and write to the second one.
-
-        Note that to guarantee alignment of the two population records,
-        `condition` and `active_indices` are only used to construct the first
-        (i.e., current, or read) population record. The `active_indices` property
-        of this record is used to construct the second (next, or write) record via
-        the `active_indices` parameter.
-        """
-
-        current_record = self.get_population_record_at(t, condition, active_indices)
-        next_record = self.get_population_record_at(
-            t + 1,
-            active_indices=current_record.active_indices,
-        )
-        return (current_record, next_record)
