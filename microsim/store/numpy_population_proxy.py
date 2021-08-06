@@ -65,29 +65,3 @@ class NumpyPopulationProxy:
                 record_proxy = self._new_person_record_proxy(s, d, e)
                 out[...] = func(record_proxy, **kwargs)
             return it.operands[3]
-
-    def apply(self, func, out_dtype=np.float64, **kwargs):
-        """
-        Applies `func` to each person record, then returns the result.
-
-        Any keyword arguments that are not used will be passed to `func`.
-        """
-        ops = [self._active_indices, None]
-        flags = []
-        op_flags = [["readonly"], ["writeonly", "allocate"]]
-        op_dtypes = [
-            self._active_indices.dtype,
-            out_dtype,
-        ]
-        with np.nditer(ops, flags, op_flags, op_dtypes) as it:
-            for i, out in it:
-                static_record = self._static_rows[i]
-                dynamic_record = self._dynamic_rows[i]
-                event_record = self._event_rows[i]
-                record_proxy = self._new_person_record_proxy(
-                    static_record,
-                    dynamic_record,
-                    event_record,
-                )
-                out[...] = func(record_proxy, **kwargs)
-            return it.operands[1]
