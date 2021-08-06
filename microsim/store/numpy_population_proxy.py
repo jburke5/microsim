@@ -5,16 +5,16 @@ import numpy as np
 class NumpyPopulationProxy:
     def __init__(
         self,
-        static_rows,
-        dynamic_rows,
-        event_rows,
+        static_data,
+        dynamic_data,
+        event_data,
         new_person_record_proxy,
         active_indices=None,
         active_condition=None,
     ):
-        self._static_rows = static_rows
-        self._dynamic_rows = dynamic_rows
-        self._event_rows = event_rows
+        self._static_data = static_data
+        self._dynamic_data = dynamic_data
+        self._event_data = event_data
         self._new_person_record_proxy = new_person_record_proxy
 
         if active_indices is not None:
@@ -35,9 +35,9 @@ class NumpyPopulationProxy:
 
     def __iter__(self):
         return NumpyPopulationIterator(
-            self._static_rows,
-            self._dynamic_rows,
-            self._event_rows,
+            self._static_data,
+            self._dynamic_data,
+            self._event_data,
             self._active_indices,
             self._new_person_record_proxy,
         )
@@ -51,13 +51,13 @@ class NumpyPopulationProxy:
         `self._active_indices` in __init__ if given a condition, but may have
         other uses.
         """
-        ops = [self._static_rows, self._dynamic_rows, self._event_rows, None]
+        ops = [self._static_data, self._dynamic_data, self._event_data, None]
         flags = []
         op_flags = [["readonly"], ["readonly"], ["readonly"], ["writeonly", "allocate"]]
         op_dtypes = [
-            self._static_rows.dtype,
-            self._dynamic_rows.dtype,
-            self._event_rows.dtype,
+            self._static_data.dtype,
+            self._dynamic_data.dtype,
+            self._event_data.dtype,
             out_dtype,
         ]
         with np.nditer(ops, flags, op_flags, op_dtypes) as it:
