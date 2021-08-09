@@ -35,13 +35,15 @@ class NumpyPopulationProxy:
     def _get_active_mask(self, active_condition):
         num_persons = self._person_store.get_num_persons()
         all_person_indices = np.arange(num_persons)
-        ops = [all_person_indices, None]
+        active_mask = np.zeros(all_person_indices.shape, dtype=np.bool8)
+
+        ops = [all_person_indices, active_mask]
         flags = []
-        op_flags = [["readonly"], ["writeonly", "allocate"]]
-        op_dtypes = [all_person_indices.dtype, np.bool8]
+        op_flags = [["readonly"], ["writeonly"]]
+        op_dtypes = [all_person_indices.dtype, active_mask.dtype]
         with np.nditer(ops, flags, op_flags, op_dtypes) as it:
             for i, out in it:
-                record_proxy = self._person_store.get_person_record(i, self._at_t)
-                out[...] = active_condition(record_proxy)
-            active_mask = it.operands[1]
-            return active_mask
+                person_record = self._person_store.get_person_record(i, self._at_t)
+                is_active = active_condition(person_record)
+                out[...] = is_active
+            return it.operands[1]
