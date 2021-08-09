@@ -126,3 +126,11 @@ class NumpyPersonStore:
             active_indices=active_indices,
         )
         return population_proxy
+
+    def get_person_record(self, i, t):
+        """Returns the record for person `i` at time `t`."""
+        static_row = self._static_data_array[i]
+        dynamic_row = self._dynamic_data_array[t][i]
+        event_row = self._event_data_array[t][i]
+        person_record_proxy = self._person_record_proxy_class(static_row, dynamic_row, event_row)
+        return person_record_proxy
