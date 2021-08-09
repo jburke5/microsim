@@ -5,22 +5,18 @@ import numpy as np
 class NumpyPopulationProxy:
     def __init__(
         self,
-        static_data,
-        dynamic_data,
-        event_data,
-        new_person_record_proxy,
+        person_store,
+        at_t,
         active_indices=None,
         active_condition=None,
     ):
-        self._static_data = static_data
-        self._dynamic_data = dynamic_data
-        self._event_data = event_data
-        self._new_person_record_proxy = new_person_record_proxy
+        self._at_t = at_t
+        self._person_store = person_store
 
         if active_indices is not None:
             self._active_indices = active_indices
         elif active_condition is not None:
-            active_mask = self._unconditional_apply(active_condition, out_dtype=np.bool8)
+            active_mask = self._get_active_mask(active_condition)
             (self._active_indices,) = active_mask.nonzero()
         else:
             raise ValueError("Expected to receive one of: `active_indices`, `active_condition`")
@@ -34,34 +30,18 @@ class NumpyPopulationProxy:
         return self._active_indices.shape[0]
 
     def __iter__(self):
-        return NumpyPopulationIterator(
-            self._static_data,
-            self._dynamic_data,
-            self._event_data,
-            self._active_indices,
-            self._new_person_record_proxy,
-        )
+        return NumpyPopulationIterator(self._person_store, self._at_t, self._active_indices)
 
-    def _unconditional_apply(self, func, out_dtype=np.float64, **kwargs):
-        """
-        Applies `func` to each person record, then returns the result.
-
-        Runs `func` even if person record is not active (i.e., even if its
-        index does not appear in `self._active_indices`). Necessary to set
-        `self._active_indices` in __init__ if given a condition, but may have
-        other uses.
-        """
-        ops = [self._static_data, self._dynamic_data, self._event_data, None]
+    def _get_active_mask(self, active_condition):
+        num_persons = self._person_store.get_num_persons()
+        all_person_indices = np.arange(num_persons)
+        ops = [all_person_indices, None]
         flags = []
-        op_flags = [["readonly"], ["readonly"], ["readonly"], ["writeonly", "allocate"]]
-        op_dtypes = [
-            self._static_data.dtype,
-            self._dynamic_data.dtype,
-            self._event_data.dtype,
-            out_dtype,
-        ]
+        op_flags = [["readonly"], ["writeonly", "allocate"]]
+        op_dtypes = [all_person_indices.dtype, np.bool8]
         with np.nditer(ops, flags, op_flags, op_dtypes) as it:
-            for s, d, e, out in it:
-                record_proxy = self._new_person_record_proxy(s, d, e)
-                out[...] = func(record_proxy, **kwargs)
-            return it.operands[3]
+            for i, out in it:
+                record_proxy = self._person_store.get_person_record(i, self._at_t)
+                out[...] = active_condition(record_proxy)
+            active_mask = it.operands[1]
+            return active_mask
