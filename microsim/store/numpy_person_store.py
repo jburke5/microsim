@@ -114,14 +114,9 @@ class NumpyPersonStore:
 
     def get_population_at(self, t, condition=None, active_indices=None):
         """Returns all records at time `t` that satisfy `condition`."""
-        static_rows = self._static_data_array
-        dynamic_rows = self._dynamic_data_array[t]
-        event_rows = self._event_data_array[t]
         population_proxy = NumpyPopulationProxy(
-            static_rows,
-            dynamic_rows,
-            event_rows,
-            self._person_record_proxy_class,
+            self,
+            t,
             active_condition=condition,
             active_indices=active_indices,
         )
