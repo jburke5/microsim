@@ -43,28 +43,26 @@ class StorePopulation:
         start_tick = self._current_tick
         end_tick = start_tick + num_ticks
         for t in range(start_tick, end_tick):
-            cur_pop, next_pop = self._person_store.get_population_advance_record_window(
-                t, condition=is_alive
-            )
+            alive_pop = self._person_store.get_population_at(t, condition=is_alive)
 
-            if cur_pop.num_persons == 0:
+            if alive_pop.num_persons == 0:
                 break
 
-            for cur_record, next_record in zip(cur_pop, next_pop):
-                self._advance_person_risk_factors(cur_record, next_record)
-                self._advance_person_treatments(cur_record, next_record)
+            for person in alive_pop:
+                self._advance_person_risk_factors(person)
+                self._advance_person_treatments(person)
 
         self._current_tick = end_tick
 
-    def _advance_person_risk_factors(self, cur_record, next_record):
+    def _advance_person_risk_factors(self, person):
         for rf in self._risk_factor_prop_names:
             rf_model = self._risk_model_repository.get_model(rf)
-            next_value = rf_model.estimate_next_risk_vectorized(cur_record)
-            setattr(next_record, rf, next_value)
+            next_value = rf_model.estimate_next_risk_vectorized(person.current)
+            setattr(person.next, rf, next_value)
 
-    def _advance_person_treatments(self, cur_record, next_record):
+    def _advance_person_treatments(self, person):
         for treatment in self._treatment_prop_names:
             treatment_model = self._risk_model_repository.get_model(treatment)
-            next_value = treatment_model.estimate_next_risk_vectorized(cur_record)
-            setattr(next_record, treatment, next_value)
-        self._bp_treatment_strategy.apply_treatment(cur_record, next_record)
+            next_value = treatment_model.estimate_next_risk_vectorized(person.current)
+            setattr(person.next, treatment, next_value)
+        self._bp_treatment_strategy.apply_treatment(person.current, person.next)
