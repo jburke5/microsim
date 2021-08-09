@@ -98,11 +98,11 @@ class NumpyPersonStore:
             | dynamic_mapping.property_mappings.keys()
             | event_mapping.property_mappings.keys()
         )
-        pop_proxy = self.get_population_at(0, active_indices=np.arange(0, self._num_persons))
-        for record, dest_proxy in zip(iter_person_records(), pop_proxy):
+        initial_pop = self.get_population_at(0, active_indices=np.arange(0, self._num_persons))
+        for record, person in zip(iter_person_records(), initial_pop):
             for prop_name in all_person_record_property_names:
                 value = getattr(record, prop_name)
-                setattr(dest_proxy, prop_name, value)
+                setattr(person.current, prop_name, value)
 
     def get_num_persons(self):
         """Returns the number of people held in this store."""
