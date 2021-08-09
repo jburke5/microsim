@@ -1,6 +1,6 @@
 import numpy as np
 from microsim.store.numpy_field_proxy import NumpyFieldProxy
-from microsim.store.numpy_population_record_proxy import NumpyPopulationProxy
+from microsim.store.numpy_population_proxy import NumpyPopulationProxy
 
 
 def assert_positive_int(value, name):
