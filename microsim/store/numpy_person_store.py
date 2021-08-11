@@ -125,7 +125,7 @@ class NumpyPersonStore:
     def get_person_record(self, i, t):
         """Returns the record for person `i` at time `t`."""
         static_row = self._static_data_array[i]
-        dynamic_row = self._dynamic_data_array[i][t]
-        event_row = self._event_data_array[i][t]
+        dynamic_row = self._dynamic_data_array[i, t]
+        event_row = self._event_data_array[i, t]
         person_record_proxy = self._person_record_proxy_class(static_row, dynamic_row, event_row)
         return person_record_proxy
