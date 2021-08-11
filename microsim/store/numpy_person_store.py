@@ -79,11 +79,11 @@ class NumpyPersonStore:
         static_dtype = static_mapping.dtype
         self._static_data_array = np.zeros(static_shape, static_dtype)
 
-        dynamic_shape = (self._num_ticks + 1, self._num_persons)  # + 1 for initial data + k ticks
+        dynamic_shape = (self._num_persons, self._num_ticks + 1)  # + 1 for initial data + k ticks
         dynamic_dtype = dynamic_mapping.dtype
         self._dynamic_data_array = np.zeros(dynamic_shape, dynamic_dtype)
 
-        event_shape = (self._num_ticks + 1, self._num_persons)  # + 1 for initial data + k ticks
+        event_shape = (self._num_persons, self._num_ticks + 1)  # + 1 for initial data + k ticks
         event_dtype = event_mapping.dtype
         self._event_data_array = np.zeros(event_shape, event_dtype)
 
@@ -125,7 +125,7 @@ class NumpyPersonStore:
     def get_person_record(self, i, t):
         """Returns the record for person `i` at time `t`."""
         static_row = self._static_data_array[i]
-        dynamic_row = self._dynamic_data_array[t][i]
-        event_row = self._event_data_array[t][i]
+        dynamic_row = self._dynamic_data_array[i][t]
+        event_row = self._event_data_array[i][t]
         person_record_proxy = self._person_record_proxy_class(static_row, dynamic_row, event_row)
         return person_record_proxy
