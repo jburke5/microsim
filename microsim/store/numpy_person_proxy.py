@@ -12,7 +12,7 @@ class NumpyPersonProxy:
         all_prop_names = set(chain(*[c.keys() for c in field_metadata.values()]))
 
         for prop_name in all_prop_names:
-            setattr(self, prop_name, property(lambda _: getattr(cur_record, prop_name)))
+            setattr(self, prop_name, getattr(cur_record, prop_name))
 
         # add mean{prop_name} property for numeric dynamic fields
         num_cur_prev_records = len(self._cur_prev_records)
@@ -21,7 +21,7 @@ class NumpyPersonProxy:
             mean_val = (
                 sum([getattr(r, prop_name) for r in self._cur_prev_records]) / num_cur_prev_records
             )
-            setattr(self, mean_prop_name, property(lambda _: mean_val))
+            setattr(self, mean_prop_name, mean_val)
 
     @property
     def next(self):
