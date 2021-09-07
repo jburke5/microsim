@@ -1,3 +1,4 @@
+from types import MappingProxyType
 import numpy as np
 from microsim.store.numpy_field_proxy import NumpyFieldProxy
 from microsim.store.numpy_population_proxy import NumpyPopulationProxy
@@ -51,7 +52,13 @@ def new_person_record_proxy_class(static_props, dynamic_props, event_props):
         self._dynamic_row = dynamic_row
         self._event_row = event_row
 
-    base_attrs = {"__init__": person_record_proxy_init}
+    field_metadata_dict = MappingProxyType(
+        {"static": static_props, "dynamic": dynamic_props, "event": dynamic_props}
+    )
+    base_attrs = {
+        "__init__": person_record_proxy_init,
+        "__field_metadata__": property(lambda _: field_metadata_dict),
+    }
     proxy_class_attrs = {**static_attrs, **dynamic_attrs, **event_attrs, **base_attrs}
     person_record_proxy_class = type("NumpyPersonRecordProxy", tuple(), proxy_class_attrs)
     return person_record_proxy_class
