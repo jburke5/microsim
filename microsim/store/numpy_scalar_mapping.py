@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 
-@dataclass
+@dataclass(frozen=True)
 class NumpyScalarMapping:
     field_name: str
     field_type: Any
