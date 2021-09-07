@@ -2,11 +2,17 @@ from itertools import chain
 
 
 class NumpyPersonProxy:
-    def __init__(self, next_record, cur_prev_records):
+    def __init__(self, at_t, next_record, cur_prev_records):
+        self._at_t = at_t
         self._next_record = next_record
         self._cur_prev_records = list(cur_prev_records)
 
         # proxy latest properties for vectorized model compatibility
+        num_cur_prev_records = len(self._cur_prev_records)
+        if self._at_t == -1:
+            # ...though don't proxy properties for initial data load
+            return
+
         cur_record = self._cur_prev_records[-1]
         field_metadata = cur_record.__field_metadata__
         all_prop_names = set(chain(*[c.keys() for c in field_metadata.values()]))
@@ -15,7 +21,6 @@ class NumpyPersonProxy:
             setattr(self, prop_name, getattr(cur_record, prop_name))
 
         # add mean{prop_name} property for numeric dynamic fields
-        num_cur_prev_records = len(self._cur_prev_records)
         for prop_name, field_mapping in field_metadata["dynamic"].items():
             mean_prop_name = f"mean{prop_name.capitalize()}"
             mean_val = (

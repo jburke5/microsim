@@ -14,8 +14,12 @@ class NumpyPopulationIterator:
     def __next__(self):
         abs_person_idx = next(self._it)
         next_record = self._person_store.get_person_record(abs_person_idx, self._at_t + 1)
-        cur_prev_records = [
-            self._person_store.get_person_record(abs_person_idx, t) for t in range(self._at_t + 1)
-        ]
-        person_proxy = NumpyPersonProxy(next_record, cur_prev_records)
+        if self._at_t == -1:
+            cur_prev_records = []
+        else:
+            cur_prev_records = [
+                self._person_store.get_person_record(abs_person_idx, t)
+                for t in range(self._at_t + 1)
+            ]
+        person_proxy = NumpyPersonProxy(self._at_t, next_record, cur_prev_records)
         return person_proxy
