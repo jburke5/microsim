@@ -1,4 +1,3 @@
-from microsim.store.numpy_person_proxy import NumpyPersonProxy
 import numpy as np
 
 
@@ -13,13 +12,5 @@ class NumpyPopulationIterator:
 
     def __next__(self):
         abs_person_idx = next(self._it)
-        next_record = self._person_store.get_person_record(abs_person_idx, self._at_t + 1)
-        if self._at_t == -1:
-            cur_prev_records = []
-        else:
-            cur_prev_records = [
-                self._person_store.get_person_record(abs_person_idx, t)
-                for t in range(self._at_t + 1)
-            ]
-        person_proxy = NumpyPersonProxy(self._at_t, next_record, cur_prev_records)
+        person_proxy = self._person_store.get_person_proxy_at(abs_person_idx, self._at_t)
         return person_proxy

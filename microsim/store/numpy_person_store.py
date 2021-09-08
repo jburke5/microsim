@@ -1,4 +1,5 @@
 import numpy as np
+from microsim.store.numpy_person_proxy import new_person_proxy_class
 from microsim.store.numpy_person_record_proxy import new_person_record_proxy_class
 from microsim.store.numpy_population_proxy import NumpyPopulationProxy
 
@@ -47,6 +48,7 @@ class NumpyPersonStore:
             dynamic_mapping.property_mappings,
             event_mapping.property_mappings,
         )
+        self._person_proxy_class = new_person_proxy_class(self._person_record_proxy_class)
 
         all_person_record_property_names = (
             static_mapping.property_mappings.keys()
@@ -84,3 +86,12 @@ class NumpyPersonStore:
         event_row = self._event_data_array[i, t]
         person_record_proxy = self._person_record_proxy_class(static_row, dynamic_row, event_row)
         return person_record_proxy
+
+    def get_person_proxy_at(self, i, t):
+        next_record = self.get_person_record(i, t + 1)
+        if t == -1:
+            cur_prev_records = []
+        else:
+            cur_prev_records = [self.get_person_record(i, t) for t in range(t + 1)]
+        person_proxy = self._person_proxy_class(next_record, cur_prev_records)
+        return person_proxy
