@@ -1,6 +1,7 @@
+from types import MappingProxyType
 import numpy as np
 from microsim.store.numpy_person_proxy import new_person_proxy_class
-from microsim.store.numpy_person_record_proxy import new_person_record_proxy_class
+from microsim.store.numpy_person_record_proxy import PersonRecordProxyMetaclass
 from microsim.store.numpy_population_proxy import NumpyPopulationProxy
 
 
@@ -43,10 +44,15 @@ class NumpyPersonStore:
         event_dtype = event_mapping.dtype
         self._event_data_array = np.zeros(event_shape, event_dtype)
 
-        self._person_record_proxy_class = new_person_record_proxy_class(
-            static_mapping.property_mappings,
-            dynamic_mapping.property_mappings,
-            event_mapping.property_mappings,
+        field_metadata = MappingProxyType(
+            {
+                "static": static_mapping.property_mappings,
+                "dynamic": dynamic_mapping.property_mappings,
+                "event": event_mapping.property_mappings,
+            }
+        )
+        self._person_record_proxy_class = PersonRecordProxyMetaclass(
+            "NumpyPersonRecordProxy", tuple(), {}, field_metadata=field_metadata
         )
         self._person_proxy_class = new_person_proxy_class(self._person_record_proxy_class)
 

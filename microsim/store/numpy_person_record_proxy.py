@@ -1,4 +1,3 @@
-from types import MappingProxyType
 from microsim.store.numpy_field_proxy import NumpyFieldProxy
 
 
@@ -29,25 +28,36 @@ def proxy_attrs_from_props(property_mappings, row_attr_name):
     return attrs
 
 
-def new_person_record_proxy_class(static_props, dynamic_props, event_props):
-    assert_unique_prop_names(static_props.keys(), dynamic_props.keys(), event_props.keys())
+class PersonRecordProxyMetaclass(type):
+    """
+    Metaclass for automatically generating combined record proxies.
 
-    static_attrs = proxy_attrs_from_props(static_props, "_static_row")
-    dynamic_attrs = proxy_attrs_from_props(dynamic_props, "_dynamic_row")
-    event_attrs = proxy_attrs_from_props(event_props, "_event_row")
+    Defines same properties on created classes as original record classes.
+    """
 
-    def person_record_proxy_init(self, static_row, dynamic_row, event_row):
-        self._static_row = static_row
-        self._dynamic_row = dynamic_row
-        self._event_row = event_row
+    def __new__(cls, name, bases, namespace, *, field_metadata):
+        static_props = field_metadata["static"]
+        dynamic_props = field_metadata["dynamic"]
+        event_props = field_metadata["event"]
 
-    field_metadata_dict = MappingProxyType(
-        {"static": static_props, "dynamic": dynamic_props, "event": dynamic_props}
-    )
-    base_attrs = {
-        "__init__": person_record_proxy_init,
-        "__field_metadata__": field_metadata_dict,
-    }
-    proxy_class_attrs = {**static_attrs, **dynamic_attrs, **event_attrs, **base_attrs}
-    person_record_proxy_class = type("NumpyPersonRecordProxy", tuple(), proxy_class_attrs)
-    return person_record_proxy_class
+        assert_unique_prop_names(static_props.keys(), dynamic_props.keys(), event_props.keys())
+
+        static_attrs = proxy_attrs_from_props(static_props, "_static_row")
+        dynamic_attrs = proxy_attrs_from_props(dynamic_props, "_dynamic_row")
+        event_attrs = proxy_attrs_from_props(event_props, "_event_row")
+
+        namespace.update(static_attrs)
+        namespace.update(dynamic_attrs)
+        namespace.update(event_attrs)
+
+        namespace["__field_metadata__"] = field_metadata
+
+        def person_record_proxy_init(self, static_row, dynamic_row, event_row):
+            self._static_row = static_row
+            self._dynamic_row = dynamic_row
+            self._event_row = event_row
+
+        namespace["__init__"] = person_record_proxy_init
+
+        new_cls = type.__new__(cls, name, bases, namespace)
+        return new_cls
