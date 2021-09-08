@@ -46,7 +46,7 @@ def new_person_record_proxy_class(static_props, dynamic_props, event_props):
     )
     base_attrs = {
         "__init__": person_record_proxy_init,
-        "__field_metadata__": property(lambda _: field_metadata_dict),
+        "__field_metadata__": field_metadata_dict,
     }
     proxy_class_attrs = {**static_attrs, **dynamic_attrs, **event_attrs, **base_attrs}
     person_record_proxy_class = type("NumpyPersonRecordProxy", tuple(), proxy_class_attrs)

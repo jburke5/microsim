@@ -14,7 +14,7 @@ def new_person_proxy_class(person_record_proxy_class):
     }
 
     # proxy latest properties for vectorized model compatibility
-    field_metadata = person_record_proxy_class.__field_metadata__.fget(None)
+    field_metadata = person_record_proxy_class.__field_metadata__
     all_record_prop_names = set(chain(*[c.keys() for c in field_metadata.values()]))
 
     prop_attrs = {}
