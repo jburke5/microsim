@@ -1,6 +1,6 @@
 from types import MappingProxyType
 import numpy as np
-from microsim.store.numpy_person_proxy import new_person_proxy_class
+from microsim.store.numpy_person_proxy import NumpyPersonProxy
 from microsim.store.numpy_person_record_proxy import PersonRecordProxyMetaclass
 from microsim.store.numpy_population_proxy import NumpyPopulationProxy
 
@@ -54,7 +54,7 @@ class NumpyPersonStore:
         self._person_record_proxy_class = PersonRecordProxyMetaclass(
             "NumpyPersonRecordProxy", tuple(), {}, field_metadata=field_metadata
         )
-        self._person_proxy_class = new_person_proxy_class(self._person_record_proxy_class)
+        self._person_proxy_class = NumpyPersonProxy
 
         all_person_record_property_names = (
             static_mapping.property_mappings.keys()
