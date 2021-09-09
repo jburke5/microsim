@@ -25,6 +25,9 @@ class NumpyPersonStore:
         dynamic_mapping,
         event_mapping,
         iter_person_records,
+        *,
+        person_record_proxy_class=None,
+        person_proxy_class=None,
     ):
         assert_positive_int(num_persons, "num_persons")
         self._num_persons = num_persons
@@ -44,17 +47,23 @@ class NumpyPersonStore:
         event_dtype = event_mapping.dtype
         self._event_data_array = np.zeros(event_shape, event_dtype)
 
-        field_metadata = MappingProxyType(
-            {
-                "static": static_mapping.property_mappings,
-                "dynamic": dynamic_mapping.property_mappings,
-                "event": event_mapping.property_mappings,
-            }
+        if person_record_proxy_class is not None:
+            self._person_record_proxy_class = person_record_proxy_class
+        else:
+            field_metadata = MappingProxyType(
+                {
+                    "static": static_mapping.property_mappings,
+                    "dynamic": dynamic_mapping.property_mappings,
+                    "event": event_mapping.property_mappings,
+                }
+            )
+            self._person_record_proxy_class = PersonRecordProxyMetaclass(
+                "NumpyPersonRecordProxy", tuple(), {}, field_metadata=field_metadata
+            )
+
+        self._person_proxy_class = (
+            person_proxy_class if person_proxy_class is not None else NumpyPersonProxy
         )
-        self._person_record_proxy_class = PersonRecordProxyMetaclass(
-            "NumpyPersonRecordProxy", tuple(), {}, field_metadata=field_metadata
-        )
-        self._person_proxy_class = NumpyPersonProxy
 
         all_person_record_property_names = (
             static_mapping.property_mappings.keys()
