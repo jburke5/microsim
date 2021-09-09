@@ -66,4 +66,4 @@ class NumpyPersonProxy:
 
     @property
     def current_and_previous(self):
-        return self._cur_prev_records
+        return self._cur_prev_records[:]
