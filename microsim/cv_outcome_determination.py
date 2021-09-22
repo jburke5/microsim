@@ -105,6 +105,22 @@ class CVOutcomeDetermination:
     def has_prior_stroke_mi(self, person, vectorized):
         return self.has_prior_stroke(person, vectorized) or self.has_prior_mi(person, vectorized)
 
+    def get_cv_outcome_for_person(self, outcome_model_repository, person):
+        cv_risk = self.get_risk_for_person(outcome_model_repository, person, vectorized=True)
+        had_prior_stroke = any(r.stroke is not None for r in person.current_and_previous)
+        if had_prior_stroke:
+            cv_risk *= self.secondary_prevention_multiplier
+
+        if not self._will_have_cvd_event(cv_risk):
+            return None
+
+        if self._will_have_mi(person, outcome_model_repository, vectorized=True):
+            is_fatal_mi = self._will_have_fatal_mi(person, vectorized=True)
+            return Outcome(OutcomeType.MI, is_fatal_mi)
+        else:
+            is_fatal_stroke = self._will_have_fatal_stroke(person, vectorized=True)
+            return Outcome(OutcomeType.STROKE, is_fatal_stroke)
+
     def assign_outcome_for_person(
         self,
         outcome_model_repository,

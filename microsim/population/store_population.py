@@ -74,10 +74,11 @@ class StorePopulation:
         self._bp_treatment_strategy.apply_treatment(person.current, person.next)
 
     def _advance_person_outcomes(self, person):
-        cv_outcome = self._outcome_model_repository.assign_cv_outcome(person)
-        if cv_outcome.type == OutcomeType.MI:
-            setattr(person.next, "mi", cv_outcome)
-        elif cv_outcome.type == OutcomeType.STROKE:
-            setattr(person.next, "stroke", cv_outcome)
-        else:
-            raise ValueError(f"Unhandled cardiovascular outcome type: {cv_outcome.type}")
+        cv_outcome = self._outcome_model_repository.get_cv_outcome_for_person(person)
+        if cv_outcome is not None:
+            if cv_outcome.type == OutcomeType.MI:
+                setattr(person.next, "mi", cv_outcome)
+            elif cv_outcome.type == OutcomeType.STROKE:
+                setattr(person.next, "stroke", cv_outcome)
+            else:
+                raise ValueError(f"Unhandled cardiovascular outcome type: {cv_outcome.type}")

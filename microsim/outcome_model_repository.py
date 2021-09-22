@@ -178,6 +178,9 @@ class OutcomeModelRepository:
         model_spec = load_model_spec(modelName)
         return StatsModelCoxModel(CoxRegressionModel(**model_spec))
 
+    def get_cv_outcome_for_person(self, person):
+        return self.outcomeDet.get_cv_outcome_for_person(self, person)
+
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
         return self.outcomeDet.assign_outcome_for_person(
             self, person, False, years, self.manualStrokeMIProbability

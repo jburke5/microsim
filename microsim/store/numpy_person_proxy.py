@@ -22,6 +22,18 @@ class MeanProxiedProperty:
         return mean
 
 
+class HadPriorEventProxiedProperty:
+    def __init__(self, proxied_prop_name):
+        self._proxied_prop_name = proxied_prop_name
+
+    def __get__(self, instance, owner=None):
+        cur_prev_records = instance.current_and_previous
+        had_prior_event = any(
+            getattr(r, self._proxied_prop_name) is not None for r in cur_prev_records
+        )
+        return had_prior_event
+
+
 def new_person_proxy_class(field_metadata):
     def person_proxy_init(self, next_record, cur_prev_records):
         self._next_record = next_record
@@ -45,6 +57,10 @@ def new_person_proxy_class(field_metadata):
     for dynamic_prop_name in field_metadata["dynamic"].keys():
         mean_prop_name = f"mean{dynamic_prop_name.capitalize()}"
         prop_attrs[mean_prop_name] = MeanProxiedProperty(dynamic_prop_name)
+
+    # add [has_prior_]{prop_name} boolean properties for events
+    for event_prop_name in field_metadata["event"].keys():
+        prop_attrs[event_prop_name] = HadPriorEventProxiedProperty(event_prop_name)
 
     proxy_class_attrs = {**prop_attrs, **base_attrs}
     person_proxy_class = type("NumpyPersonProxy", tuple(), proxy_class_attrs)
