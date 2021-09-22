@@ -1,3 +1,6 @@
+from microsim.outcome import OutcomeType
+
+
 def is_alive(person_record):
     return person_record.alive
 
@@ -15,6 +18,7 @@ class StorePopulation:
         self,
         person_store,
         risk_model_repository,
+        outcome_model_repository,
         bp_treatment_strategy,
         risk_factor_prop_names,
         treatment_prop_names,
@@ -22,6 +26,7 @@ class StorePopulation:
     ):
         self._person_store = person_store
         self._risk_model_repository = risk_model_repository
+        self._outcome_model_repository = outcome_model_repository
         self._bp_treatment_strategy = bp_treatment_strategy
 
         self._risk_factor_prop_names = risk_factor_prop_names
@@ -51,6 +56,7 @@ class StorePopulation:
             for person in alive_pop:
                 self._advance_person_risk_factors(person)
                 self._advance_person_treatments(person)
+                self._advance_person_outcomes(person)
 
         self._current_tick = end_tick
 
@@ -66,3 +72,12 @@ class StorePopulation:
             next_value = treatment_model.estimate_next_risk_vectorized(person)
             setattr(person.next, treatment, next_value)
         self._bp_treatment_strategy.apply_treatment(person.current, person.next)
+
+    def _advance_person_outcomes(self, person):
+        cv_outcome = self._outcome_model_repository.assign_cv_outcome(person)
+        if cv_outcome.type == OutcomeType.MI:
+            setattr(person.next, "mi", cv_outcome)
+        elif cv_outcome.type == OutcomeType.STROKE:
+            setattr(person.next, "stroke", cv_outcome)
+        else:
+            raise ValueError(f"Unhandled cardiovascular outcome type: {cv_outcome.type}")
