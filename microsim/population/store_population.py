@@ -83,9 +83,6 @@ class StorePopulation:
             else:
                 raise ValueError(f"Unhandled cardiovascular outcome type: {cv_outcome.type}")
 
-        next_alive = not (cv_outcome is not None and cv_outcome.fatal)
-        person.next.alive = next_alive
-
         next_gcp = self._outcome_model_repository.get_gcp_vectorized(person)
         person.next.gcp = next_gcp
 
@@ -95,3 +92,19 @@ class StorePopulation:
                 person.next.dementia = dementia_outcome
             else:
                 raise ValueError(f"Unhandled dementia outcome type: {dementia_outcome.type}")
+
+        self._update_liveness(person)
+
+    def _update_liveness(self, person):
+        assert person.next.dementia is None or not person.next.dementia.fatal
+
+        will_have_fatal_cv_event = person.next.mi is not None and person.next.mi.fatal
+        will_have_fatal_cv_event |= person.next.stroke is not None and person.next.stroke.fatal
+        if will_have_fatal_cv_event:
+            person.next.alive = False
+            return
+
+        will_have_non_cv_death = self._outcome_model_repository.assign_non_cv_mortality_vectorized(
+            person
+        )
+        person.next.alive = not will_have_non_cv_death
