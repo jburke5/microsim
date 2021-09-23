@@ -82,3 +82,6 @@ class StorePopulation:
                 setattr(person.next, "stroke", cv_outcome)
             else:
                 raise ValueError(f"Unhandled cardiovascular outcome type: {cv_outcome.type}")
+
+        next_gcp = self._outcome_model_repository.get_gcp_vectorized(person)
+        setattr(person.next, "gcp", next_gcp)
