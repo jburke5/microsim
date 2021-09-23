@@ -77,6 +77,13 @@ def new_person_proxy_class(field_metadata):
     # ... for the GCP model
     prop_attrs["baseAge"] = property(lambda p: p.current_and_previous[0].age)
     prop_attrs["totalYearsInSim"] = property(lambda p: p.current.age - p.baseAge)
+    # ... and for the dementia model
+    prop_attrs["baseGcp"] = property(lambda p: p.current_and_previous[0].gcp)
+    prop_attrs["gcpSlope"] = property(
+        lambda p: p.current.gcp - p.current_and_previous[-2].gcp
+        if len(p.current_and_previous) > 1
+        else 0
+    )
 
     proxy_class_attrs = {**prop_attrs, **base_attrs}
     person_proxy_class = type("NumpyPersonProxy", tuple(), proxy_class_attrs)

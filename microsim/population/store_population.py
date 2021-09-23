@@ -85,3 +85,10 @@ class StorePopulation:
 
         next_gcp = self._outcome_model_repository.get_gcp_vectorized(person)
         setattr(person.next, "gcp", next_gcp)
+
+        dementia_outcome = self._outcome_model_repository.get_dementia_for_person(person)
+        if dementia_outcome is not None:
+            if dementia_outcome.type == OutcomeType.DEMENTIA:
+                setattr(person.next, "dementia", dementia_outcome)
+            else:
+                raise ValueError(f"Unhandled dementia outcome type: {dementia_outcome.type}")

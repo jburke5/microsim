@@ -163,6 +163,16 @@ class OutcomeModelRepository:
             person, OutcomeModelType.DEMENTIA, years=1, vectorized=True
         )
 
+    def get_dementia_for_person(self, person):
+        if person.dementia:
+            return None
+
+        will_have_dementia = self.get_dementia_vectorized(person)
+        if will_have_dementia:
+            return Outcome(OutcomeType.DEMENTIA, False)
+        else:
+            return None
+
     def select_model_for_person(self, person, outcome):
         return self.select_model_for_gender(person._gender, outcome)
 
