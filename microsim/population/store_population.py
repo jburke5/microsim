@@ -83,6 +83,9 @@ class StorePopulation:
             else:
                 raise ValueError(f"Unhandled cardiovascular outcome type: {cv_outcome.type}")
 
+        next_alive = not (cv_outcome is not None and cv_outcome.fatal)
+        setattr(person.next, "alive", next_alive)
+
         next_gcp = self._outcome_model_repository.get_gcp_vectorized(person)
         setattr(person.next, "gcp", next_gcp)
 
