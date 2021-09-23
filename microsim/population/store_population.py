@@ -77,21 +77,21 @@ class StorePopulation:
         cv_outcome = self._outcome_model_repository.get_cv_outcome_for_person(person)
         if cv_outcome is not None:
             if cv_outcome.type == OutcomeType.MI:
-                setattr(person.next, "mi", cv_outcome)
+                person.next.mi = cv_outcome
             elif cv_outcome.type == OutcomeType.STROKE:
-                setattr(person.next, "stroke", cv_outcome)
+                person.next.stroke = cv_outcome
             else:
                 raise ValueError(f"Unhandled cardiovascular outcome type: {cv_outcome.type}")
 
         next_alive = not (cv_outcome is not None and cv_outcome.fatal)
-        setattr(person.next, "alive", next_alive)
+        person.next.alive = next_alive
 
         next_gcp = self._outcome_model_repository.get_gcp_vectorized(person)
-        setattr(person.next, "gcp", next_gcp)
+        person.next.gcp = next_gcp
 
         dementia_outcome = self._outcome_model_repository.get_dementia_for_person(person)
         if dementia_outcome is not None:
             if dementia_outcome.type == OutcomeType.DEMENTIA:
-                setattr(person.next, "dementia", dementia_outcome)
+                person.next.dementia = dementia_outcome
             else:
                 raise ValueError(f"Unhandled dementia outcome type: {dementia_outcome.type}")
