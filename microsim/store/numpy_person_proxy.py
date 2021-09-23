@@ -1,4 +1,6 @@
 from itertools import chain
+from microsim.smoking_status import SmokingStatus
+from microsim.race_ethnicity import NHANESRaceEthnicity
 
 
 class DirectProxiedProperty:
@@ -61,6 +63,16 @@ def new_person_proxy_class(field_metadata):
     # add [has_prior_]{prop_name} boolean properties for events
     for event_prop_name in field_metadata["event"].keys():
         prop_attrs[event_prop_name] = HadPriorEventProxiedProperty(event_prop_name)
+
+    # boolean props for model args that currently cannot be specified easily or readably
+    prop_attrs["black"] = property(
+        lambda p: p.current.raceEthnicity > NHANESRaceEthnicity.NON_HISPANIC_BLACK
+    )
+    prop_attrs["current_smoker"] = property(
+        lambda p: p.current.smokingStatus == SmokingStatus.CURRENT
+    )
+    prop_attrs["current_diabetes"] = property(lambda p: p.current.a1c > 6.5)
+    prop_attrs["current_bp_treatment"] = property(lambda p: p.current.antiHypertensiveCount > 0)
 
     proxy_class_attrs = {**prop_attrs, **base_attrs}
     person_proxy_class = type("NumpyPersonProxy", tuple(), proxy_class_attrs)
