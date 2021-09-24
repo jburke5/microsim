@@ -4,14 +4,11 @@ import numpy as np
 
 class NumpyPopulationProxy:
     def __init__(
-        self,
-        person_store,
-        at_t,
-        active_indices=None,
-        active_condition=None,
+        self, person_store, at_t, active_indices=None, active_condition=None, scratch_next=False
     ):
         self._at_t = at_t
         self._person_store = person_store
+        self._scratch_next = scratch_next
 
         if active_indices is not None:
             self._active_indices = active_indices
@@ -31,6 +28,12 @@ class NumpyPopulationProxy:
 
     def __iter__(self):
         return NumpyPopulationIterator(self._person_store, self._at_t, self._active_indices)
+
+    def get_scratch_copy(self):
+        """Returns population with same members but with scratch as `.next`."""
+        return NumpyPopulationProxy(
+            self._person_store, self._at_t, self._active_indices, scratch_next=True
+        )
 
     def _get_active_mask(self, active_condition):
         num_persons = self._person_store.get_num_persons()

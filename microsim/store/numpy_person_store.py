@@ -42,10 +42,12 @@ class NumpyPersonStore:
         dynamic_shape = (self._num_persons, self._num_ticks + 1)  # + 1 for initial data + k ticks
         dynamic_dtype = dynamic_mapping.dtype
         self._dynamic_data_array = np.zeros(dynamic_shape, dynamic_dtype)
+        self._scratch_dynamic_data_array = np.zeros((self._num_persons,), dynamic_dtype)
 
         event_shape = (self._num_persons, self._num_ticks + 1)  # + 1 for initial data + k ticks
         event_dtype = event_mapping.dtype
         self._event_data_array = np.zeros(event_shape, event_dtype)
+        self._scratch_event_data_array = np.zeros((self._num_persons,), event_dtype)
 
         if person_record_proxy_class is not None:
             self._person_record_proxy_class = person_record_proxy_class
@@ -94,6 +96,13 @@ class NumpyPersonStore:
         )
         return population_proxy
 
+    def get_scratch_person_record(self, i):
+        static_row = self._static_data_array[i]
+        dynamic_row = self._scratch_dynamic_data_array[i]
+        event_row = self._scratch_event_data_array[i]
+        person_record_proxy = self._person_record_proxy_class(static_row, dynamic_row, event_row)
+        return person_record_proxy
+
     def get_person_record(self, i, t):
         """Returns the record for person `i` at time `t`."""
         static_row = self._static_data_array[i]
@@ -102,8 +111,12 @@ class NumpyPersonStore:
         person_record_proxy = self._person_record_proxy_class(static_row, dynamic_row, event_row)
         return person_record_proxy
 
-    def get_person_proxy_at(self, i, t):
-        next_record = self.get_person_record(i, t + 1)
+    def get_person_proxy_at(self, i, t, *, scratch_next=False):
+        if scratch_next:
+            next_record = self.get_scratch_person_record(i)
+        else:
+            next_record = self.get_person_record(i, t + 1)
+
         if t == -1:
             cur_prev_records = []
         else:
