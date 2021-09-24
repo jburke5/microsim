@@ -1,5 +1,5 @@
-from microsim.store.numpy_population_iterator import NumpyPopulationIterator
 import numpy as np
+from microsim.store.numpy_population_iterator import NumpyPopulationIterator
 
 
 class NumpyPopulationProxy:
@@ -28,6 +28,16 @@ class NumpyPopulationProxy:
 
     def __iter__(self):
         return NumpyPopulationIterator(self._person_store, self._at_t, self._active_indices)
+
+    def __getitem__(self, key):
+        if type(key) is not int:
+            raise TypeError(f"Expected `int` key; received: {type(key)} (value: '{key}')")
+
+        abs_idx = self._active_indices[key]
+        person_proxy = self._person_store.get_person_proxy_at(
+            abs_idx, self._at_t, scratch_next=self._scratch_next
+        )
+        return person_proxy
 
     def get_scratch_copy(self):
         """Returns population with same members but with scratch as `.next`."""
