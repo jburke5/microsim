@@ -61,16 +61,12 @@ class StorePopulation:
         self._current_tick = end_tick
 
     def _advance_person_risk_factors(self, person):
-        for rf in self._risk_factor_prop_names:
+        for rf in self._risk_factor_prop_names + self._treatment_prop_names:
             rf_model = self._risk_model_repository.get_model(rf)
             next_value = rf_model.estimate_next_risk_vectorized(person)
             setattr(person.next, rf, next_value)
 
     def _advance_person_treatments(self, person):
-        for treatment in self._treatment_prop_names:
-            treatment_model = self._risk_model_repository.get_model(treatment)
-            next_value = treatment_model.estimate_next_risk_vectorized(person)
-            setattr(person.next, treatment, next_value)
         self._bp_treatment_strategy.apply_treatment(person.current, person.next)
 
     def _advance_person_outcomes(self, person):
