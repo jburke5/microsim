@@ -104,3 +104,88 @@ class StorePopulation:
             person
         )
         person.next.alive = not will_have_non_cv_death
+
+    def _recalibrate_treatment(self, alive_pop):
+        scratch_pop = alive_pop.get_scratch_copy()
+        for scratch_person in scratch_pop:
+            self._advance_person_risk_factors(scratch_person)
+            self._advance_person_outcomes(scratch_person)
+
+        max_bp_meds = 5
+        indices_by_bp_meds = [[] for i in range(max_bp_meds + 1)]
+        for i, person in enumerate(alive_pop):
+            bp_meds_added = person.next.bpMedsAdded
+            indices_by_bp_meds[bp_meds_added].append(i)
+
+        bp_treatment_standards = (
+            self._bp_treatment_strategy.get_treatment_recalibration_for_population()
+        )
+        for num_bp_meds in range(1, max_bp_meds + 1):
+            indices = indices_by_bp_meds[num_bp_meds]
+
+            model_relrisk, num_cv_events = self._get_model_cv_event_stats(
+                alive_pop, scratch_pop, indices
+            )
+            standard_mi_relrisk = bp_treatment_standards[OutcomeType.MI] ** num_bp_meds
+            standard_stroke_relrisk = bp_treatment_standards[OutcomeType.STROKE] ** num_bp_meds
+            delta_mi_relrisk = model_relrisk[OutcomeType.MI] - standard_mi_relrisk
+            delta_stroke_relrisk = model_relrisk[OutcomeType.STROKE] - standard_stroke_relrisk
+            num_mis_to_change = int(
+                round(delta_mi_relrisk * num_cv_events[OutcomeType.MI])
+                / model_relrisk[OutcomeType.MI]
+            )
+            num_strokes_to_change = int(
+                round(delta_stroke_relrisk * num_cv_events[OutcomeType.STROKE])
+                / model_relrisk[OutcomeType.STROKE]
+            )
+            num_events_to_change = {
+                OutcomeType.MI: num_mis_to_change,
+                OutcomeType.STROKE: num_strokes_to_change,
+            }
+
+            # decide whose events to change and how
+            # actually recalibrate events
+
+    def _get_model_cv_event_stats(self, treated_pop, untreated_pop, indices):
+        treated_total_mi_risk = 0
+        treated_total_stroke_risk = 0
+        treated_count_mi_events = 0
+        treated_count_stroke_events = 0
+        untreated_total_mi_risk = 0
+        untreated_total_stroke_risk = 0
+        for i in indices:
+            treated_person = treated_pop[i]
+            treated_cv_risks = self._outcome_model_repository.get_cv_event_risks_for_person(
+                treated_person
+            )
+            treated_total_mi_risk += treated_cv_risks[OutcomeType.MI]
+            treated_total_stroke_risk += treated_cv_risks[OutcomeType.STROKE]
+            if treated_person.next.mi is not None:
+                treated_count_mi_events += 1
+            if treated_person.next.stroke is not None:
+                treated_count_stroke_events += 1
+
+            untreated_person = untreated_pop[i]
+            untreated_cv_risks = self._outcome_model_repository.get_cv_event_risks_for_person(
+                untreated_person
+            )
+            untreated_total_mi_risk += untreated_cv_risks[OutcomeType.MI]
+            untreated_total_stroke_risk += untreated_cv_risks[OutcomeType.STROKE]
+
+        num_persons = len(indices)
+        treated_mean_mi_risk = treated_total_mi_risk / num_persons
+        treated_mean_stroke_risk = treated_total_stroke_risk / num_persons
+        untreated_mean_mi_risk = untreated_total_mi_risk / num_persons
+        untreated_mean_stroke_risk = untreated_total_stroke_risk / num_persons
+
+        model_mi_relrisk = treated_mean_mi_risk / untreated_mean_mi_risk
+        model_stroke_relrisk = treated_mean_stroke_risk / untreated_mean_stroke_risk
+        model_relrisk = {
+            OutcomeType.MI: model_mi_relrisk,
+            OutcomeType.STROKE: model_stroke_relrisk,
+        }
+        treated_num_events = {
+            OutcomeType.MI: treated_count_mi_events,
+            OutcomeType.STROKE: treated_count_stroke_events,
+        }
+        return model_relrisk, treated_num_events
