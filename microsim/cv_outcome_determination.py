@@ -105,12 +105,15 @@ class CVOutcomeDetermination:
     def has_prior_stroke_mi(self, person, vectorized):
         return self.has_prior_stroke(person, vectorized) or self.has_prior_mi(person, vectorized)
 
-    def get_cv_outcome_for_person(self, outcome_model_repository, person):
+    def get_combined_cv_risk_for_person(self, outcome_model_repository, person):
         cv_risk = self.get_risk_for_person(outcome_model_repository, person, vectorized=True)
         had_prior_stroke = any(r.stroke is not None for r in person.current_and_previous)
         if had_prior_stroke:
             cv_risk *= self.secondary_prevention_multiplier
+        return cv_risk
 
+    def get_cv_outcome_for_person(self, outcome_model_repository, person):
+        cv_risk = self.get_combined_cv_risk_for_person(outcome_model_repository, person)
         if not self._will_have_cvd_event(cv_risk):
             return None
 
@@ -120,6 +123,13 @@ class CVOutcomeDetermination:
         else:
             is_fatal_stroke = self._will_have_fatal_stroke(person, vectorized=True)
             return Outcome(OutcomeType.STROKE, is_fatal_stroke)
+
+    def get_cv_event_risks_for_person(self, outcome_model_repository, person):
+        cv_risk = self.get_combined_cv_risk_for_person(outcome_model_repository, person)
+        stroke_prob = self.get_stroke_probability(person, vectorized=True)
+        stroke_risk = cv_risk * stroke_prob
+        mi_risk = cv_risk * (1 - stroke_prob)
+        return {OutcomeType.MI: mi_risk, OutcomeType.STROKE: stroke_risk}
 
     def assign_outcome_for_person(
         self,

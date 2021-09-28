@@ -188,6 +188,9 @@ class OutcomeModelRepository:
         model_spec = load_model_spec(modelName)
         return StatsModelCoxModel(CoxRegressionModel(**model_spec))
 
+    def get_cv_event_risks_for_person(self, person):
+        return self.outcomeDet.get_cv_event_risks_for_person(self, person)
+
     def get_cv_outcome_for_person(self, person):
         return self.outcomeDet.get_cv_outcome_for_person(self, person)
 
