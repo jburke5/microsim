@@ -112,17 +112,23 @@ class CVOutcomeDetermination:
             cv_risk *= self.secondary_prevention_multiplier
         return cv_risk
 
+    def new_mi_for_person(self, person):
+        is_fatal = self._will_have_fatal_mi(person, vectorized=True)
+        return Outcome(OutcomeType.MI, is_fatal)
+
+    def new_stroke_for_person(self, person):
+        is_fatal = self._will_have_fatal_stroke(person, vectorized=True)
+        return Outcome(OutcomeType.STROKE, is_fatal)
+
     def get_cv_outcome_for_person(self, outcome_model_repository, person):
         cv_risk = self.get_combined_cv_risk_for_person(outcome_model_repository, person)
         if not self._will_have_cvd_event(cv_risk):
             return None
 
         if self._will_have_mi(person, outcome_model_repository, vectorized=True):
-            is_fatal_mi = self._will_have_fatal_mi(person, vectorized=True)
-            return Outcome(OutcomeType.MI, is_fatal_mi)
+            return self.new_mi_for_person(person)
         else:
-            is_fatal_stroke = self._will_have_fatal_stroke(person, vectorized=True)
-            return Outcome(OutcomeType.STROKE, is_fatal_stroke)
+            return self.new_stroke_for_person(person)
 
     def get_cv_event_risks_for_person(self, outcome_model_repository, person):
         cv_risk = self.get_combined_cv_risk_for_person(outcome_model_repository, person)
