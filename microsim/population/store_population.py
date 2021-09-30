@@ -139,8 +139,21 @@ class StorePopulation:
                 round(delta_stroke_relrisk * num_stroke_events) / model_relrisk[OutcomeType.STROKE]
             )
 
-            # decide whose events to change and how
-            # actually recalibrate events
+            if delta_mi_relrisk < 0 and num_mis_to_change > 0:
+                pass  # TODO: add MIs
+            elif delta_mi_relrisk > 0:
+                if num_mis_to_change > num_mi_events:
+                    num_mis_to_change = num_mi_events
+                if num_mis_to_change > 0:
+                    pass  # TODO: remove MIs
+
+            if delta_stroke_relrisk < 0 and num_strokes_to_change > 0:
+                pass  # TODO: add strokes
+            elif delta_stroke_relrisk > 0:
+                if num_strokes_to_change > num_stroke_events:
+                    num_strokes_to_change = num_stroke_events
+                if num_strokes_to_change > 0:
+                    pass  # TODO: remove strokes
 
     def _get_model_cv_event_stats(self, treated_pop, untreated_pop, indices):
         treated_total_mi_risk = 0
