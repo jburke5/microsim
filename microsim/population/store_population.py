@@ -1,3 +1,4 @@
+import numpy as np
 from microsim.outcome import OutcomeType
 
 
@@ -140,12 +141,24 @@ class StorePopulation:
             )
 
             if delta_mi_relrisk < 0 and num_mis_to_change > 0:
-                pass  # TODO: add MIs
-            elif delta_mi_relrisk > 0:
-                if num_mis_to_change > num_mi_events:
-                    num_mis_to_change = num_mi_events
-                if num_mis_to_change > 0:
-                    pass  # TODO: remove MIs
+                no_mi_indices = treated_has_event[OutcomeType.MI][False]
+                no_mi_risk = [untreated_cv_risks[i][OutcomeType.MI] for i in no_mi_indices]
+                add_mi_indices = np.random.choice(
+                    no_mi_indices, size=num_mis_to_change, replace=False, p=no_mi_risk
+                )
+                for i in add_mi_indices:
+                    person = alive_pop[i]
+                    person.next.mi = self._outcome_model_repository.new_mi_for_person(person)
+            elif delta_mi_relrisk > 0 and num_mis_to_change > 0 and num_mi_events > 0:
+                num_mis_to_change = min(num_mis_to_change, num_mi_events)
+                has_mi_indices = treated_has_event[OutcomeType.MI][True]
+                has_mi_risk = [untreated_cv_risks[i][OutcomeType.MI] for i in has_mi_indices]
+                remove_mi_indices = np.random.choice(
+                    has_mi_indices, size=num_mis_to_change, replace=False, p=has_mi_risk
+                )
+                for i in remove_mi_indices:
+                    person = alive_pop[i]
+                    person.next.mi = None
 
             if delta_stroke_relrisk < 0 and num_strokes_to_change > 0:
                 pass  # TODO: add strokes
