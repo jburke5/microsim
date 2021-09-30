@@ -161,12 +161,33 @@ class StorePopulation:
                     person.next.mi = None
 
             if delta_stroke_relrisk < 0 and num_strokes_to_change > 0:
-                pass  # TODO: add strokes
-            elif delta_stroke_relrisk > 0:
-                if num_strokes_to_change > num_stroke_events:
-                    num_strokes_to_change = num_stroke_events
-                if num_strokes_to_change > 0:
-                    pass  # TODO: remove strokes
+                no_stroke_indices = treated_has_event[OutcomeType.STROKE][False]
+                no_stroke_risk = [
+                    untreated_cv_risks[i][OutcomeType.STROKE] for i in no_stroke_indices
+                ]
+                add_stroke_indices = np.random.choice(
+                    no_stroke_indices, size=num_strokes_to_change, replace=False, p=no_stroke_risk
+                )
+                for i in add_stroke_indices:
+                    person = alive_pop[i]
+                    person.next.stroke = self._outcome_model_repository.new_stroke_for_person(
+                        person
+                    )
+            elif delta_stroke_relrisk > 0 and num_strokes_to_change > 0 and num_stroke_events > 0:
+                num_strokes_to_change = min(num_strokes_to_change, num_stroke_events)
+                has_stroke_indices = treated_has_event[OutcomeType.STROKE][True]
+                has_stroke_risk = [
+                    untreated_cv_risks[i][OutcomeType.STROKE] for i in has_stroke_indices
+                ]
+                remove_stroke_indices = np.random.choice(
+                    has_stroke_indices,
+                    size=num_strokes_to_change,
+                    replace=False,
+                    p=has_stroke_risk,
+                )
+                for i in remove_stroke_indices:
+                    person = alive_pop[i]
+                    person.next.stroke = None
 
     def _get_model_cv_event_stats(self, treated_pop, untreated_pop, indices):
         treated_total_mi_risk = 0
