@@ -1,5 +1,5 @@
-from typing import Callable
-
+from collections import defaultdict
+from typing import Callable, Hashable
 import numpy as np
 from microsim.store.numpy_person_proxy import NumpyPersonProxy
 from microsim.store.numpy_population_iterator import NumpyPopulationIterator
@@ -26,3 +26,16 @@ class NumpyPopulationProxy:
         )
         subpop = NumpySubpopulationProxy(self._person_store, self._at_t, subpop_indices)
         return subpop
+
+    def group_by(self, key_func: Callable[[NumpyPersonProxy], Hashable]):
+        """Groups persons into subpopulations per the given `key_func`."""
+        group_indices = defaultdict(list)
+        for i, person in enumerate(self):
+            person_group_key = key_func(person)
+            group_indices[person_group_key].append(i)
+
+        grouped_subpops = {
+            group_key: NumpySubpopulationProxy(self._person_store, self._at_t, subpop_indices)
+            for group_key, subpop_indices in group_indices.items()
+        }
+        return grouped_subpops
