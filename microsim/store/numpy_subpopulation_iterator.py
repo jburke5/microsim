@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class NumpyPopulationIterator:
+class NumpySubpopulationIterator:
     def __init__(self, person_store, at_t, active_indices, scratch_next=False):
         self._person_store = person_store
         self._at_t = at_t

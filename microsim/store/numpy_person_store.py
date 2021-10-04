@@ -2,7 +2,7 @@ from types import MappingProxyType
 import numpy as np
 from microsim.store.numpy_person_proxy import NumpyPersonProxy
 from microsim.store.numpy_person_record_proxy import PersonRecordProxyMetaclass
-from microsim.store.numpy_population_proxy import NumpyPopulationProxy
+from microsim.store.numpy_subpopulation_proxy import NumpySubpopulationProxy
 
 
 def assert_positive_int(value, name):
@@ -88,7 +88,7 @@ class NumpyPersonStore:
 
     def get_population_at(self, t, condition=None, active_indices=None):
         """Returns all records at time `t` that satisfy `condition`."""
-        population_proxy = NumpyPopulationProxy(
+        population_proxy = NumpySubpopulationProxy(
             self,
             t,
             active_condition=condition,

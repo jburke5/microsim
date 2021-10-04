@@ -1,8 +1,8 @@
 import numpy as np
-from microsim.store.numpy_population_iterator import NumpyPopulationIterator
+from microsim.store.numpy_subpopulation_iterator import NumpySubpopulationIterator
 
 
-class NumpyPopulationProxy:
+class NumpySubpopulationProxy:
     def __init__(
         self, person_store, at_t, active_indices=None, active_condition=None, scratch_next=False
     ):
@@ -27,7 +27,7 @@ class NumpyPopulationProxy:
         return self._active_indices.shape[0]
 
     def __iter__(self):
-        return NumpyPopulationIterator(self._person_store, self._at_t, self._active_indices)
+        return NumpySubpopulationIterator(self._person_store, self._at_t, self._active_indices)
 
     def __getitem__(self, key):
         if type(key) is not int:
@@ -40,8 +40,8 @@ class NumpyPopulationProxy:
         return person_proxy
 
     def get_scratch_copy(self):
-        """Returns population with same members but with scratch as `.next`."""
-        return NumpyPopulationProxy(
+        """Returns subpopulation with same members but with scratch `.next`."""
+        return NumpySubpopulationProxy(
             self._person_store, self._at_t, self._active_indices, scratch_next=True
         )
 
