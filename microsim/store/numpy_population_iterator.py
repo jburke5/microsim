@@ -1,4 +1,6 @@
 class NumpyPopulationIterator:
+    """Iterator for a whole population without conditions."""
+
     def __init__(self, person_store, at_t):
         self._store = person_store
         self._at_t = at_t
