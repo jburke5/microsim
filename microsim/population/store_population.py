@@ -6,6 +6,13 @@ def is_alive(person_record):
     return person_record.current.alive
 
 
+def new_num_bp_meds_upto_func(max_bp_meds):
+    def num_bp_meds_upto(person):
+        return min(person.next.bpMedsAdded, max_bp_meds)
+
+    return num_bp_meds_upto
+
+
 class StorePopulation:
     """
     Population that uses a PersonStore to store its people.
@@ -113,26 +120,26 @@ class StorePopulation:
             self._advance_person_outcomes(scratch_person)
 
         max_bp_meds = 5
-        indices_by_bp_meds = [[] for i in range(max_bp_meds + 1)]
-        for i, person in enumerate(alive_pop):
-            bp_meds_added = person.next.bpMedsAdded
-            indices_by_bp_meds[bp_meds_added].append(i)
+        num_bp_meds_upto = new_num_bp_meds_upto_func(max_bp_meds)
+        all_bp_med_groups = alive_pop.group_by(num_bp_meds_upto)
+        recalibration_groups = [all_bp_med_groups[i] for i in range(1, max_bp_meds + 1)]
 
         bp_treatment_standards = (
             self._bp_treatment_strategy.get_treatment_recalibration_for_population()
         )
-        for num_bp_meds in range(1, max_bp_meds + 1):
-            indices = indices_by_bp_meds[num_bp_meds]
-
-            model_relrisk, treated_has_event, untreated_cv_risks = self._get_model_cv_event_stats(
-                alive_pop, scratch_pop, indices
-            )
-            num_mi_events = len(treated_has_event[OutcomeType.MI][True])
-            num_stroke_events = len(treated_has_event[OutcomeType.STROKE][True])
+        for num_bp_meds, treated_subpop in enumerate(recalibration_groups, start=1):
             standard_mi_relrisk = bp_treatment_standards[OutcomeType.MI] ** num_bp_meds
             standard_stroke_relrisk = bp_treatment_standards[OutcomeType.STROKE] ** num_bp_meds
+
+            untreated_subpop = treated_subpop.get_scratch_copy()
+            model_relrisk = self._get_model_cv_event_relrisk(treated_subpop, untreated_subpop)
             delta_mi_relrisk = model_relrisk[OutcomeType.MI] - standard_mi_relrisk
             delta_stroke_relrisk = model_relrisk[OutcomeType.STROKE] - standard_stroke_relrisk
+
+            treated_has_mi = treated_subpop.group_by(lambda p: p.next.mi is not None)
+            treated_has_stroke = treated_subpop.group_by(lambda p: p.next.stroke is not None)
+            num_mi_events = treated_has_mi[True].num_persons
+            num_stroke_events = treated_has_stroke[True].num_persons
             num_mis_to_change = int(
                 round(delta_mi_relrisk * num_mi_events) / model_relrisk[OutcomeType.MI]
             )
@@ -141,94 +148,87 @@ class StorePopulation:
             )
 
             if delta_mi_relrisk < 0 and num_mis_to_change > 0:
-                no_mi_indices = treated_has_event[OutcomeType.MI][False]
-                no_mi_risk = [untreated_cv_risks[i][OutcomeType.MI] for i in no_mi_indices]
-                add_mi_indices = np.random.choice(
-                    no_mi_indices, size=num_mis_to_change, replace=False, p=no_mi_risk
+                no_mi_subpop = treated_has_mi[False]
+                no_mi_untreated_subpop = no_mi_subpop.get_scratch_copy()
+                no_mi_risks = self._get_model_cv_event_risk(no_mi_untreated_subpop, OutcomeType.MI)
+                add_mi_rel_indices = np.random.choice(
+                    no_mi_subpop.num_persons, size=num_mis_to_change, replace=False, p=no_mi_risks
                 )
-                for i in add_mi_indices:
-                    person = alive_pop[i]
+                for person in (no_mi_subpop[i] for i in add_mi_rel_indices):
                     person.next.mi = self._outcome_model_repository.new_mi_for_person(person)
             elif delta_mi_relrisk > 0 and num_mis_to_change > 0 and num_mi_events > 0:
                 num_mis_to_change = min(num_mis_to_change, num_mi_events)
-                has_mi_indices = treated_has_event[OutcomeType.MI][True]
-                has_mi_risk = [untreated_cv_risks[i][OutcomeType.MI] for i in has_mi_indices]
-                remove_mi_indices = np.random.choice(
-                    has_mi_indices, size=num_mis_to_change, replace=False, p=has_mi_risk
+                has_mi_subpop = treated_has_mi[True]
+                has_mi_untreated_subpop = has_mi_subpop.get_scratch_copy()
+                has_mi_risk = self._get_model_cv_event_risk(
+                    has_mi_untreated_subpop, OutcomeType.MI
                 )
-                for i in remove_mi_indices:
-                    person = alive_pop[i]
+                remove_mi_indices = np.random.choice(
+                    has_mi_subpop.num_persons, size=num_mis_to_change, replace=False, p=has_mi_risk
+                )
+                for person in (has_mi_subpop[i] for i in remove_mi_indices):
                     person.next.mi = None
 
             if delta_stroke_relrisk < 0 and num_strokes_to_change > 0:
-                no_stroke_indices = treated_has_event[OutcomeType.STROKE][False]
-                no_stroke_risk = [
-                    untreated_cv_risks[i][OutcomeType.STROKE] for i in no_stroke_indices
-                ]
-                add_stroke_indices = np.random.choice(
-                    no_stroke_indices, size=num_strokes_to_change, replace=False, p=no_stroke_risk
+                no_stroke_subpop = treated_has_stroke[False]
+                no_stroke_untreated_subpop = no_stroke_subpop.get_scratch_copy()
+                no_stroke_risks = self._get_model_cv_event_risk(
+                    no_stroke_untreated_subpop, OutcomeType.STROKE
                 )
-                for i in add_stroke_indices:
-                    person = alive_pop[i]
+                add_stroke_indices = np.random.choice(
+                    no_stroke_subpop.num_persons,
+                    size=num_strokes_to_change,
+                    replace=False,
+                    p=no_stroke_risks,
+                )
+                for person in (no_stroke_subpop[i] for i in add_stroke_indices):
                     person.next.stroke = self._outcome_model_repository.new_stroke_for_person(
                         person
                     )
             elif delta_stroke_relrisk > 0 and num_strokes_to_change > 0 and num_stroke_events > 0:
                 num_strokes_to_change = min(num_strokes_to_change, num_stroke_events)
-                has_stroke_indices = treated_has_event[OutcomeType.STROKE][True]
-                has_stroke_risk = [
-                    untreated_cv_risks[i][OutcomeType.STROKE] for i in has_stroke_indices
-                ]
+                has_stroke_subpop = treated_has_stroke[True]
+                has_stroke_untreated_subpop = has_stroke_subpop.get_scratch_copy()
+                has_stroke_risks = self._get_model_cv_event_risk(
+                    has_stroke_untreated_subpop, OutcomeType.STROKE
+                )
                 remove_stroke_indices = np.random.choice(
-                    has_stroke_indices,
+                    has_stroke_subpop.num_persons,
                     size=num_strokes_to_change,
                     replace=False,
-                    p=has_stroke_risk,
+                    p=has_stroke_risks,
                 )
-                for i in remove_stroke_indices:
-                    person = alive_pop[i]
+                for person in (has_stroke_subpop[i] for i in remove_stroke_indices):
                     person.next.stroke = None
 
-    def _get_model_cv_event_stats(self, treated_pop, untreated_pop, indices):
+    def _get_model_cv_event_relrisk(self, treated_pop, untreated_pop):
         treated_total_mi_risk = 0
         untreated_total_mi_risk = 0
         treated_total_stroke_risk = 0
         untreated_total_stroke_risk = 0
-        treated_has_event = {
-            OutcomeType.MI: {False: [], True: []},
-            OutcomeType.STROKE: {False: [], True: []},
-        }
-        untreated_cv_risks = []
-        for i in indices:
-            treated_person = treated_pop[i]
+        for treated_person, untreated_person in zip(treated_pop, untreated_pop):
             treated_cv_risks = self._outcome_model_repository.get_cv_event_risks_for_person(
                 treated_person
             )
             treated_total_mi_risk += treated_cv_risks[OutcomeType.MI]
             treated_total_stroke_risk += treated_cv_risks[OutcomeType.STROKE]
-            will_have_mi = treated_person.next.mi is not None
-            treated_has_event[OutcomeType.MI][will_have_mi].append(i)
-            will_have_stroke = treated_person.next.stroke is not None
-            treated_has_event[OutcomeType.STROKE][will_have_stroke].append(i)
 
-            untreated_person = untreated_pop[i]
             untreated_cv_risks = self._outcome_model_repository.get_cv_event_risks_for_person(
                 untreated_person
             )
             untreated_total_mi_risk += untreated_cv_risks[OutcomeType.MI]
             untreated_total_stroke_risk += untreated_cv_risks[OutcomeType.STROKE]
-            untreated_cv_risks.append(untreated_cv_risks)
 
-        num_persons = len(indices)
-        treated_mean_mi_risk = treated_total_mi_risk / num_persons
-        treated_mean_stroke_risk = treated_total_stroke_risk / num_persons
-        untreated_mean_mi_risk = untreated_total_mi_risk / num_persons
-        untreated_mean_stroke_risk = untreated_total_stroke_risk / num_persons
-
-        model_mi_relrisk = treated_mean_mi_risk / untreated_mean_mi_risk
-        model_stroke_relrisk = treated_mean_stroke_risk / untreated_mean_stroke_risk
         model_relrisk = {
-            OutcomeType.MI: model_mi_relrisk,
-            OutcomeType.STROKE: model_stroke_relrisk,
+            OutcomeType.MI: treated_total_mi_risk / untreated_total_mi_risk,
+            OutcomeType.STROKE: treated_total_stroke_risk / untreated_total_stroke_risk,
         }
-        return model_relrisk, treated_has_event, untreated_cv_risks
+        return model_relrisk
+
+    def _get_model_cv_event_risk(self, untreated_pop, event_type):
+        cv_event_risks = []
+        for person in untreated_pop:
+            person_cv_risks = self._outcome_model_repository.get_cv_event_risks_for_person(person)
+            person_event_risk = person_cv_risks[event_type]
+            cv_event_risks.append(person_event_risk)
+        return cv_event_risks
