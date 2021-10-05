@@ -4,11 +4,11 @@ import numpy as np
 class NumpySubpopulationIterator:
     """Iterator for a subset of a whole population, given by indices."""
 
-    def __init__(self, person_store, at_t, active_indices, scratch_next=False):
+    def __init__(self, person_store, at_t, member_indices, scratch_next=False):
         self._person_store = person_store
         self._at_t = at_t
         self._scratch_next = scratch_next
-        self._it = np.nditer(active_indices, [], ["readonly"], [active_indices.dtype])
+        self._it = np.nditer(member_indices, [], ["readonly"], [member_indices.dtype])
 
     def __iter__(self):
         return self
