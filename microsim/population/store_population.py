@@ -3,7 +3,7 @@ from microsim.outcome import OutcomeType
 
 
 def is_alive(person_record):
-    return person_record.alive
+    return person_record.current.alive
 
 
 class StorePopulation:
@@ -49,7 +49,7 @@ class StorePopulation:
         start_tick = self._current_tick
         end_tick = start_tick + num_ticks
         for t in range(start_tick, end_tick):
-            alive_pop = self._person_store.get_population_at(t, condition=is_alive)
+            alive_pop = self._person_store.get_population_at(t).where(is_alive)
 
             if alive_pop.num_persons == 0:
                 break
