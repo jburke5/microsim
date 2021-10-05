@@ -1,3 +1,4 @@
+import numpy as np
 from microsim.store.numpy_subpopulation_iterator import NumpySubpopulationIterator
 
 
@@ -6,7 +7,14 @@ class NumpySubpopulationProxy:
         self._at_t = at_t
         self._person_store = person_store
         self._scratch_next = scratch_next
-        self._active_indices = active_indices
+
+        index_array = np.array(active_indices, dtype=np.intp)
+        if index_array.ndim != 1:
+            raise ValueError(
+                "Expected `active_indices` to convert to 1D array;"
+                f" converted to {index_array.ndim}D instead (from value: {active_indices})"
+            )
+        self._active_indices = index_array
 
     @property
     def active_indices(self):
