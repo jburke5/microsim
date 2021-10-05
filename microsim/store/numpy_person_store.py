@@ -2,7 +2,7 @@ from types import MappingProxyType
 import numpy as np
 from microsim.store.numpy_person_proxy import NumpyPersonProxy
 from microsim.store.numpy_person_record_proxy import PersonRecordProxyMetaclass
-from microsim.store.numpy_subpopulation_proxy import NumpySubpopulationProxy
+from microsim.store.numpy_population_proxy import NumpyPopulationProxy
 
 
 def assert_positive_int(value, name):
@@ -72,7 +72,7 @@ class NumpyPersonStore:
             | dynamic_mapping.property_mappings.keys()
             | event_mapping.property_mappings.keys()
         )
-        initial_pop = self.get_population_at(-1, active_indices=np.arange(0, self._num_persons))
+        initial_pop = self.get_population_at(t=-1)
         for record, person in zip(iter_person_records(), initial_pop):
             for prop_name in all_person_record_property_names:
                 value = getattr(record, prop_name)
@@ -86,15 +86,9 @@ class NumpyPersonStore:
         """Returns the number of ticks for which store can hold data."""
         return self._num_ticks
 
-    def get_population_at(self, t, condition=None, active_indices=None):
-        """Returns all records at time `t` that satisfy `condition`."""
-        population_proxy = NumpySubpopulationProxy(
-            self,
-            t,
-            active_condition=condition,
-            active_indices=active_indices,
-        )
-        return population_proxy
+    def get_population_at(self, t):
+        """Returns a population containing all person data at time `t`."""
+        return NumpyPopulationProxy(self, t)
 
     def get_scratch_person_record(self, i):
         static_row = self._static_data_array[i]
