@@ -160,24 +160,28 @@ class StorePopulation:
         num_mis_to_change = int(round(delta_mi_relrisk * num_mi_events) / model_mi_relrisk)
 
         if delta_mi_relrisk < 0 and num_mis_to_change > 0:
-            no_mi_subpop = treated_has_mi[False]
-            no_mi_untreated_subpop = no_mi_subpop.get_scratch_copy()
-            no_mi_risks = self._get_model_cv_event_risk(no_mi_untreated_subpop, OutcomeType.MI)
-            add_mi_rel_indices = np.random.choice(
-                no_mi_subpop.num_persons, size=num_mis_to_change, replace=False, p=no_mi_risks
-            )
-            for person in (no_mi_subpop[i] for i in add_mi_rel_indices):
-                person.next.mi = self._outcome_model_repository.new_mi_for_person(person)
+            self._recalibrate_add_mis(treated_has_mi[False], num_mis_to_change)
         elif delta_mi_relrisk > 0 and num_mis_to_change > 0 and num_mi_events > 0:
             num_mis_to_change = min(num_mis_to_change, num_mi_events)
-            has_mi_subpop = treated_has_mi[True]
-            has_mi_untreated_subpop = has_mi_subpop.get_scratch_copy()
-            has_mi_risk = self._get_model_cv_event_risk(has_mi_untreated_subpop, OutcomeType.MI)
-            remove_mi_indices = np.random.choice(
-                has_mi_subpop.num_persons, size=num_mis_to_change, replace=False, p=has_mi_risk
-            )
-            for person in (has_mi_subpop[i] for i in remove_mi_indices):
-                person.next.mi = None
+            self._recalibrate_remove_mis(treated_has_mi[True], num_mis_to_change)
+
+    def _recalibrate_add_mis(self, no_mi_subpop, num_mis_to_change):
+        no_mi_untreated_subpop = no_mi_subpop.get_scratch_copy()
+        no_mi_risks = self._get_model_cv_event_risk(no_mi_untreated_subpop, OutcomeType.MI)
+        add_mi_rel_indices = np.random.choice(
+            no_mi_subpop.num_persons, size=num_mis_to_change, replace=False, p=no_mi_risks
+        )
+        for person in (no_mi_subpop[i] for i in add_mi_rel_indices):
+            person.next.mi = self._outcome_model_repository.new_mi_for_person(person)
+
+    def _recalibrate_remove_mis(self, has_mi_subpop, num_mis_to_change):
+        has_mi_untreated_subpop = has_mi_subpop.get_scratch_copy()
+        has_mi_risk = self._get_model_cv_event_risk(has_mi_untreated_subpop, OutcomeType.MI)
+        remove_mi_indices = np.random.choice(
+            has_mi_subpop.num_persons, size=num_mis_to_change, replace=False, p=has_mi_risk
+        )
+        for person in (has_mi_subpop[i] for i in remove_mi_indices):
+            person.next.mi = None
 
     def _recalibrate_stroke(self, treated_subpop, model_stroke_relrisk, standard_stroke_relrisk):
         treated_has_stroke = treated_subpop.group_by(has_stroke)
