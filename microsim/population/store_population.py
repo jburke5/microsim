@@ -235,4 +235,8 @@ class StorePopulation:
             person_cv_risks = self._outcome_model_repository.get_cv_event_risks_for_person(person)
             person_event_risk = person_cv_risks[event_type]
             cv_event_risks.append(person_event_risk)
-        return cv_event_risks
+        total_risk = sum(cv_event_risks)
+        if total_risk == 0:
+            return cv_event_risks
+        normalized_cv_event_risks = [r / total_risk for r in cv_event_risks]
+        return normalized_cv_event_risks
