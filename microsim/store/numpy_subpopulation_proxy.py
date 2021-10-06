@@ -31,8 +31,11 @@ class NumpySubpopulationProxy:
         return NumpySubpopulationIterator(self._person_store, self._at_t, self._member_indices)
 
     def __getitem__(self, key):
-        if type(key) is not int:
-            raise TypeError(f"Expected `int` key; received: {type(key)} (value: '{key}')")
+        if type(key) is not int and not isinstance(key, np.integer):
+            raise TypeError(
+                "Expected key to be a Python `int` or Numpy integer type;"
+                f" received: {type(key)} (value: '{key}')"
+            )
 
         abs_idx = self._member_indices[key]
         person_proxy = self._person_store.get_person_proxy_at(
