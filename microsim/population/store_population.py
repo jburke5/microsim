@@ -66,6 +66,8 @@ class StorePopulation:
                 self._advance_person_treatments(person)
                 self._advance_person_outcomes(person)
 
+            self._recalibrate_treatment(alive_pop)
+
         self._current_tick = end_tick
 
     def _advance_person_risk_factors(self, person):
