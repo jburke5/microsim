@@ -13,6 +13,14 @@ def new_num_bp_meds_upto_func(max_bp_meds):
     return num_bp_meds_upto
 
 
+def has_mi(person):
+    return person.next.mi is not None
+
+
+def has_stroke(person):
+    return person.next.stroke is not None
+
+
 class StorePopulation:
     """
     Population that uses a PersonStore to store its people.
@@ -146,7 +154,7 @@ class StorePopulation:
             )
 
     def _recalibrate_mi(self, treated_subpop, model_mi_relrisk, standard_mi_relrisk):
-        treated_has_mi = treated_subpop.group_by(lambda p: p.next.mi is not None)
+        treated_has_mi = treated_subpop.group_by(has_mi)
         num_mi_events = treated_has_mi[True].num_persons
         delta_mi_relrisk = model_mi_relrisk - standard_mi_relrisk
         num_mis_to_change = int(round(delta_mi_relrisk * num_mi_events) / model_mi_relrisk)
@@ -172,7 +180,7 @@ class StorePopulation:
                 person.next.mi = None
 
     def _recalibrate_stroke(self, treated_subpop, model_stroke_relrisk, standard_stroke_relrisk):
-        treated_has_stroke = treated_subpop.group_by(lambda p: p.next.stroke is not None)
+        treated_has_stroke = treated_subpop.group_by(has_stroke)
         num_strokes = treated_has_stroke[True].num_persons
         delta_stroke_relrisk = model_stroke_relrisk - standard_stroke_relrisk
         num_strokes_to_change = int(
