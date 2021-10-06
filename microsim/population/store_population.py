@@ -2,8 +2,8 @@ import numpy as np
 from microsim.outcome import OutcomeType
 
 
-def is_alive(person_record):
-    return person_record.current.alive
+def is_alive(person):
+    return person.current.alive
 
 
 def new_num_bp_meds_upto_func(max_bp_meds):
