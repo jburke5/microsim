@@ -1,7 +1,5 @@
 from collections import defaultdict
-from typing import Callable, Hashable
 import numpy as np
-from microsim.store.numpy_person_proxy import NumpyPersonProxy
 from microsim.store.numpy_subpopulation_iterator import NumpySubpopulationIterator
 
 
@@ -49,7 +47,7 @@ class NumpySubpopulationProxy:
             self._person_store, self._at_t, self._member_indices, scratch_next=True
         )
 
-    def where(self, condition: Callable[[NumpyPersonProxy], bool]):
+    def where(self, condition):
         """Returns subpopulation of persons that satisfy the given condition."""
         subpop_indices = [
             self._member_indices[i] for i, person in enumerate(self) if condition(person)
@@ -59,7 +57,7 @@ class NumpySubpopulationProxy:
         )
         return subpop
 
-    def group_by(self, key_func: Callable[[NumpyPersonProxy], Hashable]):
+    def group_by(self, key_func):
         """Groups persons into subpopulations per the given `key_func`."""
         group_indices = defaultdict(list)
         for i, person in enumerate(self):
