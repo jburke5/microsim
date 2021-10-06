@@ -192,34 +192,38 @@ class StorePopulation:
         )
 
         if delta_stroke_relrisk < 0 and num_strokes_to_change > 0:
-            no_stroke_subpop = treated_has_stroke[False]
-            no_stroke_untreated_subpop = no_stroke_subpop.get_scratch_copy()
-            no_stroke_risks = self._get_model_cv_event_risk(
-                no_stroke_untreated_subpop, OutcomeType.STROKE
-            )
-            add_stroke_indices = np.random.choice(
-                no_stroke_subpop.num_persons,
-                size=num_strokes_to_change,
-                replace=False,
-                p=no_stroke_risks,
-            )
-            for person in (no_stroke_subpop[i] for i in add_stroke_indices):
-                person.next.stroke = self._outcome_model_repository.new_stroke_for_person(person)
+            self._recalibrate_add_strokes(treated_has_stroke[False], num_strokes_to_change)
         elif delta_stroke_relrisk > 0 and num_strokes_to_change > 0 and num_strokes > 0:
             num_strokes_to_change = min(num_strokes_to_change, num_strokes)
-            has_stroke_subpop = treated_has_stroke[True]
-            has_stroke_untreated_subpop = has_stroke_subpop.get_scratch_copy()
-            has_stroke_risks = self._get_model_cv_event_risk(
-                has_stroke_untreated_subpop, OutcomeType.STROKE
-            )
-            remove_stroke_indices = np.random.choice(
-                has_stroke_subpop.num_persons,
-                size=num_strokes_to_change,
-                replace=False,
-                p=has_stroke_risks,
-            )
-            for person in (has_stroke_subpop[i] for i in remove_stroke_indices):
-                person.next.stroke = None
+            self._recalibrate_remove_strokes(treated_has_stroke[True], num_strokes_to_change)
+
+    def _recalibrate_add_strokes(self, no_stroke_subpop, num_strokes_to_change):
+        no_stroke_untreated_subpop = no_stroke_subpop.get_scratch_copy()
+        no_stroke_risks = self._get_model_cv_event_risk(
+            no_stroke_untreated_subpop, OutcomeType.STROKE
+        )
+        add_stroke_indices = np.random.choice(
+            no_stroke_subpop.num_persons,
+            size=num_strokes_to_change,
+            replace=False,
+            p=no_stroke_risks,
+        )
+        for person in (no_stroke_subpop[i] for i in add_stroke_indices):
+            person.next.stroke = self._outcome_model_repository.new_stroke_for_person(person)
+
+    def _recalibrate_remove_strokes(self, has_stroke_subpop, num_strokes_to_change):
+        has_stroke_untreated_subpop = has_stroke_subpop.get_scratch_copy()
+        has_stroke_risks = self._get_model_cv_event_risk(
+            has_stroke_untreated_subpop, OutcomeType.STROKE
+        )
+        remove_stroke_indices = np.random.choice(
+            has_stroke_subpop.num_persons,
+            size=num_strokes_to_change,
+            replace=False,
+            p=has_stroke_risks,
+        )
+        for person in (has_stroke_subpop[i] for i in remove_stroke_indices):
+            person.next.stroke = None
 
     def _get_model_cv_event_relrisk(self, treated_pop, untreated_pop):
         treated_total_mi_risk = 0
