@@ -124,7 +124,9 @@ class StorePopulation:
         max_bp_meds = 5
         num_bp_meds_upto = new_num_bp_meds_upto_func(max_bp_meds)
         all_bp_med_groups = alive_pop.group_by(num_bp_meds_upto)
-        recalibration_groups = [all_bp_med_groups[i] for i in range(1, max_bp_meds + 1)]
+        recalibration_groups = [
+            all_bp_med_groups[i] for i in range(1, max_bp_meds + 1) if i in all_bp_med_groups
+        ]
 
         bp_treatment_standards = (
             self._bp_treatment_strategy.get_treatment_recalibration_for_population()
