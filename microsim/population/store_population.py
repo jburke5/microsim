@@ -124,7 +124,7 @@ class StorePopulation:
         person.next.alive = not will_have_non_cv_death
 
     def _recalibrate_treatment(self, alive_pop):
-        scratch_pop = alive_pop.get_scratch_copy()
+        scratch_pop = alive_pop.with_scratch_next()
         for scratch_person in scratch_pop:
             self._advance_person_risk_factors(scratch_person)
             self._advance_person_outcomes(scratch_person)
@@ -140,7 +140,7 @@ class StorePopulation:
             self._bp_treatment_strategy.get_treatment_recalibration_for_population()
         )
         for num_bp_meds, treated_subpop in enumerate(recalibration_groups, start=1):
-            untreated_subpop = treated_subpop.get_scratch_copy()
+            untreated_subpop = treated_subpop.with_scratch_next()
             model_relrisk = self._get_model_cv_event_relrisk(treated_subpop, untreated_subpop)
 
             standard_mi_relrisk = bp_treatment_standards[OutcomeType.MI] ** num_bp_meds
@@ -166,7 +166,7 @@ class StorePopulation:
             self._recalibrate_remove_mis(treated_has_mi[True], num_mis_to_change)
 
     def _recalibrate_add_mis(self, no_mi_subpop, num_mis_to_change):
-        no_mi_untreated_subpop = no_mi_subpop.get_scratch_copy()
+        no_mi_untreated_subpop = no_mi_subpop.with_scratch_next()
         no_mi_risks = self._get_model_cv_event_risk(no_mi_untreated_subpop, OutcomeType.MI)
         add_mi_rel_indices = np.random.choice(
             no_mi_subpop.num_persons, size=num_mis_to_change, replace=False, p=no_mi_risks
@@ -175,7 +175,7 @@ class StorePopulation:
             person.next.mi = self._outcome_model_repository.new_mi_for_person(person)
 
     def _recalibrate_remove_mis(self, has_mi_subpop, num_mis_to_change):
-        has_mi_untreated_subpop = has_mi_subpop.get_scratch_copy()
+        has_mi_untreated_subpop = has_mi_subpop.with_scratch_next()
         has_mi_risk = self._get_model_cv_event_risk(has_mi_untreated_subpop, OutcomeType.MI)
         remove_mi_indices = np.random.choice(
             has_mi_subpop.num_persons, size=num_mis_to_change, replace=False, p=has_mi_risk
@@ -198,7 +198,7 @@ class StorePopulation:
             self._recalibrate_remove_strokes(treated_has_stroke[True], num_strokes_to_change)
 
     def _recalibrate_add_strokes(self, no_stroke_subpop, num_strokes_to_change):
-        no_stroke_untreated_subpop = no_stroke_subpop.get_scratch_copy()
+        no_stroke_untreated_subpop = no_stroke_subpop.with_scratch_next()
         no_stroke_risks = self._get_model_cv_event_risk(
             no_stroke_untreated_subpop, OutcomeType.STROKE
         )
@@ -212,7 +212,7 @@ class StorePopulation:
             person.next.stroke = self._outcome_model_repository.new_stroke_for_person(person)
 
     def _recalibrate_remove_strokes(self, has_stroke_subpop, num_strokes_to_change):
-        has_stroke_untreated_subpop = has_stroke_subpop.get_scratch_copy()
+        has_stroke_untreated_subpop = has_stroke_subpop.with_scratch_next()
         has_stroke_risks = self._get_model_cv_event_risk(
             has_stroke_untreated_subpop, OutcomeType.STROKE
         )

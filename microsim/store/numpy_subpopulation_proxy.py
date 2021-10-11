@@ -41,7 +41,7 @@ class NumpySubpopulationProxy:
         )
         return person_proxy
 
-    def get_scratch_copy(self):
+    def with_scratch_next(self):
         """Returns subpopulation with same members but with scratch `.next`."""
         return NumpySubpopulationProxy(
             self._person_store, self._at_t, self._member_indices, scratch_next=True
