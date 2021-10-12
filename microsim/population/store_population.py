@@ -1,24 +1,8 @@
-import numpy as np
 from microsim.outcome import OutcomeType
 
 
 def is_alive(person):
     return person.current.alive
-
-
-def new_num_bp_meds_upto_func(max_bp_meds):
-    def num_bp_meds_upto(person):
-        return min(person.next.bpMedsAdded, max_bp_meds)
-
-    return num_bp_meds_upto
-
-
-def has_mi(person):
-    return person.next.mi is not None
-
-
-def has_stroke(person):
-    return person.next.stroke is not None
 
 
 class StorePopulation:
@@ -36,6 +20,7 @@ class StorePopulation:
         risk_model_repository,
         outcome_model_repository,
         bp_treatment_strategy,
+        bp_treatment_recalibration,
         risk_factor_prop_names,
         treatment_prop_names,
         outcome_prop_names,
@@ -44,6 +29,7 @@ class StorePopulation:
         self._risk_model_repository = risk_model_repository
         self._outcome_model_repository = outcome_model_repository
         self._bp_treatment_strategy = bp_treatment_strategy
+        self._bp_treatment_recalibration = bp_treatment_recalibration
 
         self._risk_factor_prop_names = risk_factor_prop_names
         self._treatment_prop_names = treatment_prop_names
@@ -124,139 +110,10 @@ class StorePopulation:
         person.next.alive = not will_have_non_cv_death
 
     def _recalibrate_treatment(self, alive_pop):
-        scratch_pop = alive_pop.with_scratch_next()
-        for scratch_person in scratch_pop:
-            self._advance_person_risk_factors(scratch_person)
-            self._advance_person_outcomes(scratch_person)
+        def set_scratch_next_to_baseline(pop):
+            scratch_pop = pop.with_scratch_next()
+            for scratch_person in scratch_pop:
+                self._advance_person_risk_factors(scratch_person)
+                self._advance_person_outcomes(scratch_person)
 
-        max_bp_meds = 5
-        num_bp_meds_upto = new_num_bp_meds_upto_func(max_bp_meds)
-        all_bp_med_groups = alive_pop.group_by(num_bp_meds_upto)
-        recalibration_groups = [
-            all_bp_med_groups[i] for i in range(1, max_bp_meds + 1) if i in all_bp_med_groups
-        ]
-
-        bp_treatment_standards = (
-            self._bp_treatment_strategy.get_treatment_recalibration_for_population()
-        )
-        for num_bp_meds, treated_subpop in enumerate(recalibration_groups, start=1):
-            untreated_subpop = treated_subpop.with_scratch_next()
-            model_relrisk = self._get_model_cv_event_relrisk(treated_subpop, untreated_subpop)
-
-            standard_mi_relrisk = bp_treatment_standards[OutcomeType.MI] ** num_bp_meds
-            standard_stroke_relrisk = bp_treatment_standards[OutcomeType.STROKE] ** num_bp_meds
-
-            self._recalibrate_mi(
-                treated_subpop, model_relrisk[OutcomeType.MI], standard_mi_relrisk
-            )
-            self._recalibrate_stroke(
-                treated_subpop, model_relrisk[OutcomeType.STROKE], standard_stroke_relrisk
-            )
-
-    def _recalibrate_mi(self, treated_subpop, model_mi_relrisk, standard_mi_relrisk):
-        treated_has_mi = treated_subpop.group_by(has_mi)
-        num_mi_events = treated_has_mi[True].num_persons
-        delta_mi_relrisk = model_mi_relrisk - standard_mi_relrisk
-        num_mis_to_change = int(round(delta_mi_relrisk * num_mi_events) / model_mi_relrisk)
-
-        if delta_mi_relrisk < 0 and num_mis_to_change > 0:
-            self._recalibrate_add_mis(treated_has_mi[False], num_mis_to_change)
-        elif delta_mi_relrisk > 0 and num_mis_to_change > 0 and num_mi_events > 0:
-            num_mis_to_change = min(num_mis_to_change, num_mi_events)
-            self._recalibrate_remove_mis(treated_has_mi[True], num_mis_to_change)
-
-    def _recalibrate_add_mis(self, no_mi_subpop, num_mis_to_change):
-        no_mi_untreated_subpop = no_mi_subpop.with_scratch_next()
-        no_mi_risks = self._get_model_cv_event_risk(no_mi_untreated_subpop, OutcomeType.MI)
-        add_mi_rel_indices = np.random.choice(
-            no_mi_subpop.num_persons, size=num_mis_to_change, replace=False, p=no_mi_risks
-        )
-        for person in (no_mi_subpop[i] for i in add_mi_rel_indices):
-            person.next.mi = self._outcome_model_repository.new_mi_for_person(person)
-
-    def _recalibrate_remove_mis(self, has_mi_subpop, num_mis_to_change):
-        has_mi_untreated_subpop = has_mi_subpop.with_scratch_next()
-        has_mi_risk = self._get_model_cv_event_risk(has_mi_untreated_subpop, OutcomeType.MI)
-        remove_mi_indices = np.random.choice(
-            has_mi_subpop.num_persons, size=num_mis_to_change, replace=False, p=has_mi_risk
-        )
-        for person in (has_mi_subpop[i] for i in remove_mi_indices):
-            person.next.mi = None
-
-    def _recalibrate_stroke(self, treated_subpop, model_stroke_relrisk, standard_stroke_relrisk):
-        treated_has_stroke = treated_subpop.group_by(has_stroke)
-        num_strokes = treated_has_stroke[True].num_persons
-        delta_stroke_relrisk = model_stroke_relrisk - standard_stroke_relrisk
-        num_strokes_to_change = int(
-            round(delta_stroke_relrisk * num_strokes) / model_stroke_relrisk
-        )
-
-        if delta_stroke_relrisk < 0 and num_strokes_to_change > 0:
-            self._recalibrate_add_strokes(treated_has_stroke[False], num_strokes_to_change)
-        elif delta_stroke_relrisk > 0 and num_strokes_to_change > 0 and num_strokes > 0:
-            num_strokes_to_change = min(num_strokes_to_change, num_strokes)
-            self._recalibrate_remove_strokes(treated_has_stroke[True], num_strokes_to_change)
-
-    def _recalibrate_add_strokes(self, no_stroke_subpop, num_strokes_to_change):
-        no_stroke_untreated_subpop = no_stroke_subpop.with_scratch_next()
-        no_stroke_risks = self._get_model_cv_event_risk(
-            no_stroke_untreated_subpop, OutcomeType.STROKE
-        )
-        add_stroke_indices = np.random.choice(
-            no_stroke_subpop.num_persons,
-            size=num_strokes_to_change,
-            replace=False,
-            p=no_stroke_risks,
-        )
-        for person in (no_stroke_subpop[i] for i in add_stroke_indices):
-            person.next.stroke = self._outcome_model_repository.new_stroke_for_person(person)
-
-    def _recalibrate_remove_strokes(self, has_stroke_subpop, num_strokes_to_change):
-        has_stroke_untreated_subpop = has_stroke_subpop.with_scratch_next()
-        has_stroke_risks = self._get_model_cv_event_risk(
-            has_stroke_untreated_subpop, OutcomeType.STROKE
-        )
-        remove_stroke_indices = np.random.choice(
-            has_stroke_subpop.num_persons,
-            size=num_strokes_to_change,
-            replace=False,
-            p=has_stroke_risks,
-        )
-        for person in (has_stroke_subpop[i] for i in remove_stroke_indices):
-            person.next.stroke = None
-
-    def _get_model_cv_event_relrisk(self, treated_pop, untreated_pop):
-        treated_total_mi_risk = 0
-        untreated_total_mi_risk = 0
-        treated_total_stroke_risk = 0
-        untreated_total_stroke_risk = 0
-        for treated_person, untreated_person in zip(treated_pop, untreated_pop):
-            treated_cv_risks = self._outcome_model_repository.get_cv_event_risks_for_person(
-                treated_person
-            )
-            treated_total_mi_risk += treated_cv_risks[OutcomeType.MI]
-            treated_total_stroke_risk += treated_cv_risks[OutcomeType.STROKE]
-
-            untreated_cv_risks = self._outcome_model_repository.get_cv_event_risks_for_person(
-                untreated_person
-            )
-            untreated_total_mi_risk += untreated_cv_risks[OutcomeType.MI]
-            untreated_total_stroke_risk += untreated_cv_risks[OutcomeType.STROKE]
-
-        model_relrisk = {
-            OutcomeType.MI: treated_total_mi_risk / untreated_total_mi_risk,
-            OutcomeType.STROKE: treated_total_stroke_risk / untreated_total_stroke_risk,
-        }
-        return model_relrisk
-
-    def _get_model_cv_event_risk(self, untreated_pop, event_type):
-        cv_event_risks = []
-        for person in untreated_pop:
-            person_cv_risks = self._outcome_model_repository.get_cv_event_risks_for_person(person)
-            person_event_risk = person_cv_risks[event_type]
-            cv_event_risks.append(person_event_risk)
-        total_risk = sum(cv_event_risks)
-        if total_risk == 0:
-            return cv_event_risks
-        normalized_cv_event_risks = [r / total_risk for r in cv_event_risks]
-        return normalized_cv_event_risks
+        self._bp_treatment_recalibration.recalibrate(alive_pop, set_scratch_next_to_baseline)
