@@ -97,3 +97,20 @@ class QALYAssignmentStrategy:
             OutcomeType.MI: (x.miNext or x.mi, x.ageAtFirstMI),
         }
         return self.get_qalys_for_age_and_conditions(x.age, conditions, x.dead, x)
+
+    def get_qalys_for_person(self, person):
+        conditions = {
+            OutcomeType.DEMENTIA: (
+                person.dementia or person.next.dementia is not None,
+                person.ageAtFirstDementia,
+            ),
+            OutcomeType.STROKE: (
+                person.stroke or person.next.stroke is not None,
+                person.ageAtFirstStroke,
+            ),
+            OutcomeType.MI: (person.mi or person.next.mi is not None, person.ageAtFirstMI),
+        }
+        current_age = person.current.age
+        has_died = not person.next.alive
+
+        return self.get_qalys_for_age_and_conditions(current_age, conditions, has_died)
