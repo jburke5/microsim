@@ -99,11 +99,11 @@ class StorePopulation:
                 raise ValueError(f"Unhandled dementia outcome type: {dementia_outcome.type}")
 
     def _advance_person_post_recalibration(self, person):
-        self._update_person_liveness(person)
+        self._advance_person_liveness(person)
         person.next.qalys = self._qaly_assignment_strategy.get_qalys_for_person(person)
         person.next.age = person.current.age + 1
 
-    def _update_person_liveness(self, person):
+    def _advance_person_liveness(self, person):
         assert person.next.dementia is None or not person.next.dementia.fatal
 
         will_have_fatal_cv_event = person.next.mi is not None and person.next.mi.fatal
