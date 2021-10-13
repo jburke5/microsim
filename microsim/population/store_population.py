@@ -67,6 +67,7 @@ class StorePopulation:
             for person in alive_pop:
                 self._update_person_liveness(person)
                 person.next.qalys = self._qaly_assignment_strategy.get_qalys_for_person(person)
+                person.next.age = person.current.age + 1
 
         self._current_tick = end_tick
 
