@@ -65,9 +65,7 @@ class StorePopulation:
             self._recalibrate_treatment(alive_pop)
 
             for person in alive_pop:
-                self._update_person_liveness(person)
-                person.next.qalys = self._qaly_assignment_strategy.get_qalys_for_person(person)
-                person.next.age = person.current.age + 1
+                self._advance_person_post_recalibration(person)
 
         self._current_tick = end_tick
 
@@ -99,6 +97,11 @@ class StorePopulation:
                 person.next.dementia = dementia_outcome
             else:
                 raise ValueError(f"Unhandled dementia outcome type: {dementia_outcome.type}")
+
+    def _advance_person_post_recalibration(self, person):
+        self._update_person_liveness(person)
+        person.next.qalys = self._qaly_assignment_strategy.get_qalys_for_person(person)
+        person.next.age = person.current.age + 1
 
     def _update_person_liveness(self, person):
         assert person.next.dementia is None or not person.next.dementia.fatal
