@@ -21,6 +21,7 @@ class StorePopulation:
         outcome_model_repository,
         bp_treatment_strategy,
         bp_treatment_recalibration,
+        qaly_assignment_strategy,
         risk_factor_prop_names,
         treatment_prop_names,
         outcome_prop_names,
@@ -30,6 +31,7 @@ class StorePopulation:
         self._outcome_model_repository = outcome_model_repository
         self._bp_treatment_strategy = bp_treatment_strategy
         self._bp_treatment_recalibration = bp_treatment_recalibration
+        self._qaly_assignment_strategy = qaly_assignment_strategy
 
         self._risk_factor_prop_names = risk_factor_prop_names
         self._treatment_prop_names = treatment_prop_names
@@ -64,6 +66,7 @@ class StorePopulation:
 
             for person in alive_pop:
                 self._update_person_liveness(person)
+                person.next.qalys = self._qaly_assignment_strategy.get_qalys_for_person(person)
 
         self._current_tick = end_tick
 
