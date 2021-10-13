@@ -62,6 +62,9 @@ class StorePopulation:
 
             self._recalibrate_treatment(alive_pop)
 
+            for person in alive_pop:
+                self._update_liveness(person)
+
         self._current_tick = end_tick
 
     def _advance_person_risk_factors(self, person):
@@ -92,8 +95,6 @@ class StorePopulation:
                 person.next.dementia = dementia_outcome
             else:
                 raise ValueError(f"Unhandled dementia outcome type: {dementia_outcome.type}")
-
-        self._update_liveness(person)
 
     def _update_liveness(self, person):
         assert person.next.dementia is None or not person.next.dementia.fatal
