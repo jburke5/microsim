@@ -1,4 +1,4 @@
-from microsim.util.get_base_annotations import get_base_annotations
+from typing import get_type_hints
 
 
 def inherit_annotations(cls):
@@ -9,5 +9,5 @@ def inherit_annotations(cls):
     the class attributes but do not implement them.
     """
 
-    cls.__annotations__ = get_base_annotations(cls)
+    cls.__annotations__ = get_type_hints(cls)
     return cls

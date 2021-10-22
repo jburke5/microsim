@@ -1,9 +1,9 @@
 from enum import IntEnum
-from microsim.outcome import Outcome, OutcomeType
 from types import MappingProxyType
+from typing import get_type_hints
+from microsim.outcome import Outcome, OutcomeType
 import numpy as np
 from microsim.store.numpy_scalar_mapping import NumpyScalarMapping
-from microsim.util.get_base_annotations import get_base_annotations
 
 
 def get_enum_member_value(x):
@@ -69,7 +69,7 @@ class NumpySubrecordMapping:
         if scalar_mapping_factory is None:
             scalar_mapping_factory = get_scalar_mapping
         if get_record_properties is None:
-            get_record_properties = get_base_annotations
+            get_record_properties = get_type_hints
         self._property_mappings = {}
 
         dtype_fields = []
