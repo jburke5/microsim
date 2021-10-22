@@ -13,7 +13,7 @@ def assert_unique_prop_names(static_prop_names, dynamic_prop_names, event_prop_n
             (("dynamic", "event"), dynamic_event_overlap),
         ]
         overlap_dict = {k: v for k, v in overlap_list if v}
-        raise ValueError(f"Duplicate property names across subrecords: {overlap_dict}")
+        raise ValueError(f"Duplicate property names across records: {overlap_dict}")
 
 
 def proxy_attrs_from_props(property_mappings, row_attr_name):
