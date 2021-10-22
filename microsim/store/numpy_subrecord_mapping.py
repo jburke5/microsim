@@ -45,7 +45,7 @@ def get_scalar_mapping(field_name, pytype):
     raise NotImplementedError(f"Scalar mapping not implemented for Python type: {pytype}")
 
 
-class NumpyEventSubrecordMapping:
+class NumpyEventRecordMapping:
     def __init__(self):
         self._property_mappings = MappingProxyType(
             {f: new_outcome_struct_mapping(f) for f in ["mi", "stroke", "dementia"]}
@@ -62,8 +62,8 @@ class NumpyEventSubrecordMapping:
         return self._dtype
 
 
-class NumpySubrecordMapping:
-    """Specifies how to map a subrecord type to/from a single Numpy array."""
+class NumpyRecordMapping:
+    """Specifies how to map a record type to/from a single Numpy array."""
 
     def __init__(self, protocol, *, scalar_mapping_factory=None, get_record_properties=None):
         if scalar_mapping_factory is None:
