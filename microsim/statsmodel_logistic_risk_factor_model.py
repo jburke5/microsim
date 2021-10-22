@@ -11,3 +11,9 @@ class StatsModelLogisticRiskFactorModel(StatsModelLinearRiskFactorModel):
     def estimate_next_risk(self, person):
         linearRisk = super(StatsModelLogisticRiskFactorModel, self).estimate_next_risk(person)
         return np.random.rand() < np.exp(linearRisk) / (1 + np.exp(linearRisk))
+
+    def estimate_next_risk_vectorized(self, person):
+        linearRisk = super(StatsModelLogisticRiskFactorModel, self).estimate_next_risk_vectorized(
+            person
+        )
+        return np.random.rand() < np.exp(linearRisk) / (1 + np.exp(linearRisk))
