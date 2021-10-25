@@ -24,7 +24,7 @@ class NumpyPersonStore:
         static_mapping,
         dynamic_mapping,
         event_mapping,
-        iter_person_records,
+        initial_person_records,
         *,
         person_record_proxy_class=None,
         person_proxy_class=None,
@@ -73,7 +73,7 @@ class NumpyPersonStore:
             | event_mapping.property_mappings.keys()
         )
         initial_pop = self.get_population_at(t=-1)
-        for record, person in zip(iter_person_records(), initial_pop):
+        for record, person in zip(initial_person_records, initial_pop):
             for prop_name in all_person_record_property_names:
                 value = getattr(record, prop_name)
                 setattr(person.next, prop_name, value)
