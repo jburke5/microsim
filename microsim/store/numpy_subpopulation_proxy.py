@@ -26,7 +26,9 @@ class NumpySubpopulationProxy:
         return self._member_indices.shape[0]
 
     def __iter__(self):
-        return NumpySubpopulationIterator(self._person_store, self._at_t, self._member_indices)
+        return NumpySubpopulationIterator(
+            self._person_store, self._at_t, self._member_indices, scratch_next=self._scratch_next
+        )
 
     def __getitem__(self, key):
         if type(key) is not int and not isinstance(key, np.integer):
