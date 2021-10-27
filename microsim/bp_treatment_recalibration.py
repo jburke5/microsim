@@ -52,7 +52,7 @@ class BPTreatmentRecalibration:
 
     def _recalibrate_mi(self, treated_subpop, model_mi_relrisk, standard_mi_relrisk):
         treated_has_mi = treated_subpop.group_by(has_mi)
-        num_mi_events = treated_has_mi[True].num_persons
+        num_mi_events = treated_has_mi[True].num_persons if True in treated_has_mi else 0
         delta_mi_relrisk = model_mi_relrisk - standard_mi_relrisk
         num_mis_to_change = int(round(delta_mi_relrisk * num_mi_events) / model_mi_relrisk)
 
@@ -82,7 +82,7 @@ class BPTreatmentRecalibration:
 
     def _recalibrate_stroke(self, treated_subpop, model_stroke_relrisk, standard_stroke_relrisk):
         treated_has_stroke = treated_subpop.group_by(has_stroke)
-        num_strokes = treated_has_stroke[True].num_persons
+        num_strokes = treated_has_stroke[True].num_persons if True in treated_has_stroke else 0
         delta_stroke_relrisk = model_stroke_relrisk - standard_stroke_relrisk
         num_strokes_to_change = int(
             round(delta_stroke_relrisk * num_strokes) / model_stroke_relrisk
