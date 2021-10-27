@@ -16,7 +16,7 @@ class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
 
     def apply_treatment(self, cur_record, next_record):
         next_record.bpMedsAdded = 1
-        next_record.antiHypertensiveCount = 1
+        next_record.antiHypertensiveCount += 1
         next_record.sbp -= AddBPTreatmentMedsToGoal120.sbpLowering
         next_record.dbp -= AddBPTreatmentMedsToGoal120.dbpLowering
 
@@ -64,7 +64,7 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
     def apply_treatment(self, cur_record, next_record):
         meds_needed = self.get_meds_needed_for_goal(next_record.sbp, next_record.dbp)
         next_record.bpMedsAdded = meds_needed
-        next_record.antiHypertensiveCount = meds_needed
+        next_record.antiHypertensiveCount += meds_needed
         next_record.sbp -= meds_needed * AddBPTreatmentMedsToGoal120.sbpLowering
         next_record.dbp -= meds_needed * AddBPTreatmentMedsToGoal120.dbpLowering
 
