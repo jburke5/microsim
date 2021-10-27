@@ -190,7 +190,7 @@ def person_record_to_person(population_index, person_record):
         ldl=person_record.ldl,
         trig=person_record.trig,
         waist=person_record.waist,
-        anyPhysicalActivity=person_record.waist,
+        anyPhysicalActivity=person_record.anyPhysicalActivity,
         education=person_record.education,
         smokingStatus=person_record.smokingStatus,
         alcohol=person_record.alcoholPerWeek,
