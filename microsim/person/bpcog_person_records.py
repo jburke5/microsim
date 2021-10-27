@@ -28,15 +28,15 @@ class BPCOGPersonDynamicRecordProtocol(Protocol):
 
     alive: bool
     age: int
-    sbp: int
-    dbp: int
+    sbp: float
+    dbp: float
     a1c: float
-    hdl: int
-    ldl: int
-    trig: int
-    totChol: int
+    hdl: float
+    ldl: float
+    trig: float
+    totChol: float
     bmi: float
-    waist: int
+    waist: float
     anyPhysicalActivity: bool
     alcoholPerWeek: AlcoholCategory
     antiHypertensiveCount: int
