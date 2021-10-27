@@ -119,7 +119,7 @@ class NHANESPersonRecordFactory:
             anyPhysicalActivity=anyPhysicalActivity,
             alcoholPerWeek=AlcoholCategory.get_category_for_consumption(alcoholPerWeek),
             antiHypertensiveCount=antiHypertensive,
-            statin=statin,
+            statin=bool(statin),
             otherLipidLowerMedication=otherLipidLowering,
             bpMedsAdded=0,
             afib=False,

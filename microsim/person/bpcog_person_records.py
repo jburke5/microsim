@@ -40,7 +40,7 @@ class BPCOGPersonDynamicRecordProtocol(Protocol):
     anyPhysicalActivity: bool
     alcoholPerWeek: AlcoholCategory
     antiHypertensiveCount: int
-    statin: int
+    statin: bool
     bpMedsAdded: int
     afib: bool
     qalys: float
