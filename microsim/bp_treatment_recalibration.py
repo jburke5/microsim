@@ -156,8 +156,5 @@ class BPTreatmentRecalibration:
                 row[...] = cv_risks[event_type]
         if complement:
             cv_event_risks = 1 - cv_event_risks
-        total_risk = cv_event_risks.sum()
-        if total_risk == 0:
-            return cv_event_risks
-        normalized_cv_event_risks = cv_event_risks / total_risk
+        normalized_cv_event_risks = cv_event_risks / cv_event_risks.sum()
         return normalized_cv_event_risks
