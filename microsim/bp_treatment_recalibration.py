@@ -73,9 +73,11 @@ class BPTreatmentRecalibration:
 
     def _recalibrate_remove_mis(self, has_mi_subpop, num_mis_to_change):
         has_mi_untreated_subpop = has_mi_subpop.with_scratch_next()
-        has_mi_risk = self._get_model_cv_event_risk(has_mi_untreated_subpop, OutcomeType.MI)
+        not_have_mi_risk = self._get_model_cv_event_risk(
+            has_mi_untreated_subpop, OutcomeType.MI, complement=True
+        )
         remove_mi_indices = np.random.choice(
-            has_mi_subpop.num_persons, size=num_mis_to_change, replace=False, p=has_mi_risk
+            has_mi_subpop.num_persons, size=num_mis_to_change, replace=False, p=not_have_mi_risk
         )
         for person in (has_mi_subpop[i] for i in remove_mi_indices):
             person.next.mi = None
@@ -110,14 +112,14 @@ class BPTreatmentRecalibration:
 
     def _recalibrate_remove_strokes(self, has_stroke_subpop, num_strokes_to_change):
         has_stroke_untreated_subpop = has_stroke_subpop.with_scratch_next()
-        has_stroke_risks = self._get_model_cv_event_risk(
-            has_stroke_untreated_subpop, OutcomeType.STROKE
+        not_have_stroke_risks = self._get_model_cv_event_risk(
+            has_stroke_untreated_subpop, OutcomeType.STROKE, complement=True
         )
         remove_stroke_indices = np.random.choice(
             has_stroke_subpop.num_persons,
             size=num_strokes_to_change,
             replace=False,
-            p=has_stroke_risks,
+            p=not_have_stroke_risks,
         )
         for person in (has_stroke_subpop[i] for i in remove_stroke_indices):
             person.next.stroke = None
@@ -146,14 +148,16 @@ class BPTreatmentRecalibration:
         }
         return model_relrisk
 
-    def _get_model_cv_event_risk(self, untreated_pop, event_type):
-        cv_event_risks = []
-        for person in untreated_pop:
-            person_cv_risks = self._outcome_model_repository.get_cv_event_risks_for_person(person)
-            person_event_risk = person_cv_risks[event_type]
-            cv_event_risks.append(person_event_risk)
-        total_risk = sum(cv_event_risks)
+    def _get_model_cv_event_risk(self, untreated_pop, event_type, complement=False):
+        cv_event_risks = np.empty(untreated_pop.num_persons, dtype=np.float64)
+        with np.nditer(cv_event_risks, op_flags=["writeonly"]) as it:
+            for person, row in zip(untreated_pop, it):
+                cv_risks = self._outcome_model_repository.get_cv_event_risks_for_person(person)
+                row[...] = cv_risks[event_type]
+        if complement:
+            cv_event_risks = 1 - cv_event_risks
+        total_risk = cv_event_risks.sum()
         if total_risk == 0:
             return cv_event_risks
-        normalized_cv_event_risks = [r / total_risk for r in cv_event_risks]
+        normalized_cv_event_risks = cv_event_risks / total_risk
         return normalized_cv_event_risks
