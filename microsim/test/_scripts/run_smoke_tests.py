@@ -126,7 +126,6 @@ def assert_data_integrity(num_persons, person_records, store, initial_pop):
         "alcoholPerWeek": 0,
         "antiHypertensiveCount": 0,
         "statin": 0,
-        "otherLipidLowerMedication": 0,
         "bpMedsAdded": 0,
         "afib": False,
         "qalys": 0,
@@ -144,6 +143,10 @@ def assert_data_integrity(num_persons, person_records, store, initial_pop):
         assert proxied_record.education == next_proxied_record.education
         assert proxied_record.smokingStatus == next_proxied_record.smokingStatus
         assert proxied_record.gcpRandomEffect == next_proxied_record.gcpRandomEffect
+        assert (
+            proxied_record.otherLipidLowerMedication
+            == next_proxied_record.otherLipidLowerMedication
+        )
 
         for name, expected_value in expected_prop_values.items():
             proxied_value = getattr(next_proxied_record, name)

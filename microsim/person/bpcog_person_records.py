@@ -19,6 +19,9 @@ class BPCOGPersonStaticRecordProtocol(Protocol):
     smokingStatus: SmokingStatus
     gcpRandomEffect: float
 
+    # props that likely should not be static in principle, yet do not currently change:
+    otherLipidLowerMedication: int
+
 
 class BPCOGPersonDynamicRecordProtocol(Protocol):
     """Contains dynamic data for one Person at one tick."""
@@ -38,7 +41,6 @@ class BPCOGPersonDynamicRecordProtocol(Protocol):
     alcoholPerWeek: AlcoholCategory
     antiHypertensiveCount: int
     statin: int
-    otherLipidLowerMedication: int
     bpMedsAdded: int
     afib: bool
     qalys: float
