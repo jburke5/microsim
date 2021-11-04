@@ -12,7 +12,7 @@ class TestNonDeterministicModels(StorePopulationValidationFixture):
         self._random_seed = 60632844
         np.random.seed(self._random_seed)
 
-    def test_physical_activity_model(self):
+    def test_cohort_physical_activity_model(self):
         model = self._cohort_risk_model_repository.get_model("anyPhysicalActivity")
         vec_df = self.vec_pop.get_people_current_state_and_summary_as_dataframe()
         cur_pop = self.store_pop.person_store.get_population_at(0)
