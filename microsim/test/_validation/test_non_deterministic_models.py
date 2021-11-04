@@ -5,6 +5,11 @@ from microsim.test._validation.fixture import StorePopulationValidationFixture
 
 
 class TestNonDeterministicModels(StorePopulationValidationFixture):
+    def setUp(self):
+        super().setUp()
+        self._random_seed = 60632844
+        np.random.seed(self._random_seed)
+
     def test_physical_activity_model(self):
         model = self._risk_model_repository.get_model("anyPhysicalActivity")
         vec_df = self.vec_pop.get_people_current_state_and_summary_as_dataframe()
