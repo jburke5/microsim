@@ -244,7 +244,7 @@ def init_populations(num_persons, num_years, nhanes_year, seed=None):
     )
     loader = NHANESPersonRecordLoader(num_persons, nhanes_year, factory, seed=seed)
 
-    person_records = list(loader.iter_person_records())
+    person_records = list(loader)
     person_store = new_bpcog_person_store(num_persons, num_years, person_records)
     initial_pop = person_store.get_population_at(0).where(is_alive)
     assert_data_integrity(num_persons, person_records, person_store, initial_pop)

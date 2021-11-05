@@ -142,7 +142,7 @@ class StorePopulationValidationFixture(TestCase):
 
         factory = NHANESPersonRecordFactory(init_random_effects, init_afib, init_gcp, init_qalys)
         loader = NHANESPersonRecordLoader(num_persons, nhanes_year, factory, seed=random_seed)
-        cls._person_records = list(loader.iter_person_records())
+        cls._person_records = list(loader)
         return cls._person_records
 
     @classmethod
