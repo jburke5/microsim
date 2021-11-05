@@ -97,7 +97,8 @@ class StorePopulationValidationFixture(TestCase):
         if cls._person_records is not None:
             return cls._person_records
 
-        factory = BPCOGCohortPersonRecordFactory()
+        factory_seed = np.random.RandomState(random_seed).randint(2 ** 32 - 1)
+        factory = BPCOGCohortPersonRecordFactory(seed=factory_seed)
         loader = NHANESPersonRecordLoader(num_persons, nhanes_year, factory, seed=random_seed)
         cls._person_records = list(loader)
         return cls._person_records

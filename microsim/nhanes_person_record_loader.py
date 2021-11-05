@@ -179,6 +179,7 @@ class BPCOGCohortPersonRecordFactory(NHANESPersonRecordFactory):
         risk_model_repository=None,
         outcome_model_repository=None,
         qaly_assignment_strategy=None,
+        seed=None,
     ):
         super().__init__(
             self._init_random_effects, self._init_afib, self._init_gcp, self._init_qalys
@@ -203,8 +204,19 @@ class BPCOGCohortPersonRecordFactory(NHANESPersonRecordFactory):
             None, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE
         )
 
+        self._seed = seed
+        self.reset_randstate()
+
+    def reset_randstate(self):
+        self._randstate = np.random.RandomState(self._seed).get_state()
+
     def _init_afib(self, person_record):
-        return self._afib_model.estimate_next_risk_vectorized(person_record)
+        prev_randstate = np.random.get_state()
+        np.random.set_state(self._randstate)
+        try:
+            return self._afib_model.estimate_next_risk_vectorized(person_record)
+        finally:
+            np.random.set_state(prev_randstate)
 
     def _init_gcp(self, person_record):
         return self._gcp_model.calc_linear_predictor_for_patient_characteristics(
@@ -238,4 +250,9 @@ class BPCOGCohortPersonRecordFactory(NHANESPersonRecordFactory):
         )
 
     def _init_random_effects(self):
-        return self._outcome_model_repository.get_random_effects()
+        prev_randstate = np.random.get_state()
+        np.random.set_state(self._randstate)
+        try:
+            return self._outcome_model_repository.get_random_effects()
+        finally:
+            np.random.set_state(prev_randstate)
