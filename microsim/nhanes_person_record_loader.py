@@ -210,13 +210,61 @@ class BPCOGCohortPersonRecordFactory(NHANESPersonRecordFactory):
     def reset_randstate(self):
         self._randstate = np.random.RandomState(self._seed).get_state()
 
-    def _init_afib(self, person_record):
+    def from_nhanes_dataset_row(
+        self,
+        gender,
+        raceEthnicity,
+        education,
+        smokingStatus,
+        selfReportMIAge,
+        selfReportStrokeAge,
+        age,
+        meanSBP,
+        meanDBP,
+        a1c,
+        hdl,
+        ldl,
+        trig,
+        tot_chol,
+        bmi,
+        waist,
+        anyPhysicalActivity,
+        alcoholPerWeek,
+        antiHypertensive,
+        statin,
+        otherLipidLowering,
+    ):
         prev_randstate = np.random.get_state()
         np.random.set_state(self._randstate)
         try:
-            return self._afib_model.estimate_next_risk_vectorized(person_record)
+            return super().from_nhanes_dataset_row(
+                gender,
+                raceEthnicity,
+                education,
+                smokingStatus,
+                selfReportMIAge,
+                selfReportStrokeAge,
+                age,
+                meanSBP,
+                meanDBP,
+                a1c,
+                hdl,
+                ldl,
+                trig,
+                tot_chol,
+                bmi,
+                waist,
+                anyPhysicalActivity,
+                alcoholPerWeek,
+                antiHypertensive,
+                statin,
+                otherLipidLowering,
+            )
         finally:
             np.random.set_state(prev_randstate)
+
+    def _init_afib(self, person_record):
+        return self._afib_model.estimate_next_risk_vectorized(person_record)
 
     def _init_gcp(self, person_record):
         return self._gcp_model.calc_linear_predictor_for_patient_characteristics(
@@ -250,9 +298,4 @@ class BPCOGCohortPersonRecordFactory(NHANESPersonRecordFactory):
         )
 
     def _init_random_effects(self):
-        prev_randstate = np.random.get_state()
-        np.random.set_state(self._randstate)
-        try:
-            return self._outcome_model_repository.get_random_effects()
-        finally:
-            np.random.set_state(prev_randstate)
+        return self._outcome_model_repository.get_random_effects()
