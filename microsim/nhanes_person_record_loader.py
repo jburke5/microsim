@@ -2,11 +2,15 @@ import dataclasses
 import numpy as np
 import pandas as pd
 from microsim.alcohol_category import AlcoholCategory
+from microsim.cohort_risk_model_repository import CohortRiskModelRepository
+from microsim.outcome_model_repository import OutcomeModelRepository
+from microsim.outcome_model_type import OutcomeModelType
+from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 from microsim.smoking_status import SmokingStatus
 from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.race_ethnicity import NHANESRaceEthnicity
-from microsim.data_loader import get_absolute_datafile_path
+from microsim.data_loader import get_absolute_datafile_path, load_regression_model
 from microsim.outcome import Outcome, OutcomeType
 from microsim.person.bpcog_person_records import (
     BPCOGPersonRecord,
@@ -14,6 +18,7 @@ from microsim.person.bpcog_person_records import (
     BPCOGPersonEventRecord,
     BPCOGPersonStaticRecord,
 )
+from microsim.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFactorModel
 
 
 def get_nhanes_imputed_dataset(year):
@@ -164,3 +169,73 @@ class NHANESPersonRecordLoader:
         for row_data in zip(*[sample[k] for k in column_names]):
             person_record = self._factory.from_nhanes_dataset_row(*row_data)
             yield person_record
+
+
+class BPCOGCohortPersonRecordFactory(NHANESPersonRecordFactory):
+    """Creates `BPCOGPersonRecord`s from NHANES data & BPCOG cohort models."""
+
+    def __init__(
+        self,
+        risk_model_repository=None,
+        outcome_model_repository=None,
+        qaly_assignment_strategy=None,
+    ):
+        super().__init__(
+            self._init_random_effects, self._init_afib, self._init_gcp, self._init_qalys
+        )
+
+        self._risk_model_repository = risk_model_repository
+        if self._risk_model_repository is None:
+            self._risk_model_repository = CohortRiskModelRepository()
+
+        self._outcome_model_repository = outcome_model_repository
+        if self._outcome_model_repository is None:
+            self._outcome_model_repository = OutcomeModelRepository()
+
+        self._qaly_assignment_strategy = qaly_assignment_strategy
+        if self._qaly_assignment_strategy is None:
+            self._qaly_assignment_strategy = QALYAssignmentStrategy()
+
+        self._afib_model = StatsModelLogisticRiskFactorModel(
+            load_regression_model("BaselineAFibModel")
+        )
+        self._gcp_model = self._outcome_model_repository.select_model_for_gender(
+            None, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE
+        )
+
+    def _init_afib(self, person_record):
+        return self._afib_model.estimate_next_risk_vectorized(person_record)
+
+    def _init_gcp(self, person_record):
+        return self._gcp_model.calc_linear_predictor_for_patient_characteristics(
+            years_in_simulation=0,
+            raceEthnicity=person_record.raceEthnicity,
+            gender=person_record.gender,
+            baseAge=person_record.age,
+            education=person_record.education,
+            smokingStatus=person_record.smokingStatus,
+            bmi=person_record.bmi,
+            waist=person_record.waist,
+            totChol=person_record.totChol,
+            meanSbp=person_record.sbp,
+            afib=person_record.afib,
+            anyPhysicalActivity=person_record.anyPhysicalActivity,
+            alc=person_record.alcoholPerWeek,
+            antiHypertensiveCount=person_record.antiHypertensiveCount,
+            a1c=person_record.a1c,
+        )
+
+    def _init_qalys(self, person_record):
+        current_age = person_record.age
+        conditions = {
+            OutcomeType.DEMENTIA: (person_record.dementia, current_age),
+            OutcomeType.STROKE: (person_record.stroke, current_age),
+            OutcomeType.MI: (person_record.mi, current_age),
+        }
+        has_died = person_record.alive
+        return self._qaly_assignment_strategy.get_qalys_for_age_and_conditions(
+            current_age, conditions, has_died
+        )
+
+    def _init_random_effects(self):
+        return self._outcome_model_repository.get_random_effects()
