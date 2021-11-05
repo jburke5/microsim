@@ -8,12 +8,11 @@ from microsim.test._validation.fixture import StorePopulationValidationFixture
 class TestNonDeterministicModels(StorePopulationValidationFixture):
     def setUp(self):
         super().setUp()
-        self._cohort_risk_model_repository = CohortRiskModelRepository()
         self._random_seed = 60632844
         np.random.seed(self._random_seed)
 
     def test_cohort_afib_model(self):
-        model = self._cohort_risk_model_repository.get_model("afib")
+        model = self.risk_model_repository.get_model("afib")
         vec_df = self.vec_pop.get_people_current_state_and_summary_as_dataframe()
         cur_pop = self.store_pop.person_store.get_population_at(0)
 
@@ -26,7 +25,7 @@ class TestNonDeterministicModels(StorePopulationValidationFixture):
             self.assertEqual(vec_model_result, store_model_result)
 
     def test_cohort_antihypertensive_count_model(self):
-        model = self._cohort_risk_model_repository.get_model("antiHypertensiveCount")
+        model = self.risk_model_repository.get_model("antiHypertensiveCount")
         vec_df = self.vec_pop.get_people_current_state_and_summary_as_dataframe()
         cur_pop = self.store_pop.person_store.get_population_at(0)
 
@@ -39,7 +38,7 @@ class TestNonDeterministicModels(StorePopulationValidationFixture):
             self.assertEqual(vec_model_result, store_model_result)
 
     def test_cohort_physical_activity_model(self):
-        model = self._cohort_risk_model_repository.get_model("anyPhysicalActivity")
+        model = self.risk_model_repository.get_model("anyPhysicalActivity")
         vec_df = self.vec_pop.get_people_current_state_and_summary_as_dataframe()
         cur_pop = self.store_pop.person_store.get_population_at(0)
 
@@ -52,7 +51,7 @@ class TestNonDeterministicModels(StorePopulationValidationFixture):
             self.assertEqual(vec_model_result, store_model_result)
 
     def test_cohort_statin_model(self):
-        model = self._cohort_risk_model_repository.get_model("statin")
+        model = self.risk_model_repository.get_model("statin")
         vec_df = self.vec_pop.get_people_current_state_and_summary_as_dataframe()
         cur_pop = self.store_pop.person_store.get_population_at(0)
 
