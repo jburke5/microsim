@@ -150,10 +150,10 @@ class NHANESPersonRecordLoader:
         self._seed = seed if seed is not None else np.random.randint(2 ** 32 - 1)
         self._factory = nhanes_person_record_factory
 
-    def get_num_persons(self):
+    def __len__(self):
         return self._n
 
-    def iter_person_records(self):
+    def __iter__(self):
         sample = self._nhanes_dataset.sample(
             self._n,
             weights=self._weights,
