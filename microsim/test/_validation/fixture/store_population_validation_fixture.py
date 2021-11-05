@@ -8,7 +8,7 @@ from microsim.cohort_risk_model_repository import CohortRiskModelRepository
 from microsim.data_loader import load_regression_model
 from microsim.nhanes_person_record_loader import (
     NHANESPersonRecordLoader,
-    NHANESPersonRecordFactory,
+    BPCOGCohortPersonRecordFactory,
 )
 from microsim.outcome import OutcomeType
 from microsim.outcome_model_repository import OutcomeModelRepository
@@ -86,67 +86,23 @@ def get_init_qalys(qaly_assignment_strategy):
 class StorePopulationValidationFixture(TestCase):
     _person_records = None
 
-    _risk_model_repository = None
-    _outcome_model_repository = None
-    _bp_treatment_strategy = None
-    _qaly_assignment_strategy = None
-    _bp_treatment_recalibration = None
-
-    @classmethod
-    def _init_population_dependencies(cls):
-        """
-        Initializes dependencies for creating population & person_records.
-
-        Stores dependencies as [private] class properties. Can be called multiple times.
-        """
-        if cls._risk_model_repository is None:
-            cls._risk_model_repository = CohortRiskModelRepository()
-
-        if cls._outcome_model_repository is None:
-            cls._outcome_model_repository = OutcomeModelRepository()
-
-        if cls._bp_treatment_strategy is None:
-            cls._bp_treatment_strategy = AddASingleBPMedTreatmentStrategy()
-
-        if cls._bp_treatment_recalibration is None:
-            cls._bp_treatment_recalibration = BPTreatmentRecalibration(
-                cls._bp_treatment_strategy, cls._outcome_model_repository
-            )
-
-        if cls._qaly_assignment_strategy is None:
-            cls._qaly_assignment_strategy = QALYAssignmentStrategy()
-
     @classmethod
     def get_or_init_person_records(
         cls,
         num_persons=1_000,
         nhanes_year=2013,
         random_seed=3334670448,
-        init_afib=None,
-        init_random_effects=None,
-        init_gcp=None,
-        init_qalys=None,
     ):
         """Returns existing or creates, sets, & returns person record list."""
         if cls._person_records is not None:
             return cls._person_records
 
-        cls._init_population_dependencies()
-        init_afib = init_afib if init_afib is not None else get_init_afib()
-        if init_random_effects is None:
-            init_random_effects = cls._outcome_model_repository.get_random_effects
-        if init_gcp is None:
-            init_gcp = get_init_gcp(cls._outcome_model_repository)
-        if init_qalys is None:
-            init_qalys = get_init_qalys(cls._qaly_assignment_strategy)
-
-        factory = NHANESPersonRecordFactory(init_random_effects, init_afib, init_gcp, init_qalys)
+        factory = BPCOGCohortPersonRecordFactory()
         loader = NHANESPersonRecordLoader(num_persons, nhanes_year, factory, seed=random_seed)
         cls._person_records = list(loader)
         return cls._person_records
 
-    @classmethod
-    def new_store_pop(cls, person_records, num_years, combined_record_mapping):
+    def _new_store_pop(self, person_records, num_years, combined_record_mapping):
         """Returns a new store population"""
         person_proxy_class = new_bpcog_person_proxy_class(
             {c: m.property_mappings for c, m in combined_record_mapping.items()}
@@ -179,34 +135,48 @@ class StorePopulationValidationFixture(TestCase):
         outcome_prop_names = ["stroke", "mi", "dementia", "gcp"]
         store_pop = StorePopulation(
             person_store,
-            cls._risk_model_repository,
-            cls._outcome_model_repository,
-            cls._bp_treatment_strategy,
-            cls._bp_treatment_recalibration,
-            cls._qaly_assignment_strategy,
+            self.risk_model_repository,
+            self.outcome_model_repository,
+            self.bp_treatment_strategy,
+            self.bp_treatment_recalibration,
+            self.qaly_assignment_strategy,
             rf_prop_names,
             treatment_prop_names,
             outcome_prop_names,
         )
         return store_pop
 
-    @classmethod
-    def new_vec_pop(cls, person_records):
+    def _new_vec_pop(self, person_records):
         people = pd.Series(
             [person_obj_from_person_record(i, r) for i, r in enumerate(person_records)]
         )
         population = Population(people)
-        population._risk_model_repository = cls._risk_model_repository
-        population._outcome_model_repository = cls._outcome_model_repository
-        population._qaly_assignment_strategy = cls._qaly_assignment_strategy
-        population._bpTreatmentStrategy = cls._bp_treatment_strategy
+        population._risk_model_repository = self.risk_model_repository
+        population._outcome_model_repository = self.outcome_model_repository
+        population._qaly_assignment_strategy = self.qaly_assignment_strategy
+        population._bpTreatmentStrategy = self.bp_treatment_strategy
         return population
 
     def setUp(self):
         # call class method directly to set person records on (& to return them from) one place
         self.initial_person_records = StorePopulationValidationFixture.get_or_init_person_records()
 
+        # setup population dependencies. Use overrides if present; else, use defaults
+        if not hasattr(self, "risk_model_repository"):
+            self.risk_model_repository = CohortRiskModelRepository()
+        if not hasattr(self, "outcome_model_repository"):
+            self.outcome_model_repository = OutcomeModelRepository()
+        if not hasattr(self, "bp_treatment_strategy"):
+            self.bp_treatment_strategy = AddASingleBPMedTreatmentStrategy()
+        if not hasattr(self, "bp_treatment_recalibration"):
+            self.bp_treatment_recalibration = BPTreatmentRecalibration(
+                self.bp_treatment_strategy, self.outcome_model_repository
+            )
+        if not hasattr(self, "qaly_assignment_strategy"):
+            self.qaly_assignment_strategy = QALYAssignmentStrategy()
         self.num_years = getattr(self, "num_years", 10)
+
+        # finally, actually create the populations
         self.combined_record_mapping = MappingProxyType(
             {
                 "static": NumpyRecordMapping(BPCOGPersonStaticRecordProtocol),
@@ -214,7 +184,7 @@ class StorePopulationValidationFixture(TestCase):
                 "event": NumpyEventRecordMapping(),
             }
         )
-        self.store_pop = self.new_store_pop(
+        self.store_pop = self._new_store_pop(
             self.initial_person_records, self.num_years, self.combined_record_mapping
         )
-        self.vec_pop = self.new_vec_pop(self.initial_person_records)
+        self.vec_pop = self._new_vec_pop(self.initial_person_records)
