@@ -5,14 +5,11 @@ import pandas as pd
 from microsim.bp_treatment_recalibration import BPTreatmentRecalibration
 from microsim.bp_treatment_strategies import AddASingleBPMedTreatmentStrategy
 from microsim.cohort_risk_model_repository import CohortRiskModelRepository
-from microsim.data_loader import load_regression_model
 from microsim.nhanes_person_record_loader import (
     NHANESPersonRecordLoader,
     BPCOGCohortPersonRecordFactory,
 )
-from microsim.outcome import OutcomeType
 from microsim.outcome_model_repository import OutcomeModelRepository
-from microsim.outcome_model_type import OutcomeModelType
 from microsim.person.bpcog_person_records import (
     BPCOGPersonStaticRecordProtocol,
     BPCOGPersonDynamicRecordProtocol,
@@ -20,7 +17,6 @@ from microsim.person.bpcog_person_records import (
 from microsim.population.population import Population
 from microsim.population.store_population import StorePopulation
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
-from microsim.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFactorModel
 from microsim.store.bpcog_numpy_person_proxy import new_bpcog_person_proxy_class
 from microsim.store.numpy_record_mapping import (
     NumpyRecordMapping,
@@ -28,59 +24,6 @@ from microsim.store.numpy_record_mapping import (
 )
 from microsim.store.numpy_person_store import NumpyPersonStore
 from microsim.test._validation.helper import person_obj_from_person_record
-
-
-def get_init_afib():
-    model = load_regression_model("BaselineAFibModel")
-    afib_model = StatsModelLogisticRiskFactorModel(model)
-
-    def init_afib(person_record):
-        return afib_model.estimate_next_risk_vectorized(person_record)
-
-    return init_afib
-
-
-def get_init_gcp(outcome_model_repository):
-    gcp_model = outcome_model_repository.select_model_for_gender(
-        None, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE
-    )
-
-    def init_gcp(person_record):
-        return gcp_model.calc_linear_predictor_for_patient_characteristics(
-            years_in_simulation=0,
-            raceEthnicity=person_record.raceEthnicity,
-            gender=person_record.gender,
-            baseAge=person_record.age,
-            education=person_record.education,
-            smokingStatus=person_record.smokingStatus,
-            bmi=person_record.bmi,
-            waist=person_record.waist,
-            totChol=person_record.totChol,
-            meanSbp=person_record.sbp,
-            afib=person_record.afib,
-            anyPhysicalActivity=person_record.anyPhysicalActivity,
-            alc=person_record.alcoholPerWeek,
-            antiHypertensiveCount=person_record.antiHypertensiveCount,
-            a1c=person_record.a1c,
-        )
-
-    return init_gcp
-
-
-def get_init_qalys(qaly_assignment_strategy):
-    def init_qalys(person_record):
-        current_age = person_record.age
-        conditions = {
-            OutcomeType.DEMENTIA: (person_record.dementia, current_age),
-            OutcomeType.STROKE: (person_record.stroke, current_age),
-            OutcomeType.MI: (person_record.mi, current_age),
-        }
-        has_died = person_record.alive
-        return qaly_assignment_strategy.get_qalys_for_age_and_conditions(
-            current_age, conditions, has_died
-        )
-
-    return init_qalys
 
 
 class StorePopulationValidationFixture(TestCase):
