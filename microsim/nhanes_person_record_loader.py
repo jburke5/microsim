@@ -299,3 +299,31 @@ class BPCOGCohortPersonRecordFactory(NHANESPersonRecordFactory):
 
     def _init_random_effects(self):
         return self._outcome_model_repository.get_random_effects()
+
+
+class BPCOGCohortPersonRecordLoader(NHANESPersonRecordLoader):
+    def __init__(
+        self,
+        n,
+        year,
+        weights=None,
+        seed=None,
+        factory_seed=None,
+        risk_model_repository=None,
+        outcome_model_repository=None,
+        qaly_assignment_strategy=None,
+    ):
+        seed = seed if seed is not None else np.random.randint(2 ** 32 - 1)
+        if factory_seed is None:
+            factory_seed = np.random.RandomState(seed).randint(2 ** 32 - 1)
+        factory = BPCOGCohortPersonRecordFactory(
+            risk_model_repository,
+            outcome_model_repository,
+            qaly_assignment_strategy,
+            seed=factory_seed,
+        )
+        super().__init__(n, year, factory, weights, seed)
+
+    def __iter__(self):
+        self._factory.reset_randstate()
+        yield from super().__iter__()
