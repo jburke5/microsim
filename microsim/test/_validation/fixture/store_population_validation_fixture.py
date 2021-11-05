@@ -141,9 +141,7 @@ class StorePopulationValidationFixture(TestCase):
             init_qalys = get_init_qalys(cls._qaly_assignment_strategy)
 
         factory = NHANESPersonRecordFactory(init_random_effects, init_afib, init_gcp, init_qalys)
-        loader = NHANESPersonRecordLoader(
-            num_persons, nhanes_year, factory, random_state=np.random.RandomState(seed=random_seed)
-        )
+        loader = NHANESPersonRecordLoader(num_persons, nhanes_year, factory, seed=random_seed)
         cls._person_records = list(loader.iter_person_records())
         return cls._person_records
 

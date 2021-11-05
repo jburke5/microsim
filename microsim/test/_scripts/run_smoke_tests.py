@@ -225,7 +225,7 @@ def new_vectorized_population(
     return population
 
 
-def init_populations(num_persons, num_years, nhanes_year, random_state=None):
+def init_populations(num_persons, num_years, nhanes_year, seed=None):
     risk_model_repository = CohortRiskModelRepository()
     outcome_model_repository = OutcomeModelRepository()
     bp_treatment_strategy = AddASingleBPMedTreatmentStrategy()
@@ -242,7 +242,7 @@ def init_populations(num_persons, num_years, nhanes_year, random_state=None):
         init_gcp,
         init_qalys,
     )
-    loader = NHANESPersonRecordLoader(num_persons, nhanes_year, factory, random_state=random_state)
+    loader = NHANESPersonRecordLoader(num_persons, nhanes_year, factory, seed=seed)
 
     person_records = list(loader.iter_person_records())
     person_store = new_bpcog_person_store(num_persons, num_years, person_records)
@@ -292,9 +292,9 @@ def main():
     num_persons = 1_000
     num_years = 10
     year = 2013
-    random_state = None
+    seed = None
 
-    store_pop, vec_pop = init_populations(num_persons, num_years, year, random_state)
+    store_pop, vec_pop = init_populations(num_persons, num_years, year, seed)
 
     store_pop.advance()
     vec_pop.advance_vectorized(1)
