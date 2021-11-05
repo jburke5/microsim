@@ -5,10 +5,7 @@ import pandas as pd
 from microsim.bp_treatment_recalibration import BPTreatmentRecalibration
 from microsim.bp_treatment_strategies import AddASingleBPMedTreatmentStrategy
 from microsim.cohort_risk_model_repository import CohortRiskModelRepository
-from microsim.nhanes_person_record_loader import (
-    NHANESPersonRecordLoader,
-    BPCOGCohortPersonRecordFactory,
-)
+from microsim.nhanes_person_record_loader import BPCOGCohortPersonRecordLoader
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.person.bpcog_person_records import (
     BPCOGPersonStaticRecordProtocol,
@@ -40,9 +37,7 @@ class StorePopulationValidationFixture(TestCase):
         if cls._person_records is not None:
             return cls._person_records
 
-        factory_seed = np.random.RandomState(random_seed).randint(2 ** 32 - 1)
-        factory = BPCOGCohortPersonRecordFactory(seed=factory_seed)
-        loader = NHANESPersonRecordLoader(num_persons, nhanes_year, factory, seed=random_seed)
+        loader = BPCOGCohortPersonRecordLoader(num_persons, nhanes_year, seed=random_seed)
         cls._person_records = list(loader)
         return cls._person_records
 
