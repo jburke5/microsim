@@ -6,11 +6,8 @@ import numpy as np
 import pandas as pd
 from microsim.bp_treatment_recalibration import BPTreatmentRecalibration
 from microsim.bp_treatment_strategies import AddASingleBPMedTreatmentStrategy
-from microsim.data_loader import load_regression_model
-from microsim.outcome import OutcomeType
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.cohort_risk_model_repository import CohortRiskModelRepository
-from microsim.outcome_model_type import OutcomeModelType
 from microsim.person.bpcog_person_records import (
     BPCOGPersonRecord,
     BPCOGPersonStaticRecordProtocol,
@@ -19,71 +16,14 @@ from microsim.person.bpcog_person_records import (
 from microsim.person.person import Person
 from microsim.population.population import Population
 from microsim.population.store_population import StorePopulation
-from microsim.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFactorModel
 from microsim.store.numpy_record_mapping import (
     NumpyRecordMapping,
     NumpyEventRecordMapping,
 )
-from microsim.nhanes_person_record_loader import (
-    NHANESPersonRecordLoader,
-    NHANESPersonRecordFactory,
-)
+from microsim.test._validation.helper import BPCOGCohortPersonRecordLoader
 from microsim.store.numpy_person_store import NumpyPersonStore
 from microsim.store.bpcog_numpy_person_proxy import new_bpcog_person_proxy_class
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
-
-
-def get_init_afib():
-    model = load_regression_model("BaselineAFibModel")
-    afib_model = StatsModelLogisticRiskFactorModel(model)
-
-    def init_afib(person_record):
-        return afib_model.estimate_next_risk_vectorized(person_record)
-
-    return init_afib
-
-
-def get_init_gcp(outcome_model_repository):
-    gcp_model = outcome_model_repository.select_model_for_gender(
-        None, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE
-    )
-
-    def init_gcp(person_record):
-        return gcp_model.calc_linear_predictor_for_patient_characteristics(
-            years_in_simulation=0,
-            raceEthnicity=person_record.raceEthnicity,
-            gender=person_record.gender,
-            baseAge=person_record.age,
-            education=person_record.education,
-            smokingStatus=person_record.smokingStatus,
-            bmi=person_record.bmi,
-            waist=person_record.waist,
-            totChol=person_record.totChol,
-            meanSbp=person_record.sbp,
-            afib=person_record.afib,
-            anyPhysicalActivity=person_record.anyPhysicalActivity,
-            alc=person_record.alcoholPerWeek,
-            antiHypertensiveCount=person_record.antiHypertensiveCount,
-            a1c=person_record.a1c,
-        )
-
-    return init_gcp
-
-
-def get_init_qalys(qaly_assignment_strategy):
-    def init_qalys(person_record):
-        current_age = person_record.age
-        conditions = {
-            OutcomeType.DEMENTIA: (person_record.dementia, current_age),
-            OutcomeType.STROKE: (person_record.stroke, current_age),
-            OutcomeType.MI: (person_record.mi, current_age),
-        }
-        has_died = person_record.alive
-        return qaly_assignment_strategy.get_qalys_for_age_and_conditions(
-            current_age, conditions, has_died
-        )
-
-    return init_qalys
 
 
 def is_alive(person):
@@ -226,6 +166,12 @@ def new_vectorized_population(
 
 
 def init_populations(num_persons, num_years, nhanes_year, seed=None):
+    loader = BPCOGCohortPersonRecordLoader(num_persons, nhanes_year, seed=seed)
+    person_records = list(loader)
+    person_store = new_bpcog_person_store(num_persons, num_years, person_records)
+    initial_pop = person_store.get_population_at(0).where(is_alive)
+    assert_data_integrity(num_persons, person_records, person_store, initial_pop)
+
     risk_model_repository = CohortRiskModelRepository()
     outcome_model_repository = OutcomeModelRepository()
     bp_treatment_strategy = AddASingleBPMedTreatmentStrategy()
@@ -233,22 +179,6 @@ def init_populations(num_persons, num_years, nhanes_year, seed=None):
         bp_treatment_strategy, outcome_model_repository
     )
     qaly_assignment_strategy = QALYAssignmentStrategy()
-    init_afib = get_init_afib()
-    init_gcp = get_init_gcp(outcome_model_repository)
-    init_qalys = get_init_qalys(qaly_assignment_strategy)
-    factory = NHANESPersonRecordFactory(
-        outcome_model_repository.get_random_effects,
-        init_afib,
-        init_gcp,
-        init_qalys,
-    )
-    loader = NHANESPersonRecordLoader(num_persons, nhanes_year, factory, seed=seed)
-
-    person_records = list(loader)
-    person_store = new_bpcog_person_store(num_persons, num_years, person_records)
-    initial_pop = person_store.get_population_at(0).where(is_alive)
-    assert_data_integrity(num_persons, person_records, person_store, initial_pop)
-
     rf_prop_names = [
         "sbp",
         "dbp",
