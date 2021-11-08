@@ -1,7 +1,6 @@
 """Confirm model results do not vary significantly across Person representations."""
 
 import numpy as np
-from microsim.cohort_risk_model_repository import CohortRiskModelRepository
 from microsim.test._validation.fixture import StorePopulationValidationFixture
 
 
