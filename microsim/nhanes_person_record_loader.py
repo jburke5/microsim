@@ -2,23 +2,13 @@ import dataclasses
 import numpy as np
 import pandas as pd
 from microsim.alcohol_category import AlcoholCategory
-from microsim.cohort_risk_model_repository import CohortRiskModelRepository
-from microsim.outcome_model_repository import OutcomeModelRepository
-from microsim.outcome_model_type import OutcomeModelType
-from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 from microsim.smoking_status import SmokingStatus
 from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.race_ethnicity import NHANESRaceEthnicity
-from microsim.data_loader import get_absolute_datafile_path, load_regression_model
+from microsim.data_loader import get_absolute_datafile_path
 from microsim.outcome import Outcome, OutcomeType
-from microsim.person.bpcog_person_records import (
-    BPCOGPersonRecord,
-    BPCOGPersonDynamicRecord,
-    BPCOGPersonEventRecord,
-    BPCOGPersonStaticRecord,
-)
-from microsim.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFactorModel
+from microsim.person.bpcog_person_records import BPCOGPersonRecord
 
 
 def get_nhanes_imputed_dataset(year):
