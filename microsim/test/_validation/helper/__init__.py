@@ -6,9 +6,13 @@ from microsim.test._validation.helper.person_obj_from_person_record import (
 from microsim.test._validation.helper.person_obj_to_person_record import (
     person_obj_to_person_record,
 )
+from microsim.test._validation.helper.bpcog_cohort_person_record_loader import (
+    BPCOGCohortPersonRecordLoader,
+)
 
 
 __all__ = [
+    "BPCOGCohortPersonRecordLoader",
     "diff_person_records",
     "diff_populations_at",
     "person_obj_from_person_record",

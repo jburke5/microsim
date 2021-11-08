@@ -5,7 +5,6 @@ import pandas as pd
 from microsim.bp_treatment_recalibration import BPTreatmentRecalibration
 from microsim.bp_treatment_strategies import AddASingleBPMedTreatmentStrategy
 from microsim.cohort_risk_model_repository import CohortRiskModelRepository
-from microsim.nhanes_person_record_loader import BPCOGCohortPersonRecordLoader
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.person.bpcog_person_records import (
     BPCOGPersonStaticRecordProtocol,
@@ -21,6 +20,7 @@ from microsim.store.numpy_record_mapping import (
 )
 from microsim.store.numpy_person_store import NumpyPersonStore
 from microsim.test._validation.helper import person_obj_from_person_record
+from microsim.test._validation.helper import BPCOGCohortPersonRecordLoader
 
 
 class StorePopulationValidationFixture(TestCase):
