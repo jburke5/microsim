@@ -1,6 +1,7 @@
 """Confirm model results do not vary significantly across Person representations."""
 
 import numpy as np
+from microsim.outcome import Outcome, OutcomeType
 from microsim.test._validation.fixture import StorePopulationValidationFixture
 
 
@@ -61,3 +62,28 @@ class TestNonDeterministicModels(StorePopulationValidationFixture):
             store_model_result = model.estimate_next_risk_vectorized(store_person)
 
             self.assertEqual(vec_model_result, store_model_result)
+
+    def test_cvd_event_model(self):
+        vec_df = self.vec_pop.get_people_current_state_and_summary_as_dataframe()
+        cur_pop = self.store_pop.person_store.get_population_at(0)
+
+        for (_, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
+            model_random_state = np.random.get_state()
+            vec_outcome = vec_row_to_outcome_obj(
+                self.outcome_model_repository.assign_cv_outcome_vectorized(vec_row)
+            )
+            np.random.set_state(model_random_state)
+            store_outcome = self.outcome_model_repository.get_cv_outcome_for_person(store_person)
+
+            self.assertEqual(vec_outcome, store_outcome)
+
+
+def vec_row_to_outcome_obj(vec_row):
+    assert not (vec_row.miNext and vec_row.strokeNext)
+
+    if vec_row.miNext:
+        return Outcome(OutcomeType.MI, vec_row.miFatal)
+    elif vec_row.strokeNext:
+        return Outcome(OutcomeType.STROKE, vec_row.miFatal)
+    else:
+        return None
