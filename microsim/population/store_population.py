@@ -118,6 +118,9 @@ class StorePopulation:
         person.next.alive = not will_have_non_cv_death
 
     def _recalibrate_treatment(self, alive_pop):
+        if self._bp_treatment_recalibration is None:
+            return
+
         def set_scratch_next_to_baseline(pop):
             scratch_pop = pop.with_scratch_next()
             for scratch_person in scratch_pop:
