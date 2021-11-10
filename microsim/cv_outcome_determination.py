@@ -107,8 +107,8 @@ class CVOutcomeDetermination:
 
     def get_combined_cv_risk_for_person(self, outcome_model_repository, person):
         cv_risk = self.get_risk_for_person(outcome_model_repository, person, vectorized=True)
-        had_prior_stroke = any(r.stroke is not None for r in person.current_and_previous)
-        if had_prior_stroke:
+        had_prior_stroke_or_mi = person.stroke or person.mi
+        if had_prior_stroke_or_mi:
             cv_risk *= self.secondary_prevention_multiplier
         return cv_risk
 
