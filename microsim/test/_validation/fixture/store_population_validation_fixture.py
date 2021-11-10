@@ -1,3 +1,4 @@
+import secrets
 from types import MappingProxyType
 from unittest import TestCase
 import numpy as np
@@ -25,21 +26,27 @@ from microsim.test._validation.helper import BPCOGCohortPersonRecordLoader
 
 class StorePopulationValidationFixture(TestCase):
     _person_records = None
+    _loader_seed = None
 
     @classmethod
     def get_or_init_person_records(
         cls,
         num_persons=1_000,
         nhanes_year=2013,
-        random_seed=3334670448,
     ):
         """Returns existing or creates, sets, & returns person record list."""
         if cls._person_records is not None:
             return cls._person_records
+        if cls._loader_seed is None:
+            cls._loader_seed = secrets.randbits(32)
 
-        loader = BPCOGCohortPersonRecordLoader(num_persons, nhanes_year, seed=random_seed)
+        loader = BPCOGCohortPersonRecordLoader(num_persons, nhanes_year, seed=cls._loader_seed)
         cls._person_records = list(loader)
         return cls._person_records
+
+    @property
+    def loader_seed(self):
+        return StorePopulationValidationFixture._loader_seed
 
     def _new_store_pop(self, person_records, num_years, combined_record_mapping):
         """Returns a new store population"""
