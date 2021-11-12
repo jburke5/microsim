@@ -130,10 +130,19 @@ class TestNonDeterministicModels(StorePopulationValidationFixture):
         vec_df["dementia"] = [p.next.dementia is not None or p.dementia for p in cur_pop]
         vec_df["ageAtFirstDementia"] = [p.ageAtFirstDementia for p in cur_pop]
 
+        # recalibrate vectorized population
         model_random_state = np.random.get_state()
         recalibrated_vec_df = self.vec_pop.apply_recalibration_standards(vec_df)
-        np.random.set_state(model_random_state)
-        self.store_pop._recalibrate_treatment(cur_pop)
+
+        # recalibrate store population
+        def set_scratch_next_to_baseline(pop):
+            scratch_pop = pop.with_scratch_next()
+            for scratch_person in scratch_pop:
+                no_recal_store_pop._advance_person_risk_factors(scratch_person)
+            # reset RNG here to avoid non-det. risk factor models' advancing the RNG
+            np.random.set_state(model_random_state)
+
+        self.bp_treatment_recalibration.recalibrate(cur_pop, set_scratch_next_to_baseline)
         recalibrated_store_pop = cur_pop
 
         for (_, vec_row), store_person in zip(
