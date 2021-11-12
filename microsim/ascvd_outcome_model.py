@@ -1,6 +1,4 @@
 import numpy as np
-from microsim.smoking_status import SmokingStatus
-from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
 
 # https://annals.org/aim/fullarticle/2683613/[XSLTImagePath]
