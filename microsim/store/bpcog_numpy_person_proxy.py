@@ -84,7 +84,7 @@ def new_bpcog_person_proxy_class(field_metadata, name="BPCOGNumpyPersonProxy"):
     # boolean props for model args that currently cannot be specified easily or readably
     # ... for the CV outcome model
     prop_attrs["black"] = property(
-        lambda p: p.current.raceEthnicity > NHANESRaceEthnicity.NON_HISPANIC_BLACK
+        lambda p: p.current.raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK
     )
     prop_attrs["current_smoker"] = property(
         lambda p: p.current.smokingStatus == SmokingStatus.CURRENT
