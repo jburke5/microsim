@@ -44,10 +44,6 @@ class StorePopulationValidationFixture(TestCase):
         cls._person_records = list(loader)
         return cls._person_records
 
-    @property
-    def loader_seed(self):
-        return StorePopulationValidationFixture._loader_seed
-
     def _new_store_pop(self, person_records, num_years, combined_record_mapping):
         """Returns a new store population"""
         person_proxy_class = new_bpcog_person_proxy_class(
