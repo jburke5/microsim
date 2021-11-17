@@ -73,7 +73,7 @@ class CVOutcomeDetermination:
             if self.has_prior_mi(person, vectorized)
             else fatalMIProb
         )
-        return npRand.uniform(size=1) < fatalProb
+        return npRand.uniform(size=1)[0] < fatalProb
 
     def _will_have_fatal_stroke(self, person, vectorized=False, overrideStrokeProb=None):
         fatalStrokeProb = (
@@ -84,7 +84,7 @@ class CVOutcomeDetermination:
             if self.has_prior_stroke(person, vectorized)
             else fatalStrokeProb
         )
-        return npRand.uniform(size=1) < fatalProb
+        return npRand.uniform(size=1)[0] < fatalProb
 
     def get_risk_for_person(self, outcome_model_repository, person, vectorized):
         if vectorized:
