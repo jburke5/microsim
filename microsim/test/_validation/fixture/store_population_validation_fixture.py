@@ -104,8 +104,11 @@ class StorePopulationValidationFixture(TestCase):
         return population
 
     def setUp(self):
-        # call class method directly to set person records on (& to return them from) one place
-        self.initial_person_records = StorePopulationValidationFixture.get_or_init_person_records()
+        if not hasattr(self, "initial_person_records"):
+            # call class method directly to set person records on (& to return them from) one place
+            self.initial_person_records = (
+                StorePopulationValidationFixture.get_or_init_person_records()
+            )
 
         # setup population dependencies. Use overrides if present; else, use defaults
         if not hasattr(self, "risk_model_repository"):
