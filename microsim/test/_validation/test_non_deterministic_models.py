@@ -7,6 +7,8 @@ from microsim.test._validation.fixture import StorePopulationValidationFixture
 
 class TestNonDeterministicModels(StorePopulationValidationFixture):
     def setUp(self):
+        TestNonDeterministicModels._loader_seed = 338275772
+        self.initial_person_records = TestNonDeterministicModels.get_or_init_person_records()
         super().setUp()
         self._random_seed = 60632844
         np.random.seed(self._random_seed)
