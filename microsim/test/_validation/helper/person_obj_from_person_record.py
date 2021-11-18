@@ -23,6 +23,8 @@ def person_obj_from_person_record(population_index, person_record):
         statin=person_record.statin,
         otherLipidLoweringMedicationCount=person_record.otherLipidLowerMedication,
         initializeAfib=lambda _: person_record.afib,
+        selfReportStrokeAge=None if person_record.stroke is None else person_record.age,
+        selfReportMIAge=None if person_record.mi is None else person_record.age,
         randomEffects={"gcp": person_record.gcpRandomEffect},
         _populationIndex=population_index,
     )
