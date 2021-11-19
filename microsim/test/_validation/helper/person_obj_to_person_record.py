@@ -27,6 +27,12 @@ def person_obj_to_person_record(person, at_t):
     # `otherLipidLoweringMedicationCount` never updated after init? (unclear if intentional)
     otherLipidLowerMedication = person._otherLipidLoweringMedicationCount[-1]
 
+    selfReportAgeKwargs = {}
+    if person._selfReportStrokeAge:
+        selfReportAgeKwargs["selfReportStrokeAge"] = person._selfReportStrokeAge
+    if person._selfReportMIAge:
+        selfReportAgeKwargs["selfReportMIAge"] = person._selfReportMIAge
+
     person_record = BPCOGPersonRecord(
         gender=person._gender,
         raceEthnicity=person._raceEthnicity,
@@ -56,6 +62,7 @@ def person_obj_to_person_record(person, at_t):
         mi=mi,
         stroke=stroke,
         dementia=dementia,
+        **selfReportAgeKwargs,
     )
 
     return person_record
