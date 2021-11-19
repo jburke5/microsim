@@ -16,63 +16,69 @@ class TestNonDeterministicModels(StorePopulationValidationFixture):
         self._random_seed = 60632844
         np.random.seed(self._random_seed)
 
+    def _get_assert_msg(self, person_idx):
+        return (
+            f"(loader_seed={self._loader_seed}, test_seed={self._random_seed},"
+            f" person_idx={person_idx})"
+        )
+
     def test_cohort_afib_model(self):
         model = self.risk_model_repository.get_model("afib")
         vec_df = self.vec_pop.get_people_current_state_and_summary_as_dataframe()
         cur_pop = self.store_pop.person_store.get_population_at(0)
 
-        for (_, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
+        for (i, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
             model_random_state = np.random.get_state()
             vec_model_result = model.estimate_next_risk_vectorized(vec_row)
             np.random.set_state(model_random_state)
             store_model_result = model.estimate_next_risk_vectorized(store_person)
 
-            self.assertEqual(vec_model_result, store_model_result)
+            self.assertEqual(vec_model_result, store_model_result, self._get_assert_msg(i))
 
     def test_cohort_antihypertensive_count_model(self):
         model = self.risk_model_repository.get_model("antiHypertensiveCount")
         vec_df = self.vec_pop.get_people_current_state_and_summary_as_dataframe()
         cur_pop = self.store_pop.person_store.get_population_at(0)
 
-        for (_, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
+        for (i, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
             model_random_state = np.random.get_state()
             vec_model_result = model.estimate_next_risk_vectorized(vec_row)
             np.random.set_state(model_random_state)
             store_model_result = model.estimate_next_risk_vectorized(store_person)
 
-            self.assertEqual(vec_model_result, store_model_result)
+            self.assertEqual(vec_model_result, store_model_result, self._get_assert_msg(i))
 
     def test_cohort_physical_activity_model(self):
         model = self.risk_model_repository.get_model("anyPhysicalActivity")
         vec_df = self.vec_pop.get_people_current_state_and_summary_as_dataframe()
         cur_pop = self.store_pop.person_store.get_population_at(0)
 
-        for (_, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
+        for (i, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
             model_random_state = np.random.get_state()
             vec_model_result = model.estimate_next_risk_vectorized(vec_row)
             np.random.set_state(model_random_state)
             store_model_result = model.estimate_next_risk_vectorized(store_person)
 
-            self.assertEqual(vec_model_result, store_model_result)
+            self.assertEqual(vec_model_result, store_model_result, self._get_assert_msg(i))
 
     def test_cohort_statin_model(self):
         model = self.risk_model_repository.get_model("statin")
         vec_df = self.vec_pop.get_people_current_state_and_summary_as_dataframe()
         cur_pop = self.store_pop.person_store.get_population_at(0)
 
-        for (_, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
+        for (i, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
             model_random_state = np.random.get_state()
             vec_model_result = model.estimate_next_risk_vectorized(vec_row)
             np.random.set_state(model_random_state)
             store_model_result = model.estimate_next_risk_vectorized(store_person)
 
-            self.assertEqual(vec_model_result, store_model_result)
+            self.assertEqual(vec_model_result, store_model_result, self._get_assert_msg(i))
 
     def test_cvd_event_model(self):
         vec_df = self.vec_pop.get_people_current_state_and_summary_as_dataframe()
         cur_pop = self.store_pop.person_store.get_population_at(0)
 
-        for (_, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
+        for (i, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
             model_random_state = np.random.get_state()
             vec_mi, vec_stroke = vec_row_to_outcomes(
                 self.outcome_model_repository.assign_cv_outcome_vectorized(vec_row)
@@ -81,20 +87,20 @@ class TestNonDeterministicModels(StorePopulationValidationFixture):
             np.random.set_state(model_random_state)
             store_outcome = self.outcome_model_repository.get_cv_outcome_for_person(store_person)
 
-            self.assertEqual(vec_outcome, store_outcome)
+            self.assertEqual(vec_outcome, store_outcome, self._get_assert_msg(i))
 
     def test_non_cvd_death_model(self):
         model = self.outcome_model_repository.assign_non_cv_mortality_vectorized
         vec_df = self.vec_pop.get_people_current_state_and_summary_as_dataframe()
         cur_pop = self.store_pop.person_store.get_population_at(0)
 
-        for (_, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
+        for (i, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
             model_random_state = np.random.get_state()
             vec_model_result = model(vec_row)
             np.random.set_state(model_random_state)
             store_model_result = model(store_person)
 
-            self.assertEqual(vec_model_result, store_model_result)
+            self.assertEqual(vec_model_result, store_model_result, self._get_assert_msg(i))
 
     def test_recalibration(self):
         no_recal_store_pop = StorePopulation(
@@ -148,12 +154,12 @@ class TestNonDeterministicModels(StorePopulationValidationFixture):
         self.bp_treatment_recalibration.recalibrate(cur_pop, set_scratch_next_to_baseline)
         recalibrated_store_pop = cur_pop
 
-        for (_, vec_row), store_person in zip(
+        for (i, vec_row), store_person in zip(
             recalibrated_vec_df.iterrows(), recalibrated_store_pop
         ):
             vec_mi, vec_stroke = vec_row_to_outcomes(vec_row)
-            self.assertEqual(vec_mi, store_person.next.mi)
-            self.assertEqual(vec_stroke, store_person.next.stroke)
+            self.assertEqual(vec_mi, store_person.next.mi, self._get_assert_msg(i))
+            self.assertEqual(vec_stroke, store_person.next.stroke, self._get_assert_msg(i))
 
 
 def vec_row_to_outcomes(vec_row):
