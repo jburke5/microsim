@@ -37,11 +37,22 @@ class HadPriorEventProxiedProperty:
 
 
 class AgeAtFirstEventProxiedProperty:
-    def __init__(self, event_prop_name):
+    def __init__(self, event_prop_name, override_prop_name=None):
         self._event_prop_name = event_prop_name
+        self._override_prop_name = override_prop_name
 
     def __get__(self, instance, owner=None):
-        for record in chain(instance.current_and_previous, [instance.next]):
+        all_records_iter = chain(instance.current_and_previous, [instance.next])
+
+        initial_record = next(all_records_iter)
+        initial_event = getattr(initial_record, self._event_prop_name)
+        if initial_event is not None:
+            if self._override_prop_name is not None:
+                return getattr(initial_record, self._override_prop_name)
+            else:
+                return getattr(initial_event, "age", initial_record.age)
+
+        for record in all_records_iter:
             event = getattr(record, self._event_prop_name)
             if event is not None:
                 age = getattr(event, "age", None) or record.age
@@ -79,7 +90,14 @@ def new_bpcog_person_proxy_class(field_metadata, name="BPCOGNumpyPersonProxy"):
 
         cap_event_prop_name = "MI" if event_prop_name == "mi" else event_prop_name.capitalize()
         age_at_first_event_prop_name = f"ageAtFirst{cap_event_prop_name}"
-        prop_attrs[age_at_first_event_prop_name] = AgeAtFirstEventProxiedProperty(event_prop_name)
+        initial_age_prop_name = (
+            f"selfReport{cap_event_prop_name}Age"
+            if event_prop_name == "mi" or event_prop_name == "stroke"
+            else None
+        )
+        prop_attrs[age_at_first_event_prop_name] = AgeAtFirstEventProxiedProperty(
+            event_prop_name, initial_age_prop_name
+        )
 
     # boolean props for model args that currently cannot be specified easily or readably
     # ... for the CV outcome model

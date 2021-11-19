@@ -92,8 +92,13 @@ class NHANESPersonRecordFactory:
         otherLipidLowering,
     ):
         random_effects = self._init_random_effects()
+        selfReportAgeKwargs = {}
         prior_mi = build_prior_mi_event(selfReportMIAge, age)
+        if prior_mi is not None:
+            selfReportAgeKwargs["selfReportMIAge"] = prior_mi.properties.get("age", age)
         prior_stroke = build_prior_stroke_event(selfReportStrokeAge, age)
+        if prior_stroke is not None:
+            selfReportAgeKwargs["selfReportStrokeAge"] = prior_stroke.properties.get("age", age)
         person_record = BPCOGPersonRecord(
             gender=NHANESGender(int(gender)),
             raceEthnicity=NHANESRaceEthnicity(int(raceEthnicity)),
@@ -123,6 +128,7 @@ class NHANESPersonRecordFactory:
             mi=prior_mi,
             stroke=prior_stroke,
             dementia=None,
+            **selfReportAgeKwargs,
         )
 
         afib = self._init_afib(person_record)

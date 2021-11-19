@@ -22,6 +22,10 @@ class BPCOGPersonStaticRecordProtocol(Protocol):
     # props that likely should not be static in principle, yet do not currently change:
     otherLipidLowerMedication: int
 
+    # props that should be with events in principle, but are best suited here for right now:
+    selfReportMIAge: int = -9223372036854775808
+    selfReportStrokeAge: int = -9223372036854775808
+
 
 class BPCOGPersonDynamicRecordProtocol(Protocol):
     """Contains dynamic data for one Person at one tick."""
