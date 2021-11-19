@@ -43,11 +43,11 @@ class BPTreatmentRecalibration:
                 self._bp_treatment_standards[OutcomeType.STROKE] ** num_bp_meds
             )
 
-            self._recalibrate_mi(
-                treated_subpop, model_relrisk[OutcomeType.MI], standard_mi_relrisk
-            )
             self._recalibrate_stroke(
                 treated_subpop, model_relrisk[OutcomeType.STROKE], standard_stroke_relrisk
+            )
+            self._recalibrate_mi(
+                treated_subpop, model_relrisk[OutcomeType.MI], standard_mi_relrisk
             )
 
     def _recalibrate_mi(self, treated_subpop, model_mi_relrisk, standard_mi_relrisk):
