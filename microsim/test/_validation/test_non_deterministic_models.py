@@ -74,9 +74,10 @@ class TestNonDeterministicModels(StorePopulationValidationFixture):
 
         for (_, vec_row), store_person in zip(vec_df.iterrows(), cur_pop):
             model_random_state = np.random.get_state()
-            vec_outcome = vec_row_to_outcome_obj(
+            vec_mi, vec_stroke = vec_row_to_outcomes(
                 self.outcome_model_repository.assign_cv_outcome_vectorized(vec_row)
             )
+            vec_outcome = vec_mi if vec_mi is not None else vec_stroke
             np.random.set_state(model_random_state)
             store_outcome = self.outcome_model_repository.get_cv_outcome_for_person(store_person)
 
@@ -150,23 +151,12 @@ class TestNonDeterministicModels(StorePopulationValidationFixture):
         for (_, vec_row), store_person in zip(
             recalibrated_vec_df.iterrows(), recalibrated_store_pop
         ):
-            self.assertEqual(vec_row.miNext, store_person.next.mi is not None)
-            self.assertEqual(
-                vec_row.miFatal, store_person.next.mi is not None and store_person.next.mi.fatal
-            )
-            self.assertEqual(vec_row.strokeNext, store_person.next.stroke is not None)
-            self.assertEqual(
-                vec_row.strokeFatal,
-                store_person.next.stroke is not None and store_person.next.stroke.fatal,
-            )
+            vec_mi, vec_stroke = vec_row_to_outcomes(vec_row)
+            self.assertEqual(vec_mi, store_person.next.mi)
+            self.assertEqual(vec_stroke, store_person.next.stroke)
 
 
-def vec_row_to_outcome_obj(vec_row):
-    assert not (vec_row.miNext and vec_row.strokeNext)
-
-    if vec_row.miNext:
-        return Outcome(OutcomeType.MI, vec_row.miFatal)
-    elif vec_row.strokeNext:
-        return Outcome(OutcomeType.STROKE, vec_row.strokeFatal)
-    else:
-        return None
+def vec_row_to_outcomes(vec_row):
+    mi = Outcome(OutcomeType.MI, vec_row.miFatal) if vec_row.miNext else None
+    stroke = Outcome(OutcomeType.STROKE, vec_row.strokeFatal) if vec_row.strokeNext else None
+    return (mi, stroke)
