@@ -167,6 +167,6 @@ def vec_row_to_outcome_obj(vec_row):
     if vec_row.miNext:
         return Outcome(OutcomeType.MI, vec_row.miFatal)
     elif vec_row.strokeNext:
-        return Outcome(OutcomeType.STROKE, vec_row.miFatal)
+        return Outcome(OutcomeType.STROKE, vec_row.strokeFatal)
     else:
         return None
