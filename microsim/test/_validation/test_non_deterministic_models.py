@@ -13,12 +13,9 @@ class TestNonDeterministicModels(StorePopulationValidationFixture):
 
     @classmethod
     def setUpClass(cls):
-        cls._loader_seed = secrets.randbits(32)
         cls._random_seed = secrets.randbits(32)
-        cls._person_records = None
 
     def setUp(self):
-        self.initial_person_records = TestNonDeterministicModels.get_or_init_person_records()
         super().setUp()
         np.random.seed(self._random_seed)
 
