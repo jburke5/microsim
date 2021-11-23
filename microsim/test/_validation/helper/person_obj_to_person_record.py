@@ -28,9 +28,9 @@ def person_obj_to_person_record(person, at_t):
     otherLipidLowerMedication = person._otherLipidLoweringMedicationCount[-1]
 
     selfReportAgeKwargs = {}
-    if person._selfReportStrokeAge:
+    if hasattr(person, "_selfReportStrokeAge"):
         selfReportAgeKwargs["selfReportStrokeAge"] = person._selfReportStrokeAge
-    if person._selfReportMIAge:
+    if hasattr(person, "_selfReportMIAge"):
         selfReportAgeKwargs["selfReportMIAge"] = person._selfReportMIAge
 
     person_record = BPCOGPersonRecord(
