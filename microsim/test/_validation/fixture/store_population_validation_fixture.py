@@ -119,7 +119,7 @@ class StorePopulationValidationFixture(TestCase):
             )
         if not hasattr(self, "qaly_assignment_strategy"):
             self.qaly_assignment_strategy = QALYAssignmentStrategy()
-        self.num_years = getattr(self, "num_years", 10)
+        self.num_years = getattr(self, "num_years", 1)
 
         # finally, actually create the populations
         self.combined_record_mapping = MappingProxyType(
