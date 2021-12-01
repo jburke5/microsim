@@ -44,14 +44,14 @@ class StorePopulationValidationFixture(TestCase):
         cls._person_records = list(loader)
         return cls._person_records
 
-    def _new_store_pop(self, person_records, num_years, combined_record_mapping):
+    def _new_store_pop(self, person_records, num_ticks, combined_record_mapping):
         """Returns a new store population"""
         person_proxy_class = new_bpcog_person_proxy_class(
             {c: m.property_mappings for c, m in combined_record_mapping.items()}
         )
         person_store = NumpyPersonStore(
             len(person_records),
-            num_years,
+            num_ticks,
             combined_record_mapping["static"],
             combined_record_mapping["dynamic"],
             combined_record_mapping["event"],
@@ -119,7 +119,7 @@ class StorePopulationValidationFixture(TestCase):
             )
         if not hasattr(self, "qaly_assignment_strategy"):
             self.qaly_assignment_strategy = QALYAssignmentStrategy()
-        self.num_years = getattr(self, "num_years", 1)
+        self.num_ticks = getattr(self, "num_ticks", 1)
 
         # finally, actually create the populations
         self.combined_record_mapping = MappingProxyType(
@@ -130,6 +130,6 @@ class StorePopulationValidationFixture(TestCase):
             }
         )
         self.store_pop = self._new_store_pop(
-            self.initial_person_records, self.num_years, self.combined_record_mapping
+            self.initial_person_records, self.num_ticks, self.combined_record_mapping
         )
         self.vec_pop = self._new_vec_pop(self.initial_person_records)
