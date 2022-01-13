@@ -1,5 +1,10 @@
+from microsim.alcohol_category import AlcoholCategory
+from microsim.education import Education
+from microsim.gender import NHANESGender
 from microsim.person.bpcog_person_records import BPCOGPersonRecord
 from microsim.outcome import OutcomeType
+from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.smoking_status import SmokingStatus
 
 
 def person_obj_to_person_record(person, at_t):
@@ -34,10 +39,10 @@ def person_obj_to_person_record(person, at_t):
         selfReportAgeKwargs["selfReportMIAge"] = person._selfReportMIAge
 
     person_record = BPCOGPersonRecord(
-        gender=person._gender,
-        raceEthnicity=person._raceEthnicity,
-        education=person._education,
-        smokingStatus=person._smokingStatus,
+        gender=NHANESGender(person._gender),
+        raceEthnicity=NHANESRaceEthnicity(person._raceEthnicity),
+        education=Education(person._education),
+        smokingStatus=SmokingStatus(person._smokingStatus),
         gcpRandomEffect=person._randomEffects["gcp"],
         alive=is_alive,
         age=age,
@@ -51,7 +56,7 @@ def person_obj_to_person_record(person, at_t):
         bmi=person._bmi[at_t],
         waist=person._waist[at_t],
         anyPhysicalActivity=person._anyPhysicalActivity[at_t],
-        alcoholPerWeek=person._alcoholPerWeek[at_t],
+        alcoholPerWeek=AlcoholCategory(person._alcoholPerWeek[at_t]),
         antiHypertensiveCount=person._antiHypertensiveCount[at_t],
         statin=person._statin[at_t],
         otherLipidLowerMedication=otherLipidLowerMedication,
