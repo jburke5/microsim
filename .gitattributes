@@ -1,3 +1,2 @@
 *.dta filter=lfs diff=lfs merge=lfs -text
-microsim/data/us.1969_2017.19ages.adjusted.txt filter=lfs diff=lfs merge=lfs -text
 microsim/data/us.1969_2017.19ages.adjusted.txt.gz filter=lfs diff=lfs merge=lfs -text
