@@ -19,6 +19,7 @@ from microsim.gfr_equation import GFREquation
 import pandas as pd
 from pandarallel import pandarallel
 import copy
+import gzip
 import multiprocessing as mp
 import numpy as np
 import logging
@@ -547,48 +548,49 @@ class Population:
         if yearOfStandardizedPopulation in Population._ageStandards:
             return copy.deepcopy(Population._ageStandards[yearOfStandardizedPopulation])
 
-        datafile_path = get_absolute_datafile_path("us.1969_2017.19ages.adjusted.txt")
-        ageStandard = pd.read_csv(datafile_path, header=0, names=["raw"])
-        # https://seer.cancer.gov/popdata/popdic.html
-        ageStandard["year"] = ageStandard["raw"].str[0:4]
-        ageStandard["year"] = ageStandard.year.astype(int)
-        # format changes in 1990...so, we'll go forward from there...
-        ageStandard = ageStandard.loc[ageStandard.year >= 1990]
-        ageStandard["state"] = ageStandard["raw"].str[4:6]
-        ageStandard["state"] = ageStandard["raw"].str[4:6]
-        # 1 = white, 2 = black, 3 = american indian/alaskan, 4 = asian/pacific islander
-        ageStandard["race"] = ageStandard["raw"].str[13:14]
-        ageStandard["hispanic"] = ageStandard["raw"].str[14:15]
-        ageStandard["female"] = ageStandard["raw"].str[15:16]
-        ageStandard["female"] = ageStandard["female"].astype(int)
-        ageStandard["female"] = ageStandard["female"].replace({1: 0, 2: 1})
-        ageStandard["ageGroup"] = ageStandard["raw"].str[16:18]
-        ageStandard["ageGroup"] = ageStandard["ageGroup"].astype(int)
-        ageStandard["standardPopulation"] = ageStandard["raw"].str[18:26]
-        ageStandard["standardPopulation"] = ageStandard["standardPopulation"].astype(int)
-        ageStandard["lowerAgeBound"] = (ageStandard.ageGroup - 1) * 5
-        ageStandard["upperAgeBound"] = (ageStandard.ageGroup * 5) - 1
-        ageStandard["lowerAgeBound"] = ageStandard["lowerAgeBound"].replace({-5: 0, 0: 1})
-        ageStandard["upperAgeBound"] = ageStandard["upperAgeBound"].replace({-1: 0, 89: 150})
-        ageStandardYear = ageStandard.loc[ageStandard.year == yearOfStandardizedPopulation]
-        ageStandardGroupby = ageStandardYear[
-            ["female", "standardPopulation", "lowerAgeBound", "upperAgeBound", "ageGroup"]
-        ].groupby(["ageGroup", "female"])
-        ageStandardHeaders = ageStandardGroupby.first()[["lowerAgeBound", "upperAgeBound"]]
-        ageStandardHeaders["female"] = ageStandardHeaders.index.get_level_values(1)
-        ageStandardPopulation = ageStandardYear[["female", "standardPopulation", "ageGroup"]]
-        ageStandardPopulation = ageStandardPopulation.groupby(["ageGroup", "female"]).sum()
-        ageStandardPopulation = ageStandardHeaders.join(ageStandardPopulation, how="inner")
-        # cache the age standard populations...they're not that big and it takes a while
-        # to build one
-        ageStandardPopulation["outcomeCount"] = 0
-        ageStandardPopulation["simPersonYears"] = 0
-        ageStandardPopulation["simPeople"] = 0
-        Population._ageStandards[yearOfStandardizedPopulation] = copy.deepcopy(
-            ageStandardPopulation
-        )
+        datafile_path = get_absolute_datafile_path("us.1969_2017.19ages.adjusted.txt.gz")
+        with gzip.open(datafile_path, "rt") as f:
+            ageStandard = pd.read_csv(f, header=0, names=["raw"])
+            # https://seer.cancer.gov/popdata/popdic.html
+            ageStandard["year"] = ageStandard["raw"].str[0:4]
+            ageStandard["year"] = ageStandard.year.astype(int)
+            # format changes in 1990...so, we'll go forward from there...
+            ageStandard = ageStandard.loc[ageStandard.year >= 1990]
+            ageStandard["state"] = ageStandard["raw"].str[4:6]
+            ageStandard["state"] = ageStandard["raw"].str[4:6]
+            # 1 = white, 2 = black, 3 = american indian/alaskan, 4 = asian/pacific islander
+            ageStandard["race"] = ageStandard["raw"].str[13:14]
+            ageStandard["hispanic"] = ageStandard["raw"].str[14:15]
+            ageStandard["female"] = ageStandard["raw"].str[15:16]
+            ageStandard["female"] = ageStandard["female"].astype(int)
+            ageStandard["female"] = ageStandard["female"].replace({1: 0, 2: 1})
+            ageStandard["ageGroup"] = ageStandard["raw"].str[16:18]
+            ageStandard["ageGroup"] = ageStandard["ageGroup"].astype(int)
+            ageStandard["standardPopulation"] = ageStandard["raw"].str[18:26]
+            ageStandard["standardPopulation"] = ageStandard["standardPopulation"].astype(int)
+            ageStandard["lowerAgeBound"] = (ageStandard.ageGroup - 1) * 5
+            ageStandard["upperAgeBound"] = (ageStandard.ageGroup * 5) - 1
+            ageStandard["lowerAgeBound"] = ageStandard["lowerAgeBound"].replace({-5: 0, 0: 1})
+            ageStandard["upperAgeBound"] = ageStandard["upperAgeBound"].replace({-1: 0, 89: 150})
+            ageStandardYear = ageStandard.loc[ageStandard.year == yearOfStandardizedPopulation]
+            ageStandardGroupby = ageStandardYear[
+                ["female", "standardPopulation", "lowerAgeBound", "upperAgeBound", "ageGroup"]
+            ].groupby(["ageGroup", "female"])
+            ageStandardHeaders = ageStandardGroupby.first()[["lowerAgeBound", "upperAgeBound"]]
+            ageStandardHeaders["female"] = ageStandardHeaders.index.get_level_values(1)
+            ageStandardPopulation = ageStandardYear[["female", "standardPopulation", "ageGroup"]]
+            ageStandardPopulation = ageStandardPopulation.groupby(["ageGroup", "female"]).sum()
+            ageStandardPopulation = ageStandardHeaders.join(ageStandardPopulation, how="inner")
+            # cache the age standard populations...they're not that big and it takes a while
+            # to build one
+            ageStandardPopulation["outcomeCount"] = 0
+            ageStandardPopulation["simPersonYears"] = 0
+            ageStandardPopulation["simPeople"] = 0
+            Population._ageStandards[yearOfStandardizedPopulation] = copy.deepcopy(
+                ageStandardPopulation
+            )
 
-        return ageStandardPopulation
+            return ageStandardPopulation
 
     def tabulate_age_specific_rates(self, ageStandard):
         ageStandard["percentStandardPopInGroup"] = ageStandard["standardPopulation"] / (
