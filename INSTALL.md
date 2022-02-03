@@ -78,7 +78,7 @@ Installing all of the above can be daunting, but the steps below should give a s
 1. Your installation should be complete at this point, but to make sure that everything is working as expected, run the following command to run the automated tests:
 
     ```
-    poetry run test
+    poetry run ./scripts/test.py
     ```
 
 1. Congratulations! You made it!
