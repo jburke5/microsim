@@ -7,5 +7,5 @@ install:
   - poetry install
 
 script:
-  - poetry run lint || (echo -n)
-  - poetry run test
+  - poetry run ./scripts/lint.py || (echo -n)
+  - poetry run ./scripts/test.py
