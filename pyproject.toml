@@ -18,11 +18,6 @@ flake8 = "^3.7.8"
 ipython = "^7.7.0"
 black = "^21.5b2"
 
-[tool.poetry.scripts]
-test = "scripts.test:main"
-lint = "scripts.lint:main"
-format = "scripts.format:main"
-
 [tool.black]
 line-length = 99
 
