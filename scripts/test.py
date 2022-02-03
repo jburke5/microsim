@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import subprocess
 
 
@@ -14,3 +15,7 @@ def main():
     ]
     proc = subprocess.run(args)
     exit(proc.returncode)
+
+
+if __name__ == "__main__":
+    main()
