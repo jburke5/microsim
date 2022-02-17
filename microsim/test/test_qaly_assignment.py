@@ -97,6 +97,7 @@ class TestQALYAssignment(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
+            creatinine = 0,
             initializeAfib=TestQALYAssignment.initializeAfib,
             initializationRepository=InitializationRepository(),
         )

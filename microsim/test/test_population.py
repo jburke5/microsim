@@ -58,6 +58,7 @@ class TestPopulationAdvanceOutcomes(unittest.TestCase):
             0,
             0,
             0,
+            0,
             initializeAFib,
             selfReportStrokeAge=None,
             selfReportMIAge=None,

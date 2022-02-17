@@ -87,3 +87,6 @@ class TestRiskModelRepository(RiskModelRepository):
         self._repository["alcoholPerWeek"] = NHANESLinearRiskFactorModel(
             "alcoholPerWeek", params=params, ses=ses, resids=pd.Series(np.zeros(10))
         )
+        self._repository["creatinine"] = NHANESLinearRiskFactorModel(
+            "creatinine", params=params, ses=ses, resids=pd.Series(np.zeros(10))
+        )

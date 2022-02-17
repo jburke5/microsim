@@ -59,6 +59,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             0,
             0,
             0,
+            0,
             initializeAFib,
         )
 

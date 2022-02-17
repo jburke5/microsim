@@ -13,6 +13,7 @@ from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
+from microsim.gfr_equation import GFREquation
 
 # luciana-tag...lne thing that tripped me up was probable non clear communication regarding "waves"
 # so, i'm going to spell it out here and try to make the code consistent.
@@ -51,6 +52,7 @@ class Person:
         antiHypertensiveCount: int,
         statin: int,
         otherLipidLoweringMedicationCount: int,
+        creatinine: float,
         initializeAfib: Callable,
         initializationRepository=None,
         selfReportStrokeAge=None,
@@ -86,6 +88,7 @@ class Person:
         self._antiHypertensiveCount = [antiHypertensiveCount]
         self._statin = [statin]
         self._otherLipidLoweringMedicationCount = [otherLipidLoweringMedicationCount]
+        self._creatinine = [creatinine]
 
         # outcomes is a dictionary of arrays. each element in the dictionary represents
         # a differnet outcome type each element in the array is a tuple representting
@@ -161,6 +164,7 @@ class Person:
         self._qalys = [self._qalys[0]]
         self._afib = [self._afib[0]]
         self._bpMedsAdded = [self._bpMedsAdded[0]]
+        self._creatinine = [self._creatinine[0]]
 
         # iterate through outcomes and remove those that occured after the simulation started
         for type, outcomes_for_type in self._outcomes.items():
@@ -179,6 +183,15 @@ class Person:
     @property
     def _current_diabetes(self):
         return self.has_diabetes()
+
+  
+    @property
+    def _gfr(self):
+        return GFREquation().get_gfr_for_person(self)
+    
+    @property
+    def _current_ckd(self):
+        return self._gfr < 60 
 
     # generlized logistic function mapping GCP to MMSE in combined cohrot data
     def get_current_mmse(self):
@@ -455,6 +468,7 @@ class Person:
         )
         self._afib.append(self.get_next_risk_factor("afib", risk_model_repository))
         self._statin.append(self.get_next_risk_factor("statin", risk_model_repository))
+        self._creatinine.append(self.get_next_risk_factor("creatinine", risk_model_repository))
         self._alcoholPerWeek.append(
             AlcoholCategory.get_category_for_consumption(
                 self.get_next_risk_factor("alcoholPerWeek", risk_model_repository)
@@ -491,6 +505,7 @@ class Person:
             ),
             statin=self.get_next_risk_factor("statin", risk_model_repository),
             otherLipidLoweringMedicationCount=self._otherLipidLoweringMedicationCount,
+            creatinine=self.get_next_risk_factor("creatinine", risk_model_repository),
             initializeAfib=(lambda _: False),
             selfReportStrokeAge=50 if self._outcomes[OutcomeType.STROKE] is not None else None,
             selfReportMIAge=50 if self._outcomes[OutcomeType.MI] is not None else None,
@@ -569,6 +584,7 @@ class Person:
             f"education={Education(self._education)}, "
             f"antiHypertensiveCount={self._antiHypertensiveCount[-1]}, "
             f"otherLipid={self._otherLipidLoweringMedicationCount[-1]}, "
+            f"creatinine={self._creatinine[-1]}, "
             f"statin={self._statin[-1]}, "
             f"index={self._populationIndex if self._populationIndex is not None else None}, "
             f"outcomes={self._outcomes}"
@@ -621,6 +637,8 @@ class Person:
             return False
         if not other._otherLipidLoweringMedicationCount == self._otherLipidLoweringMedicationCount:
             return False
+        if not other._creatinine == self._creatinine:
+            return False
         if not other._afib == self._afib:
             return False
         if not other._alive == self._alive:
@@ -653,6 +671,7 @@ class Person:
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
+            creatinine=0,
             initializeAfib=None,
         )
         selfCopy._lowerBounds = self._lowerBounds
@@ -676,6 +695,7 @@ class Person:
         selfCopy._alcoholPerWeek = copy.deepcopy(self._alcoholPerWeek)
         selfCopy._antiHypertensiveCount = copy.deepcopy(self._antiHypertensiveCount)
         selfCopy._statin = copy.deepcopy(self._statin)
+        selfCopy._creatinine = copy.deepcopy(self._creatinine)
         selfCopy._otherLipidLoweringMedicationCount = copy.deepcopy(
             self._otherLipidLoweringMedicationCount
         )

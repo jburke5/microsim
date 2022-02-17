@@ -2,7 +2,8 @@ from microsim.outcome import OutcomeType
 from abc import ABC
 
 
-class BaseTreatmentStrategy(ABC):
+# tryign to turn off ABC as it causes pickling problems...this class shoudl extend ABC
+class BaseTreatmentStrategy(    ):
     def get_changes_vectorized(self, x):
         raise RuntimeError("Vectorized Treatment not implemented for this strategy")
 
@@ -57,25 +58,34 @@ class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
 class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
     sbpLowering = 5.5
     dbpLowering = 3.1
+    sbpGoal = 120
+    dbpGoal = 65
 
     def __init__(self):
         pass
 
     def apply_treatment(self, cur_record, next_record):
-        meds_needed = self.get_meds_needed_for_goal(next_record.sbp, next_record.dbp)
+        bp_goal = self.get_goal_vectorized(next_record)
+        meds_needed = self.get_meds_needed_for_goal(
+            next_record.sbp, next_record.dbp, next_record.antiHypertensiveCount, bp_goal
+        )
+
         next_record.bpMedsAdded = meds_needed
         next_record.antiHypertensiveCount += meds_needed
         next_record.sbp -= meds_needed * AddBPTreatmentMedsToGoal120.sbpLowering
         next_record.dbp -= meds_needed * AddBPTreatmentMedsToGoal120.dbpLowering
 
-    def get_meds_needed_for_goal(self, sbp, dbp):
-        sbpMedCount = int((sbp - 120) / AddBPTreatmentMedsToGoal120.sbpLowering)
-        dbpMedCount = int((dbp - 65) / AddBPTreatmentMedsToGoal120.dbpLowering)
+    def getGoal(self, person):
+        return {'sbp' : 120, 'dbp' : 65}
+
+    def get_meds_needed_for_goal(self, sbp, dbp, currentMeds, goal):
+        sbpMedCount = int((sbp - goal['sbp']) / AddBPTreatmentMedsToGoal120.sbpLowering)
+        dbpMedCount = int((dbp - goal['dbp']) / AddBPTreatmentMedsToGoal120.dbpLowering)
         medCount = dbpMedCount if dbpMedCount < sbpMedCount else sbpMedCount
         return 0 if medCount < 0 else medCount
 
     def get_changes_for_person(self, person):
-        medsForGoal = self.get_meds_needed_for_goal(person._sbp[-1], person._dbp[-1])
+        medsForGoal = self.get_meds_needed_for_goal(person._sbp[-1], person._dbp[-1], person._antiHypertensiveCount[-1], self.getGoal(person))
         return (
             {"_antiHypertensiveCount": medsForGoal},
             {"_bpMedsAdded": medsForGoal},
@@ -95,8 +105,11 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
     def repeat_treatment_strategy(self):
         return True
 
+    def get_goal_vectorized(self, x):
+        return {'sbp' : 120, 'dbp' : 65}
+   
     def get_changes_vectorized(self, x):
-        medsNeeded = self.get_meds_needed_for_goal(x.sbpNext, x.dbpNext)
+        medsNeeded = self.get_meds_needed_for_goal(x.sbpNext, x.dbpNext, x.antiHypertensiveCountNext, self.get_goal_vectorized(x))
         x.bpMedsAddedNext = medsNeeded
         x.antiHypertensiveCountNext = x.antiHypertensiveCountNext + medsNeeded
         x.sbpNext = x.sbpNext - medsNeeded * AddBPTreatmentMedsToGoal120.sbpLowering

@@ -25,6 +25,7 @@ class CohortRiskModelRepository(RiskModelRepository):
         )
         self._initialize_linear_probability_risk_model("afib", "afibCohortModel")
         self._initialize_linear_probability_risk_model("statin", "statinCohortModel")
+        self._initialize_linear_risk_model("creatinine", "creatinineCohortModel")
         self._initialize_int_rounded_linear_risk_model(
             "antiHypertensiveCount", "antiHypertensiveCountCohortModel"
         )

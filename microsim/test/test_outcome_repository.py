@@ -39,6 +39,7 @@ class TestOutcomeRepository(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
+            creatinine = 0,
             initializeAfib=initializeAfib,
         )
 
@@ -61,7 +62,8 @@ class TestOutcomeRepository(unittest.TestCase):
             alcohol=AlcoholCategory.NONE,
             antiHypertensiveCount=0,
             statin=0,
-            otherLipidLoweringMedicationCount=0,
+            otherLipidLoweringMedicationCount=0,            
+            creatinine = 0,
             initializeAfib=initializeAfib,
         )
 
@@ -85,6 +87,7 @@ class TestOutcomeRepository(unittest.TestCase):
             antiHypertensiveCount=1,
             statin=0,
             otherLipidLoweringMedicationCount=0,
+            creatinine = 0,
             initializeAfib=initializeAfib,
         )
 
@@ -108,6 +111,7 @@ class TestOutcomeRepository(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
+            creatinine = 0,
             initializeAfib=initializeAfib,
         )
 
@@ -131,6 +135,7 @@ class TestOutcomeRepository(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
+            creatinine = 0,
             initializeAfib=initializeAfib,
         )
 
