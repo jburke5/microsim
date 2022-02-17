@@ -72,6 +72,7 @@ class StorePopulationValidationFixture(TestCase):
             "afib",
             "waist",
             "alcoholPerWeek",
+            "creatinine",
         ]
         treatment_prop_names = ["antiHypertensiveCount", "statin"]
         outcome_prop_names = ["stroke", "mi", "dementia", "gcp"]

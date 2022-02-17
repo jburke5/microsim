@@ -65,6 +65,7 @@ class NHANESPersonRecordFactory:
             "antiHypertensive",
             "statin",
             "otherLipidLowering",
+            "serumCreatinine",
         ]
 
     def from_nhanes_dataset_row(
@@ -90,6 +91,7 @@ class NHANESPersonRecordFactory:
         antiHypertensive,
         statin,
         otherLipidLowering,
+        creatinine,
     ):
         random_effects = self._init_random_effects()
         selfReportAgeKwargs = {}
@@ -121,6 +123,7 @@ class NHANESPersonRecordFactory:
             antiHypertensiveCount=antiHypertensive,
             statin=bool(statin),
             otherLipidLowerMedication=otherLipidLowering,
+            creatinine=creatinine,
             bpMedsAdded=0,
             afib=False,
             qalys=0,

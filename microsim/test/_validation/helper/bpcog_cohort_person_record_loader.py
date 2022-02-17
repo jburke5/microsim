@@ -73,6 +73,7 @@ class BPCOGCohortPersonRecordFactory(NHANESPersonRecordFactory):
         antiHypertensive,
         statin,
         otherLipidLowering,
+        creatinine,
     ):
         prev_randstate = np.random.get_state()
         np.random.set_state(self._randstate)
@@ -99,6 +100,7 @@ class BPCOGCohortPersonRecordFactory(NHANESPersonRecordFactory):
                 antiHypertensive,
                 statin,
                 otherLipidLowering,
+                creatinine,
             )
         finally:
             np.random.set_state(prev_randstate)

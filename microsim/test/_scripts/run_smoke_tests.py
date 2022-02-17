@@ -140,6 +140,7 @@ def person_record_to_person(population_index, person_record):
         antiHypertensiveCount=person_record.antiHypertensiveCount,
         statin=person_record.statin,
         otherLipidLoweringMedicationCount=person_record.otherLipidLowerMedication,
+        creatinine=person_record.creatinine,
         initializeAfib=lambda _: person_record.afib,
         randomEffects={"gcp": person_record.gcpRandomEffect},
         _populationIndex=population_index,
@@ -192,6 +193,7 @@ def init_populations(num_persons, num_years, nhanes_year, seed=None):
         "afib",
         "waist",
         "alcoholPerWeek",
+        "creatinine",
     ]
     treatment_prop_names = ["antiHypertensiveCount", "statin"]
     outcome_prop_names = ["stroke", "mi", "dementia", "gcp"]

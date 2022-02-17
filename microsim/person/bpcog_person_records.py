@@ -49,6 +49,7 @@ class BPCOGPersonDynamicRecordProtocol(Protocol):
     afib: bool
     qalys: float
     gcp: float
+    creatinine: float
 
 
 class BPCOGPersonEventRecordProtocol(Protocol):

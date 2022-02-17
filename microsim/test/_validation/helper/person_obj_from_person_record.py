@@ -22,6 +22,7 @@ def person_obj_from_person_record(population_index, person_record):
         antiHypertensiveCount=person_record.antiHypertensiveCount,
         statin=person_record.statin,
         otherLipidLoweringMedicationCount=person_record.otherLipidLowerMedication,
+        creatinine=person_record.creatinine,
         initializeAfib=lambda _: person_record.afib,
         selfReportStrokeAge=person_record.selfReportStrokeAge,
         selfReportMIAge=person_record.selfReportMIAge,

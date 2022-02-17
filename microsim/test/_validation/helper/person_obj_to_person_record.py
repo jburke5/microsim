@@ -60,6 +60,7 @@ def person_obj_to_person_record(person, at_t):
         antiHypertensiveCount=person._antiHypertensiveCount[at_t],
         statin=person._statin[at_t],
         otherLipidLowerMedication=otherLipidLowerMedication,
+        creatinine=person._creatinine[at_t],
         bpMedsAdded=person._bpMedsAdded[at_t],
         afib=person._afib[at_t],
         qalys=person._qalys[at_t],
