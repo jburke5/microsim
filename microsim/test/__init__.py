@@ -1,7 +1,6 @@
 import os
-
-
-__all__ = []
+import sys
+import unittest
 
 
 def load_tests(loader, standard_tests, pattern):
@@ -11,3 +10,11 @@ def load_tests(loader, standard_tests, pattern):
     package_tests = loader.discover(test_dir, discover_pattern)
     standard_tests.addTests(package_tests)
     return standard_tests
+
+
+def run_all_tests():
+    test_module = sys.modules[__name__]
+    unittest.main(module=test_module)
+
+
+__all__ = [run_all_tests]
