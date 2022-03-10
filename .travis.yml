@@ -1,6 +1,9 @@
 language: python
 python:
   - '3.7'
+os: linux
+dist: xenial
+arch: amd64
 
 install:
   - pip install poetry
