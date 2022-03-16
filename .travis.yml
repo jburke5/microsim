@@ -9,6 +9,8 @@ install:
   - pip install poetry
   - poetry install
 
-script:
+before_script:
   - poetry run ./scripts/lint.py || (echo -n)
+
+script:
   - poetry run ./scripts/test.py
