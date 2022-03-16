@@ -1,8 +1,10 @@
 import unittest
 
 from microsim.population import NHANESDirectSamplePopulation
+from microsim.test.helper import skip_if_quick_mode
 
 
+@skip_if_quick_mode
 class TestOverallPopulationFunction(unittest.TestCase):
     def test_basic_population(self):
         popSize = 100

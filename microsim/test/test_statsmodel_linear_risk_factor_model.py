@@ -8,6 +8,7 @@ from microsim.alcohol_category import AlcoholCategory
 from microsim.test.helper.init_vectorized_population_dataframe import (
     init_vectorized_population_dataframe,
 )
+from microsim.test.helper import skip_if_quick_mode
 
 
 from microsim.person import Person
@@ -22,6 +23,7 @@ def initializeAfib(person):
     return None
 
 
+@skip_if_quick_mode
 class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
     def setUp(self):
         popSize = 100

@@ -5,8 +5,10 @@ import numpy as np
 from microsim.population import NHANESDirectSamplePopulation
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.outcome import Outcome, OutcomeType
+from microsim.test.helper import skip_if_quick_mode
 
 
+@skip_if_quick_mode
 class TestOftenStrokeModelRepository(OutcomeModelRepository):
     def __init__(self, stroke_rate):
         super().__init__()
@@ -41,6 +43,7 @@ class TestOftenStrokeModelRepository(OutcomeModelRepository):
         return False
 
 
+@skip_if_quick_mode
 class TestOftenMIModelRepository(OutcomeModelRepository):
     def __init__(self, mi_rate, fatality_rate=0.0, non_cv_mortality_rate=0.0):
         super().__init__()
@@ -143,6 +146,7 @@ class addABPMedMILargeEffectSize(addABPMedStrokeLargeEffectSize):
         return {OutcomeType.MI: 0.5, OutcomeType.STROKE: 0.92}
 
 
+@skip_if_quick_mode
 class TestTreatmentRecalibration(unittest.TestCase):
     def setUp(self):
         self.popSize = 500

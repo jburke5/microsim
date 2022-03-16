@@ -11,6 +11,7 @@ from microsim.smoking_status import SmokingStatus
 from microsim.test.helper.init_vectorized_population_dataframe import (
     init_vectorized_population_dataframe,
 )
+from microsim.test.helper import skip_if_quick_mode
 import unittest
 import copy
 
@@ -37,6 +38,7 @@ class AlwaysNegativeOutcomeRepository(OutcomeModelRepository):
         return 0
 
 
+@skip_if_quick_mode
 class TestPersonAdvanceOutcomes(unittest.TestCase):
     def setUp(self):
         self.joe = Person(

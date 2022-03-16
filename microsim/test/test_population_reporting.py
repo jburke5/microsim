@@ -1,5 +1,6 @@
 import unittest
 import pandas as pd
+from microsim.test.helper import skip_if_quick_mode
 import numpy as np
 from microsim.population import NHANESAgeStandardPopulation, NHANESDirectSamplePopulation
 
@@ -31,6 +32,7 @@ class AlwaysNonFatalMIOutcomeRepository(OutcomeModelRepository):
         return False
 
 
+@skip_if_quick_mode
 class TestPopulationReporting(unittest.TestCase):
     def setUp(self):
         self.popSize = 10000

@@ -6,12 +6,14 @@ from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.education import Education
 from microsim.alcohol_category import AlcoholCategory
+from microsim.test.helper import skip_if_quick_mode
 
 import unittest
 import pandas as pd
 import numpy as np
 
 
+@skip_if_quick_mode
 class TestPopulation(unittest.TestCase):
     def setUp(self):
         self.test_n = 10000
@@ -36,6 +38,7 @@ def initializeAFib(person):
     return False
 
 
+@skip_if_quick_mode
 class TestPopulationAdvanceOutcomes(unittest.TestCase):
     def setUp(self):
         self.joe = Person(

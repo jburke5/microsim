@@ -9,6 +9,7 @@ from microsim.alcohol_category import AlcoholCategory
 from microsim.test.helper.init_vectorized_population_dataframe import (
     init_vectorized_population_dataframe,
 )
+from microsim.test.helper import skip_if_quick_mode
 
 import unittest
 
@@ -17,6 +18,7 @@ def initializeAfib(person):
     return None
 
 
+@skip_if_quick_mode
 class TestOutcomeRepository(unittest.TestCase):
     def setUp(self):
         self._white_male = Person(
