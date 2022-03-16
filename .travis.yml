@@ -12,5 +12,4 @@ install:
 before_script:
   - poetry run ./scripts/lint.py || (echo -n)
 
-script:
-  - poetry run ./scripts/test.py
+script: ./scripts/travisci-script-phase.bash
