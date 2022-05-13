@@ -61,7 +61,8 @@ class Population:
             "afib",
             "waist",
             "alcoholPerWeek",
-            "creatinine"        ]
+            "creatinine",
+        ]
         # , 'otherLipidLoweringMedicationCount']
         self._treatments = ["antiHypertensiveCount", "statin"]
         self._timeVaryingCovariates = copy.copy(self._riskFactors)
@@ -98,7 +99,7 @@ class Population:
 
             # advance risk factors
             for rf in self._riskFactors:
-                #print(f"### Risk Factor: {rf}")
+                # print(f"### Risk Factor: {rf}")
                 alive[rf + "Next"] = alive.parallel_apply(
                     self._risk_model_repository.get_model(rf).estimate_next_risk_vectorized,
                     axis="columns",
@@ -134,10 +135,15 @@ class Population:
             alive["gcp"] = alive.apply(
                 self._outcome_model_repository.get_gcp_vectorized, axis="columns"
             )
-            newDementia = alive.loc[~alive.dementia].apply(
-                self._outcome_model_repository.get_dementia_vectorized, axis="columns"
-            )
-            alive["dementiaNext"] = newDementia
+            # if the whole popluation has demeentia, nobody new can get dementia...
+            if len(alive.loc[~alive.dementia]) > 0:
+                newDementia = alive.loc[~alive.dementia].apply(
+                    self._outcome_model_repository.get_dementia_vectorized, axis="columns"
+                )
+                alive["dementiaNext"] = newDementia
+            else:
+                alive["dementiaNext"] = np.repeat(False, len(alive))
+
             alive.loc[alive["dementiaNext"] == 1, "ageAtFirstDementia"] = alive.age
             alive["dementia"] = newDementia | alive["dementia"]
 
@@ -191,7 +197,11 @@ class Population:
         }.items():
             if x[outcomeName + "Next"]:
                 fatal = False if outcomeName == "dementia" else x[outcomeName + "Fatal"]
-                person.add_outcome_event(Outcome(outcomeType, fatal))
+                # only one dementia event per person
+                if outcomeName == "dementia" and person._dementia:
+                    break
+                else:
+                    person.add_outcome_event(Outcome(outcomeType, fatal))
 
         person._gcp.append(x.gcp)
         person._qalys.append(x.qalyNext)
@@ -226,7 +236,7 @@ class Population:
 
         df["totalYearsInSim"] = df["totalYearsInSim"] + 1
         df["current_diabetes"] = df["a1c"] > 6.5
-        df["gfr"] = df.apply(GFREquation().get_gfr_for_person_vectorized, axis='columns')
+        df["gfr"] = df.apply(GFREquation().get_gfr_for_person_vectorized, axis="columns")
         df["current_bp_treatment"] = df["antiHypertensiveCount"] >= 1
         df["totalQalys"] = df["totalQalys"] + df["qalyNext"]
         # assign ages for new events

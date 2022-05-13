@@ -57,7 +57,7 @@ class TestDementiaModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0,
+            creatinine=0,
             initializeAfib=TestDementiaModel.initializeAfib,
             initializationRepository=InitializationRepository(),
         )
@@ -86,7 +86,7 @@ class TestDementiaModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0,
+            creatinine=0,
             initializeAfib=TestDementiaModel.initializeAfib,
             initializationRepository=InitializationRepository(),
         )
@@ -114,7 +114,7 @@ class TestDementiaModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0,            
+            creatinine=0,
             initializeAfib=TestDementiaModel.initializeAfib,
             initializationRepository=InitializationRepository(),
         )
@@ -144,7 +144,7 @@ class TestDementiaModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0,            
+            creatinine=0,
             initializeAfib=TestDementiaModel.initializeAfib,
             initializationRepository=InitializationRepository(),
         )
@@ -173,7 +173,7 @@ class TestDementiaModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0,            
+            creatinine=0,
             initializeAfib=TestDementiaModel.initializeAfib,
             initializationRepository=InitializationRepository(),
         )
@@ -181,10 +181,7 @@ class TestDementiaModel(unittest.TestCase):
         self._test_case_three_parametric._gcp.append(self._test_case_two._gcp[0])
 
         self._population_dataframe = init_vectorized_population_dataframe(
-            [
-                self._test_case_one,
-                self._test_case_two,
-            ]
+            [self._test_case_one, self._test_case_two,]
         )
 
     def test_dementia_after_one_year(self):

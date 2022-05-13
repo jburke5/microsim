@@ -69,6 +69,14 @@ class StatsModelLinearRiskFactorModel:
     def get_interactions(self, coeff_name):
         return coeff_name.split(INTERACTION_INDICATOR)
 
+    def get_risk_for_person(self, person, years, vectorized=False):
+        linear_predictor = (
+            self.estimate_next_risk_vectorized(person)
+            if vectorized
+            else self.estimate_next_risk(person)
+        )
+        return linear_predictor
+
     def estimate_next_risk(self, person):
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
         linearPredictor = self.get_intercept()

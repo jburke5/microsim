@@ -100,7 +100,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -124,7 +124,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -148,7 +148,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -172,7 +172,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -196,7 +196,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -220,7 +220,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -244,7 +244,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -268,7 +268,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -292,7 +292,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -316,7 +316,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -340,7 +340,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -364,7 +364,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -388,7 +388,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -412,7 +412,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -436,7 +436,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -460,7 +460,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -484,7 +484,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -508,7 +508,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=1,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -532,7 +532,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=1,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,            
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -556,7 +556,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=1,
-            creatinine = 0.0,
+            creatinine=0.0,
             initializeAfib=initializeAfib,
         )
 
@@ -580,7 +580,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,            
+            creatinine=0.0,
             initializeAfib=initializeAfibAlwaysPositive,
         )
 
@@ -604,7 +604,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,            
+            creatinine=0.0,
             initializeAfib=initializeAfib,
             selfReportStrokeAge=50,
         )
@@ -629,7 +629,7 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.0,            
+            creatinine=0.0,
             initializeAfib=initializeAfib,
             selfReportStrokeAge=50,
         )

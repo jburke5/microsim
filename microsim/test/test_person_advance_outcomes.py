@@ -70,8 +70,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self.joe_with_stroke.add_outcome_event(Outcome(OutcomeType.STROKE, False))
 
         self._population_dataframe = init_vectorized_population_dataframe(
-            [self.joe, self.joe_with_mi, self.joe_with_stroke],
-            with_base_gcp=True,
+            [self.joe, self.joe_with_mi, self.joe_with_stroke], with_base_gcp=True,
         )
 
         self._always_positive_repository = AlwaysPositiveOutcomeRepository()
@@ -97,14 +96,10 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         joe_data = self._population_dataframe.iloc[0]
 
         is_max_prob_mi_fatal = self.cvDeterminer._will_have_fatal_mi(
-            joe_data,
-            vectorized=True,
-            overrideMIProb=1.0,
+            joe_data, vectorized=True, overrideMIProb=1.0,
         )
         is_min_prob_mi_fatal = self.cvDeterminer._will_have_fatal_mi(
-            joe_data,
-            vectorized=True,
-            overrideMIProb=0.0,
+            joe_data, vectorized=True, overrideMIProb=0.0,
         )
 
         self.assertTrue(is_max_prob_mi_fatal)
@@ -117,14 +112,10 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         joe_with_mi_data = self._population_dataframe.iloc[1]  # same as joe_data plus 1 MI
 
         will_have_fatal_first_mi = self.cvDeterminer._will_have_fatal_mi(
-            joe_data,
-            vectorized=True,
-            overrideMIProb=0.0,
+            joe_data, vectorized=True, overrideMIProb=0.0,
         )
         will_have_fatal_second_mi = self.cvDeterminer._will_have_fatal_mi(
-            joe_with_mi_data,
-            vectorized=True,
-            overrideMIProb=0.0,
+            joe_with_mi_data, vectorized=True, overrideMIProb=0.0,
         )
 
         self.assertFalse(will_have_fatal_first_mi)
@@ -139,14 +130,10 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         joe_with_stroke_data = self._population_dataframe.iloc[2]  # same as joe_data plus 1 stroke
 
         will_have_fatal_first_stroke = self.cvDeterminer._will_have_fatal_stroke(
-            joe_data,
-            vectorized=True,
-            overrideStrokeProb=0.0,
+            joe_data, vectorized=True, overrideStrokeProb=0.0,
         )
         will_have_fatal_second_stroke = self.cvDeterminer._will_have_fatal_stroke(
-            joe_with_stroke_data,
-            vectorized=True,
-            overrideStrokeProb=0.0,
+            joe_with_stroke_data, vectorized=True, overrideStrokeProb=0.0,
         )
 
         self.assertFalse(will_have_fatal_first_stroke)
@@ -158,14 +145,10 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         joe_data = self._population_dataframe.iloc[0]
 
         is_max_prob_stroke_fatal = self.cvDeterminer._will_have_fatal_stroke(
-            joe_data,
-            vectorized=True,
-            overrideStrokeProb=1.0,
+            joe_data, vectorized=True, overrideStrokeProb=1.0,
         )
         is_min_prob_stroke_fatal = self.cvDeterminer._will_have_fatal_stroke(
-            joe_data,
-            vectorized=True,
-            overrideStrokeProb=0.0,
+            joe_data, vectorized=True, overrideStrokeProb=0.0,
         )
 
         self.assertTrue(is_max_prob_stroke_fatal)
@@ -175,16 +158,10 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         joe_data = self._population_dataframe.iloc[0]
 
         has_mi_max_manual_prob = self.cvDeterminer._will_have_mi(
-            joe_data,
-            outcome_model_repository=None,
-            vectorized=False,
-            manualMIProb=1.0,
+            joe_data, outcome_model_repository=None, vectorized=False, manualMIProb=1.0,
         )
         has_mi_min_manual_prob = self.cvDeterminer._will_have_mi(
-            joe_data,
-            outcome_model_repository=None,
-            vectorized=False,
-            manualMIProb=0.0,
+            joe_data, outcome_model_repository=None, vectorized=False, manualMIProb=0.0,
         )
 
         self.assertTrue(has_mi_max_manual_prob)

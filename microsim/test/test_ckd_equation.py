@@ -10,7 +10,7 @@ from microsim.race_ethnicity import NHANESRaceEthnicity
 
 
 class TestCKDEquation(unittest.TestCase):
-    def setUp(self):        
+    def setUp(self):
         self._black_female_high_cr = Person(
             age=52,
             gender=NHANESGender.FEMALE,
@@ -31,7 +31,7 @@ class TestCKDEquation(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.8,
+            creatinine=0.8,
             initializeAfib=TestCKDEquation.initializeAfib,
         )
 
@@ -55,7 +55,7 @@ class TestCKDEquation(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.4,
+            creatinine=0.4,
             initializeAfib=TestCKDEquation.initializeAfib,
         )
 
@@ -79,10 +79,10 @@ class TestCKDEquation(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 1.2,
+            creatinine=1.2,
             initializeAfib=TestCKDEquation.initializeAfib,
         )
-   
+
         self._white_male_low_cr = Person(
             age=52,
             gender=NHANESGender.MALE,
@@ -103,26 +103,42 @@ class TestCKDEquation(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0.1,
+            creatinine=0.1,
             initializeAfib=TestCKDEquation.initializeAfib,
         )
 
     def initializeAfib(person):
         return None
 
-    
     def testGFRs(self):
-        blackFemaleHighCr = 166 * (self._black_female_high_cr._creatinine[0]/0.7)**-1.209 * 0.993**self._black_female_high_cr._age[-1]
+        blackFemaleHighCr = (
+            166
+            * (self._black_female_high_cr._creatinine[0] / 0.7) ** -1.209
+            * 0.993 ** self._black_female_high_cr._age[-1]
+        )
         self.assertAlmostEqual(blackFemaleHighCr, self._black_female_high_cr._gfr)
 
-        blackFemaleLowCr = 166 * (self._black_female_low_cr._creatinine[0]/0.7)**-.329 * 0.993**self._black_female_low_cr._age[-1]
+        blackFemaleLowCr = (
+            166
+            * (self._black_female_low_cr._creatinine[0] / 0.7) ** -0.329
+            * 0.993 ** self._black_female_low_cr._age[-1]
+        )
         self.assertAlmostEqual(blackFemaleLowCr, self._black_female_low_cr._gfr)
 
-        whiteMaleHighCr = 141 * (self._white_male_high_cr._creatinine[0]/0.9)**-1.209 * 0.993**self._white_male_high_cr._age[-1]
+        whiteMaleHighCr = (
+            141
+            * (self._white_male_high_cr._creatinine[0] / 0.9) ** -1.209
+            * 0.993 ** self._white_male_high_cr._age[-1]
+        )
         self.assertAlmostEqual(whiteMaleHighCr, self._white_male_high_cr._gfr)
 
-        whiteMaleLowCr = 141 * (self._white_male_low_cr._creatinine[0]/0.9)**-.411 * 0.993**self._white_male_low_cr._age[-1]
+        whiteMaleLowCr = (
+            141
+            * (self._white_male_low_cr._creatinine[0] / 0.9) ** -0.411
+            * 0.993 ** self._white_male_low_cr._age[-1]
+        )
         self.assertAlmostEqual(whiteMaleLowCr, self._white_male_low_cr._gfr)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -17,19 +17,11 @@ class TestCoxModel(VectorizedTestFixture):
         p1_data = self.population_dataframe.iloc[0]
 
         actual_current_risk = self.model.linear_predictor_vectorized(p1_data)
-        actual_cumulative_risk = self.model.get_risk_for_person(
-            p1_data,
-            years=1,
-            vectorized=True,
-        )
+        actual_cumulative_risk = self.model.get_risk_for_person(p1_data, years=1, vectorized=True,)
 
         self.assertAlmostEqual(
-            first=5.440096345569454,
-            second=actual_current_risk,
-            places=1,
+            first=5.440096345569454, second=actual_current_risk, places=1,
         )
         self.assertAlmostEqual(
-            first=0.026299703075722214,
-            second=actual_cumulative_risk,
-            places=1,
+            first=0.026299703075722214, second=actual_cumulative_risk, places=1,
         )

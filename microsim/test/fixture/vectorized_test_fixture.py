@@ -42,7 +42,7 @@ class VectorizedTestFixture(unittest.TestCase):
                 antiHypertensiveCount=0,
                 statin=0,
                 otherLipidLoweringMedicationCount=0,
-                creatinine = 0.6,
+                creatinine=0.6,
                 initializeAfib=(lambda _: None),
                 randomEffects={"gcp": 0},
             )

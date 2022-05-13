@@ -16,4 +16,4 @@ class NHANESRaceEthnicity(IntEnum):
 
     @property
     def _black(self):
-        return self==NON_HISPANIC_BLACK
+        return self == NON_HISPANIC_BLACK

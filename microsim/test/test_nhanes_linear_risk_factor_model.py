@@ -32,7 +32,7 @@ class TestNHANESLinearRiskFactorModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0,
+            creatinine=0,
             initializeAfib=initializeAfib,
         )
 
@@ -64,7 +64,7 @@ class TestNHANESLinearRiskFactorModel(unittest.TestCase):
             antiHypertensiveCount=0,
             statin=0,
             otherLipidLoweringMedicationCount=0,
-            creatinine = 0,
+            creatinine=0,
             initializeAfib=initializeAfib,
         )
         highBPPerson.advance_risk_factors(self._risk_model_repository)

@@ -184,14 +184,13 @@ class Person:
     def _current_diabetes(self):
         return self.has_diabetes()
 
-  
     @property
     def _gfr(self):
         return GFREquation().get_gfr_for_person(self)
-    
+
     @property
     def _current_ckd(self):
-        return self._gfr < 60 
+        return self._gfr < 60
 
     # generlized logistic function mapping GCP to MMSE in combined cohrot data
     def get_current_mmse(self):

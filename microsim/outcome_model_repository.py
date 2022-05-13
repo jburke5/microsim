@@ -12,6 +12,7 @@ from microsim.regression_model import RegressionModel
 from microsim.gcp_model import GCPModel
 from microsim.outcome import Outcome, OutcomeType
 from microsim.dementia_model import DementiaModel
+from microsim.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFactorModel
 from microsim.smoking_status import SmokingStatus
 
 import numpy.random as npRand
@@ -115,9 +116,15 @@ class OutcomeModelRepository:
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
 
         # This represents non-cardiovascular mortality..
-        self._models[OutcomeModelType.NON_CV_MORTALITY] = self.initialize_cox_model(
-            "nhanesMortalityModel"
+        nonCVModelSpec = load_model_spec("nhanesMortalityModelLogit")
+        mortModel = StatsModelLogisticRiskFactorModel(RegressionModel(**nonCVModelSpec), False)
+        # Recalibrate mortalitly model to align with life table data, as explored in notebook
+        # buildNHANESMortalityModel
+        mortModel.non_intercept_params["age"] = mortModel.non_intercept_params["age"] * -1
+        mortModel.non_intercept_params["squareAge"] = (
+            mortModel.non_intercept_params["squareAge"] * 3.5
         )
+        self._models[OutcomeModelType.NON_CV_MORTALITY] = mortModel
 
     def get_random_effects(self):
         return {"gcp": npRand.normal(0, 4.84)}
