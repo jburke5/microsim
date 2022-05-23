@@ -12,7 +12,7 @@ def init_vectorized_population_dataframe(person_list: List[Person], *, with_base
         gcp_model = GCPModel()
         for p in person_list:
             if len(p._gcp) == 0:
-                base_gcp = gcp_model.calc_linear_predictor(p)
+                base_gcp = gcp_model.get_risk_for_person(p)
                 p._gcp.append(base_gcp)
     people = pd.Series(person_list)
     population = Population(people)

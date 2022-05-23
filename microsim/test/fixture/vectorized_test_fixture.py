@@ -46,7 +46,7 @@ class VectorizedTestFixture(unittest.TestCase):
                 initializeAfib=(lambda _: None),
                 randomEffects={"gcp": 0},
             )
-            base_gcp = GCPModel().calc_linear_predictor(test_person)
+            base_gcp = GCPModel().get_risk_for_person(test_person)
             test_person._gcp.append([base_gcp])
 
             VectorizedTestFixture._population_dataframe = init_vectorized_population_dataframe(

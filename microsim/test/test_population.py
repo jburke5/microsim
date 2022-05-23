@@ -68,7 +68,7 @@ class TestPopulationAdvanceOutcomes(unittest.TestCase):
 
     def test_dont_advance_dead_people_in_population(self):
         # add GCP to advance successfully
-        joe_base_gcp = GCPModel().calc_linear_predictor(self.joe)
+        joe_base_gcp = GCPModel().get_risk_for_person(self.joe)
         self.joe._gcp.append(joe_base_gcp)
         # use ClonePopulation: sets up repositories, populationIndex, and 2+ people to workaround
         self.dummy_population = ClonePopulation(self.joe, 2)

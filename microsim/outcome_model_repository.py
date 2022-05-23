@@ -122,7 +122,7 @@ class OutcomeModelRepository:
         # buildNHANESMortalityModel
         mortModel.non_intercept_params["age"] = mortModel.non_intercept_params["age"] * -1
         mortModel.non_intercept_params["squareAge"] = (
-            mortModel.non_intercept_params["squareAge"] * 3.5
+            mortModel.non_intercept_params["squareAge"] * 4
         )
         self._models[OutcomeModelType.NON_CV_MORTALITY] = mortModel
 
@@ -150,6 +150,7 @@ class OutcomeModelRepository:
         )
         return gcp if gcp > 0 else 0
 
+    # should the GCP random effct be included here or in the risk model?
     def get_gcp_vectorized(self, person):
         gcp = (
             self.get_risk_for_person(

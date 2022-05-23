@@ -10,6 +10,7 @@ from microsim.education import Education
 from microsim.smoking_status import SmokingStatus
 from microsim.outcome import Outcome, OutcomeType
 from microsim.alcohol_category import AlcoholCategory
+from microsim.gcp_model import GCPModel
 
 
 def initializeAfib(arg):
@@ -33,6 +34,12 @@ class AlwaysFatalStrokeOutcomeRepository(OutcomeModelRepository):
     def get_random_effects(self):
         return {}
 
+    def get_gcp(self, person):
+        return GCPModel().get_risk_for_person(person, test=True)
+
+    def get_gcp_vectorized(self, person):
+        return GCPModel().get_risk_for_person(person, vectorized=True, test=True)
+
 
 class AlwaysNonCVDeathRepository(OutcomeModelRepository):
     def __init__(self):
@@ -46,6 +53,12 @@ class AlwaysNonCVDeathRepository(OutcomeModelRepository):
 
     def get_random_effects(self):
         return {}
+
+    def get_gcp(self, person):
+        return GCPModel().get_risk_for_person(person, test=True)
+
+    def get_gcp_vectorized(self, person):
+        return GCPModel().get_risk_for_person(person, vectorized=True, test=True)
 
 
 class AlwaysNonFatalStrokeOutcomeRepository(OutcomeModelRepository):
@@ -61,6 +74,12 @@ class AlwaysNonFatalStrokeOutcomeRepository(OutcomeModelRepository):
     def get_random_effects(self):
         return {}
 
+    def get_gcp(self, person):
+        return GCPModel().get_risk_for_person(person, test=True)
+
+    def get_gcp_vectorized(self, person):
+        return GCPModel().get_risk_for_person(person, vectorized=True, test=True)
+
 
 class NothingHappensRepository(OutcomeModelRepository):
     def __init__(self):
@@ -74,6 +93,12 @@ class NothingHappensRepository(OutcomeModelRepository):
 
     def get_random_effects(self):
         return {}
+
+    def get_gcp(self, person):
+        return GCPModel().get_risk_for_person(person, test=True)
+
+    def get_gcp_vectorized(self, person):
+        return GCPModel().get_risk_for_person(person, vectorized=True, test=True)
 
 
 class TestResetPersonAndRollBackEvents(unittest.TestCase):
