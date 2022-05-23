@@ -789,18 +789,18 @@ class Population:
     def get_people_current_state_as_dataframe(self, parallel=True):
         if parallel:
             pandarallel.initialize(verbose=1)
-            return pd.DataFrame.from_dict(
-                self._people.parallel_apply(
+            return pd.DataFrame(
+                list(self._people.parallel_apply(
                     self.get_person_attributes_from_person,
                     timeVaryingCovariates=self._timeVaryingCovariates,
-                ).array
+                ))
             )
         else:
-            return pd.DataFrame.from_dict(
-                self._people.apply(
+            return pd.DataFrame(
+                list(self._people.apply(
                     self.get_person_attributes_from_person,
                     timeVaryingCovariates=self._timeVaryingCovariates,
-                ).array
+                ))
             )
 
     def get_people_current_state_and_summary_as_dataframe(self):
