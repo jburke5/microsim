@@ -1,6 +1,6 @@
 language: python
 python:
-  - '3.7'
+  - '3.9'
 os: linux
 dist: xenial
 arch: amd64
