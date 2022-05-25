@@ -12,9 +12,25 @@ class GCPModel:
 
     # TODO — what do we need to do with the random intercept? shouls we take a draw per person and assign it?
     # if we don't do that there is going to be mroe change in cognitive trajectory per person that we'd expect...
-    def calc_linear_predictor_for_patient_characteristics(self, yearsInSim, raceEthnicity, gender, baseAge,
-        education, alcohol, smokingStatus, bmi, waist, totChol, meanSBP, anyAntiHpertensive, fastingGlucose,
-        physicalActivity, afib, test=False):
+    def calc_linear_predictor_for_patient_characteristics(
+        self,
+        yearsInSim,
+        raceEthnicity,
+        gender,
+        baseAge,
+        education,
+        alcohol,
+        smokingStatus,
+        bmi,
+        waist,
+        totChol,
+        meanSBP,
+        anyAntiHpertensive,
+        fastingGlucose,
+        physicalActivity,
+        afib,
+        test=False,
+    ):
         xb = 55.6090
         xb += yearsInSim * -0.2031
         if raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
@@ -59,32 +75,48 @@ class GCPModel:
             xb += -1.6579
         return xb
 
-
     def get_risk_for_person(self, person, years=1, vectorized=False, test=False):
         random_effect = 0
         if not vectorized:
             random_effect = person._randomEffects["gcp"] if "gcp" in person._randomEffects else 0
         residual = 0 if test else np.random.normal(0.38, 6.99)
-        
+
         linPred = 0
         if vectorized:
-            linPred = self.calc_linear_predictor_for_patient_characteristics(yearsInSim=person.totalYearsInSim,
-                raceEthnicity=person.raceEthnicity, gender=person.gender, baseAge=person.baseAge,
-                education=person.education, alcohol=person.alcoholPerWeek, 
-                smokingStatus=person.smokingStatus, bmi=person.bmi, waist=person.waist,
-                totChol=person.totChol, meanSBP=person.meanSbp, 
+            linPred = self.calc_linear_predictor_for_patient_characteristics(
+                yearsInSim=person.totalYearsInSim,
+                raceEthnicity=person.raceEthnicity,
+                gender=person.gender,
+                baseAge=person.baseAge,
+                education=person.education,
+                alcohol=person.alcoholPerWeek,
+                smokingStatus=person.smokingStatus,
+                bmi=person.bmi,
+                waist=person.waist,
+                totChol=person.totChol,
+                meanSBP=person.meanSbp,
                 anyAntiHpertensive=(person.antiHypertensiveCount > 0),
-                fastingGlucose=Person.convert_a1c_to_fasting_glucose(person.a1c), physicalActivity=person.anyPhysicalActivity,
-                afib=person.afib)
+                fastingGlucose=Person.convert_a1c_to_fasting_glucose(person.a1c),
+                physicalActivity=person.anyPhysicalActivity,
+                afib=person.afib,
+            )
         else:
-            linPred = self.calc_linear_predictor_for_patient_characteristics(yearsInSim=person.years_in_simulation(),
-                raceEthnicity=person._raceEthnicity, gender=person._gender, baseAge=person._age[0],
-                education=person._education, alcohol=person._alcoholPerWeek[-1], 
-                smokingStatus=person._smokingStatus, bmi=person._bmi[-1], waist=person._waist[-1],
-                totChol=person._totChol[-1], meanSBP=np.array(person._sbp).mean(), 
+            linPred = self.calc_linear_predictor_for_patient_characteristics(
+                yearsInSim=person.years_in_simulation(),
+                raceEthnicity=person._raceEthnicity,
+                gender=person._gender,
+                baseAge=person._age[0],
+                education=person._education,
+                alcohol=person._alcoholPerWeek[-1],
+                smokingStatus=person._smokingStatus,
+                bmi=person._bmi[-1],
+                waist=person._waist[-1],
+                totChol=person._totChol[-1],
+                meanSBP=np.array(person._sbp).mean(),
                 anyAntiHpertensive=(person._antiHypertensiveCount[-1] > 0),
-                fastingGlucose=person.get_fasting_glucose(not test), physicalActivity=person._anyPhysicalActivity[-1],
-                afib=person._afib[-1])
+                fastingGlucose=person.get_fasting_glucose(not test),
+                physicalActivity=person._anyPhysicalActivity[-1],
+                afib=person._afib[-1],
+            )
 
-        
         return linPred + random_effect + residual

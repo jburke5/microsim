@@ -140,7 +140,12 @@ class TestOutcomeRepository(unittest.TestCase):
         )
 
         self._population_dataframe = init_vectorized_population_dataframe(
-            [self._black_female, self._black_male, self._black_treated_male,], with_base_gcp=True,
+            [
+                self._black_female,
+                self._black_male,
+                self._black_treated_male,
+            ],
+            with_base_gcp=True,
         )
         self._outcome_model_repository = OutcomeModelRepository()
 
@@ -174,7 +179,8 @@ class TestOutcomeRepository(unittest.TestCase):
     def test_calculate_actual_ten_year_risk_for_person(self):
         p1_data = self._population_dataframe.iloc[0]  # same data as `self._black_female`
         p1_model = self._outcome_model_repository.select_model_for_person(
-            PersonRowWrapper(p1_data), OutcomeModelType.CARDIOVASCULAR,
+            PersonRowWrapper(p1_data),
+            OutcomeModelType.CARDIOVASCULAR,
         )
         p1_ten_year_risk = p1_model.transform_to_ten_year_risk(
             p1_model.get_one_year_linear_predictor(p1_data, vectorized=True)
@@ -186,7 +192,8 @@ class TestOutcomeRepository(unittest.TestCase):
         # the race interaction term
         p2_data = self._population_dataframe.iloc[1]  # same data as `self._black_male`
         p2_model = self._outcome_model_repository.select_model_for_person(
-            PersonRowWrapper(p2_data), OutcomeModelType.CARDIOVASCULAR,
+            PersonRowWrapper(p2_data),
+            OutcomeModelType.CARDIOVASCULAR,
         )
         p2_ten_year_risk = p2_model.transform_to_ten_year_risk(
             p2_model.get_one_year_linear_predictor(p2_data, vectorized=True)
@@ -196,13 +203,19 @@ class TestOutcomeRepository(unittest.TestCase):
     def test_approximate_one_year_risk_for_person(self):
         p1_data = self._population_dataframe.iloc[0]  # same data as `self._black_female`
         p1_one_year_risk = self._outcome_model_repository.get_risk_for_person(
-            p1_data, OutcomeModelType.CARDIOVASCULAR, years=1, vectorized=True,
+            p1_data,
+            OutcomeModelType.CARDIOVASCULAR,
+            years=1,
+            vectorized=True,
         )
         self.assertAlmostEqual(0.017654 / 10, p1_one_year_risk, delta=0.03)
 
         p2_data = self._population_dataframe.iloc[1]  # same data as `self._black_male`
         p2_one_year_risk = self._outcome_model_repository.get_risk_for_person(
-            p2_data, OutcomeModelType.CARDIOVASCULAR, years=1, vectorized=True,
+            p2_data,
+            OutcomeModelType.CARDIOVASCULAR,
+            years=1,
+            vectorized=True,
         )
         self.assertAlmostEqual(0.03476 / 10, p2_one_year_risk, delta=0.03)
 
@@ -211,7 +224,8 @@ class TestOutcomeRepository(unittest.TestCase):
         p3_data = self._population_dataframe.iloc[2]  # same data as `self._treated_black_male`
 
         model = self._outcome_model_repository.select_model_for_person(
-            PersonRowWrapper(p3_data), OutcomeModelType.CARDIOVASCULAR,
+            PersonRowWrapper(p3_data),
+            OutcomeModelType.CARDIOVASCULAR,
         )
         actual_ten_year_risk = model.transform_to_ten_year_risk(
             model.get_one_year_linear_predictor(self._black_treated_male)
@@ -223,7 +237,10 @@ class TestOutcomeRepository(unittest.TestCase):
         p3_data = self._population_dataframe.iloc[2]  # same data as `self._treated_black_male`
 
         actual_one_year_risk = self._outcome_model_repository.get_risk_for_person(
-            p3_data, OutcomeModelType.CARDIOVASCULAR, years=1, vectorized=True,
+            p3_data,
+            OutcomeModelType.CARDIOVASCULAR,
+            years=1,
+            vectorized=True,
         )
 
         self.assertAlmostEqual(0.069810753 / 10, actual_one_year_risk, delta=0.03)

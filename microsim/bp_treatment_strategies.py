@@ -88,7 +88,7 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
 
     def get_treatment_recalibration_for_person(self, person):
         medsForGoal = self.get_meds_needed_for_goal(person.sbp[-1], person.dbp[-1])
-        return {OutcomeType.STROKE: 0.79 ** medsForGoal, OutcomeType.MI: 0.87 ** medsForGoal}
+        return {OutcomeType.STROKE: 0.79**medsForGoal, OutcomeType.MI: 0.87**medsForGoal}
 
     def repeat_treatment_strategy(self):
         return True
