@@ -12,7 +12,7 @@
 The MICROSIM project is built on many other software packages that serve the following roles:
 
 * **Development environment with statistical tools**: We use the [Python programming language](https://www.python.org/) with the [statsmodels module](https://www.statsmodels.org/stable/index.html) to run the statistical modeling and analysis. *This environment is what actually runs the code*, roughly analogous to Stata/SPSS. The term "environment" is used because it contains many tools that work together to make it possible. Below are the main players and their roles:
-  * Python 3.7 - a general purpose programming language that has a large software ecosystem
+  * Python 3.9 - a general purpose programming language that has a large software ecosystem
   * statsmodels - statistical modeling, testing, and data exploration
   * numpy, scipy, pandas - basic packages for numerical analysis, scientific functions, and data frames
   * [Poetry](https://python-poetry.org/) - tool to install Python packages such as those listed above
@@ -38,11 +38,11 @@ Installing all of the above can be daunting, but the steps below should give a s
     exec $SHELL
     ```
 
-1. Install Python 3.7 with pyenv. On macOS and Linux, running the following command will install 3.7.7, the latest release of Python 3.7:
+1. Install Python 3.9 with pyenv. On macOS and Linux, running the following command will install 3.9.13, the latest release of Python 3.9 at time of writing:
 
     ```
-    pyenv install 3.7.7
-    pyenv global 3.7.7
+    pyenv install 3.9.13
+    pyenv global 3.9.13
     ```
 
 1. Install [pipx](https://github.com/pipxproject/pipx), a tool to manage command line Python tools
