@@ -103,7 +103,7 @@ class SquareTransform(AbstractBaseTransform):
     """Returns the square (one or many) of the given value."""
 
     def apply(self, value):
-        return value ** 2
+        return value**2
 
 
 class FirstElementTransform(AbstractBaseTransform):
