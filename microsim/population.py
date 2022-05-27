@@ -239,17 +239,19 @@ class Population:
     def move_people_df_forward(self, df):
         factorsToChange = copy.copy(self._riskFactors)
         factorsToChange.extend(self._treatments)
-
+        
+        newVariables = {}
+        
         for rf in factorsToChange:
             # the curent value is stored in the variable name
             df[rf] = df[rf + "Next"]
-            df[rf + str(self._currentWave)] = df[rf + "Next"]
+            newVariables[rf + str(self._currentWave)] = df[rf + "Next"]
             df["mean" + rf.capitalize()] = (
                 df["mean" + rf.capitalize()] * (df["totalYearsInSim"] + 1) + df[rf + "Next"]
             ) / (df["totalYearsInSim"] + 2)
         for outcome in ["mi", "stroke"]:
             df[outcome + "InSim"] = df[outcome + "InSim"] | df[outcome + "Next"]
-            df[outcome + str(self._currentWave)] = df[outcome + "Next"]
+            newVariables[outcome + str(self._currentWave)] = df[outcome + "Next"]
         df["dead"] = df["dead"] | df["deadNext"]
         df["dead" + str(self._currentWave)] = df["deadNext"]
 
@@ -259,12 +261,14 @@ class Population:
         df["gfr"] = df.apply(GFREquation().get_gfr_for_person_vectorized, axis="columns")
         df["current_bp_treatment"] = df["antiHypertensiveCount"] >= 1
         df["totalQalys"] = df["totalQalys"] + df["qalyNext"]
+        
         # assign ages for new events
         # df.loc[(df.ageAtFirstStroke.isnull()) & (df.strokeNext), 'ageAtFirstStroke'] = df.age
         # df.loc[(df.ageAtFirstMI.isnull()) & (df.miNext), 'ageAtFirstMI'] = df.age
         # df.loc[(df.ageAtFirstDementia.isnull()) & (df.dementiaNext), 'ageAtFirstDementia'] = df.age
 
-        return df
+        return pd.concat([df.reset_index(drop=True), pd.DataFrame(newVariables).reset_index(drop=True)], axis='columns', ignore_index=False)
+
 
     def set_bp_treatment_strategy(self, bpTreatmentStrategy):
         self._bpTreatmentStrategy = bpTreatmentStrategy
