@@ -45,9 +45,10 @@ class TestPopulationReporting(unittest.TestCase):
         ).sum()
 
     def testAllCasesHaveEvent(self):
+        self.pop1 = NHANESAgeStandardPopulation(self.popSize, 1999)
         self.pop1._outcome_model_repository = AlwaysNonFatalMIOutcomeRepository()
 
-        self.pop1.advance_vectorized(1)
+        df, alive = self.pop1.advance_vectorized(1)
         self.assertEqual(self.popSize, self.get_event_count(self.pop1, OutcomeType.MI, 1))
 
         # events per 100000 = 100000

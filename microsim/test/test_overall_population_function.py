@@ -1,11 +1,11 @@
 import unittest
-
+import pdb
 from microsim.population import NHANESDirectSamplePopulation
 
 
 class TestOverallPopulationFunction(unittest.TestCase):
     def test_basic_population(self):
-        popSize = 100
+        popSize = 1
         numYears = 3
         pop = NHANESDirectSamplePopulation(popSize, 1999)
         for i in range(1, numYears):

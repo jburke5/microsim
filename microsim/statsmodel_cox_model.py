@@ -40,4 +40,4 @@ class StatsModelCoxModel(StatsModelLinearRiskFactorModel):
             else self.linear_predictor(person)
         )
         yearsInSim = person.totalYearsInSim if vectorized else len(person._age)
-        return self.get_cumulative_hazard_for_years_in_sim(yearsInSim) * np.exp(linear_predictor)
+        return self.get_cumulative_hazard_for_years_in_sim(yearsInSim) * np.exp(float(linear_predictor))

@@ -97,10 +97,12 @@ class Population:
                 break
             self._currentWave += 1
 
+            riskFactorsAndTreatment = {}
             # advance risk factors
+            #import pdb; pdb.set_trace()
             for rf in self._riskFactors:
                 # print(f"### Risk Factor: {rf}")
-                alive[rf + "Next"] = alive.parallel_apply(
+                riskFactorsAndTreatment[rf + "Next"] = alive.parallel_apply(
                     self._risk_model_repository.get_model(rf).estimate_next_risk_vectorized,
                     axis="columns",
                 )
@@ -108,34 +110,46 @@ class Population:
             # advance treatment
             for treatment in self._treatments:
                 # print(f"### Treatment: {treatment}")
-                alive[treatment + "Next"] = alive.apply(
+                riskFactorsAndTreatment[treatment + "Next"] = alive.apply(
                     self._risk_model_repository.get_model(treatment).estimate_next_risk_vectorized,
                     axis="columns",
                 )
 
             # apply treatment modifications
-            alive["bpMedsAddedNext"] = 0
+            alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(riskFactorsAndTreatment).reset_index(drop=True)], axis='columns', ignore_index=False)
+            
+            alive = pd.concat([alive.reset_index(drop=True), pd.Series(np.zeros(len(alive)), name='bpMedsAddedNext')], axis='columns', ignore_index=False)
             if self._bpTreatmentStrategy is not None:
                 alive = alive.apply(
                     self._bpTreatmentStrategy.get_changes_vectorized, axis="columns"
                 )
-
             # advance outcomes
-            # first, setup outcome variables
-            for outcome in ["stroke", "mi", "dementia", "dead", "gcp"]:
-                alive[outcome + "Next"] = 0
-            alive["strokeFatal"] = 0
-            alive["miFatal"] = 0
-
             # first determine if there is a cv event
+            # add these variables here to speed up performance...better than adding one at a time
+            # in the advance method...
+            outcomeVars = {}
+            # first, setup outcome variables
+            for outcome in ["stroke", "mi", "dementia", "dead", "cvDeath", 'nonCVDeath']:
+                outcomeVars[outcome + "Next"] = [False] * len(alive)
+            outcomeVars["strokeFatal"] = [False] * len(alive)
+            outcomeVars["miFatal"] =[False] * len(alive)
+            #outcomeVars["qalyNext"] =np.zeros(len(alive))
+            #outcomeVars["ageAtFirstDementia"] = [np.nan] * len(df)
+            alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(outcomeVars) ], axis='columns')
             alive = alive.apply(
                 self._outcome_model_repository.assign_cv_outcome_vectorized, axis="columns"
             )
 
-            alive["gcp"] = alive.apply(
+            gcp = {}
+            gcp["gcpNext"] = alive.apply(
                 self._outcome_model_repository.get_gcp_vectorized, axis="columns"
             )
-            # if the whole popluation has demeentia, nobody new can get dementia...
+            gcp["gcpSlope"] = gcp['gcpNext'] - alive['gcp']
+            alive.drop(columns=['gcpSlope'], inplace=True)
+            alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(gcp)], axis='columns')
+
+            # if the whole popluation has demeentia, nobody new can get dementia...            
+            alive.dementia = alive.dementia.astype('bool_')
             if len(alive.loc[~alive.dementia]) > 0:
                 newDementia = alive.loc[~alive.dementia].apply(
                     self._outcome_model_repository.get_dementia_vectorized, axis="columns"
@@ -148,6 +162,7 @@ class Population:
             alive["dementia"] = newDementia | alive["dementia"]
 
             numberAliveBeforeRecal = len(alive)
+
             alive = self.apply_recalibration_standards(alive)
             if len(alive) != numberAliveBeforeRecal:
                 raise Exception(
@@ -159,9 +174,11 @@ class Population:
             )
             alive["deadNext"] = alive["nonCVDeathNext"] | alive["cvDeathNext"]
 
-            alive["qalyNext"] = alive.apply(
+            qaly = {}
+            qaly["qalyNext"] = alive.apply(
                 QALYAssignmentStrategy().get_qalys_vectorized, axis="columns"
             )
+            alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(qaly)], axis='columns')
 
             alive.loc[~alive.dead, "age"] = alive.age + 1
             self._totalWavesAdvanced += 1
@@ -172,6 +189,8 @@ class Population:
             alive.apply(self.push_updates_back_to_people, axis="columns")
             nextCols = [col for col in alive.columns if "Next" in col]
             alive.drop(columns=nextCols, inplace=True)
+            fatalCols = [col for col in alive.columns if "Fatal" in col]
+            alive.drop(columns=fatalCols, inplace=True)
         return alive, df
 
     def push_updates_back_to_people(self, x):
@@ -236,6 +255,7 @@ class Population:
 
         df["totalYearsInSim"] = df["totalYearsInSim"] + 1
         df["current_diabetes"] = df["a1c"] > 6.5
+        df['gcp'] = df['gcpNext']
         df["gfr"] = df.apply(GFREquation().get_gfr_for_person_vectorized, axis="columns")
         df["current_bp_treatment"] = df["antiHypertensiveCount"] >= 1
         df["totalQalys"] = df["totalQalys"] + df["qalyNext"]
@@ -806,12 +826,13 @@ class Population:
     def get_people_current_state_and_summary_as_dataframe(self):
         df = self.get_people_current_state_as_dataframe()
         # iterate through variables that vary over time
+        tvcMeans = {}
         for var in self._timeVaryingCovariates:
-            df["mean" + var.capitalize()] = [
+            tvcMeans["mean" + var.capitalize()] = [
                 pd.Series(getattr(person, "_" + var)).mean()
                 for i, person in self._people.iteritems()
-            ]
-        return df
+            ]        
+        return pd.concat([df, pd.DataFrame(tvcMeans)], axis=1)
 
     def get_people_initial_state_as_dataframe(self):
         return pd.DataFrame(
