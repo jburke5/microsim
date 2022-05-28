@@ -253,7 +253,7 @@ class Population:
             df[outcome + "InSim"] = df[outcome + "InSim"] | df[outcome + "Next"]
             newVariables[outcome + str(self._currentWave)] = df[outcome + "Next"]
         df["dead"] = df["dead"] | df["deadNext"]
-        df["dead" + str(self._currentWave)] = df["deadNext"]
+        newVariables["dead" + str(self._currentWave)] = df["deadNext"]
 
         df["totalYearsInSim"] = df["totalYearsInSim"] + 1
         df["current_diabetes"] = df["a1c"] > 6.5
