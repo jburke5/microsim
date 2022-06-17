@@ -1020,9 +1020,35 @@ class ClonePopulation(Population):
         self._risk_model_repository = CohortRiskModelRepository()
         self.n = n
 
-        people = pd.Series([copy.deepcopy(person) for i in range(0, n)])
+        # trying to make sure that cloned peopel are setup the same way as people are
+        # when sampled from NHANES
+        clonePerson = build_person(pd.Series({'age' : person._age[0],
+                                            'gender': int(person._gender),
+                                            'raceEthnicity':int(person._raceEthnicity),
+                                            'meanSBP' :person._sbp[0],
+                                            'meanDBP' :person._dbp[0],
+                                            'a1c':person._a1c[0],
+                                            'hdl':person._hdl[0],
+                                            'ldl':person._ldl[0],
+                                            'trig':person._trig[0],
+                                            'tot_chol':person._totChol[0],
+                                            'bmi':person._bmi[0],
+                                            'waist':person._waist[0],
+                                            'anyPhysicalActivity':person._anyPhysicalActivity[0],
+                                            'smokingStatus': int(person._smokingStatus),
+                                            'alcoholPerWeek': person._alcoholPerWeek[0],
+                                            'education' : int(person._education),
+                                            'antiHypertensive': person._antiHypertensiveCount[0],
+                                            'statin': person._statin[0],
+                                            'otherLipidLowering' : person._otherLipidLoweringMedicationCount[0],
+                                            'serumCreatinine' : person._creatinine[0],
+                                            'selfReportStrokeAge' : -1, 
+                                            'selfReportMIAge' : -1,
+                                            'diedBy2015' : 0}), self._outcome_model_repository)
 
-        pandarallel.initialize(verbose=1)
+        people = pd.Series([copy.deepcopy(clonePerson) for i in range(0, n)])
+
+        #pandarallel.initialize(verbose=1)
         for i in range(0, len(people)):
             people.iloc[i]._populationIndex = i
         super().__init__(people)

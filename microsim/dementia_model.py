@@ -16,7 +16,7 @@ class DementiaModel(StatsModelCoxModel):
         super().__init__(CoxRegressionModel({}, {}, linearTerm, quadraticTerm), False)
         if populationRecalibration:
             self.one_year_linear_cumulative_hazard = self.one_year_linear_cumulative_hazard * 0.5
-            self.one_year_quad_cumulative_hazard = self.one_year_quad_cumulative_hazard * 0.05
+            self.one_year_quad_cumulative_hazard = self.one_year_quad_cumulative_hazard * 0.175
 
     def linear_predictor(self, person):
         return self.linear_predictor_for_patient_characteristics(

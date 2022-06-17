@@ -146,3 +146,34 @@ class NoBPTreatmentNoBPChange(BaseTreatmentStrategy):
 
     def rollback_changes_vectorized(self, x):
         return x
+
+class NoBPTreatment(BaseTreatmentStrategy):
+    def __init__(self):
+        pass
+
+    def get_changes_for_person(self, person):
+        current = person._antiHypertensiveCount[-1]
+        return (
+            {"_antiHypertensiveCount": -1 * current},
+            {"_bpMedsAdded": -1 * current},
+            {"_sbp": 0, "_dbp": 0},
+        )
+
+    def get_treatment_recalibration_for_population(self):
+        return None
+
+    def get_treatment_recalibration_for_person(self):
+        return None
+
+    def repeat_treatment_strategy(self):
+        return True
+
+    def get_changes_vectorized(self, x):
+        x.bpMedsAddedNext = 0
+        x.antiHypertensiveCountNext = 0
+        x.sbpNext = x.sbpNext
+        x.dbpNext = x.dbpNext
+        return x
+
+    def rollback_changes_vectorized(self, x):
+        return x
