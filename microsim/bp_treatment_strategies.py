@@ -177,3 +177,47 @@ class NoBPTreatment(BaseTreatmentStrategy):
 
     def rollback_changes_vectorized(self, x):
         return x
+
+# James, P. A. et al. 2014 Evidence-Based Guideline for the Management of High Blood Pressure in Adults: Report From the Panel Members Appointed to the Eighth Joint National Committee (JNC 8). Jama 311, 507–520 (2014).
+class jnc8Treatment(AddBPTreatmentMedsToGoal120):
+    def lowTarget(self, person):
+        return person._diabetes or person._ckd or person._age[-1] < 60
+    
+    def getGoal(self, person):
+        return {'sbp' : 140, 'dbp' : 90} if self.lowTarget(person) else {'sbp' : 150, 'dbp' : 90}
+        
+    def lowTargetVectorized(self, x):
+        #print(list(x.index))
+        return x.current_diabetes or x.gfr < 60 or x.age < 60
+        
+    def get_goal_vectorized(self, x):
+        return {'sbp' : 140, 'dbp' : 90} if self.lowTargetVectorized(x) else {'sbp' : 150, 'dbp' : 90}
+
+    
+    def get_meds_needed_for_goal(self, sbp, dbp, currentMeds, goal):
+        meds = super().get_meds_needed_for_goal(sbp, dbp, currentMeds, goal)
+        #print(f"meds: {meds} sbp: {sbp} dbp: {dbp} goal: {goal}")
+        return 4-currentMeds if meds + currentMeds > 4 else meds
+
+class jnc8ForHighRisk(jnc8Treatment):
+    def __init__(self, targetRisk):
+        self.targetRisk = targetRisk
+    
+    def lowTarget(self, person):
+        risk = OutcomeModelRepository().get_risk_for_person(person, OutcomeModelType.CARDIOVASCULAR, 10)
+        return risk >  self.targetRisk
+    
+    def lowTargetVectorized(self, x):
+        risk = OutcomeModelRepository().get_risk_for_person(x, OutcomeModelType.CARDIOVASCULAR, 10, True)
+        return risk >  self.targetRisk
+
+class jnc8ForHighRiskLowBpTarget(jnc8ForHighRisk):
+    def __init__(self, targetRisk, targetBP):
+        super().__init__(targetRisk)
+        self.targetBP = targetBP
+        
+    def getGoal(self, person):
+        return self.targetBP 
+    
+    def get_goal_vectorized(self, x):
+        return self.targetBP
