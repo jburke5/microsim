@@ -299,6 +299,13 @@ class Person:
     def is_dead(self):
         return not self._alive[-1]
 
+    def dead_at_start_of_wave(self, wave):
+        return (wave > len(self._age)) or (self._alive[wave-1] == False)
+
+    def dead_at_end_of_wave(self, wave):
+        return (wave > len(self._age)) or (self._alive[wave] == False)
+
+
     # this method is trying to enable simple logic in the popuation.
     # when the population asks, "who is alive at a given time point?" it can't merely check
     # the index on person._alive, because people who died prior to that time will not have an index
