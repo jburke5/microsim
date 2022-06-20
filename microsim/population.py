@@ -873,6 +873,33 @@ class Population:
             }
         )
 
+    def get_summary_df(self):
+        data = {}
+        for year in range(1,self._currentWave+1):
+            data[f'mi{year}'] = [x.has_mi_during_wave(year) for _, x in self._people.iteritems()]
+            data[f'stroke{year}'] = [x.has_stroke_during_wave(year) for _, x in self._people.iteritems()]
+            data[f'dead{year}'] = [x.dead_at_end_of_wave(year) for _, x in self._people.iteritems()]
+            data[f'dementia{year}'] = [x.has_outcome_during_wave(year, OutcomeType.DEMENTIA) for _, x in self._people.iteritems()]
+            data[f'gcp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._gcp[year-1] for _, x in self._people.iteritems()]
+            data[f'sbp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._sbp[year-1] for _, x in self._people.iteritems()]
+            data[f'dbp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._dbp[year-1] for _, x in self._people.iteritems()]  
+            data[f'bpMeds{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._antiHypertensiveCount[year-1] for _, x in pop._people.iteritems()]
+
+        data['baseAge'] = [x._age[0] for _, x in self._people.iteritems()]
+        data['id'] = [x._populationIndex  for _, x in self._people.iteritems()] 
+        data['finalAge'] = [x._age[-1]  for _, x in self._people.iteritems()]
+        data['education'] = [x._education  for _, x in self._people.iteritems()]
+        data['gender'] = [x._gender  for _, x in self._people.iteritems()]
+        data['raceEthnicity'] = [x._raceEthnicity  for _, x in self._people.iteritems()]
+        data['smokingStatus'] = [x._smokingStatus  for _, x in self._people.iteritems()]
+
+        data['baselineSBP'] = [x._sbp[0] for _, x in self._people.iteritems()]
+        data['baselineDBP'] = [x._dbp[0] for _, x in self._people.iteritems()]
+        data['black'] = [x._raceEthnicity==4 for _, x in self._people.iteritems()]
+        data['dementiaFreeYears'] = [x.get_age_at_first_outcome(OutcomeType.DEMENTIA) - x._age[0] if x._dementia else x._age[-1] - x._age[0]  for _, x in self._people.iteritems()]
+        data['deadAtEndOfSim'] = [x._alive[-1]==False for _, x in self._people.iteritems()]
+        return pd.DataFrame(data)
+
 
 def initializeAFib(person):
     model = load_regression_model("BaselineAFibModel")
