@@ -938,7 +938,7 @@ def initializeAFib(person):
     return statsModel.estimate_next_risk(person)
 
 
-def build_person(x, outcome_model_repository):
+def build_person(x, outcome_model_repository, randomEffects=None):
     return Person(
         age=x.age,
         gender=NHANESGender(int(x.gender)),
@@ -966,7 +966,7 @@ def build_person(x, outcome_model_repository):
         selfReportMIAge=np.random.randint(18, x.age)
         if x.selfReportMIAge == 99999
         else x.selfReportMIAge,
-        randomEffects=outcome_model_repository.get_random_effects(),
+        randomEffects=outcome_model_repository.get_random_effects() if randomEffects is None else randomEffects,
         dfIndex=x.index,
         diedBy2015=x.diedBy2015 == True,
     )
@@ -1102,7 +1102,7 @@ class ClonePopulation(Population):
                                             'serumCreatinine' : person._creatinine[0],
                                             'selfReportStrokeAge' : -1, 
                                             'selfReportMIAge' : -1,
-                                            'diedBy2015' : 0}), self._outcome_model_repository)
+                                            'diedBy2015' : 0}), self._outcome_model_repository, randomEffects=person._randomEffects)
 
         people = pd.Series([copy.deepcopy(clonePerson) for i in range(0, n)])
 
