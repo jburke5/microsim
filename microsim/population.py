@@ -120,9 +120,11 @@ class Population:
             alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(riskFactorsAndTreatment).reset_index(drop=True)], axis='columns', ignore_index=False)
             
             # bp meds added in this wave are 0...
-            alive = pd.concat([alive.reset_index(drop=True), pd.Series(np.zeros(len(alive)), name='bpMedsAddedNext')], axis='columns', ignore_index=False)
+            medsData = pd.DataFrame({'bpMedsAddedNext' :  pd.Series(np.zeros(len(alive))), 
+                                    'totalBPMedsAddedNext' : pd.Series(alive['totalBPMedsAdded'])})
+            
             # total bp meds are carried forward from teh prior wave
-            alive = pd.concat([alive.reset_index(drop=True), pd.Series(alive['totalBPMedsAdded'], name='totalBPMedsAddedNext')], axis='columns', ignore_index=False)
+            alive = pd.concat([alive.reset_index(drop=True), medsData], axis='columns', ignore_index=False)
             if self._bpTreatmentStrategy is not None:
                 alive = alive.apply(
                     self._bpTreatmentStrategy.get_changes_vectorized, axis="columns"
