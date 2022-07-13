@@ -15,6 +15,7 @@ from microsim.outcome import Outcome, OutcomeType
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 from microsim.initialization_repository import InitializationRepository
 from microsim.gfr_equation import GFREquation
+from microsim.bp_treatment_strategies import *
 
 import pandas as pd
 from pandarallel import pandarallel
@@ -118,7 +119,10 @@ class Population:
             # apply treatment modifications
             alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(riskFactorsAndTreatment).reset_index(drop=True)], axis='columns', ignore_index=False)
             
+            # bp meds added in this wave are 0...
             alive = pd.concat([alive.reset_index(drop=True), pd.Series(np.zeros(len(alive)), name='bpMedsAddedNext')], axis='columns', ignore_index=False)
+            # total bp meds are carried forward from teh prior wave
+            alive = pd.concat([alive.reset_index(drop=True), pd.Series(alive['totalBPMedsAdded'], name='totalBPMedsAddedNext')], axis='columns', ignore_index=False)
             if self._bpTreatmentStrategy is not None:
                 alive = alive.apply(
                     self._bpTreatmentStrategy.get_changes_vectorized, axis="columns"
@@ -261,6 +265,8 @@ class Population:
         df["gfr"] = df.apply(GFREquation().get_gfr_for_person_vectorized, axis="columns")
         df["current_bp_treatment"] = df["antiHypertensiveCount"] >= 1
         df["totalQalys"] = df["totalQalys"] + df["qalyNext"]
+        df["bpMedsAdded"] = df["bpMedsAddedNext"]
+        df["totalBPMedsAdded"] = df["totalBPMedsAddedNext"]
         
         # assign ages for new events
         # df.loc[(df.ageAtFirstStroke.isnull()) & (df.strokeNext), 'ageAtFirstStroke'] = df.age
@@ -291,6 +297,7 @@ class Population:
     # so, i thikn it should be based on the model-predicted risks...
 
     def recalibrate_bp_treatment(self, recalibration_df):
+        logging.info(f"*** before recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
         treatment_outcome_standard = (
             self._bpTreatmentStrategy.get_treatment_recalibration_for_population()
         )
@@ -311,14 +318,20 @@ class Population:
         recalibration_df = recalibration_df.apply(
             self._bpTreatmentStrategy.get_changes_vectorized, axis="columns"
         )
+        #logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
         recalibration_df["rolledBackEventType"] = None
-        maxMeds = 5
+        # total meds added represents the total number of medication effects that we'll recalibrate for
+        # it is the lesser of the total number of BP meds actually added (totalBpMedsAdded) or the max cap
+        # so, if a treamtent strategy adds 10 medications, they'll effect the BP...but, they 
+        # wont' have an additional efect on event reduction over the medication cap
+        recalibration_df['totalBPMedsAddedCapped'] = recalibration_df['totalBPMedsAddedNext']
+        recalibration_df.loc[recalibration_df['totalBPMedsAddedNext'] >= BaseTreatmentStrategy.MAX_BP_MEDS, 'totalBPMedsAddedCapped'] = BaseTreatmentStrategy.MAX_BP_MEDS
+        logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
+
         # recalibrate within each group of added medicaitons so that we can stratify the treamtnet effects
-        for i in range(1, maxMeds + 1):
-            recalibrationPopForMedCount = recalibration_df.loc[
-                (recalibration_df.bpMedsAddedNext == i)
-                | (recalibration_df.bpMedsAddedNext.values >= maxMeds)
-            ]
+        for i in range(1, BaseTreatmentStrategy.MAX_BP_MEDS + 1):
+            #logging.info(f"Roll back for med count: {i}")
+            recalibrationPopForMedCount = recalibration_df.loc[recalibration_df.totalBPMedsAddedCapped == i]
             # the change standards are for a single medication
             recalibration_standard_for_med_count = treatment_outcome_standard.copy()
             for key, value in recalibration_standard_for_med_count.items():
@@ -378,6 +391,7 @@ class Population:
                     recalibratedForMedCount.index, "rolledBackEventType"
                 ] = recalibratedForMedCount["rolledBackEventType"]
 
+        logging.info(f"*** after recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
         return recalibration_df
 
     def estimate_risks(self, recalibration_df, prefix):
@@ -408,6 +422,8 @@ class Population:
         fatalityDetermination,
         recalibration_pop,
     ):
+        #logging.info(f"create or rollback {outcomeType}, standard: {treatment_outcome_standard[outcomeType]}")
+
         modelEstimatedRR = (
             recalibration_pop[treatedRiskVar].mean() / recalibration_pop[untreatedRiskVar].mean()
         )
@@ -432,6 +448,8 @@ class Population:
         # it would not, i think, be hard to change. but, just spelling it out here.
 
         # if negative, the model estimated too few events, if positive, too mnany
+        #logging.info(f"bp recalibration, delta: {delta}, number of statuses to change: {numberOfEventStatusesToChange}")
+
         if delta < 0:
             if numberOfEventStatusesToChange > 0:
                 new_events = nonEventsForPeople.sample(
@@ -774,6 +792,9 @@ class Population:
             "alcoholPerWeek": person._alcoholPerWeek[-1],
             "creatinine": person._creatinine[-1],
             "antiHypertensiveCount": person._antiHypertensiveCount[-1],
+            # this variable is used in the risk model...
+            # this reflects whether patients have had medications assigned as a risk factor, but 
+            # not whether there has been a separate trematent effect, which is tracked in bpMedsAdded
             "current_bp_treatment": person._antiHypertensiveCount[-1] > 0,
             "statin": person._statin[-1],
             "otherLipidLoweringMedicationCount": person._otherLipidLoweringMedicationCount[-1],
@@ -797,7 +818,8 @@ class Population:
             "gcpSlope": person._gcp[-1] - person._gcp[-2] if len(person._gcp) >= 2 else 0,
             "totalYearsInSim": person.years_in_simulation(),
             "totalQalys": np.array(person._qalys).sum(),
-            "bpMedsAdded": person._bpMedsAdded[-1],
+            "totalBPMedsAdded": np.array(person._bpMedsAdded).sum(),
+            "bpMedsAdded": person._bpMedsAdded[-1]
         }
         try:
             attrForPerson["populationIndex"] = person._populationIndex
@@ -870,6 +892,8 @@ class Population:
                     person._selfReportStrokePriorToSim for person in self._people
                 ],
                 "totalQalys": [np.array(person._qalys).sum() for person in self._people],
+                "totalBPMedsAdded" : [np.zeros(len(self._people))],
+                "bpMedsAdded" : [np.zeros(len(self._people))]
             }
         )
 
@@ -883,7 +907,10 @@ class Population:
             data[f'gcp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._gcp[year-1] for _, x in self._people.iteritems()]
             data[f'sbp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._sbp[year-1] for _, x in self._people.iteritems()]
             data[f'dbp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._dbp[year-1] for _, x in self._people.iteritems()]  
-            data[f'bpMeds{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._antiHypertensiveCount[year-1] for _, x in pop._people.iteritems()]
+            data[f'bpMeds{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._antiHypertensiveCount[year-1] for _, x in self._people.iteritems()]
+            data[f'bpMedsAdded{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._bpMedsAdded[year-1] for _, x in self._people.iteritems()]
+            data[f'totalBPMeds{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._bpMedsAdded[year-1]+x._antiHypertensiveCount[year-1] for _, x in self._people.iteritems()]
+            data[f'totalBPMedsAdded{year}'] = [np.array(x._bpMedsAdded).sum() for _, x in self._people.iteritems()]
 
         data['baseAge'] = [x._age[0] for _, x in self._people.iteritems()]
         data['id'] = [x._populationIndex  for _, x in self._people.iteritems()] 

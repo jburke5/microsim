@@ -1,12 +1,18 @@
 from microsim.outcome import OutcomeType
+from microsim.outcome_model_type import OutcomeModelType
+from microsim.outcome_model_repository import OutcomeModelRepository
+
 from abc import ABC
 
-
 # tryign to turn off ABC as it causes pickling problems...this class shoudl extend ABC
+# BP treamtent classees modify, only, the number of BP medications added
+# the total number of BP medications are the number added at baseline (antiHypertensiveCount)
+# combined with the number added, additionalliy, via treatment algorithms
 class BaseTreatmentStrategy:
+    MAX_BP_MEDS = 4
+
     def get_changes_vectorized(self, x):
         raise RuntimeError("Vectorized Treatment not implemented for this strategy")
-
 
 class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
     sbpLowering = 5.5
@@ -35,17 +41,17 @@ class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
         return False
 
     def get_changes_vectorized(self, x):
-        x.antiHypertensiveCountNext = x.antiHypertensiveCountNext + 1
         x.bpMedsAddedNext = 1
+        x.totalBPMedsAddedNext = 1
         x.sbpNext = x.sbpNext - AddASingleBPMedTreatmentStrategy.sbpLowering
         x.dbpNext = x.dbpNext - AddASingleBPMedTreatmentStrategy.dbpLowering
         return x
 
     def rollback_changes_vectorized(self, x):
-        x.antiHypertensiveCountNext = x.antiHypertensiveCountNext - 1
         x.sbpNext = x.sbpNext + AddASingleBPMedTreatmentStrategy.sbpLowering
         x.dbpNext = x.dbpNext + AddASingleBPMedTreatmentStrategy.dbpLowering
         x.bpMedsAddedNext = 0
+        x.totalBPMedsAddedNext = 0
         return x
 
 
@@ -67,15 +73,15 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
         medCount = dbpMedCount if dbpMedCount < sbpMedCount else sbpMedCount
         return 0 if medCount < 0 else medCount
 
-    def get_changes_for_person(self, person):
+    def get_changes_for_person(self, person):        
         medsForGoal = self.get_meds_needed_for_goal(
             person._sbp[-1],
             person._dbp[-1],
-            person._antiHypertensiveCount[-1],
+            person._antiHypertensiveCount[-1] + person._bpMedsAdded[-1],
             self.getGoal(person),
         )
         return (
-            {"_antiHypertensiveCount": medsForGoal},
+            {},
             {"_bpMedsAdded": medsForGoal},
             {
                 "_sbp": -1 * medsForGoal * AddBPTreatmentMedsToGoal120.sbpLowering,
@@ -94,57 +100,25 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
         return True
 
     def get_goal_vectorized(self, x):
-        return {"sbp": 120, "dbp": 65}
+        return self.getGoal()
 
     def get_changes_vectorized(self, x):
         medsNeeded = self.get_meds_needed_for_goal(
-            x.sbpNext, x.dbpNext, x.antiHypertensiveCountNext, self.get_goal_vectorized(x)
+            x.sbpNext, x.dbpNext, x.antiHypertensiveCountNext + x.totalBPMedsAdded, self.get_goal_vectorized(x)
         )
-        x.bpMedsAddedNext = medsNeeded
-        x.antiHypertensiveCountNext = x.antiHypertensiveCountNext + medsNeeded
+        # how many medications to add in addition to baseline
+        x.bpMedsAddedNext =  medsNeeded 
+        x.totalBPMedsAddedNext = x.totalBPMedsAdded + medsNeeded
         x.sbpNext = x.sbpNext - medsNeeded * AddBPTreatmentMedsToGoal120.sbpLowering
         x.dbpNext = x.dbpNext - medsNeeded * AddBPTreatmentMedsToGoal120.dbpLowering
         return x
 
     def rollback_changes_vectorized(self, x):
-        x.antiHypertensiveCountNext = x.antiHypertensiveCountNext - x.bpMedsAddedNext
         x.sbpNext = x.sbpNext + x.bpMedsAddedNext * AddBPTreatmentMedsToGoal120.sbpLowering
         x.dbpNext = x.dbpNext + x.bpMedsAddedNext * AddBPTreatmentMedsToGoal120.dbpLowering
+        # rollback to the prior number of BP meds added
         x.bpMedsAddedNext = 0
-        return x
-
-
-class NoBPTreatmentNoBPChange(BaseTreatmentStrategy):
-    def __init__(self):
-        pass
-
-    def get_changes_for_person(self, person):
-        current = person._antiHypertensiveCount[-1]
-        changeSBP = person._sbp[-1] - person._sbp[-2]
-        changeDBP = person._dbp[-1] - person._dbp[-2]
-        return (
-            {"_antiHypertensiveCount": -1 * current},
-            {"_bpMedsAdded": -1 * current},
-            {"_sbp": -1 * changeSBP, "_dbp": -1 * changeDBP},
-        )
-
-    def get_treatment_recalibration_for_population(self):
-        return None
-
-    def get_treatment_recalibration_for_person(self):
-        return None
-
-    def repeat_treatment_strategy(self):
-        return True
-
-    def get_changes_vectorized(self, x):
-        x.bpMedsAddedNext = 0
-        x.antiHypertensiveCountNext = 0
-        x.sbpNext = x.sbp
-        x.dbpNext = x.dbp
-        return x
-
-    def rollback_changes_vectorized(self, x):
+        x.totalBPMedsAddedNext = x.totalBPMedsAdded
         return x
 
 class NoBPTreatment(BaseTreatmentStrategy):
@@ -154,9 +128,9 @@ class NoBPTreatment(BaseTreatmentStrategy):
     def get_changes_for_person(self, person):
         current = person._antiHypertensiveCount[-1]
         return (
-            {"_antiHypertensiveCount": -1 * current},
-            {"_bpMedsAdded": -1 * current},
-            {"_sbp": current * AddBPTreatmentMedsToGoal120.sbpLowering, "_dbp": current.dbpLowering},
+            {"_antiHypertensiveCount": 0},
+            {"_bpMedsAdded": 0},
+            {"_sbp": 0, "_dbp": 0},
         )
 
     def get_treatment_recalibration_for_population(self):
@@ -168,14 +142,15 @@ class NoBPTreatment(BaseTreatmentStrategy):
     def repeat_treatment_strategy(self):
         return True
 
+    # BP meds can change via the usual care risk model...but, we won't add any meds...
     def get_changes_vectorized(self, x):
         x.bpMedsAddedNext = 0
-        x.antiHypertensiveCountNext = 0
-        x.sbpNext = x.sbpNext + x.antiHypertensiveCount * AddBPTreatmentMedsToGoal120.sbpLowering
-        x.dbpNext = x.dbpNext + x.antiHypertensiveCount * AddBPTreatmentMedsToGoal120.dbpLowering
+        x.totalBPMedsAddedNext = 0
         return x
 
     def rollback_changes_vectorized(self, x):
+        x.bpMedsAddedNext = 0
+        x.totalBPMedsAddedNext = 0
         return x
 
 # James, P. A. et al. 2014 Evidence-Based Guideline for the Management of High Blood Pressure in Adults: Report From the Panel Members Appointed to the Eighth Joint National Committee (JNC 8). Jama 311, 507–520 (2014).
@@ -193,11 +168,12 @@ class jnc8Treatment(AddBPTreatmentMedsToGoal120):
     def get_goal_vectorized(self, x):
         return {'sbp' : 140, 'dbp' : 90} if self.lowTargetVectorized(x) else {'sbp' : 150, 'dbp' : 90}
 
-    
     def get_meds_needed_for_goal(self, sbp, dbp, currentMeds, goal):
         meds = super().get_meds_needed_for_goal(sbp, dbp, currentMeds, goal)
-        #print(f"meds: {meds} sbp: {sbp} dbp: {dbp} goal: {goal}")
-        return 4-currentMeds if meds + currentMeds > 4 else meds
+        cappedMeds = BaseTreatmentStrategy.MAX_BP_MEDS if meds > BaseTreatmentStrategy.MAX_BP_MEDS else meds
+        medsToReturn = BaseTreatmentStrategy.MAX_BP_MEDS - currentMeds  if cappedMeds + currentMeds > BaseTreatmentStrategy.MAX_BP_MEDS else cappedMeds
+        #print(f"meds: {meds} sbp: {sbp} dbp: {dbp} goal: {goal} currentMeds: {currentMeds}, cappedMeds: {cappedMeds}, medsToReturn: {medsToReturn}")
+        return medsToReturn if medsToReturn > 0 else 0
 
 class jnc8ForHighRisk(jnc8Treatment):
     def __init__(self, targetRisk):

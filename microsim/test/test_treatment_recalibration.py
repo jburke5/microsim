@@ -105,17 +105,17 @@ class addABPMedStrokeLargeEffectSize:
         return False
 
     def get_changes_vectorized(self, x):
-        x.antiHypertensiveCountNext = x.antiHypertensiveCountNext + 1
         x.bpMedsAddedNext = 1
+        x.totalBPMedsAddedNext = 1
         x.sbpNext = x.sbpNext - self._sbp_lowering
         x.dbpNext = x.dbpNext - self._dbp_lowering
         return x
 
     def rollback_changes_vectorized(self, x):
-        x.antiHypertensiveCountNext = x.antiHypertensiveCountNext - 1
         x.sbpNext = x.sbpNext + self._sbp_lowering
         x.dbpNext = x.dbpNext + self._dbp_lowering
         x.bpMedsAddedNext = 0
+        x.totalBPMedsAddedNext = 0
         return x
 
 

@@ -1,11 +1,14 @@
 import unittest
+import numpy as np
 
 from microsim.person import Person
 from microsim.education import Education
+from microsim.population import ClonePopulation
 from microsim.test.test_risk_model_repository import TestRiskModelRepository
 from microsim.bp_treatment_strategies import (
     AddBPTreatmentMedsToGoal120,
     AddASingleBPMedTreatmentStrategy,
+    jnc8ForHighRiskLowBpTarget
 )
 
 
@@ -16,7 +19,7 @@ class TestTreatmentStrategy(unittest.TestCase):
     def getPerson(self, baselineSBP=140, baselineDBP=80):
         return Person(
             age=75,
-            gender=0,
+            gender=1,
             raceEthnicity=1,
             sbp=baselineSBP,
             dbp=baselineDBP,
@@ -43,19 +46,17 @@ class TestTreatmentStrategy(unittest.TestCase):
         self.baselineDBP = 80
         self.singleMedStrategy = AddASingleBPMedTreatmentStrategy()
         self._test_person = self.getPerson()
-        self._risk_model_repository = TestRiskModelRepository()
+        self._risk_model_repository = TestRiskModelRepository(nullModels=True)
         # setup so that the SBP  always stays the same
+        self._risk_model_repository.set_default_model_for_name("sbp")
         self._risk_model_repository._repository["sbp"]._params["age"] = 0
         self._risk_model_repository._repository["sbp"]._params["sbp"] = 1.0
         self._risk_model_repository._repository["sbp"]._params["intercept"] = 0
+        self._risk_model_repository.set_default_model_for_name("dbp")
         self._risk_model_repository._repository["dbp"]._params["age"] = 0
         self._risk_model_repository._repository["dbp"]._params["dbp"] = 1.0
         self._risk_model_repository._repository["dbp"]._params["sbp"] = 0
         self._risk_model_repository._repository["dbp"]._params["intercept"] = 0
-        # setup so that the anti-hypertensive count stays at zero
-        self._risk_model_repository._repository["antiHypertensiveCount"]._params["age"] = 0
-        self._risk_model_repository._repository["antiHypertensiveCount"]._params["sbp"] = 0
-        self._risk_model_repository._repository["antiHypertensiveCount"]._params["intercept"] = 0
 
     def add_a_single_blood_pressure_medication_strategy(person):
         return {"_antiHypertensiveCount": 1}, {"_sbp": -5, "_dbp": -3}, {}
@@ -92,14 +93,14 @@ class TestTreatmentStrategy(unittest.TestCase):
         highSbp._bpTreatmentStrategy = AddBPTreatmentMedsToGoal120()
         highSbp.advance_treatment(self._risk_model_repository)
         # 190-120 / 5.5
-        self.assertEqual(12, highSbp._antiHypertensiveCount[-1])
+        self.assertEqual(12, highSbp._bpMedsAdded[-1])
         self.assertEqual(124, highSbp._sbp[-1])
 
         mediumSBP = self.getPerson(140, 150)
         mediumSBP._bpTreatmentStrategy = AddBPTreatmentMedsToGoal120()
         mediumSBP.advance_treatment(self._risk_model_repository)
         # 140-120 / 5.5
-        self.assertEqual(3, mediumSBP._antiHypertensiveCount[-1])
+        self.assertEqual(3, mediumSBP._bpMedsAdded[-1])
         self.assertEqual(123.5, mediumSBP._sbp[-1])
 
         lowSBP = self.getPerson(110, 100)
@@ -112,9 +113,86 @@ class TestTreatmentStrategy(unittest.TestCase):
         dbpDrives._bpTreatmentStrategy = AddBPTreatmentMedsToGoal120()
         dbpDrives.advance_treatment(self._risk_model_repository)
         # 110-66/3.1
-        self.assertEqual(14, dbpDrives._antiHypertensiveCount[-1])
+        self.assertEqual(14, dbpDrives._bpMedsAdded[-1])
         self.assertEqual(66.6, dbpDrives._dbp[-1])
 
+    def testSprintStrategyAtPopLevelOneWave(self):
+        maxMedPerson = self.getPerson(190, 120)
+        pop = ClonePopulation(maxMedPerson, 100)
+        pop._risk_model_repository = TestRiskModelRepository(nullModels=True)
+
+        pop.set_bp_treatment_strategy(jnc8ForHighRiskLowBpTarget(0.075, {'sbp' : 126, 'dbp': 0}))
+        alive, df = pop.advance_vectorized(1)
+
+        # checking that anti hypertensives weren't accidentally added
+        self.assertEqual(0, alive.antiHypertensiveCount.max())
+        # should add 4 bp meds for everybody
+        self.assertEqual(4, alive.bpMedsAdded.max())
+        self.assertEqual(4, alive.bpMedsAdded.min())
+        # should add 4 bp meds for everybody
+        self.assertEqual(4, alive.totalBPMedsAdded.max())
+        self.assertEqual(4, alive.totalBPMedsAdded.min())
+        # BP should be lowered by 4*BP lowering effect
+        self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, alive.sbp.max())
+        self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, alive.sbp.min())
+
+        self.assertEqual(0, pop._people.iloc[0]._antiHypertensiveCount[-1])
+        self.assertEqual(4, pop._people.iloc[0]._bpMedsAdded[-1])
+        self.assertEqual(4, np.array(pop._people.iloc[0]._bpMedsAdded).sum())
+        self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, pop._people.iloc[0]._sbp[-1])
+
+
+    def testSprintStrategyAtPopLevelTwoWave(self):
+        maxMedPerson = self.getPerson(190, 120)
+        pop = ClonePopulation(maxMedPerson, 100)
+        pop._risk_model_repository = TestRiskModelRepository(nullModels=True)
+        pop.set_bp_treatment_strategy(jnc8ForHighRiskLowBpTarget(0.075, {'sbp' : 126, 'dbp': 0}))
+        alive, df = pop.advance_vectorized(2)
+
+        # checking that anti hypertensives weren't accidentally added
+        self.assertEqual(0, alive.antiHypertensiveCount.max())
+        # should add no new medicatinos
+        self.assertEqual(0, alive.bpMedsAdded.max())
+        self.assertEqual(0, alive.bpMedsAdded.min())
+        # should add 4 bp meds for everybody
+        self.assertEqual(4, alive.totalBPMedsAdded.max())
+        self.assertEqual(4, alive.totalBPMedsAdded.min())
+        # BP should be lowered by 4*BP lowering effect
+        self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, alive.sbp.max())
+        self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, alive.sbp.min())
+
+        self.assertEqual(0, pop._people.iloc[0]._antiHypertensiveCount[-1])
+        self.assertEqual(0, pop._people.iloc[0]._bpMedsAdded[-1])
+        self.assertEqual(4, np.array(pop._people.iloc[0]._bpMedsAdded).sum())
+        self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, pop._people.iloc[0]._sbp[-1])
+
+
+    def testSprintStrategyAtPopLevelFiveWave(self):
+        maxMedPerson = self.getPerson(190, 120)
+        pop = ClonePopulation(maxMedPerson, 100)
+        pop._risk_model_repository = TestRiskModelRepository(nullModels=True)
+        pop.set_bp_treatment_strategy(jnc8ForHighRiskLowBpTarget(0.075, {'sbp' : 126, 'dbp': 0}))
+        alive, df = pop.advance_vectorized(5)
+
+        for wave in range(2, 5):
+            self.assertEqual(0, pop._people.iloc[0]._antiHypertensiveCount[wave])
+            self.assertEqual(0, pop._people.iloc[0]._bpMedsAdded[wave])
+            self.assertEqual(4, np.array(pop._people.iloc[0]._bpMedsAdded).sum())
+            self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, pop._people.iloc[0]._sbp[wave])
+
+        # checking that anti hypertensives weren't accidentally added
+        self.assertEqual(0, alive.antiHypertensiveCount.max())
+        # should add no new medicatinos
+        self.assertEqual(0, alive.bpMedsAdded.max())
+        self.assertEqual(0, alive.bpMedsAdded.min())
+        # should add 4 bp meds for everybody
+        self.assertEqual(4, alive.totalBPMedsAdded.max())
+        self.assertEqual(4, alive.totalBPMedsAdded.min())
+        # BP should be lowered by 4*BP lowering effect
+        self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, alive.sbp.max())
+        self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, alive.sbp.min())
+
+    
 
 if __name__ == "__main__":
     unittest.main()
