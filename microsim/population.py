@@ -397,22 +397,27 @@ class Population:
         return recalibration_df
 
     def estimate_risks(self, recalibration_df, prefix):
-        recalibration_df[prefix + "combinedRisks"] = recalibration_df.apply(
+        combinedRisks = recalibration_df.apply(
             self._outcome_model_repository.get_risk_for_person_vectorized,
             axis="columns",
             args=(OutcomeModelType.CARDIOVASCULAR, 1),
         )
-        recalibration_df[prefix + "strokeProbabilities"] = recalibration_df.apply(
+        strokeProbabilities = recalibration_df.apply(
             CVOutcomeDetermination().get_stroke_probability, axis="columns", vectorized=True
         )
-        recalibration_df[prefix + "strokeRisks"] = (
+        strokeRisks = (
             recalibration_df[prefix + "combinedRisks"]
             * recalibration_df[prefix + "strokeProbabilities"]
         )
-        recalibration_df[prefix + "miRisks"] = recalibration_df[prefix + "combinedRisks"] * (
+        miRisks = recalibration_df[prefix + "combinedRisks"] * (
             1 - recalibration_df[prefix + "strokeProbabilities"]
         )
-        return recalibration_df
+
+        risksAndProbs = pd.DataFrame({prefix + "combinedRisks" : combinedRisks, prefix + "strokeProbabilities" : strokeProbabilities,
+                        prefix + "strokeRisks" : strokeRisks, prefix + "miRisks" : miRisks})
+        
+        return pd.concat([recalibration_df.reset_index(drop=True), risksAndProbs.reset_index(drop=True)], axis='columns', ignore_index=False)
+
 
     def create_or_rollback_events_to_correct_calibration(
         self,
