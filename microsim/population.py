@@ -335,7 +335,7 @@ class Population:
             # the change standards are for a single medication
             recalibration_standard_for_med_count = treatment_outcome_standard.copy()
             for key, value in recalibration_standard_for_med_count.items():
-                recalibration_standard_for_med_count[key] = value ** i
+                recalibration_standard_for_med_count[key] = value**i
 
             if len(recalibrationPopForMedCount) > 0:
                 # recalibrate stroke
@@ -836,17 +836,21 @@ class Population:
         if parallel:
             pandarallel.initialize(verbose=1)
             return pd.DataFrame(
-                list(self._people.parallel_apply(
-                    self.get_person_attributes_from_person,
-                    timeVaryingCovariates=self._timeVaryingCovariates,
-                ))
+                list(
+                    self._people.parallel_apply(
+                        self.get_person_attributes_from_person,
+                        timeVaryingCovariates=self._timeVaryingCovariates,
+                    )
+                )
             )
         else:
             return pd.DataFrame(
-                list(self._people.apply(
-                    self.get_person_attributes_from_person,
-                    timeVaryingCovariates=self._timeVaryingCovariates,
-                ))
+                list(
+                    self._people.apply(
+                        self.get_person_attributes_from_person,
+                        timeVaryingCovariates=self._timeVaryingCovariates,
+                    )
+                )
             )
 
     def get_people_current_state_and_summary_as_dataframe(self):

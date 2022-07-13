@@ -90,7 +90,8 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
         for person in self.people:
             self.advancePerson(person)
         self.population_dataframe = init_vectorized_population_dataframe(
-            self.people, with_base_gcp=True,
+            self.people,
+            with_base_gcp=True,
         )
 
         df2 = pd.DataFrame(
