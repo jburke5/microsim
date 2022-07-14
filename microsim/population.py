@@ -321,13 +321,19 @@ class Population:
             self._bpTreatmentStrategy.get_changes_vectorized, axis="columns"
         )
         #logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
-        recalibration_df["rolledBackEventType"] = None
+        totalBPMedsAddedCapped = recalibration_df['totalBPMedsAddedNext']
+        totalBPMedsAddedCapped.loc[totalBPMedsAddedCapped >= BaseTreatmentStrategy.MAX_BP_MEDS] = BaseTreatmentStrategy.MAX_BP_MEDS
+        #recalibration_df.loc[recalibration_df['totalBPMedsAddedNext'] >= BaseTreatmentStrategy.MAX_BP_MEDS, 'totalBPMedsAddedCapped'] = BaseTreatmentStrategy.MAX_BP_MEDS
+        recalibrationVars = {"rolledBackEventType" : [None] * len(recalibration_df),
+                            'totalBPMedsAddedCapped' : totalBPMedsAddedCapped}
+       
+        recalibration_df = pd.concat([recalibration_df.reset_index(drop=True), pd.DataFrame(recalibrationVars).reset_index(drop=True)], axis='columns', ignore_index=False)
+        
+        #recalibration_df["rolledBackEventType"] = None
         # total meds added represents the total number of medication effects that we'll recalibrate for
         # it is the lesser of the total number of BP meds actually added (totalBpMedsAdded) or the max cap
         # so, if a treamtent strategy adds 10 medications, they'll effect the BP...but, they 
         # wont' have an additional efect on event reduction over the medication cap
-        recalibration_df['totalBPMedsAddedCapped'] = recalibration_df['totalBPMedsAddedNext']
-        recalibration_df.loc[recalibration_df['totalBPMedsAddedNext'] >= BaseTreatmentStrategy.MAX_BP_MEDS, 'totalBPMedsAddedCapped'] = BaseTreatmentStrategy.MAX_BP_MEDS
         #logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
 
         # recalibrate within each group of added medicaitons so that we can stratify the treamtnet effects
