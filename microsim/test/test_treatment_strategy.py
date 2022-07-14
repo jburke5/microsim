@@ -1,4 +1,5 @@
 import unittest
+from microsim.initialization_repository import InitializationRepository
 import numpy as np
 
 from microsim.person import Person
@@ -39,6 +40,8 @@ class TestTreatmentStrategy(unittest.TestCase):
             otherLipidLoweringMedicationCount=0,
             creatinine=0.0,
             initializeAfib=TestTreatmentStrategy.initializeAfib,
+            initializationRepository=InitializationRepository(),
+            randomEffects={'gcp' : 0}
         )
 
     def setUp(self):
