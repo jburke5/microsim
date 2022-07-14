@@ -325,8 +325,7 @@ class Population:
         totalBPMedsAddedCapped.loc[totalBPMedsAddedCapped >= BaseTreatmentStrategy.MAX_BP_MEDS] = BaseTreatmentStrategy.MAX_BP_MEDS
         #recalibration_df.loc[recalibration_df['totalBPMedsAddedNext'] >= BaseTreatmentStrategy.MAX_BP_MEDS, 'totalBPMedsAddedCapped'] = BaseTreatmentStrategy.MAX_BP_MEDS
         recalibrationVars = {"rolledBackEventType" : [None] * len(recalibration_df),
-                            'totalBPMedsAddedCapped' : totalBPMedsAddedCapped}
-       
+                            'totalBPMedsAddedCapped' : totalBPMedsAddedCapped}       
         recalibration_df = pd.concat([recalibration_df.reset_index(drop=True), pd.DataFrame(recalibrationVars).reset_index(drop=True)], axis='columns', ignore_index=False)
         
         #recalibration_df["rolledBackEventType"] = None
@@ -401,7 +400,7 @@ class Population:
 
         #logging.info(f"*** after recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
         recalibration_df.drop(columns=['treatedcombinedRisks', 'treatedstrokeProbabilities', 'treatedstrokeRisks', 'treatedmiRisks', 
-                    'untreatedcombinedRisks', 'untreatedstrokeProbabilities', 'untreatedstrokeRisks', 'untreatedmiRisks'], inplace=True)
+                    'untreatedcombinedRisks', 'untreatedstrokeProbabilities', 'untreatedstrokeRisks', 'untreatedmiRisks', 'totalBPMedsAddedCapped', 'rolledBackEventType'], inplace=True)
         return recalibration_df
 
     def estimate_risks(self, recalibration_df, prefix):

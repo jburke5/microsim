@@ -218,7 +218,7 @@ class OutcomeModelRepository:
 
     # for reporting this is a place to store debugging data to see how elements of outcomes models are behaving
     def report_result(self, resultName, resultDict):
-        if not self._resultReporting.has_key[resultName]:
+        if not resultName in self._resultReporting:
             self._resultReporting[resultName]= []
         self._resultReporting[resultName].append(resultDict)
 

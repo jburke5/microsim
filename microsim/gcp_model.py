@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 
 class GCPModel:
-    def __init__(self, outcomeModelRepository):
+    def __init__(self, outcomeModelRepository=None):
         self._outcome_model_repository = outcomeModelRepository
         pass
 
@@ -36,6 +36,7 @@ class GCPModel:
         reportingDict = OrderedDict()
         
         xb = 55.6090
+        reportingDict['totalYears'] = yearsInSim
         reportingDict['intercept'] = xb
         xb += yearsInSim * -0.2031
         reportingDict['yearsInSim'] = xb - reportingDict[next(reversed(reportingDict))]
@@ -95,7 +96,8 @@ class GCPModel:
         if afib:
             xb += -1.6579
         reportingDict['activity'] = xb - reportingDict[next(reversed(reportingDict))]
-        self._outcome_model_repository.report_result('gcp', reportingDict)
+        if self._outcome_model_repository is not None:
+            self._outcome_model_repository.report_result('gcp', reportingDict)
         return xb
 
     def get_risk_for_person(self, person, years=1, vectorized=False, test=False):
