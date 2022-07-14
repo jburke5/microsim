@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from microsim.smoking_status import SmokingStatus
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.education import Education
@@ -33,26 +34,23 @@ class GCPModel:
         afib,
         test=False,
     ):
-        reportingDict = OrderedDict()
-        
+        #reportingDict = {}
         xb = 55.6090
-        reportingDict['totalYears'] = yearsInSim
-        reportingDict['intercept'] = xb
+        #reportingDict['intercept'] = xb
         xb += yearsInSim * -0.2031
-        reportingDict['yearsInSim'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['yearsInSim'] = xb - pd.Series(reportingDict.values()).sum()
         if raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
             xb += -5.6818
             xb += yearsInSim * -0.00870
-        reportingDict['raceEthnicity'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['raceEthnicity'] = xb - pd.Series(reportingDict.values()).sum()
         if gender == NHANESGender.FEMALE:
             xb += 2.0863
             xb += yearsInSim * -0.06184
-        reportingDict['gender'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['gender'] = xb - pd.Series(reportingDict.values()).sum()
         xb += -2.0109 * (baseAge - 65) / 10
-        reportingDict['baseAge'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['baseAge'] = xb - pd.Series(reportingDict.values()).sum()
         xb += -0.1266 * yearsInSim * baseAge / 10
-        reportingDict['baseAgeYears'] = xb - reportingDict[next(reversed(reportingDict))]
-
+        #reportingDict['baseAgeYears'] = xb - pd.Series(reportingDict.values()).sum()
         # are we sure that the educatino categories align?
         if education == Education.LESSTHANHIGHSCHOOL:
             xb += -9.5559
@@ -62,42 +60,47 @@ class GCPModel:
             xb += -3.1954
         elif education == Education.SOMECOLLEGE:
             xb += -2.3795
-        reportingDict['educcation'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['educcation'] = xb - pd.Series(reportingDict.values()).sum()
 
         alcCoeffs = [0, 0.8071, 0.6943, 0.7706]
         xb += alcCoeffs[int(alcohol)]
-        reportingDict['alcohol'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['alcohol'] = xb - pd.Series(reportingDict.values()).sum()
 
         if smokingStatus == SmokingStatus.CURRENT:
             xb += -1.1678
-        reportingDict['smoking'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['smoking'] = xb - pd.Series(reportingDict.values()).sum()
         xb += (bmi - 26.6) * 0.1309
-        reportingDict['bmi'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['bmi'] = xb - pd.Series(reportingDict.values()).sum()
         xb += (waist - 94) * -0.05754
-        reportingDict['waist'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['waist'] = xb - pd.Series(reportingDict.values()).sum()
         # note...not 100% sure if this should be LDL vs. tot chol...
         xb += (totChol - 127) / 10 * 0.002690
-        reportingDict['totChol'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['totChol'] = xb - pd.Series(reportingDict.values()).sum()
         xb += (meanSBP - 120) / 10 * -0.2663
-        reportingDict['meanSbp'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['meanSbp'] = xb - pd.Series(reportingDict.values()).sum()
         xb += (meanSBP - 120) / 10 * yearsInSim * -0.01953
-        reportingDict['sbpYears'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['sbpYears'] = xb - pd.Series(reportingDict.values()).sum()
 
         xb += anyAntiHpertensive * 0.04410
-        reportingDict['antiHypertensive'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['antiHypertensive'] = xb - pd.Series(reportingDict.values()).sum()
         xb += anyAntiHpertensive * yearsInSim * 0.01984
-        reportingDict['antiHypertensiveYears'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['antiHypertensiveYears'] = xb - pd.Series(reportingDict.values()).sum()
 
         # need to turn off the residual for hte simulation...also need to make sure that we're correctly centered...
         xb += (fastingGlucose - 100) / 10 * -0.09362
-        reportingDict['glucose'] = xb - reportingDict[next(reversed(reportingDict))]
+        #reportingDict['glucose'] = xb - pd.Series(reportingDict.values()).sum()
         if physicalActivity:
             xb += 0.6065
+        #reportingDict['activity'] = xb - pd.Series(reportingDict.values()).sum()
         if afib:
             xb += -1.6579
-        reportingDict['activity'] = xb - reportingDict[next(reversed(reportingDict))]
-        if self._outcome_model_repository is not None:
-            self._outcome_model_repository.report_result('gcp', reportingDict)
+        #reportingDict['afib'] = xb - pd.Series(reportingDict.values()).sum()
+        #reportingDict['totalYears'] = yearsInSim
+        #reportingDict['meanSBPValue'] = meanSBP
+        #reportingDict['antiHypertensiveValue'] = anyAntiHpertensive
+
+        #if self._outcome_model_repository is not None:
+        #    self._outcome_model_repository.report_result('gcp', reportingDict)
         return xb
 
     def get_risk_for_person(self, person, years=1, vectorized=False, test=False):
