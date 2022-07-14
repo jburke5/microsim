@@ -304,7 +304,7 @@ class Population:
             self._bpTreatmentStrategy.get_treatment_recalibration_for_population()
         )
         # estimate risk for the people alive at the start of the wave
-        self.estimate_risks(recalibration_df, "treated")
+        recalibration_df= self.estimate_risks(recalibration_df, "treated")
 
         # rollback the treatment effect.
         # redtag: would like to apply to this to a deeply cloned population, but i can't get that to work
@@ -314,7 +314,7 @@ class Population:
         )
 
         # estimate risk after applying the treamtent effect
-        self.estimate_risks(recalibration_df, "untreated")
+        recalibration_df = self.estimate_risks(recalibration_df, "untreated")
 
         # hacktag related to above — roll back the treatment effect...
         recalibration_df = recalibration_df.apply(
@@ -394,6 +394,8 @@ class Population:
                 ] = recalibratedForMedCount["rolledBackEventType"]
 
         logging.info(f"*** after recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
+        recalibration_df.drop(columns=['treatedcombinedRisks', 'treatedstrokeProbabilities', 'treatedstrokeRisks', 'treatedmiRisks', 
+                    'untreatedcombinedRisks', 'untreatedstrokeProbabilities', 'untreatedstrokeRisks', 'untreatedmiRisks'], inplace=True)
         return recalibration_df
 
     def estimate_risks(self, recalibration_df, prefix):
@@ -406,11 +408,10 @@ class Population:
             CVOutcomeDetermination().get_stroke_probability, axis="columns", vectorized=True
         )
         strokeRisks = (
-            recalibration_df[prefix + "combinedRisks"]
-            * recalibration_df[prefix + "strokeProbabilities"]
+            combinedRisks * strokeProbabilities
         )
-        miRisks = recalibration_df[prefix + "combinedRisks"] * (
-            1 - recalibration_df[prefix + "strokeProbabilities"]
+        miRisks = combinedRisks * (
+            1 - strokeProbabilities
         )
 
         risksAndProbs = pd.DataFrame({prefix + "combinedRisks" : combinedRisks, prefix + "strokeProbabilities" : strokeProbabilities,
