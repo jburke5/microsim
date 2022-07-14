@@ -299,7 +299,7 @@ class Population:
     # so, i thikn it should be based on the model-predicted risks...
 
     def recalibrate_bp_treatment(self, recalibration_df):
-        logging.info(f"*** before recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
+        #logging.info(f"*** before recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
         treatment_outcome_standard = (
             self._bpTreatmentStrategy.get_treatment_recalibration_for_population()
         )
@@ -328,7 +328,7 @@ class Population:
         # wont' have an additional efect on event reduction over the medication cap
         recalibration_df['totalBPMedsAddedCapped'] = recalibration_df['totalBPMedsAddedNext']
         recalibration_df.loc[recalibration_df['totalBPMedsAddedNext'] >= BaseTreatmentStrategy.MAX_BP_MEDS, 'totalBPMedsAddedCapped'] = BaseTreatmentStrategy.MAX_BP_MEDS
-        logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
+        #logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
 
         # recalibrate within each group of added medicaitons so that we can stratify the treamtnet effects
         for i in range(1, BaseTreatmentStrategy.MAX_BP_MEDS + 1):
@@ -393,7 +393,7 @@ class Population:
                     recalibratedForMedCount.index, "rolledBackEventType"
                 ] = recalibratedForMedCount["rolledBackEventType"]
 
-        logging.info(f"*** after recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
+        #logging.info(f"*** after recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
         recalibration_df.drop(columns=['treatedcombinedRisks', 'treatedstrokeProbabilities', 'treatedstrokeRisks', 'treatedmiRisks', 
                     'untreatedcombinedRisks', 'untreatedstrokeProbabilities', 'untreatedstrokeRisks', 'untreatedmiRisks'], inplace=True)
         return recalibration_df
