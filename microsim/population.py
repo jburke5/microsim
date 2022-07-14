@@ -1116,6 +1116,7 @@ class ClonePopulation(Population):
                                             randomEffects=person._randomEffects)
 
         # for factors that were initialized on the first person, we have to set them the same way on teh clones
+        clonePerson._afib[0] = person._afib[0]
         initializers = self._initialization_repository.get_initializers()
         for initializerName, _ in initializers.items():
             fromAttr = getattr(person, initializerName)

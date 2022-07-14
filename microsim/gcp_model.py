@@ -4,10 +4,12 @@ from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.person import Person
+from collections import OrderedDict
 
 
 class GCPModel:
-    def __init__(self):
+    def __init__(self, outcomeModelRepository):
+        self._outcome_model_repository = outcomeModelRepository
         pass
 
     # TODO — what do we need to do with the random intercept? shouls we take a draw per person and assign it?
@@ -31,16 +33,24 @@ class GCPModel:
         afib,
         test=False,
     ):
+        reportingDict = OrderedDict()
+        
         xb = 55.6090
+        reportingDict['intercept'] = xb
         xb += yearsInSim * -0.2031
+        reportingDict['yearsInSim'] = xb - reportingDict[next(reversed(reportingDict))]
         if raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
             xb += -5.6818
             xb += yearsInSim * -0.00870
+        reportingDict['raceEthnicity'] = xb - reportingDict[next(reversed(reportingDict))]
         if gender == NHANESGender.FEMALE:
             xb += 2.0863
             xb += yearsInSim * -0.06184
+        reportingDict['gender'] = xb - reportingDict[next(reversed(reportingDict))]
         xb += -2.0109 * (baseAge - 65) / 10
+        reportingDict['baseAge'] = xb - reportingDict[next(reversed(reportingDict))]
         xb += -0.1266 * yearsInSim * baseAge / 10
+        reportingDict['baseAgeYears'] = xb - reportingDict[next(reversed(reportingDict))]
 
         # are we sure that the educatino categories align?
         if education == Education.LESSTHANHIGHSCHOOL:
@@ -51,28 +61,41 @@ class GCPModel:
             xb += -3.1954
         elif education == Education.SOMECOLLEGE:
             xb += -2.3795
+        reportingDict['educcation'] = xb - reportingDict[next(reversed(reportingDict))]
 
         alcCoeffs = [0, 0.8071, 0.6943, 0.7706]
         xb += alcCoeffs[int(alcohol)]
+        reportingDict['alcohol'] = xb - reportingDict[next(reversed(reportingDict))]
 
         if smokingStatus == SmokingStatus.CURRENT:
             xb += -1.1678
+        reportingDict['smoking'] = xb - reportingDict[next(reversed(reportingDict))]
         xb += (bmi - 26.6) * 0.1309
+        reportingDict['bmi'] = xb - reportingDict[next(reversed(reportingDict))]
         xb += (waist - 94) * -0.05754
+        reportingDict['waist'] = xb - reportingDict[next(reversed(reportingDict))]
         # note...not 100% sure if this should be LDL vs. tot chol...
         xb += (totChol - 127) / 10 * 0.002690
+        reportingDict['totChol'] = xb - reportingDict[next(reversed(reportingDict))]
         xb += (meanSBP - 120) / 10 * -0.2663
+        reportingDict['meanSbp'] = xb - reportingDict[next(reversed(reportingDict))]
         xb += (meanSBP - 120) / 10 * yearsInSim * -0.01953
+        reportingDict['sbpYears'] = xb - reportingDict[next(reversed(reportingDict))]
 
         xb += anyAntiHpertensive * 0.04410
+        reportingDict['antiHypertensive'] = xb - reportingDict[next(reversed(reportingDict))]
         xb += anyAntiHpertensive * yearsInSim * 0.01984
+        reportingDict['antiHypertensiveYears'] = xb - reportingDict[next(reversed(reportingDict))]
 
         # need to turn off the residual for hte simulation...also need to make sure that we're correctly centered...
         xb += (fastingGlucose - 100) / 10 * -0.09362
+        reportingDict['glucose'] = xb - reportingDict[next(reversed(reportingDict))]
         if physicalActivity:
             xb += 0.6065
         if afib:
             xb += -1.6579
+        reportingDict['activity'] = xb - reportingDict[next(reversed(reportingDict))]
+        self._outcome_model_repository.report_result('gcp', reportingDict)
         return xb
 
     def get_risk_for_person(self, person, years=1, vectorized=False, test=False):

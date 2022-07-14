@@ -1,9 +1,18 @@
 from microsim.risk_model_repository import RiskModelRepository
+from microsim.cohort_risk_model_repository import CohortRiskModelRepository
 
-
+# we'll let anti hypertensives get updated as per normal...
 class StaticRiskFactorOverTimeRepository(RiskModelRepository):
+    def __init__(self)L
+        super(StaticRiskFactorOverTimeRepository, self).__init__()
+        self._repository["antiHypertensiveCount"] == CohortRiskModelRepository().get_model("antiHypertensiveCount")
+
+
     def get_model(self, name):
-        return DoNothingModel(name)
+        if self._repository.has_key(name):
+            return self._repository[name]
+        else:
+            return DoNothingModel(name)
 
 
 class DoNothingModel:

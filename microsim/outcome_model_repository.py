@@ -49,6 +49,7 @@ class OutcomeModelRepository:
         # variable used in testing to control whether a patient will have a stroke or mi
         self.manualStrokeMIProbability = None
 
+        self._resultReporting = {}
         self._models = {}
         femaleCVCoefficients = {
             "lagAge": 0.106501,
@@ -112,7 +113,7 @@ class OutcomeModelRepository:
                 black_race_x_tot_chol_hdl_ratio=-0.117749,
             ),
         }
-        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel(self)
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
 
         # This represents non-cardiovascular mortality..
@@ -215,6 +216,11 @@ class OutcomeModelRepository:
 
         # utility class to take a dataframe row and convert some salietn elements to a person to streamline model selection
 
+    # for reporting this is a place to store debugging data to see how elements of outcomes models are behaving
+    def report_result(self, resultName, resultDict):
+        if not self._resultReporting.has_key[resultName]:
+            self._resultReporting[resultName]= []
+        self._resultReporting[resultName].append(resultDict)
 
 class PersonRowWrapper:
     def __init__(self, x):
