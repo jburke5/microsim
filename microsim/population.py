@@ -1084,6 +1084,7 @@ class ClonePopulation(Population):
         self._outcome_model_repository = OutcomeModelRepository()
         self._qaly_assignment_strategy = QALYAssignmentStrategy()
         self._risk_model_repository = CohortRiskModelRepository()
+        self._initialization_repository = InitializationRepository()
         self.n = n
 
         # trying to make sure that cloned peopel are setup the same way as people are
@@ -1110,8 +1111,19 @@ class ClonePopulation(Population):
                                             'serumCreatinine' : person._creatinine[0],
                                             'selfReportStrokeAge' : -1, 
                                             'selfReportMIAge' : -1,
-                                            'diedBy2015' : 0}), self._outcome_model_repository, randomEffects=person._randomEffects)
+                                            'diedBy2015' : 0}), 
+                                            self._outcome_model_repository, 
+                                            randomEffects=person._randomEffects)
 
+        # for factors that were initialized on the first person, we have to set them the same way on teh clones
+        initializers = self._initialization_repository.get_initializers()
+        for initializerName, _ in initializers.items():
+            fromAttr = getattr(person, initializerName)
+            toAttr = getattr(clonePerson, initializerName)
+            toAttr.clear()
+            toAttr.extend(fromAttr)
+
+        
         people = pd.Series([copy.deepcopy(clonePerson) for i in range(0, n)])
 
         #pandarallel.initialize(verbose=1)
