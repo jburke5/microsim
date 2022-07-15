@@ -98,6 +98,7 @@ class GCPModel:
         #reportingDict['totalYears'] = yearsInSim
         #reportingDict['meanSBPValue'] = meanSBP
         #reportingDict['antiHypertensiveValue'] = anyAntiHpertensive
+        #reportingDict['finalXb'] = xb
 
         #if self._outcome_model_repository is not None:
         #    self._outcome_model_repository.report_result('gcp', reportingDict)

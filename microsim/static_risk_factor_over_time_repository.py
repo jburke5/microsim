@@ -5,11 +5,11 @@ from microsim.cohort_risk_model_repository import CohortRiskModelRepository
 class StaticRiskFactorOverTimeRepository(RiskModelRepository):
     def __init__(self):
         super(StaticRiskFactorOverTimeRepository, self).__init__()
-        self._repository["antiHypertensiveCount"] == CohortRiskModelRepository().get_model("antiHypertensiveCount")
+        self._repository["antiHypertensiveCount"] = CohortRiskModelRepository()._repository["antiHypertensiveCount"]
 
 
     def get_model(self, name):
-        if self._repository.has_key(name):
+        if name in self._repository.keys():
             return self._repository[name]
         else:
             return DoNothingModel(name)

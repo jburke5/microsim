@@ -222,6 +222,12 @@ class Person:
     def has_incident_dementia(self):
         return self.has_incident_event(OutcomeType.DEMENTIA)
 
+    def dead_at_start_of_wave(self, year):
+        return (year > len(self._age)) or (self._alive[year-1] == False)
+
+    def dead_at_end_of_wave(self, year):
+        return (year > len(self._age)) or (self._alive[year] == False)
+
     @property
     def _black(self):
         return self._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK
