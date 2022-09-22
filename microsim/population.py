@@ -1049,6 +1049,16 @@ class NHANESDirectSamplePopulation(Population):
         else:
             raise Exception("unknwon risk model repository type" + model_repository_type)
 
+class PersonListPopulation(Population):
+    def __init__(self, people):
+
+        super().__init__(pd.Series(people))
+        self.n = len(people)
+        self._qaly_assignment_strategy = QALYAssignmentStrategy()
+        self._outcome_model_repository = OutcomeModelRepository()
+        self._risk_model_repository = CohortRiskModelRepository()
+
+
 
 class NHANESAgeStandardPopulation(NHANESDirectSamplePopulation):
     def __init__(self, n, year):
