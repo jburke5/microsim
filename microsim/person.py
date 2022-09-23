@@ -172,6 +172,48 @@ class Person:
                 filter(lambda outcome: outcome[0] < self._age[0], outcomes_for_type)
             )
 
+    def get_wave_for_age(self, ageTarget):
+        if ageTarget < self._age[0] or ageTarget > self.age[-1]:
+            raise RuntimeError(f'Age:: {ageTarget} out of range {self._age[0]}-{self._age[-1]}')
+        
+        wave = -1
+        for i, age in enumerate(self._age):
+            if ageTarget==age:
+                wave = i+1
+                break
+        return wave
+    
+    def get_person_copy_at_age(self, age):
+        personCopy = copy.deepcopy(self)
+        waveForAge = personCopy.get_wave_for_age(age)
+        personCopy._age = personCopy._age[:waveForAge]
+        personCopy._alive = personCopy._alive[:waveForAge]
+        personCopy._sbp = personCopy._sbp[:waveForAge]
+        personCopy._dbp = personCopy._dbp[:waveForAge]
+        personCopy._a1c = personCopy._a1c[:waveForAge]
+        personCopy._hdl = personCopy._hdl[:waveForAge]
+        personCopy._ldl = personCopy._ldl[:waveForAge]
+        personCopy._trig = personCopy._trig[:waveForAge]
+        personCopy._totChol = personCopy._totChol[:waveForAge]
+        personCopy._bmi = personCopy._bmi[:waveForAge]
+        personCopy._waist = personCopy._waist[:waveForAge]
+        personCopy._anyPhysicalActivity = personCopy._anyPhysicalActivity[:waveForAge]
+        personCopy._antiHypertensiveCount = personCopy._antiHypertensiveCount[:waveForAge]
+        personCopy._alcoholPerWeek = personCopy._alcoholPerWeek[:waveForAge]
+        personCopy._statin = personCopy._statin[:waveForAge]
+        personCopy._otherLipidLoweringMedicationCount = personCopy._otherLipidLoweringMedicationCount[:waveForAge]
+        personCopy._gcp = personCopy._gcp[:waveForAge]
+        personCopy._qalys = personCopy._qalys[:waveForAge]
+        personCopy._afib = personCopy._afib[:waveForAge]
+        personCopy._bpMedsAdded = personCopy._bpMedsAdded[:waveForAge]
+        personCopy._creatinine = personCopy._creatinine[:waveForAge]
+
+        # iterate through outcomes and remove those that occured after the simulation started
+        for type, outcomes_for_type in personCopy._outcomes.items():
+            personCopy._outcomes[type] = list(
+                filter(lambda outcome: outcome[0] < personCopy._age[waveForAge], outcomes_for_type)
+            )
+    
     @property
     def _current_smoker(self):
         return self._smokingStatus == SmokingStatus.CURRENT
