@@ -173,7 +173,7 @@ class Person:
             )
 
     def get_wave_for_age(self, ageTarget):
-        if ageTarget < self._age[0] or ageTarget > self.age[-1]:
+        if ageTarget < self._age[0] or ageTarget > self._age[-1]:
             raise RuntimeError(f'Age:: {ageTarget} out of range {self._age[0]}-{self._age[-1]}')
         
         wave = -1
@@ -207,12 +207,14 @@ class Person:
         personCopy._afib = personCopy._afib[:waveForAge]
         personCopy._bpMedsAdded = personCopy._bpMedsAdded[:waveForAge]
         personCopy._creatinine = personCopy._creatinine[:waveForAge]
+        personCopy._populationIndex = self._populationIndex
 
         # iterate through outcomes and remove those that occured after the simulation started
         for type, outcomes_for_type in personCopy._outcomes.items():
             personCopy._outcomes[type] = list(
-                filter(lambda outcome: outcome[0] < personCopy._age[waveForAge], outcomes_for_type)
+                filter(lambda outcome: outcome[0] < age, outcomes_for_type)
             )
+        return personCopy
     
     @property
     def _current_smoker(self):
