@@ -27,31 +27,35 @@ class GFREquation:
     def __init__(self):
         pass
 
-    def get_gfr_for_person(self, person):
-        crThreshold = 0.7 if person._gender == NHANESGender.FEMALE else 0.9
+    def get_gfr_for_person(self, person, wave=-1):
+        return self.get_gfr_for_person_attributes(person._gender, person._raceEthnicity,
+            person._creatinine[wave], person._age[wave])
+
+    def get_gfr_for_person_attributes(self, gender, raceEthnicity, creatinine, age):
+        crThreshold = 0.7 if gender == NHANESGender.FEMALE else 0.9
         exponent = GFREquation.exponentForGenderCr.loc[
-            (GFREquation.exponentForGenderCr["female"] == (person._gender == NHANESGender.FEMALE))
+            (GFREquation.exponentForGenderCr["female"] == (gender == NHANESGender.FEMALE))
             & (
                 GFREquation.exponentForGenderCr["underThreshold"]
-                == (person._creatinine[-1] <= crThreshold)
+                == (creatinine <= crThreshold)
             )
         ].iloc[0]["exponent"]
         constant = GFREquation.constantForRaceGender.loc[
             (
                 GFREquation.constantForRaceGender["black"]
-                == (person._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK)
+                == (raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK)
             )
             & (
                 GFREquation.constantForRaceGender["female"]
-                == (person._gender == NHANESGender.FEMALE)
+                == (gender == NHANESGender.FEMALE)
             )
         ].iloc[0]["constant"]
 
         # print(f"thresholds: {crThreshold} constant: {constant} exponent: {exponent} female: {self._gender==NHANESGender.FEMALE}, black: {self._raceEthnicity==NHANESRaceEthnicity.NON_HISPANIC_BLACK}, cr: {self._creatinine[-1]}")
         return (
             constant
-            * (person._creatinine[-1] / crThreshold) ** exponent
-            * 0.993 ** person._age[-1]
+            * (creatinine / crThreshold) ** exponent
+            * 0.993 ** age
         )
 
     def get_gfr_for_person_vectorized(self, x):

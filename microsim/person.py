@@ -2,6 +2,7 @@ import math
 import copy
 import numpy.random as npRand
 import numpy as np
+import pandas as pd
 import logging
 
 from typing import Callable
@@ -183,6 +184,8 @@ class Person:
                 break
         return wave
     
+    # returns a version of the person that maintains all of their history up until 
+    # a specified age threshold.
     def get_person_copy_at_age(self, age):
         personCopy = copy.deepcopy(self)
         waveForAge = personCopy.get_wave_for_age(age)
@@ -215,6 +218,107 @@ class Person:
                 filter(lambda outcome: outcome[0] < age, outcomes_for_type)
             )
         return personCopy
+
+    # this method and the following method are used by poulation to get person informaiton
+    def get_current_state_as_dict(self):
+        return {
+            "age": self._age[-1],
+            "baseAge": self._age[0],
+            "gender": self._gender,
+            "raceEthnicity": self._raceEthnicity,
+            "black": self._raceEthnicity == 4,
+            "sbp": self._sbp[-1],
+            "dbp": self._dbp[-1],
+            "a1c": self._a1c[-1],
+            "current_diabetes": self._a1c[-1] > 6.5,
+            "gfr": self._gfr,
+            "hdl": self._hdl[-1],
+            "ldl": self._ldl[-1],
+            "trig": self._trig[-1],
+            "totChol": self._totChol[-1],
+            "bmi": self._bmi[-1],
+            "anyPhysicalActivity": self._anyPhysicalActivity[-1],
+            "education": self._education.value,
+            "afib": self._afib[-1],
+            "alcoholPerWeek": self._alcoholPerWeek[-1],
+            "creatinine": self._creatinine[-1],
+            "antiHypertensiveCount": self._antiHypertensiveCount[-1],
+            # this variable is used in the risk model...
+            # this reflects whether patients have had medications assigned as a risk factor, but 
+            # not whether there has been a separate trematent effect, which is tracked in bpMedsAdded
+            "current_bp_treatment": self._antiHypertensiveCount[-1] > 0,
+            "statin": self._statin[-1],
+            "otherLipidLoweringMedicationCount": self._otherLipidLoweringMedicationCount[-1],
+            "waist": self._waist[-1],
+            "smokingStatus": self._smokingStatus,
+            "current_smoker": self._smokingStatus == 2,
+            "dead": self.is_dead(),
+            "gcpRandomEffect": self._randomEffects["gcp"],
+            "miPriorToSim": self._selfReportMIPriorToSim,
+            "mi": self._selfReportMIPriorToSim or self.has_mi_during_simulation(),
+            "stroke": self._selfReportStrokePriorToSim or self.has_stroke_during_simulation(),
+            "ageAtFirstStroke": self.get_age_at_first_outcome(OutcomeType.STROKE),
+            "ageAtFirstMI": self.get_age_at_first_outcome(OutcomeType.MI),
+            "ageAtFirstDementia": self.get_age_at_first_outcome(OutcomeType.DEMENTIA),
+            "miInSim": self.has_mi_during_simulation(),
+            "strokePriorToSim": self._selfReportStrokePriorToSim,
+            "strokeInSim": self.has_stroke_during_simulation(),
+            "dementia": self._dementia,
+            "gcp": self._gcp[-1],
+            "baseGcp": self._gcp[0],
+            "gcpSlope": self._gcp[-1] - self._gcp[-2] if len(self._gcp) >= 2 else 0,
+            "totalYearsInSim": self.years_in_simulation(),
+            "totalQalys": np.array(self._qalys).sum(),
+            "totalBPMedsAdded": np.array(self._bpMedsAdded).sum(),
+            "bpMedsAdded": self._bpMedsAdded[-1]
+        }
+
+    def get_tvc_state_as_dict(self, timeVaryingCovariates):
+        tvcAttributes = {}
+        for var in timeVaryingCovariates:
+            attr = getattr(self, "_" + var)
+            for wave in range(0, len(attr)):
+                tvcAttributes[var + str(wave)] = attr[wave]
+        return tvcAttributes
+
+    def get_all_state_as_dict(self):
+        tvc = ['age', 'sbp', 'dbp', 'a1c', 'hdl', 'ldl', 'a1c','trig', 'totChol','bmi', 
+                'anyPhysicalActivity', 'afib', 'alcoholPerWeek', 'creatinine', 'antiHypertensiveCount',
+                'statin', 'otherLipidLoweringMedicationCount', 'waist', 'alive', 'gcp',
+                'bpMedsAdded']
+        attributes = self.get_tvc_state_as_dict(tvc)
+        waveCount = len(self._age)
+        attributes["baseAge"] =  [self._age[0]] * waveCount 
+        attributes["gender"] =  [self._gender] * waveCount
+        attributes["raceEthnicity"] =  [self._raceEthnicity] * waveCount
+        attributes["black"]= [self._raceEthnicity == 4] * waveCount
+        attributes["current_diabetes"] = np.greater(self._a1c, 6.5)
+        attributes["gfr"] = [GFREquation().get_gfr_for_person_attributes(self._gender, self._raceEthnicity,
+            self._creatinine[i], self._age[i]) for i in range(1, waveCount)]
+        attributes["education"] = [self._education.value] * waveCount
+        attributes["current_bp_treatment"] = [self._antiHypertensiveCount[i] > 0 for i in range(1, waveCount)]
+        attributes["smokingStatus"] =  [self._smokingStatus] * waveCount
+        attributes["current_smoker"] = [self._smokingStatus == 2] * waveCount
+        attributes["gcpRandomEffect"]= [self._randomEffects["gcp"]] * waveCount
+        attributes["miPriorToSim"] = [self._selfReportMIPriorToSim] * waveCount
+        attributes["strokePriorToSim"] = [self._selfReportStrokePriorToSim] * waveCount
+        attributes["mi"] = [self._selfReportMIPriorToSim or self.has_outcome_during_or_prior_to_wave(i, OutcomeType.MI) for i in range(1, waveCount)]
+        attributes["stroke"] = [self._selfReportStrokePriorToSim or self.has_outcome_during_or_prior_to_wave(i, OutcomeType.STROKE) for i in range(1, waveCount)]
+        attributes["ageAtFirstStroke"] =  [self.get_age_at_first_outcome(OutcomeType.STROKE) if self.get_age_at_first_outcome(OutcomeType.STROKE) < i else -1  for i in self._age]
+        attributes["ageAtFirstMI"] =  [self.get_age_at_first_outcome(OutcomeType.MI) if self.get_age_at_first_outcome(OutcomeType.MI) < i else -1  for i in self._age]
+        attributes["ageAtFirstDementia"] =  [self.get_age_at_first_outcome(OutcomeType.DEMENTIA) if self.get_age_at_first_outcome(OutcomeType.DEMENTIA) < i else -1  for i in self._age]
+        attributes["miInSim"] = [self.has_mi_during_wave(i) for i in range(1, waveCount)]
+        attributes["strokeInSim"] = [self.has_stroke_during_wave(i) for i in range(1, waveCount)]
+        attributes["dementia"] = [self.has_outcome_during_or_prior_to_wave(i, OutcomeType.DEMENTIA)(i) for i in range(1, waveCount)]
+        attributes["baseGcp"] = [self._gcp[0]] * waveCount
+        attributes["totalYearsInSim"] = np.arange(1, waveCount)
+        attributes["totalBPMedsAdded"] = [np.array(self._bpMedsAdded[:i]).sum() for i in range(1, waveCount)]
+        attributes["totalQalys"] = [QALYAssignmentStrategy().get_next_qaly(self, age) for age in self._age]
+        return attributes
+
+    
+    def get_all_state_as_df(self):
+        return pd.DataFrame(self.get_all_state_as_dict())
     
     @property
     def _current_smoker(self):
@@ -404,20 +508,41 @@ class Person:
     def has_mi_during_wave(self, wave):
         return self.has_outcome_during_wave(wave, OutcomeType.MI)
 
-    def has_outcome_during_wave(self, wave, outcomeType):
-        if (wave <= 0) or (self._alive[-1] and wave > len(self._age) - 1):
+    def valid_outcome_wave(self, wave, addOneWave=False):
+        if (wave <= 0) or (self._alive[-1] and (wave > len(self._age) - (0 if addOneWave else 1))):
             raise Exception(
-                f"Can not have an event in a wave ({wave}) before 1 or after last wave ({len(self._age)-1}). On person ({self})"
+                f"Can not have an event in a wave ({wave}) before 1 or after last wave ({len(self._age)-1} for person: {self}))"
             )
         elif (not self._alive[-1]) and (wave > len(self._age)):
             return False
-        return len(self._outcomes[outcomeType]) != 0 and self.has_outcome_at_age(
-            outcomeType, self._age[wave - 1]
-        )
+        else:
+            return True
+    
+    def has_outcome_during_wave(self, wave, outcomeType):
+        if not self.valid_outcome_wave(wave):
+            return False
+        else:
+            return len(self._outcomes[outcomeType]) != 0 and self.has_outcome_at_age(outcomeType, self._age[wave - 1])
+
+    # addOneWave is a variable that tries to deal with the idea that a valid wave number
+    # depends on when the query is performed. while teh data is advancing, it is possible that 
+    # outcomes may have already been set, but that the person's age hasn't yet advanced...
+    # in that case, set addOneWave=True and we won't raise an exception
+    def has_outcome_during_or_prior_to_wave(self, wave, outcomeType, addOneWave=False):
+        if not self.valid_outcome_wave(wave, addOneWave):
+            return False
+        else:
+            return len(self._outcomes[outcomeType]) != 0 and self.has_outcome_by_age(outcomeType, self._age[wave - 1])
 
     def has_outcome_at_age(self, type, age):
         for outcome_tuple in self._outcomes[type]:
             if outcome_tuple[0] == age:
+                return True
+        return False
+    
+    def has_outcome_by_age(self, type, age):
+        for outcome_tuple in self._outcomes[type]:
+            if outcome_tuple[0] <= age:
                 return True
         return False
 
@@ -642,7 +767,7 @@ class Person:
             f"otherLipid={self._otherLipidLoweringMedicationCount[-1]}, "
             f"creatinine={self._creatinine[-1]}, "
             f"statin={self._statin[-1]}, "
-            f"index={self._populationIndex if self._populationIndex is not None else None}, "
+            f"index={self._populationIndex if (hasattr(self, '_populationIndex') and self._populationIndex is not None) else None}, "
             f"outcomes={self._outcomes}"
             f")"
         )

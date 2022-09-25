@@ -783,66 +783,14 @@ class Population:
         return (ageStandard.ageSpecificContribution.sum(), ageStandard.outcomeCount.sum())
 
     def get_person_attributes_from_person(self, person, timeVaryingCovariates):
-        attrForPerson = {
-            "age": person._age[-1],
-            "baseAge": person._age[0],
-            "gender": person._gender,
-            "raceEthnicity": person._raceEthnicity,
-            "black": person._raceEthnicity == 4,
-            "sbp": person._sbp[-1],
-            "dbp": person._dbp[-1],
-            "a1c": person._a1c[-1],
-            "current_diabetes": person._a1c[-1] > 6.5,
-            "gfr": person._gfr,
-            "hdl": person._hdl[-1],
-            "ldl": person._ldl[-1],
-            "trig": person._trig[-1],
-            "totChol": person._totChol[-1],
-            "bmi": person._bmi[-1],
-            "anyPhysicalActivity": person._anyPhysicalActivity[-1],
-            "education": person._education.value,
-            "afib": person._afib[-1],
-            "alcoholPerWeek": person._alcoholPerWeek[-1],
-            "creatinine": person._creatinine[-1],
-            "antiHypertensiveCount": person._antiHypertensiveCount[-1],
-            # this variable is used in the risk model...
-            # this reflects whether patients have had medications assigned as a risk factor, but 
-            # not whether there has been a separate trematent effect, which is tracked in bpMedsAdded
-            "current_bp_treatment": person._antiHypertensiveCount[-1] > 0,
-            "statin": person._statin[-1],
-            "otherLipidLoweringMedicationCount": person._otherLipidLoweringMedicationCount[-1],
-            "waist": person._waist[-1],
-            "smokingStatus": person._smokingStatus,
-            "current_smoker": person._smokingStatus == 2,
-            "dead": person.is_dead(),
-            "gcpRandomEffect": person._randomEffects["gcp"],
-            "miPriorToSim": person._selfReportMIPriorToSim,
-            "mi": person._selfReportMIPriorToSim or person.has_mi_during_simulation(),
-            "stroke": person._selfReportStrokePriorToSim or person.has_stroke_during_simulation(),
-            "ageAtFirstStroke": person.get_age_at_first_outcome(OutcomeType.STROKE),
-            "ageAtFirstMI": person.get_age_at_first_outcome(OutcomeType.MI),
-            "ageAtFirstDementia": person.get_age_at_first_outcome(OutcomeType.DEMENTIA),
-            "miInSim": person.has_mi_during_simulation(),
-            "strokePriorToSim": person._selfReportStrokePriorToSim,
-            "strokeInSim": person.has_stroke_during_simulation(),
-            "dementia": person._dementia,
-            "gcp": person._gcp[-1],
-            "baseGcp": person._gcp[0],
-            "gcpSlope": person._gcp[-1] - person._gcp[-2] if len(person._gcp) >= 2 else 0,
-            "totalYearsInSim": person.years_in_simulation(),
-            "totalQalys": np.array(person._qalys).sum(),
-            "totalBPMedsAdded": np.array(person._bpMedsAdded).sum(),
-            "bpMedsAdded": person._bpMedsAdded[-1]
-        }
+        attrForPerson = person.get_current_state_as_dict()
         try:
             attrForPerson["populationIndex"] = person._populationIndex
         except AttributeError:
             pass  # populationIndex is not necessary for advancing; can continue safely without it
 
-        for var in timeVaryingCovariates:
-            attr = getattr(person, "_" + var)
-            for wave in range(0, len(attr)):
-                attrForPerson[var + str(wave)] = attr[wave]
+        timeVaryingAttrsForPerson = person.get_tvc_state_as_dict(timeVaryingCovariates)
+        attrForPerson.update(timeVaryingAttrsForPerson)
         return attrForPerson
 
     def get_people_current_state_as_dataframe(self, parallel=True):
@@ -874,7 +822,7 @@ class Population:
             tvcMeans["mean" + var.capitalize()] = [
                 pd.Series(getattr(person, "_" + var)).mean()
                 for i, person in self._people.iteritems()
-            ]        
+            ]   
         return pd.concat([df, pd.DataFrame(tvcMeans)], axis=1)
 
     def get_people_initial_state_as_dataframe(self):
