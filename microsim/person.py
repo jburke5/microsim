@@ -281,45 +281,71 @@ class Person:
                 tvcAttributes[var + str(wave)] = attr[wave]
         return tvcAttributes
 
-    def get_all_state_as_dict(self):
-        tvc = ['age', 'sbp', 'dbp', 'a1c', 'hdl', 'ldl', 'a1c','trig', 'totChol','bmi', 
+    def get_tvc_state_as_dict_long(self, timeVaryingCovariates):
+        tvcAttributes = {}
+        for var in timeVaryingCovariates:
+            attr = getattr(self, "_" + var)
+            tvcAttributes[var] = attr
+        return tvcAttributes
+
+    def get_final_wave_state_as_dict(self):
+        tvc = ['sbp', 'dbp', 'a1c', 'hdl', 'ldl', 'a1c','trig', 'totChol','bmi', 
                 'anyPhysicalActivity', 'afib', 'alcoholPerWeek', 'creatinine', 'antiHypertensiveCount',
-                'statin', 'otherLipidLoweringMedicationCount', 'waist', 'alive', 'gcp',
+                'statin',  'waist', 'alive', 'gcp',
                 'bpMedsAdded']
-        attributes = self.get_tvc_state_as_dict(tvc)
+        attributes = self.get_tvc_state_as_dict_long(tvc)
+        attributes = {i : j[1:] for i, j in attributes.items()}
+        # to get the final wave state, we are going to throw out the first observation for each risk factor, this is what was present at the 
+        # start of a wave...
+        updatedAgeList = copy.deepcopy(self._age)
+        # to get the state at the "end" of the last wave, we need an age value that doesn't exist, so we'll append -1
+        updatedAgeList.append(-1)
+        attributes['age'] = updatedAgeList[1:]
         waveCount = len(self._age)
+        
+        # build a list of ages that includes what a patient's age would have been at teh end of the last wave
+        ageThroughEndOfSim = copy.deepcopy(self._age)
+        ageThroughEndOfSim.append(ageThroughEndOfSim[-1]+1)
+
+        # on rare occasions a person can die from a CV and non-CV cause in the same year...
+        # in that case, they get assigned death twice...which throws the DF lengths off...
+        if len(self._alive) >= 2 and (self._alive[-1] == False) and (self._alive[-2] == False):
+            attributes['alive'] = attributes['alive'][:-1]
+        
         attributes["baseAge"] =  [self._age[0]] * waveCount 
         attributes["gender"] =  [self._gender] * waveCount
         attributes["raceEthnicity"] =  [self._raceEthnicity] * waveCount
         attributes["black"]= [self._raceEthnicity == 4] * waveCount
-        attributes["current_diabetes"] = np.greater(self._a1c, 6.5)
+        attributes["current_diabetes"] = [np.greater(self._a1c[i], 6.5) for i in range(1, waveCount+1)]
         attributes["gfr"] = [GFREquation().get_gfr_for_person_attributes(self._gender, self._raceEthnicity,
-            self._creatinine[i], self._age[i]) for i in range(1, waveCount)]
+            self._creatinine[i], ageThroughEndOfSim[i]) for i in range(1, waveCount+1)]
         attributes["education"] = [self._education.value] * waveCount
-        attributes["current_bp_treatment"] = [self._antiHypertensiveCount[i] > 0 for i in range(1, waveCount)]
+        attributes["current_bp_treatment"] = [self._antiHypertensiveCount[i] > 0 for i in range(1, waveCount+1)]
         attributes["smokingStatus"] =  [self._smokingStatus] * waveCount
         attributes["current_smoker"] = [self._smokingStatus == 2] * waveCount
         attributes["gcpRandomEffect"]= [self._randomEffects["gcp"]] * waveCount
         attributes["miPriorToSim"] = [self._selfReportMIPriorToSim] * waveCount
         attributes["strokePriorToSim"] = [self._selfReportStrokePriorToSim] * waveCount
-        attributes["mi"] = [self._selfReportMIPriorToSim or self.has_outcome_during_or_prior_to_wave(i, OutcomeType.MI) for i in range(1, waveCount)]
-        attributes["stroke"] = [self._selfReportStrokePriorToSim or self.has_outcome_during_or_prior_to_wave(i, OutcomeType.STROKE) for i in range(1, waveCount)]
-        attributes["ageAtFirstStroke"] =  [self.get_age_at_first_outcome(OutcomeType.STROKE) if self.get_age_at_first_outcome(OutcomeType.STROKE) < i else -1  for i in self._age]
-        attributes["ageAtFirstMI"] =  [self.get_age_at_first_outcome(OutcomeType.MI) if self.get_age_at_first_outcome(OutcomeType.MI) < i else -1  for i in self._age]
-        attributes["ageAtFirstDementia"] =  [self.get_age_at_first_outcome(OutcomeType.DEMENTIA) if self.get_age_at_first_outcome(OutcomeType.DEMENTIA) < i else -1  for i in self._age]
-        attributes["miInSim"] = [self.has_mi_during_wave(i) for i in range(1, waveCount)]
-        attributes["strokeInSim"] = [self.has_stroke_during_wave(i) for i in range(1, waveCount)]
-        attributes["dementia"] = [self.has_outcome_during_or_prior_to_wave(i, OutcomeType.DEMENTIA)(i) for i in range(1, waveCount)]
+        attributes["mi"] = [self._selfReportMIPriorToSim or self.has_outcome_during_or_prior_to_wave(i, OutcomeType.MI) for i in range(1, waveCount+1)]
+        attributes["stroke"] = [self._selfReportStrokePriorToSim or self.has_outcome_during_or_prior_to_wave(i, OutcomeType.STROKE) for i in range(1, waveCount+1)]
+        attributes["ageAtFirstStroke"] =  [None if self.get_age_at_first_outcome(OutcomeType.STROKE) is None else self.get_age_at_first_outcome(OutcomeType.STROKE) if self.get_age_at_first_outcome(OutcomeType.STROKE) < i else -1  for i in self._age]
+        attributes["ageAtFirstMI"] =  [None if self.get_age_at_first_outcome(OutcomeType.MI) is None else self.get_age_at_first_outcome(OutcomeType.MI) if self.get_age_at_first_outcome(OutcomeType.MI) < i else -1  for i in self._age]
+        attributes["ageAtFirstDementia"] =  [None if self.get_age_at_first_outcome(OutcomeType.DEMENTIA) is None else self.get_age_at_first_outcome(OutcomeType.DEMENTIA) if self.get_age_at_first_outcome(OutcomeType.DEMENTIA) < i else -1  for i in self._age]
+        attributes["miInSim"] = [self.has_mi_during_wave(i) for i in range(1, waveCount+1)]
+        attributes["strokeInSim"] = [self.has_stroke_during_wave(i) for i in range(1, waveCount+1)]
+        attributes["dementia"] = [self.has_outcome_during_or_prior_to_wave(i, OutcomeType.DEMENTIA) for i in range(1, waveCount+1)]
         attributes["baseGcp"] = [self._gcp[0]] * waveCount
-        attributes["totalYearsInSim"] = np.arange(1, waveCount)
-        attributes["totalBPMedsAdded"] = [np.array(self._bpMedsAdded[:i]).sum() for i in range(1, waveCount)]
+        attributes["gcpSlope"] = [self._gcp[i-1] - self._gcp[i-2] if i >= 2 else 0 for i in range(1, waveCount+1)]
+        attributes["totalYearsInSim"] = np.arange(1, waveCount+1)
+        attributes["totalBPMedsAdded"] = [np.array(self._bpMedsAdded[:i]).sum() for i in range(1, waveCount+1)]
         attributes["totalQalys"] = [QALYAssignmentStrategy().get_next_qaly(self, age) for age in self._age]
+        
+        #for key, val in attributes.items():
+        #    print(f"key: {key}, len(val): {len(val)}")
+
         return attributes
 
-    
-    def get_all_state_as_df(self):
-        return pd.DataFrame(self.get_all_state_as_dict())
-    
+        
     @property
     def _current_smoker(self):
         return self._smokingStatus == SmokingStatus.CURRENT
