@@ -928,7 +928,7 @@ def build_person(x, outcome_model_repository, randomEffects=None):
         if x.selfReportMIAge == 99999
         else x.selfReportMIAge,
         randomEffects=outcome_model_repository.get_random_effects() if randomEffects is None else randomEffects,
-        dfIndex=x.index,
+        dfIndex=x.name,
         diedBy2015=x.diedBy2015 == True,
     )
 

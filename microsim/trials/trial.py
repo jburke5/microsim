@@ -25,6 +25,7 @@ class Trial:
         return PersonListPopulation(treatedList), PersonListPopulation(untreatedList)
     
     def run(self):
+        self.treatedPop._treatments = self.trialDescription._treatments
         self.treatedPop.advance_vectorized(self.trialDescription.duration)
         self.untreatedPop.advance_vectorized(self.trialDescription.duration)
         
