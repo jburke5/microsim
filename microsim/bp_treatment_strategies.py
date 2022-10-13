@@ -197,3 +197,8 @@ class jnc8ForHighRiskLowBpTarget(jnc8ForHighRisk):
     
     def get_goal_vectorized(self, x):
         return self.targetBP
+
+# simplified class to represent SPRINT.
+class SprintTreatment(jnc8ForHighRiskLowBpTarget):
+    def __init__(self):
+        super().__init__(0.075, {'sbp' : 126, 'dbp': 85})

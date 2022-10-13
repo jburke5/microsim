@@ -1,28 +1,31 @@
-from microsim.person import Person
-from microsim.race_ethnicity import NHANESRaceEthnicity
-from microsim.smoking_status import SmokingStatus
-from microsim.gender import NHANESGender
-from microsim.education import Education
-from microsim.alcohol_category import AlcoholCategory
-from microsim.cohort_risk_model_repository import CohortRiskModelRepository
-from microsim.nhanes_risk_model_repository import NHANESRiskModelRepository
-from microsim.outcome_model_repository import OutcomeModelRepository
-from microsim.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFactorModel
-from microsim.data_loader import load_regression_model, get_absolute_datafile_path
-from microsim.outcome_model_type import OutcomeModelType
-from microsim.cv_outcome_determination import CVOutcomeDetermination
-from microsim.outcome import Outcome, OutcomeType
-from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
-from microsim.initialization_repository import InitializationRepository
-from microsim.gfr_equation import GFREquation
-from microsim.bp_treatment_strategies import *
+import copy
+import logging
+import multiprocessing as mp
 
+import numpy as np
 import pandas as pd
 from pandarallel import pandarallel
-import copy
-import multiprocessing as mp
-import numpy as np
-import logging
+
+from microsim.alcohol_category import AlcoholCategory
+from microsim.bp_treatment_strategies import *
+from microsim.cohort_risk_model_repository import CohortRiskModelRepository
+from microsim.cv_outcome_determination import CVOutcomeDetermination
+from microsim.data_loader import (get_absolute_datafile_path,
+                                  load_regression_model)
+from microsim.education import Education
+from microsim.gender import NHANESGender
+from microsim.gfr_equation import GFREquation
+from microsim.initialization_repository import InitializationRepository
+from microsim.nhanes_risk_model_repository import NHANESRiskModelRepository
+from microsim.outcome import Outcome, OutcomeType
+from microsim.outcome_model_repository import OutcomeModelRepository
+from microsim.outcome_model_type import OutcomeModelType
+from microsim.person import Person
+from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
+from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.smoking_status import SmokingStatus
+from microsim.statsmodel_logistic_risk_factor_model import \
+    StatsModelLogisticRiskFactorModel
 
 
 class Population:
@@ -200,7 +203,14 @@ class Population:
         return alive, df
 
     def push_updates_back_to_people(self, x):
+        updatedIndices = set()
+        peopleSet = set()
         person = self._people.iloc[int(x.populationIndex)]
+        if x.populationIndex in updatedIndices or person in peopleSet:
+            raise Exception(f"Population index: {x.populationIndex} already updated")
+        else:
+            updatedIndices.add(x.populationIndex)
+            peopleSet.add(person)
         return self.update_person(person, x)
 
     def update_person(self, person, x):
@@ -783,66 +793,14 @@ class Population:
         return (ageStandard.ageSpecificContribution.sum(), ageStandard.outcomeCount.sum())
 
     def get_person_attributes_from_person(self, person, timeVaryingCovariates):
-        attrForPerson = {
-            "age": person._age[-1],
-            "baseAge": person._age[0],
-            "gender": person._gender,
-            "raceEthnicity": person._raceEthnicity,
-            "black": person._raceEthnicity == 4,
-            "sbp": person._sbp[-1],
-            "dbp": person._dbp[-1],
-            "a1c": person._a1c[-1],
-            "current_diabetes": person._a1c[-1] > 6.5,
-            "gfr": person._gfr,
-            "hdl": person._hdl[-1],
-            "ldl": person._ldl[-1],
-            "trig": person._trig[-1],
-            "totChol": person._totChol[-1],
-            "bmi": person._bmi[-1],
-            "anyPhysicalActivity": person._anyPhysicalActivity[-1],
-            "education": person._education.value,
-            "afib": person._afib[-1],
-            "alcoholPerWeek": person._alcoholPerWeek[-1],
-            "creatinine": person._creatinine[-1],
-            "antiHypertensiveCount": person._antiHypertensiveCount[-1],
-            # this variable is used in the risk model...
-            # this reflects whether patients have had medications assigned as a risk factor, but 
-            # not whether there has been a separate trematent effect, which is tracked in bpMedsAdded
-            "current_bp_treatment": person._antiHypertensiveCount[-1] > 0,
-            "statin": person._statin[-1],
-            "otherLipidLoweringMedicationCount": person._otherLipidLoweringMedicationCount[-1],
-            "waist": person._waist[-1],
-            "smokingStatus": person._smokingStatus,
-            "current_smoker": person._smokingStatus == 2,
-            "dead": person.is_dead(),
-            "gcpRandomEffect": person._randomEffects["gcp"],
-            "miPriorToSim": person._selfReportMIPriorToSim,
-            "mi": person._selfReportMIPriorToSim or person.has_mi_during_simulation(),
-            "stroke": person._selfReportStrokePriorToSim or person.has_stroke_during_simulation(),
-            "ageAtFirstStroke": person.get_age_at_first_outcome(OutcomeType.STROKE),
-            "ageAtFirstMI": person.get_age_at_first_outcome(OutcomeType.MI),
-            "ageAtFirstDementia": person.get_age_at_first_outcome(OutcomeType.DEMENTIA),
-            "miInSim": person.has_mi_during_simulation(),
-            "strokePriorToSim": person._selfReportStrokePriorToSim,
-            "strokeInSim": person.has_stroke_during_simulation(),
-            "dementia": person._dementia,
-            "gcp": person._gcp[-1],
-            "baseGcp": person._gcp[0],
-            "gcpSlope": person._gcp[-1] - person._gcp[-2] if len(person._gcp) >= 2 else 0,
-            "totalYearsInSim": person.years_in_simulation(),
-            "totalQalys": np.array(person._qalys).sum(),
-            "totalBPMedsAdded": np.array(person._bpMedsAdded).sum(),
-            "bpMedsAdded": person._bpMedsAdded[-1]
-        }
+        attrForPerson = person.get_current_state_as_dict()
         try:
             attrForPerson["populationIndex"] = person._populationIndex
         except AttributeError:
             pass  # populationIndex is not necessary for advancing; can continue safely without it
 
-        for var in timeVaryingCovariates:
-            attr = getattr(person, "_" + var)
-            for wave in range(0, len(attr)):
-                attrForPerson[var + str(wave)] = attr[wave]
+        timeVaryingAttrsForPerson = person.get_tvc_state_as_dict(timeVaryingCovariates)
+        attrForPerson.update(timeVaryingAttrsForPerson)
         return attrForPerson
 
     def get_people_current_state_as_dataframe(self, parallel=True):
@@ -874,7 +832,7 @@ class Population:
             tvcMeans["mean" + var.capitalize()] = [
                 pd.Series(getattr(person, "_" + var)).mean()
                 for i, person in self._people.iteritems()
-            ]        
+            ]   
         return pd.concat([df, pd.DataFrame(tvcMeans)], axis=1)
 
     def get_people_initial_state_as_dataframe(self):
@@ -980,7 +938,7 @@ def build_person(x, outcome_model_repository, randomEffects=None):
         if x.selfReportMIAge == 99999
         else x.selfReportMIAge,
         randomEffects=outcome_model_repository.get_random_effects() if randomEffects is None else randomEffects,
-        dfIndex=x.index,
+        dfIndex=x.name,
         diedBy2015=x.diedBy2015 == True,
     )
 
@@ -1048,6 +1006,21 @@ class NHANESDirectSamplePopulation(Population):
             self._risk_model_repository = NHANESRiskModelRepository()
         else:
             raise Exception("unknwon risk model repository type" + model_repository_type)
+
+class PersonListPopulation(Population):
+    def __init__(self, people):
+
+        super().__init__(pd.Series(people))
+        self.n = len(people)
+        self._qaly_assignment_strategy = QALYAssignmentStrategy()
+        self._outcome_model_repository = OutcomeModelRepository()
+        self._risk_model_repository = CohortRiskModelRepository()
+        # population index is used for efficiency in the population, need to set it on 
+        # each person when a new population is setup
+        for i, person in self._people.iteritems():
+            person._populationIndex = i
+        # if the people have already been advanced, have the population start at that point
+        self._currentWave = len(people[0]._age)-1
 
 
 class NHANESAgeStandardPopulation(NHANESDirectSamplePopulation):
