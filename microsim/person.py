@@ -183,7 +183,14 @@ class Person:
                 wave = i+1
                 break
         return wave
-    
+
+    def get_age_at_start_of_wave(self, wave):
+        return self._age[wave]
+
+    def get_age_at_end_of_wave(self, wave):
+        return self._age[wave+1]
+
+
     # returns a version of the person that maintains all of their history up until 
     # a specified age threshold.
     def get_person_copy_at_age(self, age):
@@ -219,6 +226,40 @@ class Person:
             )
         return personCopy
 
+    def get_person_copy_starting_at_wave(self, wave):
+        personCopy = copy.deepcopy(self)
+        personCopy._age = personCopy._age[wave:]
+        personCopy._alive = personCopy._alive[wave:]
+        personCopy._sbp = personCopy._sbp[wave:]
+        personCopy._dbp = personCopy._dbp[wave:]
+        personCopy._a1c = personCopy._a1c[wave:]
+        personCopy._hdl = personCopy._hdl[wave:]
+        personCopy._ldl = personCopy._ldl[wave:]
+        personCopy._trig = personCopy._trig[wave:]
+        personCopy._totChol = personCopy._totChol[wave:]
+        personCopy._bmi = personCopy._bmi[wave:]
+        personCopy._waist = personCopy._waist[wave:]
+        personCopy._anyPhysicalActivity = personCopy._anyPhysicalActivity[wave:]
+        personCopy._antiHypertensiveCount = personCopy._antiHypertensiveCount[wave:]
+        personCopy._alcoholPerWeek = personCopy._alcoholPerWeek[wave:]
+        personCopy._statin = personCopy._statin[wave:]
+        personCopy._otherLipidLoweringMedicationCount = personCopy._otherLipidLoweringMedicationCount[wave:]
+        personCopy._gcp = personCopy._gcp[wave:]
+        personCopy._qalys = personCopy._qalys[wave:]
+        personCopy._afib = personCopy._afib[wave:]
+        personCopy._bpMedsAdded = personCopy._bpMedsAdded[wave:]
+        personCopy._creatinine = personCopy._creatinine[wave:]
+        personCopy._populationIndex = self._populationIndex
+
+        ### UNFINISHED TAG — have to figure out what to do here...what do we do with outcomes that happen
+        ### prior to this wave..
+        
+        # iterate through outcomes and remove those that occured after the simulation started
+        for type, outcomes_for_type in personCopy._outcomes.items():
+            personCopy._outcomes[type] = list(
+                filter(lambda outcome: outcome[0] < self.get_age_at_end_of_wave(wave), outcomes_for_type)
+            )
+        return personCopy
     # this method and the following method are used by poulation to get person informaiton
     def get_current_state_as_dict(self):
         return {
@@ -909,9 +950,14 @@ class Person:
         selfCopy._outcomes = copy.deepcopy(self._outcomes)
         selfCopy._selfReportStrokePriorToSim = copy.deepcopy(self._selfReportStrokePriorToSim)
         selfCopy._selfReportMIPriorToSim = copy.deepcopy(self._selfReportMIPriorToSim)
+        selfCopy._selfReportMIAge = copy.deepcopy(self._selfReportMIAge) if hasattr(self, "_selfReportMIAge") else None  
+        selfCopy._selfReportStrokeAge = copy.deepcopy(self._selfReportStrokeAge) if hasattr(self, "_selfReportStrokeAge") else None 
         selfCopy._afib = self._afib
         selfCopy._bpTreatmentStrategy = self._bpTreatmentStrategy
+        selfCopy._afib = copy.deepcopy(self._afib)
         selfCopy._gcp = copy.deepcopy(self._gcp)
         selfCopy._randomEffects = copy.deepcopy(self._randomEffects)
+        selfCopy._populationIndex =copy.deepcopy(self._populationIndex) if hasattr(self, "_populationIndex") else None 
+        selfCopy.dfIndex =copy.deepcopy(self.dfIndex) if hasattr(self, "dfIndex") else None 
 
         return selfCopy

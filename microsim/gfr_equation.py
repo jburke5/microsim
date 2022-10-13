@@ -28,11 +28,17 @@ class GFREquation:
         pass
 
     def get_gfr_for_person(self, person, wave=-1):
+        try:
+            float(person._creatinine[-1])
+            float(person._age[-1])
+        except TypeError:
+            print(f"pop index: {person._populationIndex} dfIndex: {person.dfIndex} cr: {person._creatinine}")
         return self.get_gfr_for_person_attributes(person._gender, person._raceEthnicity,
             person._creatinine[wave], person._age[wave])
 
     def get_gfr_for_person_attributes(self, gender, raceEthnicity, creatinine, age):
         crThreshold = 0.7 if gender == NHANESGender.FEMALE else 0.9
+        
         exponent = GFREquation.exponentForGenderCr.loc[
             (GFREquation.exponentForGenderCr["female"] == (gender == NHANESGender.FEMALE))
             & (

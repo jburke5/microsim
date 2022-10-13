@@ -1,28 +1,31 @@
-from microsim.person import Person
-from microsim.race_ethnicity import NHANESRaceEthnicity
-from microsim.smoking_status import SmokingStatus
-from microsim.gender import NHANESGender
-from microsim.education import Education
-from microsim.alcohol_category import AlcoholCategory
-from microsim.cohort_risk_model_repository import CohortRiskModelRepository
-from microsim.nhanes_risk_model_repository import NHANESRiskModelRepository
-from microsim.outcome_model_repository import OutcomeModelRepository
-from microsim.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFactorModel
-from microsim.data_loader import load_regression_model, get_absolute_datafile_path
-from microsim.outcome_model_type import OutcomeModelType
-from microsim.cv_outcome_determination import CVOutcomeDetermination
-from microsim.outcome import Outcome, OutcomeType
-from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
-from microsim.initialization_repository import InitializationRepository
-from microsim.gfr_equation import GFREquation
-from microsim.bp_treatment_strategies import *
+import copy
+import logging
+import multiprocessing as mp
 
+import numpy as np
 import pandas as pd
 from pandarallel import pandarallel
-import copy
-import multiprocessing as mp
-import numpy as np
-import logging
+
+from microsim.alcohol_category import AlcoholCategory
+from microsim.bp_treatment_strategies import *
+from microsim.cohort_risk_model_repository import CohortRiskModelRepository
+from microsim.cv_outcome_determination import CVOutcomeDetermination
+from microsim.data_loader import (get_absolute_datafile_path,
+                                  load_regression_model)
+from microsim.education import Education
+from microsim.gender import NHANESGender
+from microsim.gfr_equation import GFREquation
+from microsim.initialization_repository import InitializationRepository
+from microsim.nhanes_risk_model_repository import NHANESRiskModelRepository
+from microsim.outcome import Outcome, OutcomeType
+from microsim.outcome_model_repository import OutcomeModelRepository
+from microsim.outcome_model_type import OutcomeModelType
+from microsim.person import Person
+from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
+from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.smoking_status import SmokingStatus
+from microsim.statsmodel_logistic_risk_factor_model import \
+    StatsModelLogisticRiskFactorModel
 
 
 class Population:
@@ -200,7 +203,14 @@ class Population:
         return alive, df
 
     def push_updates_back_to_people(self, x):
+        updatedIndices = set()
+        peopleSet = set()
         person = self._people.iloc[int(x.populationIndex)]
+        if x.populationIndex in updatedIndices or person in peopleSet:
+            raise Exception(f"Population index: {x.populationIndex} already updated")
+        else:
+            updatedIndices.add(x.populationIndex)
+            peopleSet.add(person)
         return self.update_person(person, x)
 
     def update_person(self, person, x):
@@ -208,6 +218,10 @@ class Population:
             raise Exception(f"Trying to update a dead person: {person}")
         for rf in self._riskFactors:
             attr = getattr(person, "_" + rf)
+            try:
+                float(x[rf + str(self._currentWave)])
+            except:
+                print(f"Error on risk factor: {rf}, currentWave: {self._currentWave}, person: {person}, values: {x[rf + str(self._currentWave)]}")
             attr.append(x[rf + str(self._currentWave)])
 
         for treatment in self._treatments:
@@ -1005,7 +1019,12 @@ class PersonListPopulation(Population):
         self._qaly_assignment_strategy = QALYAssignmentStrategy()
         self._outcome_model_repository = OutcomeModelRepository()
         self._risk_model_repository = CohortRiskModelRepository()
-
+        # population index is used for efficiency in the population, need to set it on 
+        # each person when a new population is setup
+        for i, person in self._people.iteritems():
+            person._populationIndex = i
+        # if the people have already been advanced, have the population start at that point
+        self._currentWave = len(people[0]._age)-1
 
 
 class NHANESAgeStandardPopulation(NHANESDirectSamplePopulation):
