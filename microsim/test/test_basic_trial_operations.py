@@ -28,7 +28,8 @@ class TestBasicTrialOperations(unittest.TestCase):
                                                 inclusionFilter=lambda x : x._age[0] > self.ageThreshold, 
                                                 exclusionFilter=None, 
                                                 outcomes=None,
-                                                randomizationSchema=lambda x : np.random.uniform() < 0.5)
+                                                randomizationSchema=lambda x : np.random.uniform() < 0.5,
+                                                treatment=None)
 
         self.oldJoe = Person(
             age=60,

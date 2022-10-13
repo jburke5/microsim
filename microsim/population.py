@@ -218,10 +218,6 @@ class Population:
             raise Exception(f"Trying to update a dead person: {person}")
         for rf in self._riskFactors:
             attr = getattr(person, "_" + rf)
-            try:
-                float(x[rf + str(self._currentWave)])
-            except:
-                print(f"Error on risk factor: {rf}, currentWave: {self._currentWave}, person: {person}, values: {x[rf + str(self._currentWave)]}")
             attr.append(x[rf + str(self._currentWave)])
 
         for treatment in self._treatments:
