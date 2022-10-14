@@ -7,4 +7,10 @@ class OutcomeAssessor:
             outcomeDuringSim = person.has_outcome_during_simulation (outcomeType)
             if outcomeDuringSim:
                 return True
-        return False   
+        return False  
+
+    def get_name(self):
+        name = ""
+        for outcome in self.outcomeTypes:
+            name += str(outcome)
+        return name

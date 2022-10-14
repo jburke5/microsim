@@ -1,5 +1,6 @@
 from microsim.population import PersonListPopulation
 import copy
+import pandas as pd
 
 class Trial:
     def __init__(self, trialDescription, targetPopulation):
@@ -34,13 +35,21 @@ class Trial:
     
     def run(self):
         self.treatedPop._bpTreatmentStrategy = self.trialDescription.treatment
-        self.treatedDF, self.treatedAlive = self.treatedPop.advance_vectorized(self.trialDescription.duration)
-        self.untreatedDF, self.untreatedAlive = self.untreatedPop.advance_vectorized(self.trialDescription.duration)
+        lastDuration = 0
+        for duration in self.trialDescription.durations:
+            self.treatedDF, self.treatedAlive = self.treatedPop.advance_vectorized(duration-lastDuration)
+            self.untreatedDF, self.untreatedAlive = self.untreatedPop.advance_vectorized(duration-lastDuration)
+            self.analyze(duration)
+            lastDuration = duration
 
-    def analyze(self):
+
+    def analyze(self, duration):
         for analysis in self.trialDescription.analyses:
             reg, se, pvalue = analysis.analyze(self.treatedPop, self.untreatedPop)
-            self.analyticResults[analysis] = {'reg' : reg, 'se' : se, 'pvalue': pvalue}
+            self.analyticResults[get_analysis_name(analysis, duration)] = {'reg' : reg, 'se' : se, 'pvalue': pvalue}
         return self.analyticResults
         
+        
+def get_analysis_name(analysis, duration):
+    return f"{analysis.get_name()}-{str(duration)}"
     
