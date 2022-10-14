@@ -1,7 +1,7 @@
 import numpy as np
 
 class TrialDescription:
-    def __init__(self, sampleSize, duration, inclusionFilter, exclusionFilter, outcomes, treatment,
+    def __init__(self, sampleSize, duration, inclusionFilter, exclusionFilter, analyses, treatment,
                 randomizationSchema=lambda x : np.random.uniform() < 0.5):
 
         self.sampleSize = sampleSize
@@ -10,3 +10,4 @@ class TrialDescription:
         self.exclusionFilter = exclusionFilter
         self.randomizationSchema = randomizationSchema
         self.treatment = treatment
+        self.analyses = analyses

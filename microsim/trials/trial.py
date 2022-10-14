@@ -8,6 +8,7 @@ class Trial:
             trialDescription.inclusionFilter, trialDescription.exclusionFilter)
         # select our patients from the population
         self.treatedPop, self.untreatedPop = self.randomize(trialDescription.randomizationSchema)
+        self.analyticResults = {}
 
     def select_trial_population(self, targetPopulation, inclusionFilter, exclusionFilter):
         filteredPeople = list(filter(inclusionFilter, list(targetPopulation._people)))
@@ -33,10 +34,13 @@ class Trial:
     
     def run(self):
         self.treatedPop._bpTreatmentStrategy = self.trialDescription.treatment
-        #for i in range(0, self.trialDescription.duration):
-        #    print(f"************* {i}")
-        #    self.treatedDF, self.treatedAlive = self.treatedPop.advance_vectorized(1)
         self.treatedDF, self.treatedAlive = self.treatedPop.advance_vectorized(self.trialDescription.duration)
         self.untreatedDF, self.untreatedAlive = self.untreatedPop.advance_vectorized(self.trialDescription.duration)
+
+    def analyze(self):
+        for analysis in self.trialDescription.analyses:
+            reg, se, pvalue = analysis.analyze(self.treatedPop, self.untreatedPop)
+            self.analyticResults[analysis] = {'reg' : reg, 'se' : se, 'pvalue': pvalue}
+        return self.analyticResults
         
     
