@@ -94,7 +94,7 @@ class Population:
         waveAtStartOfAdvance = self._currentWave
 
         for yearIndex in range(years):
-            logging.info(f"processing year: {yearIndex}")
+            logging.info(f"processing year: {self._currentWave}")
             alive = alive.loc[alive.dead == False]
             # if everybody has died, break out of the loop, no need to keep moving forward
             if len(alive) == 0:

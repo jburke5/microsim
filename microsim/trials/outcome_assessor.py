@@ -1,10 +1,16 @@
 class OutcomeAssessor:
+    DEATH = "death"
+    
     def __init__(self, outcomesTypes):
         self.outcomeTypes = outcomesTypes
 
     def get_outcome(self, person):
         for outcomeType in self.outcomeTypes:
-            outcomeDuringSim = person.has_outcome_during_simulation (outcomeType)
+            if outcomeType == OutcomeAssessor.DEATH:
+                outcomeDuringSim = person.is_dead()
+            else:
+                outcomeDuringSim = person.has_outcome_during_simulation(outcomeType)
+            
             if outcomeDuringSim:
                 return True
         return False  
@@ -12,5 +18,5 @@ class OutcomeAssessor:
     def get_name(self):
         name = ""
         for outcome in self.outcomeTypes:
-            name += str(outcome)
+            name += OutcomeAssessor.DEATH if outcome == OutcomeAssessor.DEATH else str(outcome.value) + "-" 
         return name

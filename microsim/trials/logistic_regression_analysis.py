@@ -1,21 +1,12 @@
-import pandas as pd
-import numpy as np
 import statsmodels.formula.api as smf
+from microsim.trials.regression_analysis import RegressionAnalysis
 
-class LogisticRegressionAnalysis:
+class LogisticRegressionAnalysis(RegressionAnalysis):
     def __init__(self, outcomeAssessor, nameStem='logisticRegression'):
-        self.outcomeAssessor = outcomeAssessor
-        self.name = nameStem + outcomeAssessor.get_name()
+        super().__init__(outcomeAssessor, nameStem)
 
     def analyze(self, treatedPop, untreatedPop):
-        treatedOutcomes = [self.outcomeAssessor.get_outcome(person) for i, person in treatedPop._people.iteritems()]
-        untreatedOutcomes = [self.outcomeAssessor.get_outcome(person) for i, person in untreatedPop._people.iteritems()]
-
-        treatedOutcomes.extend(untreatedOutcomes)
-        analysisDF = pd.DataFrame({'treatment' : np.append(np.ones(len(treatedPop._people)), np.zeros(len(untreatedPop._people))),
-                    'outcome' : treatedOutcomes})
-        analysisDF.outcome = analysisDF.outcome.astype('int')
-        reg = smf.logit("outcome ~ treatment", data=analysisDF).fit()
+        reg = smf.logit("outcome ~ treatment", data=self.get_dataframe(treatedPop, untreatedPop)).fit()
         return reg.params['treatment'], reg.bse['treatment'], reg.pvalues['treatment']
 
 

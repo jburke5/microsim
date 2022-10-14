@@ -1,4 +1,6 @@
 from microsim.population import PersonListPopulation
+from microsim.trials.trial_utils import get_analysis_name
+from statsmodels.tools.sm_exceptions import PerfectSeparationError
 import copy
 import pandas as pd
 
@@ -45,11 +47,13 @@ class Trial:
 
     def analyze(self, duration):
         for analysis in self.trialDescription.analyses:
-            reg, se, pvalue = analysis.analyze(self.treatedPop, self.untreatedPop)
+            try:
+                reg, se, pvalue = analysis.analyze(self.treatedPop, self.untreatedPop)
+            except PerfectSeparationError: # how to track these is not obvious
+                continue
             self.analyticResults[get_analysis_name(analysis, duration)] = {'reg' : reg, 'se' : se, 'pvalue': pvalue}
         return self.analyticResults
         
         
-def get_analysis_name(analysis, duration):
-    return f"{analysis.get_name()}-{str(duration)}"
+
     

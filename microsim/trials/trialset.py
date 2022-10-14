@@ -1,4 +1,5 @@
 from microsim.trials.trial import Trial
+from microsim.trials.trial_utils import get_analysis_name
 import pandas as pd
 
 class Trialset:
@@ -12,7 +13,6 @@ class Trialset:
     def run(self):
         for trial in self.trials:
             trial.run()
-            trial.analyze()
         self.resultsDict = self.build_all_results_df()
 
     def get_all_results_dict(self):
@@ -24,9 +24,12 @@ class Trialset:
     def build_all_results_df(self):
         results = {}
         for analysis in self.trialDescription.analyses:
-            resultsForAnalysis = []
-            for trial in self.trials:
-                resultsForAnalysis.append(trial.analyticResults[analysis])
-            results[analysis] = pd.DataFrame(resultsForAnalysis)
+            for duration in self.trialDescription.durations:
+                resultsForAnalysis = []
+                for trial in self.trials:
+                    resultsForAnalysis.append(trial.analyticResults[get_analysis_name(analysis, duration)])
+                results[get_analysis_name(analysis, duration)] = pd.DataFrame(resultsForAnalysis)
         return results
-            
+
+def get_analysis_name(analysis, duration):
+    return f"{analysis.name}-{str(duration)}"
