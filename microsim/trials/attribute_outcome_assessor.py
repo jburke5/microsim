@@ -22,7 +22,7 @@ class AttributeOutcomeAssessor:
         return outcome
 
     def get_name(self):
-        return f"{self.attributeName}-{self.assessmentMethod}"
+        return f"{self.attributeName}-{self.assessmentMethod.value}"
 
 class AssessmentMethod(Enum):
     LAST = "last"

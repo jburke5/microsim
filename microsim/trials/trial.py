@@ -10,6 +10,7 @@ class Trial:
         self.trialPopulation = self.select_trial_population(targetPopulation, 
             trialDescription.inclusionFilter, trialDescription.exclusionFilter)
         # select our patients from the population
+        self.maxSampleSize = pd.Series(trialDescription.sampleSizes).max()
         self.treatedPop, self.untreatedPop = self.randomize(trialDescription.randomizationSchema)
         self.analyticResults = {}
 
@@ -24,7 +25,7 @@ class Trial:
         randomizedCount = 0
         # might be able to make this more efficient by sampling from the filtered people...
         for i, person in self.trialPopulation._people.iteritems():
-            while randomizedCount < self.trialDescription.sampleSize: 
+            while randomizedCount < self.maxSampleSize: 
                 if not person.is_dead():
                     if randomizationSchema(person):
                         treatedList.append(copy.deepcopy(person))
@@ -41,17 +42,35 @@ class Trial:
         for duration in self.trialDescription.durations:
             self.treatedDF, self.treatedAlive = self.treatedPop.advance_vectorized(duration-lastDuration)
             self.untreatedDF, self.untreatedAlive = self.untreatedPop.advance_vectorized(duration-lastDuration)
-            self.analyze(duration)
+            self.analyze(duration, self.maxSampleSize, self.treatedPop._people.tolist(), self.untreatedPop._people.tolist())
+            self.analyzeSmallerTrials(duration)
+            
             lastDuration = duration
 
+    def analyzeSmallerTrials(self, duration):
+        for sampleSize in self.trialDescription.sampleSizes:
+            numTrialsForSample = self.maxSampleSize // sampleSize
+            for i in range(0, numTrialsForSample):
+                if sampleSize==self.maxSampleSize:
+                    continue
+                sampleTreated = self.treatedPop._people.sample(int(sampleSize/2))
+                sampleUntreated = self.untreatedPop._people.sample(int(sampleSize/2))
+                self.analyze(duration, sampleSize, sampleTreated.tolist(), sampleUntreated.tolist())
 
-    def analyze(self, duration):
+
+    def analyze(self, duration, sampleSize, treatedPopList, untreatedPopList):
         for analysis in self.trialDescription.analyses:
             try:
-                reg, se, pvalue = analysis.analyze(self.treatedPop, self.untreatedPop)
+                reg, se, pvalue = analysis.analyze(treatedPopList, untreatedPopList)
             except PerfectSeparationError: # how to track these is not obvious
                 continue
-            self.analyticResults[get_analysis_name(analysis, duration)] = {'reg' : reg, 'se' : se, 'pvalue': pvalue}
+            self.analyticResults[get_analysis_name(analysis, duration, sampleSize)] = {'reg' : reg, 
+                                                                                        'se' : se, 
+                                                                                        'pvalue': pvalue, 
+                                                                                        'duration' : duration, 
+                                                                                        'sampleSize' : sampleSize,
+                                                                                        'outcome' :  analysis.outcomeAssessor.get_name(),
+                                                                                        'analysis' : analysis.name}
         return self.analyticResults
         
         

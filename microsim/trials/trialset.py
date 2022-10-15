@@ -11,8 +11,12 @@ class Trialset:
             self.trials.append(Trial(trialDescription, pop))
 
     def run(self):
+        trialCount = 0
         for trial in self.trials:
+            if trialCount % 10 == 0:
+                print(f"#################\n#################    Trial Count: {trialCount}")
             trial.run()
+            trialCount+=1
         self.resultsDict = self.build_all_results_df()
 
     def get_all_results_dict(self):
@@ -25,11 +29,9 @@ class Trialset:
         results = {}
         for analysis in self.trialDescription.analyses:
             for duration in self.trialDescription.durations:
-                resultsForAnalysis = []
-                for trial in self.trials:
-                    resultsForAnalysis.append(trial.analyticResults[get_analysis_name(analysis, duration)])
-                results[get_analysis_name(analysis, duration)] = pd.DataFrame(resultsForAnalysis)
+                for sampleSize in self.trialDescription.sampleSizes:
+                    resultsForAnalysis = []
+                    for trial in self.trials:
+                        resultsForAnalysis.append(trial.analyticResults[get_analysis_name(analysis, duration, sampleSize)])
+                    results[get_analysis_name(analysis, duration, sampleSize)] = pd.DataFrame(resultsForAnalysis)
         return results
-
-def get_analysis_name(analysis, duration):
-    return f"{analysis.name}-{str(duration)}"
