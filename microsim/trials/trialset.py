@@ -4,11 +4,12 @@ import pandas as pd
 
 class Trialset:
 
-    def __init__(self, trialDescription, pop, trialCount):
+    def __init__(self, trialDescription, pop, trialCount, additionalLabels=None):
         self.trials = []
         self.trialDescription = trialDescription
         for i in range(0, trialCount):
             self.trials.append(Trial(trialDescription, pop))
+        self.additionalLabels = additionalLabels
 
     def run(self):
         trialCount = 0
@@ -33,5 +34,9 @@ class Trialset:
                     resultsForAnalysis = []
                     for trial in self.trials:
                         resultsForAnalysis.append(trial.analyticResults[get_analysis_name(analysis, duration, sampleSize)])
-                    results[get_analysis_name(analysis, duration, sampleSize)] = pd.DataFrame(resultsForAnalysis)
+                    dfForAnalysis = pd.DataFrame(resultsForAnalysis)
+                    if self.additionalLabels is not None:
+                        for label, labelVal in self.additionalLabels.items():
+                            dfForAnalysis[label] = labelVal
+                    results[get_analysis_name(analysis, duration, sampleSize)] = dfForAnalysis
         return results

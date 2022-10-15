@@ -16,7 +16,6 @@ class Trial:
 
     def select_trial_population(self, targetPopulation, inclusionFilter, exclusionFilter):
         filteredPeople = list(filter(inclusionFilter, list(targetPopulation._people)))
-        # add a setp to clone people here
         return PersonListPopulation(filteredPeople)
 
     def randomize(self, randomizationSchema):
@@ -60,10 +59,11 @@ class Trial:
 
     def analyze(self, duration, sampleSize, treatedPopList, untreatedPopList):
         for analysis in self.trialDescription.analyses:
+            reg, se, pvalue = None, None, None
             try:
                 reg, se, pvalue = analysis.analyze(treatedPopList, untreatedPopList)
-            except PerfectSeparationError: # how to track these is not obvious
-                continue
+            except PerfectSeparationError: # how to track these is not obvious, now now we'll enter "Nones"
+                pass
             self.analyticResults[get_analysis_name(analysis, duration, sampleSize)] = {'reg' : reg, 
                                                                                         'se' : se, 
                                                                                         'pvalue': pvalue, 
