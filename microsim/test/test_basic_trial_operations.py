@@ -55,6 +55,7 @@ class TestBasicTrialOperations(unittest.TestCase):
             initializeAfib=lambda x: False)    
         # advance him one year to get an additional GCP value
         self.oldJoe.advance_year(CohortRiskModelRepository(), OutcomeModelRepository())
+        self.oldJoe._antiHypertensiveCount[-1] = 0
 
 
     def test_risk_filter(self):
