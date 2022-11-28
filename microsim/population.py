@@ -521,14 +521,14 @@ class Population:
         return pd.Series(peopleAlive)
 
     def get_people_that_are_currently_alive(self):
-        return pd.Series([not person.is_dead() for _, person in self._people.iteritems()])
+        return pd.Series([not person.is_dead() for _, person in self._people.items()])
 
     def get_number_of_patients_currently_alive(self):
         self.get_people_that_are_currently_alive().sum()
 
     def get_events_in_most_recent_wave(self, eventType):
         peopleWithEvents = []
-        for _, person in self._people.iteritems():
+        for _, person in self._people.items():
             if person.has_outcome_at_age(eventType, person._age[-1]):
                 peopleWithEvents.append(person)
         return peopleWithEvents
@@ -565,11 +565,11 @@ class Population:
     def get_event_rate_in_simulation(self, eventType, duration):
         events = [
             person.has_outcome_during_simulation_prior_to_wave(eventType, duration)
-            for i, person in self._people.iteritems()
+            for i, person in self._people.items()
         ]
         totalTime = [
             person.years_in_simulation() if person.years_in_simulation() < duration else duration
-            for i, person in self._people.iteritems()
+            for i, person in self._people.items()
         ]
         return np.array(events).sum() / np.array(totalTime).sum()
 
@@ -598,7 +598,7 @@ class Population:
             ageVarName = "age" + str(year)
             agesAliveDF[ageVarName] = agesAliveDF["baseAge"] + year
             agesAliveDF[aliveVarName] = [
-                person.alive_at_start_of_wave(year) for i, person in self._people.iteritems()
+                person.alive_at_start_of_wave(year) for i, person in self._people.items()
             ]
 
         agesAliveDF = agesAliveDF[
@@ -831,7 +831,7 @@ class Population:
         for var in self._timeVaryingCovariates:
             tvcMeans["mean" + var.capitalize()] = [
                 pd.Series(getattr(person, "_" + var)).mean()
-                for i, person in self._people.iteritems()
+                for i, person in self._people.items()
             ]   
         return pd.concat([df, pd.DataFrame(tvcMeans)], axis=1)
 
@@ -875,31 +875,31 @@ class Population:
     def get_summary_df(self):
         data = {}
         for year in range(1,self._currentWave+1):
-            data[f'mi{year}'] = [x.has_mi_during_wave(year) for _, x in self._people.iteritems()]
-            data[f'stroke{year}'] = [x.has_stroke_during_wave(year) for _, x in self._people.iteritems()]
-            data[f'dead{year}'] = [x.dead_at_end_of_wave(year) for _, x in self._people.iteritems()]
-            data[f'dementia{year}'] = [x.has_outcome_during_wave(year, OutcomeType.DEMENTIA) for _, x in self._people.iteritems()]
-            data[f'gcp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._gcp[year-1] for _, x in self._people.iteritems()]
-            data[f'sbp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._sbp[year-1] for _, x in self._people.iteritems()]
-            data[f'dbp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._dbp[year-1] for _, x in self._people.iteritems()]  
-            data[f'bpMeds{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._antiHypertensiveCount[year-1] for _, x in self._people.iteritems()]
-            data[f'bpMedsAdded{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._bpMedsAdded[year-1] for _, x in self._people.iteritems()]
-            data[f'totalBPMeds{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._bpMedsAdded[year-1]+x._antiHypertensiveCount[year-1] for _, x in self._people.iteritems()]
-            data[f'totalBPMedsAdded{year}'] = [np.array(x._bpMedsAdded).sum() for _, x in self._people.iteritems()]
+            data[f'mi{year}'] = [x.has_mi_during_wave(year) for _, x in self._people.items()]
+            data[f'stroke{year}'] = [x.has_stroke_during_wave(year) for _, x in self._people.items()]
+            data[f'dead{year}'] = [x.dead_at_end_of_wave(year) for _, x in self._people.items()]
+            data[f'dementia{year}'] = [x.has_outcome_during_wave(year, OutcomeType.DEMENTIA) for _, x in self._people.items()]
+            data[f'gcp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._gcp[year-1] for _, x in self._people.items()]
+            data[f'sbp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._sbp[year-1] for _, x in self._people.items()]
+            data[f'dbp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._dbp[year-1] for _, x in self._people.items()]  
+            data[f'bpMeds{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._antiHypertensiveCount[year-1] for _, x in self._people.items()]
+            data[f'bpMedsAdded{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._bpMedsAdded[year-1] for _, x in self._people.items()]
+            data[f'totalBPMeds{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._bpMedsAdded[year-1]+x._antiHypertensiveCount[year-1] for _, x in self._people.items()]
+            data[f'totalBPMedsAdded{year}'] = [np.array(x._bpMedsAdded).sum() for _, x in self._people.items()]
 
-        data['baseAge'] = [x._age[0] for _, x in self._people.iteritems()]
-        data['id'] = [x._populationIndex  for _, x in self._people.iteritems()] 
-        data['finalAge'] = [x._age[-1]  for _, x in self._people.iteritems()]
-        data['education'] = [x._education  for _, x in self._people.iteritems()]
-        data['gender'] = [x._gender  for _, x in self._people.iteritems()]
-        data['raceEthnicity'] = [x._raceEthnicity  for _, x in self._people.iteritems()]
-        data['smokingStatus'] = [x._smokingStatus  for _, x in self._people.iteritems()]
+        data['baseAge'] = [x._age[0] for _, x in self._people.items()]
+        data['id'] = [x._populationIndex  for _, x in self._people.items()] 
+        data['finalAge'] = [x._age[-1]  for _, x in self._people.items()]
+        data['education'] = [x._education  for _, x in self._people.items()]
+        data['gender'] = [x._gender  for _, x in self._people.items()]
+        data['raceEthnicity'] = [x._raceEthnicity  for _, x in self._people.items()]
+        data['smokingStatus'] = [x._smokingStatus  for _, x in self._people.items()]
 
-        data['baselineSBP'] = [x._sbp[0] for _, x in self._people.iteritems()]
-        data['baselineDBP'] = [x._dbp[0] for _, x in self._people.iteritems()]
-        data['black'] = [x._raceEthnicity==4 for _, x in self._people.iteritems()]
-        data['dementiaFreeYears'] = [x.get_age_at_first_outcome(OutcomeType.DEMENTIA) - x._age[0] if x._dementia else x._age[-1] - x._age[0]  for _, x in self._people.iteritems()]
-        data['deadAtEndOfSim'] = [x._alive[-1]==False for _, x in self._people.iteritems()]
+        data['baselineSBP'] = [x._sbp[0] for _, x in self._people.items()]
+        data['baselineDBP'] = [x._dbp[0] for _, x in self._people.items()]
+        data['black'] = [x._raceEthnicity==4 for _, x in self._people.items()]
+        data['dementiaFreeYears'] = [x.get_age_at_first_outcome(OutcomeType.DEMENTIA) - x._age[0] if x._dementia else x._age[-1] - x._age[0]  for _, x in self._people.items()]
+        data['deadAtEndOfSim'] = [x._alive[-1]==False for _, x in self._people.items()]
         return pd.DataFrame(data)
 
 
@@ -1017,7 +1017,7 @@ class PersonListPopulation(Population):
         self._risk_model_repository = CohortRiskModelRepository()
         # population index is used for efficiency in the population, need to set it on 
         # each person when a new population is setup
-        for i, person in self._people.iteritems():
+        for i, person in self._people.items():
             person._populationIndex = i
         # if the people have already been advanced, have the population start at that point
         self._currentWave = len(people[0]._age)-1
