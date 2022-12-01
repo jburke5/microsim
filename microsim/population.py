@@ -168,7 +168,7 @@ class Population:
                 alive["dementiaNext"] = np.repeat(False, len(alive))
 
             alive.loc[alive["dementiaNext"] == 1, "ageAtFirstDementia"] = alive.age
-            alive["dementia"] = newDementia | alive["dementia"]
+            alive["dementia"] = alive["dementiaNext"] | alive["dementia"]
 
             numberAliveBeforeRecal = len(alive)
 
