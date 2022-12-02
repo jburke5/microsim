@@ -81,4 +81,4 @@ Installing all of the above can be daunting, but the steps below should give a s
     poetry run test
     ```
 
-1. Congratulations! You made it!
+1. Congratulations! You made it!!
