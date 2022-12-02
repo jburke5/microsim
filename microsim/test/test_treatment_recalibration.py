@@ -159,7 +159,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         numberOfStrokesInBasePopulation = pd.Series(
             [
                 person.has_stroke_during_simulation()
-                for i, person in alwaysStrokePop._people.iteritems()
+                for i, person in alwaysStrokePop._people.items()
             ]
         ).sum()
 
@@ -173,7 +173,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         numberOfStrokesInRecalibratedPopulation = pd.Series(
             [
                 person.has_stroke_during_simulation()
-                for i, person in alwaysStrokePop._people.iteritems()
+                for i, person in alwaysStrokePop._people.items()
             ]
         ).sum()
         self.assertLess(numberOfStrokesInBasePopulation, numberOfStrokesInRecalibratedPopulation)
@@ -188,7 +188,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         numberOfStrokesInBasePopulation = pd.Series(
             [
                 person.has_stroke_during_simulation()
-                for i, person in alwaysStrokePop._people.iteritems()
+                for i, person in alwaysStrokePop._people.items()
             ]
         ).sum()
 
@@ -200,7 +200,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         numberOfStrokesInRecalibratedPopulation = pd.Series(
             [
                 person.has_stroke_during_simulation()
-                for i, person in alwaysStrokePop._people.iteritems()
+                for i, person in alwaysStrokePop._people.items()
             ]
         ).sum()
 
@@ -216,7 +216,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         alwaysMIPop.advance_vectorized(1)
         # about half of people have an MI at baseline
         numberOfMIsInBasePopulation = pd.Series(
-            [person.has_mi_during_simulation() for i, person in alwaysMIPop._people.iteritems()]
+            [person.has_mi_during_simulation() for i, person in alwaysMIPop._people.items()]
         ).sum()
 
         # set a treatment strategy on teh population
@@ -225,7 +225,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         alwaysMIPop.set_bp_treatment_strategy(addABPMedMIHarm())
         alwaysMIPop.advance_vectorized(1)
         numberOfMIsInRecalibratedPopulation = pd.Series(
-            [person.has_mi_during_simulation() for i, person in alwaysMIPop._people.iteritems()]
+            [person.has_mi_during_simulation() for i, person in alwaysMIPop._people.items()]
         ).sum()
 
         self.assertLess(numberOfMIsInBasePopulation, numberOfMIsInRecalibratedPopulation)
@@ -238,7 +238,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         neverMIPop.advance_vectorized(1)
         # abou thalf of hte population has an MI at baseline
         numberOfMIsInBasePopulation = pd.Series(
-            [person.has_mi_during_simulation() for i, person in neverMIPop._people.iteritems()]
+            [person.has_mi_during_simulation() for i, person in neverMIPop._people.items()]
         ).sum()
 
         # set a treatment strategy on teh population
@@ -247,7 +247,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         neverMIPop.set_bp_treatment_strategy(addABPMedMILargeEffectSize())
         neverMIPop.advance_vectorized(1)
         numberOfMIsInRecalibratedPopulation = pd.Series(
-            [person.has_mi_during_simulation() for i, person in neverMIPop._people.iteritems()]
+            [person.has_mi_during_simulation() for i, person in neverMIPop._people.items()]
         ).sum()
 
         self.assertGreater(numberOfMIsInBasePopulation, numberOfMIsInRecalibratedPopulation)
@@ -258,7 +258,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         neverMIPop.advance_vectorized(1)
         # the whole popuulation should have MIs at baseline
         numberOfMIsInBasePopulation = pd.Series(
-            [person.has_mi_during_simulation() for i, person in neverMIPop._people.iteritems()]
+            [person.has_mi_during_simulation() for i, person in neverMIPop._people.items()]
         ).sum()
         self.assertEqual(self.popSize, numberOfMIsInBasePopulation)
         numberOfFatalMIsInBasePopulation = pd.Series(
@@ -276,7 +276,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         neverMIPop.advance_vectorized(1)
 
         numberOfMIsAfterRecalibration = pd.Series(
-            [person.has_mi_during_simulation() for i, person in neverMIPop._people.iteritems()]
+            [person.has_mi_during_simulation() for i, person in neverMIPop._people.items()]
         ).sum()
         numberOfFatalMIsAfterRecalibration = pd.Series(
             [
@@ -294,13 +294,13 @@ class TestTreatmentRecalibration(unittest.TestCase):
         oftenMIPop.set_bp_treatment_strategy(addABPMedMILargeEffectSize())
         oftenMIPop.advance_vectorized(5)
 
-        ageLength = pd.Series([len(person._age) for i, person in oftenMIPop._people.iteritems()])
-        dead = pd.Series([person.is_dead() for i, person in oftenMIPop._people.iteritems()])
+        ageLength = pd.Series([len(person._age) for i, person in oftenMIPop._people.items()])
+        dead = pd.Series([person.is_dead() for i, person in oftenMIPop._people.items()])
 
         numberWithFullFollowup = pd.Series(
             [
                 person.is_dead() or len(person._age) == 6
-                for i, person in oftenMIPop._people.iteritems()
+                for i, person in oftenMIPop._people.items()
             ]
         ).sum()
         # some people were getting "lost" when they had events to rollback of if the had non CV daeths...

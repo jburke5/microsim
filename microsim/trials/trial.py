@@ -23,7 +23,7 @@ class Trial:
         untreatedList = []
         randomizedCount = 0
         # might be able to make this more efficient by sampling from the filtered people...
-        for i, person in self.trialPopulation._people.iteritems():
+        for i, person in self.trialPopulation._people.items():
             while randomizedCount < self.maxSampleSize: 
                 if not person.is_dead():
                     if randomizationSchema(person):
