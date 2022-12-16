@@ -59,14 +59,15 @@ class Trial:
 
     def analyze(self, duration, sampleSize, treatedPopList, untreatedPopList):
         for analysis in self.trialDescription.analyses:
-            reg, se, pvalue = None, None, None
+            reg, se, pvalue, absoluteEffectSize = None, None, None, None
             try:
-                reg, se, pvalue = analysis.analyze(treatedPopList, untreatedPopList)
+                reg, se, pvalue, absoluteEffectSize = analysis.analyze(treatedPopList, untreatedPopList)
             except PerfectSeparationError: # how to track these is not obvious, now now we'll enter "Nones"
                 pass
             self.analyticResults[get_analysis_name(analysis, duration, sampleSize)] = {'reg' : reg, 
                                                                                         'se' : se, 
-                                                                                        'pvalue': pvalue, 
+                                                                                        'pvalue': pvalue,
+                                                                                        'absEffectSize' : absoluteEffectSize,
                                                                                         'duration' : duration, 
                                                                                         'sampleSize' : sampleSize,
                                                                                         'outcome' :  analysis.outcomeAssessor.get_name(),
