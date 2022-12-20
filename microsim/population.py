@@ -26,7 +26,7 @@ from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.statsmodel_logistic_risk_factor_model import \
     StatsModelLogisticRiskFactorModel
-
+from microsim.sim_settings import simSettings
 
 class Population:
     """
@@ -38,10 +38,18 @@ class Population:
     useful for tests), because it isn't tied to tangible risk models. Ultimately it might
     turn into an abstract class...
     """
-
+   
     _ageStandards = {}
 
     def __init__(self, people):
+
+        if simSettings.pandarallelFlag:
+             self.applyMethod = pd.DataFrame.parallel_apply #uses pandarallel
+             self.applyMethodSeries = pd.Series.parallel_apply
+        else:
+             self.applyMethod = pd.DataFrame.apply #uses python apply 
+             self.applyMethodSeries = pd.Series.apply
+
         self._people = people
         self._ageStandards = {}
         # luciana tag: discuss with luciana...want to keep track of the sim wave htat is currently running, while running
@@ -106,7 +114,7 @@ class Population:
             #import pdb; pdb.set_trace()
             for rf in self._riskFactors:
                 # print(f"### Risk Factor: {rf}")
-                riskFactorsAndTreatment[rf + "Next"] = alive.parallel_apply(
+                riskFactorsAndTreatment[rf + "Next"] = self.applyMethod(alive,
                     self._risk_model_repository.get_model(rf).estimate_next_risk_vectorized,
                     axis="columns",
                 )
@@ -714,7 +722,7 @@ class Population:
         subPopulationDFSelector=None,
     ):
         # build a dataframe to represent the population
-        popDF = self.get_people_current_state_as_dataframe(parallel=False)
+        popDF = self.get_people_current_state_as_dataframe()
         popDF["female"] = popDF["gender"] - 1
 
         # calculated standardized event rate for each year
@@ -803,21 +811,10 @@ class Population:
         attrForPerson.update(timeVaryingAttrsForPerson)
         return attrForPerson
 
-    def get_people_current_state_as_dataframe(self, parallel=True):
-        if parallel:
-            pandarallel.initialize(verbose=1)
+    def get_people_current_state_as_dataframe(self):
             return pd.DataFrame(
                 list(
-                    self._people.parallel_apply(
-                        self.get_person_attributes_from_person,
-                        timeVaryingCovariates=self._timeVaryingCovariates,
-                    )
-                )
-            )
-        else:
-            return pd.DataFrame(
-                list(
-                    self._people.apply(
+                    self.applyMethodSeries(self._people,
                         self.get_person_attributes_from_person,
                         timeVaryingCovariates=self._timeVaryingCovariates,
                     )
@@ -946,11 +943,18 @@ def build_person(x, outcome_model_repository, randomEffects=None):
 def build_people_using_nhanes_for_sampling(
     nhanes, n, outcome_model_repository, filter=None, random_seed=None, weights=None
 ):
+    #cannot avoid this, eg by passing an argument, NHANESDirectSamplePopulation needs the result of this function before it can super().__init()
+    if simSettings.pandarallelFlag: 
+         applyMethod = pd.DataFrame.parallel_apply #uses pandarallel
+         applyMethodSeries = pd.Series.parallel_apply
+    else:
+         applyMethod = pd.DataFrame.apply #uses python apply 
+         applyMethodSeries = pd.Series.apply
+
     if weights is None:
         weights = nhanes.WTINT2YR
     repeated_sample = nhanes.sample(n, weights=weights, random_state=random_seed, replace=True)
-    pandarallel.initialize(verbose=1)
-    people = repeated_sample.parallel_apply(
+    people = applyMethod(repeated_sample,
         build_person, outcome_model_repository=outcome_model_repository, axis="columns"
     )
 
@@ -959,7 +963,6 @@ def build_people_using_nhanes_for_sampling(
 
     if filter is not None:
         people = people.loc[people.apply(filter)]
-
     return people
 
 
