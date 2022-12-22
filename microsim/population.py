@@ -97,7 +97,6 @@ class Population:
         # get dataframe of people...
         df = self.get_people_current_state_and_summary_as_dataframe()
         alive = df.loc[df.dead == False]
-        pandarallel.initialize(verbose=1)
         # might not need this row...depends o n whethe we do an bulk update on people or an wave-abased update
         waveAtStartOfAdvance = self._currentWave
 
@@ -899,6 +898,13 @@ class Population:
         data['deadAtEndOfSim'] = [x._alive[-1]==False for _, x in self._people.items()]
         return pd.DataFrame(data)
 
+    def use_pandarallel(self,flag): #must be able to change these attributes for instances that used pandarallel and will be passed to multiprocessing
+        if flag:
+            self.applyMethod = pd.DataFrame.parallel_apply
+            self.applyMethodSeries = pd.Series.parallel_apply
+        else:
+            self.applyMethod = pd.DataFrame.apply
+            self.applyMethodSeries = pd.Series.apply
 
 def initializeAFib(person):
     model = load_regression_model("BaselineAFibModel")
