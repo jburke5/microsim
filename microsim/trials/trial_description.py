@@ -2,7 +2,7 @@ import numpy as np
 
 class TrialDescription:
     def __init__(self, sampleSizes, durations, inclusionFilter, exclusionFilter, analyses, treatment,
-                randomizationSchema=lambda x : np.random.uniform() < 0.5):
+                randomizationSchema):
 
         self.sampleSizes = sampleSizes
         self.durations = durations
