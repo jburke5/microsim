@@ -32,12 +32,8 @@ class Trialset:
         trial = Trial(self.trialDescription, 
                       self.pop, 
                       additionalLabels=self.additionalLabels) #initialize trial
-        trial.run() #run trial
-        resultsForTrial = [] #and now analyze the trial
-        for analysis in trial.trialDescription.analyses:
-            for duration in trial.trialDescription.durations:
-                for sampleSize in trial.trialDescription.sampleSizes:
-                    resultsForTrial.append(trial.analyticResults[get_analysis_name(analysis, duration, sampleSize)])
+        trial.run() #run and analyze trial
+        resultsForTrial = list(trial.analyticResults.values())
         dfForTrial = pd.DataFrame(resultsForTrial)
         if trial.additionalLabels is not None:
             for label, labelVal in trial.additionalLabels.items():

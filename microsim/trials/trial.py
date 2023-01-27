@@ -45,7 +45,8 @@ class Trial:
             self.analyze(duration, 
                          self.maxSampleSize, 
                          self.treatedPop._people.tolist(), 
-                         self.untreatedPop._people.tolist())
+                         self.untreatedPop._people.tolist(),
+                         sampleSizeIndex=0) #there is only one maxSampleSize
             self.analyzeSmallerTrials(duration)
             lastDuration = duration
 
@@ -57,16 +58,16 @@ class Trial:
                     continue
                 sampleTreated = self.treatedPop._people.sample(int(sampleSize/2))
                 sampleUntreated = self.untreatedPop._people.sample(int(sampleSize/2))
-                self.analyze(duration, sampleSize, sampleTreated.tolist(), sampleUntreated.tolist())
+                self.analyze(duration, sampleSize, sampleTreated.tolist(), sampleUntreated.tolist(), sampleSizeIndex=i)
 
-    def analyze(self, duration, sampleSize, treatedPopList, untreatedPopList):
+    def analyze(self, duration, sampleSize, treatedPopList, untreatedPopList, sampleSizeIndex=0):
         for analysis in self.trialDescription.analyses:
             reg, se, pvalue, absoluteEffectSize = None, None, None, None
             try:
                 reg, se, pvalue, absoluteEffectSize = analysis.analyze(treatedPopList, untreatedPopList)
             except PerfectSeparationError: # how to track these is not obvious, now now we'll enter "Nones"
                 pass
-            self.analyticResults[get_analysis_name(analysis, duration, sampleSize)] = {  'reg' : reg,
+            self.analyticResults[get_analysis_name(analysis, duration, sampleSize, sampleSizeIndex=sampleSizeIndex)] = {  'reg' : reg,
                                                                                          'se' : se,
                                                                                          'pvalue': pvalue,
                                                                                          'absEffectSize' : absoluteEffectSize,

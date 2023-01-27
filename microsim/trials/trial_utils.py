@@ -1,7 +1,8 @@
 import numpy as np
 
-def get_analysis_name(analysis, duration, sampleSize):
-    return f"{analysis.name}-{str(duration)}Years-{sampleSize}"
+#sampleSizeIndex is needed due to the trial method analyzeSmallerTrials, without it trial.analyticResults would overwrite smaller sample results
+def get_analysis_name(analysis, duration, sampleSize, sampleSizeIndex=0):
+    return f"{analysis.name}-{str(duration)}Years-{sampleSize}-{sampleSizeIndex}"
 
 #this function can be generalized, for more distributions
 def randomizationSchema(x):
