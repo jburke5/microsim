@@ -8,6 +8,6 @@ class LogisticRegressionAnalysis(RegressionAnalysis):
     def analyze(self, treatedPop, untreatedPop):
         data=self.get_dataframe(treatedPop,untreatedPop)
         reg = smf.logit("outcome ~ treatment", data).fit(disp=False, method_kwargs={"warn_convergence": False})
-        return reg.params['treatment'], reg.bse['treatment'], reg.pvalues['treatment'], self.get_absolute_effect_size(data)
+        return reg.params['treatment'], reg.params['Intercept'], reg.bse['treatment'], reg.pvalues['treatment'], self.get_means(data)
 
 
