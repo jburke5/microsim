@@ -264,7 +264,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         numberOfFatalMIsInBasePopulation = pd.Series(
             [
                 person.has_mi_during_simulation() & person.is_dead()
-                for i, person in neverMIPop._people.iteritems()
+                for i, person in neverMIPop._people.items()
             ]
         ).sum()
         self.assertEqual(self.popSize, numberOfFatalMIsInBasePopulation)
@@ -281,7 +281,7 @@ class TestTreatmentRecalibration(unittest.TestCase):
         numberOfFatalMIsAfterRecalibration = pd.Series(
             [
                 person.has_mi_during_simulation() & person.is_dead()
-                for i, person in neverMIPop._people.iteritems()
+                for i, person in neverMIPop._people.items()
             ]
         ).sum()
 
