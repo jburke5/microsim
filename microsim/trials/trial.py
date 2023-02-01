@@ -62,15 +62,17 @@ class Trial:
 
     def analyze(self, duration, sampleSize, treatedPopList, untreatedPopList, sampleSizeIndex=0):
         for analysis in self.trialDescription.analyses:
-            reg, se, pvalue, absoluteEffectSize = None, None, None, None
-            try:
-                reg, se, pvalue, absoluteEffectSize = analysis.analyze(treatedPopList, untreatedPopList)
+            reg, intercept, se, pvalue, meanUntreated, meanTreated = None, None, None, None, None, None
+            try: #get_means returns both meanUntreated and meanTreated, in this order, hence the parenthesis
+                reg, intercept, se, pvalue, (meanUntreated, meanTreated) = analysis.analyze(treatedPopList, untreatedPopList)
             except PerfectSeparationError: # how to track these is not obvious, now now we'll enter "Nones"
                 pass
             self.analyticResults[get_analysis_name(analysis, duration, sampleSize, sampleSizeIndex=sampleSizeIndex)] = {  'reg' : reg,
                                                                                          'se' : se,
                                                                                          'pvalue': pvalue,
-                                                                                         'absEffectSize' : absoluteEffectSize,
+                                                                                         'intercept' : intercept,
+                                                                                         'meanUntreated' : meanUntreated,
+                                                                                         'meanTreated' : meanTreated,
                                                                                          'duration' : duration,
                                                                                          'sampleSize' : sampleSize,
                                                                                          'outcome' :  analysis.outcomeAssessor.get_name(),
