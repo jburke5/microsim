@@ -7,7 +7,7 @@ class LinearRegressionAnalysis(RegressionAnalysis):
 
     def analyze(self, treatedPop, untreatedPop):
         data=self.get_dataframe(treatedPop, untreatedPop)
-        reg = smf.ols("outcome ~ treatment", data).fit(disp=False, method_kwargs={"warn_convergence": False})
+        reg = smf.ols("outcome ~ treatment", data).fit(disp=False)
         return reg.params['treatment'], reg.params['Intercept'], reg.bse['treatment'], reg.pvalues['treatment'], self.get_means(data)
 
 
