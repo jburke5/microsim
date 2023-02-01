@@ -40,7 +40,7 @@ class TestPopulationReporting(unittest.TestCase):
         return pd.Series(
             [
                 person.has_outcome_during_wave(wave, outcomeType)
-                for i, person in pop._people.iteritems()
+                for i, person in pop._people.items()
             ]
         ).sum()
 
