@@ -3,6 +3,7 @@ from microsim.trials.trial_utils import get_analysis_name
 from statsmodels.tools.sm_exceptions import PerfectSeparationError
 import copy
 import pandas as pd
+import numpy as np
 
 class Trial:
     
@@ -66,6 +67,8 @@ class Trial:
             try: #get_means returns both meanUntreated and meanTreated, in this order, hence the parenthesis
                 reg, intercept, se, pvalue, (meanUntreated, meanTreated) = analysis.analyze(treatedPopList, untreatedPopList)
             except PerfectSeparationError: # how to track these is not obvious, now now we'll enter "Nones"
+                pass
+            except np.linalg.LinAlgError:
                 pass
             self.analyticResults[get_analysis_name(analysis, duration, sampleSize, sampleSizeIndex=sampleSizeIndex)] = {  'reg' : reg,
                                                                                          'se' : se,
