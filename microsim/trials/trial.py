@@ -7,8 +7,9 @@ import numpy as np
 
 class Trial:
     
-    def __init__(self, trialDescription, targetPopulation, additionalLabels=None): 
+    def __init__(self, trialDescription, targetPopulation, rng=None, additionalLabels=None): 
         self.trialDescription = trialDescription
+        self.rng = np.random.default_rng(rng)
         self.trialPopulation = self.select_trial_population(targetPopulation, trialDescription.inclusionFilter, trialDescription.exclusionFilter)
         # select our patients from the population
         self.maxSampleSize = pd.Series(trialDescription.sampleSizes).max()
@@ -28,7 +29,7 @@ class Trial:
         for i, person in self.trialPopulation._people.items():
             while randomizedCount < self.maxSampleSize:
                 if not person.is_dead():
-                    if randomizationSchema(person):
+                    if randomizationSchema(person, self.rng):
                         treatedList.append(copy.deepcopy(person))
                     else:
                         untreatedList.append(copy.deepcopy(person))
