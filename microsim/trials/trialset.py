@@ -24,7 +24,7 @@ class Trialset:
         rngStreams = [np.random.default_rng(s) for s in rngSeeds]
 
         for iTrial in range(0,self.trialCount):  #for as many trials as the set asks for
-                argsForRun.append((iTrial,rngStreams[iTrial])) #trialset instances contain all information needed by their trials, so just pass a trial index
+                argsForRun.append((iTrial,rngStreams[iTrial])) #pass a trial index and the random number generator
         return argsForRun
     
     #having the population as an argument passed to each trial is the reason why python makes copies of the population
@@ -39,7 +39,7 @@ class Trialset:
                       self.pop, 
                       rng,
                       additionalLabels=self.additionalLabels) #initialize trial
-        trial.run() #run and analyze trial
+        trial.run(rng) #run and analyze trial
         resultsForTrial = list(trial.analyticResults.values())
         dfForTrial = pd.DataFrame(resultsForTrial)
         if trial.additionalLabels is not None:
@@ -76,7 +76,7 @@ class TrialsetSerial(Trialset): #Serial refers to how trials are run, at any mom
         resultsTrialsetList = []
         argsForRun = self.prepareArgsForRun()
         for iTrial in range(self.trialCount):
-                resultsTrialsetList.append(self.prepareRunAnalyzeTrial(argsForRun[iTrial])) #prepare,run,analyze trial and append trial results to list
+                resultsTrialsetList.append(self.prepareRunAnalyzeTrial(*argsForRun[iTrial])) #prepare,run,analyze trial and append trial results to list
                 if (iTrial+1) % 10 == 0:
                         print(f"#################\n#################    Trial Completed: {iTrial}")
         resultsTrialsetPd = pd.concat(resultsTrialsetList).reset_index(drop=True) #convert list of dataframes to a single dataframe

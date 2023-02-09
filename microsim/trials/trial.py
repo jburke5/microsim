@@ -9,11 +9,10 @@ class Trial:
     
     def __init__(self, trialDescription, targetPopulation, rng=None, additionalLabels=None): 
         self.trialDescription = trialDescription
-        self.rng = np.random.default_rng(rng)
         self.trialPopulation = self.select_trial_population(targetPopulation, trialDescription.inclusionFilter, trialDescription.exclusionFilter)
         # select our patients from the population
         self.maxSampleSize = pd.Series(trialDescription.sampleSizes).max()
-        self.treatedPop, self.untreatedPop = self.randomize(trialDescription.randomizationSchema)
+        self.treatedPop, self.untreatedPop = self.randomize(trialDescription.randomizationSchema, rng)
         self.analyticResults = {}
         self.additionalLabels = additionalLabels 
 
@@ -21,7 +20,8 @@ class Trial:
         filteredPeople = list(filter(inclusionFilter, list(targetPopulation._people))) 
         return PersonListPopulation(filteredPeople)
 
-    def randomize(self, randomizationSchema):
+    def randomize(self, randomizationSchema, rng=None):
+        #rng = np.random.default_rng(rng)
         treatedList = []
         untreatedList = []
         randomizedCount = 0
@@ -29,7 +29,7 @@ class Trial:
         for i, person in self.trialPopulation._people.items():
             while randomizedCount < self.maxSampleSize:
                 if not person.is_dead():
-                    if randomizationSchema(person, self.rng):
+                    if randomizationSchema(person, rng):
                         treatedList.append(copy.deepcopy(person))
                     else:
                         untreatedList.append(copy.deepcopy(person))
@@ -38,12 +38,13 @@ class Trial:
                     continue
         return PersonListPopulation(treatedList), PersonListPopulation(untreatedList)
 
-    def run(self):
+    def run(self, rng=None):
+        #rng = np.random.default_rng(rng)
         self.treatedPop._bpTreatmentStrategy = self.trialDescription.treatment
         lastDuration = 0
         for duration in self.trialDescription.durations:
-            self.treatedDF, self.treatedAlive = self.treatedPop.advance_vectorized(duration-lastDuration, self.rng)
-            self.untreatedDF, self.untreatedAlive = self.untreatedPop.advance_vectorized(duration-lastDuration, self.rng)
+            self.treatedDF, self.treatedAlive = self.treatedPop.advance_vectorized(duration-lastDuration, rng)
+            self.untreatedDF, self.untreatedAlive = self.untreatedPop.advance_vectorized(duration-lastDuration, rng)
             self.analyze(duration, 
                          self.maxSampleSize, 
                          self.treatedPop._people.tolist(), 
