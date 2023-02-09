@@ -59,8 +59,11 @@ class Person:
         selfReportStrokeAge=None,
         selfReportMIAge=None,
         randomEffects=None,
+        rng=None,
         **kwargs,
     ) -> None:
+
+        #rng = np.random.default_rng(rng)  
 
         # building in manual bounds on extreme values
         self._lowerBounds = {"sbp": 60, "dbp": 20}
@@ -139,7 +142,7 @@ class Person:
             initializers = initializationRepository.get_initializers()
             for initializerName, method in initializers.items():
                 attr = getattr(self, initializerName)
-                attr.append(method(self))
+                attr.append(method(self, rng=rng))
 
         self._bpTreatmentStrategy = None
 
@@ -727,12 +730,13 @@ class Person:
 
     # redraw from models to pick new risk factors for person
 
-    def slightly_randomly_modify_baseline_risk_factors(self, risk_model_repository):
+    def slightly_randomly_modify_baseline_risk_factors(self, risk_model_repository, rng=None):
+        #rng = np.random.default_rng(rng)
         if len(self._age) > 1:
             raise RuntimeError("Can not reset risk factors after advancing person in time")
 
         return Person(
-            age=self._age[0] + npRand.randint(-2, 2),
+            age=self._age[0] + rng.integers(-2, 2), #replaces np.random.randint with endpoint=False
             gender=self._gender,
             raceEthnicity=self._raceEthnicity,
             sbp=self.get_next_risk_factor("sbp", risk_model_repository),
@@ -805,10 +809,11 @@ class Person:
     def convert_a1c_to_fasting_glucose(a1c):
         return 28.7 * a1c - 46.7
 
-    def get_fasting_glucose(self, use_residual=True):
+    def get_fasting_glucose(self, use_residual=True, rng=None):
+        #rng = np.random.default_rng(rng)
         glucose = Person.convert_a1c_to_fasting_glucose(self._a1c[-1])
         if use_residual:
-            glucose += npRand.normal(0, 21)
+            glucose += rng.normal(0, 21)
         return glucose
 
     def __hash__(self):

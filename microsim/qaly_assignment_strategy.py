@@ -12,7 +12,7 @@ class QALYAssignmentStrategy:
         self._qalysForOutcome[OutcomeType.MI] = [0.88, 0.90]
         self._qalysForOutcome[OutcomeType.DEMENTIA] = list(np.arange(0.80, 0, -0.01))
 
-    def get_next_qaly(self, person, age=-1):
+    def get_next_qaly(self, person, rng=None, age=-1):
         if age==-1:
             age=person._age[-1]
         

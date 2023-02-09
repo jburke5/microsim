@@ -43,16 +43,18 @@ class CVOutcomeDetermination:
         model_spec = load_model_spec("StrokeMIPartitionModel")
         self.strokePartitionModel = StatsModelLinearRiskFactorModel(RegressionModel(**model_spec))
 
-    def _will_have_cvd_event(self, ascvdProb):
-        return npRand.uniform(size=1) < ascvdProb
+    def _will_have_cvd_event(self, ascvdProb, rng=None):
+        #rng = np.random.default_rng(rng)
+        return rng.uniform(size=1) < ascvdProb
 
-    def _will_have_mi(self, person, outcome_model_repository, vectorized=False, manualMIProb=None):
+    def _will_have_mi(self, person, outcome_model_repository, vectorized=False, manualMIProb=None, rng=None):
+        #rng = np.random.default_rng(rng)
         if manualMIProb is not None:
-            return npRand.uniform(size=1) < manualMIProb
+            return rng.uniform(size=1) < manualMIProb
         # if no manual MI probablity, estimate it from oru partitioned model
         strokeProbability = self.get_stroke_probability(person, vectorized)
 
-        return npRand.uniform(size=1) < (1 - strokeProbability)
+        return rng.uniform(size=1) < (1 - strokeProbability)
 
     def get_stroke_probability(self, person, vectorized=False):
         strokeProbability = 0
@@ -66,16 +68,18 @@ class CVOutcomeDetermination:
             )
         return strokeProbability
 
-    def _will_have_fatal_mi(self, person, vectorized=False, overrideMIProb=None):
+    def _will_have_fatal_mi(self, person, vectorized=False, overrideMIProb=None, rng=None):
+        #rng = np.random.default_rng(rng)
         fatalMIProb = overrideMIProb if overrideMIProb is not None else self.mi_case_fatality
         fatalProb = (
             self.mi_secondary_case_fatality
             if self.has_prior_mi(person, vectorized)
             else fatalMIProb
         )
-        return npRand.uniform(size=1) < fatalProb
+        return rng.uniform(size=1) < fatalProb
 
-    def _will_have_fatal_stroke(self, person, vectorized=False, overrideStrokeProb=None):
+    def _will_have_fatal_stroke(self, person, vectorized=False, overrideStrokeProb=None, rng=None):
+        #rng = np.random.default_rng(rng)
         fatalStrokeProb = (
             overrideStrokeProb if overrideStrokeProb is not None else self.stroke_case_fatality
         )
@@ -84,7 +88,7 @@ class CVOutcomeDetermination:
             if self.has_prior_stroke(person, vectorized)
             else fatalStrokeProb
         )
-        return npRand.uniform(size=1) < fatalProb
+        return rng.uniform(size=1) < fatalProb
 
     def get_risk_for_person(self, outcome_model_repository, person, vectorized):
         if vectorized:
@@ -112,30 +116,33 @@ class CVOutcomeDetermination:
         vectorized=False,
         years=1,
         manualStrokeMIProbability=None,
+        rng=None,
     ):
 
+        #rng = np.random.default_rng(rng)
         cvRisk = self.get_risk_for_person(outcome_model_repository, person, vectorized)
 
         if self.has_prior_stroke_mi(person, vectorized):
             cvRisk = cvRisk * self.secondary_prevention_multiplier
 
         return self.get_or_assign_outcomes(
-            cvRisk, person, outcome_model_repository, vectorized, manualStrokeMIProbability
+            cvRisk, person, outcome_model_repository, vectorized, manualStrokeMIProbability, rng
         )
 
     def get_or_assign_outcomes(
-        self, cvRisk, person, outcome_model_repository, vectorized, manualStrokeMIProbability
+        self, cvRisk, person, outcome_model_repository, vectorized, manualStrokeMIProbability, rng=None
     ):
-        if self._will_have_cvd_event(cvRisk):
+        #rng = np.random.default_rng(rng)
+        if self._will_have_cvd_event(cvRisk, rng):
             if self._will_have_mi(
-                person, outcome_model_repository, vectorized, manualStrokeMIProbability
+                person, outcome_model_repository, vectorized, manualStrokeMIProbability, rng
             ):
                 return self.get_outcome(
-                    person, True, self._will_have_fatal_mi(person, vectorized), vectorized
+                    person, True, self._will_have_fatal_mi(person, vectorized, overrideMIProb=None, rng=rng), vectorized
                 )
             else:
                 return self.get_outcome(
-                    person, False, self._will_have_fatal_stroke(person, vectorized), vectorized
+                    person, False, self._will_have_fatal_stroke(person, vectorized, overrideStrokeProb=None, rng=rng), vectorized
                 )
         elif vectorized:
             person.miNext = False

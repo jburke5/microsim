@@ -62,7 +62,6 @@ class TrialsetParallel(Trialset): #Parallel refers to how trials are run, at any
         else:
             with mp.Pool(self.processesCount) as myPool: #context manager will terminate this pool of processes
                  #run trials and get back the list of dataframes with the results (trial instance is not returned to save memory)
-                 print(self.prepareArgsForRun())
                  resultsTrialsetList = myPool.starmap(self.prepareRunAnalyzeTrial, self.prepareArgsForRun())
                  resultsTrialsetPd = pd.concat(resultsTrialsetList).reset_index(drop=True) #convert list of dataframes to a single dataframe
             return resultsTrialsetPd

@@ -42,8 +42,8 @@ class Trial:
         self.treatedPop._bpTreatmentStrategy = self.trialDescription.treatment
         lastDuration = 0
         for duration in self.trialDescription.durations:
-            self.treatedDF, self.treatedAlive = self.treatedPop.advance_vectorized(duration-lastDuration)
-            self.untreatedDF, self.untreatedAlive = self.untreatedPop.advance_vectorized(duration-lastDuration)
+            self.treatedDF, self.treatedAlive = self.treatedPop.advance_vectorized(duration-lastDuration, self.rng)
+            self.untreatedDF, self.untreatedAlive = self.untreatedPop.advance_vectorized(duration-lastDuration, self.rng)
             self.analyze(duration, 
                          self.maxSampleSize, 
                          self.treatedPop._people.tolist(), 

@@ -51,7 +51,7 @@ class ASCVDOutcomeModel(StatsModelLinearRiskFactorModel):
     # age. this doesn't perfectly reproduce the 10 year risk, but its within 10%.
     # we can be more precise by building an average of the risk over all 10 years (close to within 1%)
     # but, that is computationally intense and this seems like a resonable compromise
-    def get_risk_for_person(self, person, years, vectorized=False):
+    def get_risk_for_person(self, person, rng, years, vectorized=False): #rng is included here for compatibility with other get_risk_for_person methods
         linearRisk = self.get_one_year_linear_predictor(person, vectorized)
         # four years gets us to the middle of hte 10 year window because we're using the 1 year lagged age
         # for the baseline..

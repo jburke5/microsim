@@ -104,11 +104,12 @@ class GCPModel:
         #    self._outcome_model_repository.report_result('gcp', reportingDict)
         return xb
 
-    def get_risk_for_person(self, person, years=1, vectorized=False, test=False):
+    def get_risk_for_person(self, person, rng=None, years=1, vectorized=False, test=False):
+        #rng = np.random.default_rng(rng)
         random_effect = 0
         if not vectorized:
             random_effect = person._randomEffects["gcp"] if "gcp" in person._randomEffects else 0
-        residual = 0 if test else np.random.normal(0.38, 6.99)
+        residual = 0 if test else rng.normal(0.38, 6.99)
 
         linPred = 0
         if vectorized:
@@ -143,7 +144,7 @@ class GCPModel:
                 totChol=person._totChol[-1],
                 meanSBP=np.array(person._sbp).mean(),
                 anyAntiHpertensive=((person._antiHypertensiveCount[-1] + np.array(person._bpMedsAdded).sum()) > 0),
-                fastingGlucose=person.get_fasting_glucose(not test),
+                fastingGlucose=person.get_fasting_glucose(not test, rng),
                 physicalActivity=person._anyPhysicalActivity[-1],
                 afib=person._afib[-1],
             )

@@ -93,7 +93,8 @@ class Population:
     # (i.e. static attributes, time-varying attributes)
     # also, will need to thikn about ways to make sure that the dataframe version of reality stays synced with teh "patient-based" version of reality
     # for now, will build a DF at the beginnign and then update the peopel at the end...
-    def advance_vectorized(self, years):
+    def advance_vectorized(self, years, rng=None):
+        #rng = np.random.default_rng(rng)
         # get dataframe of people...
         df = self.get_people_current_state_and_summary_as_dataframe()
         alive = df.loc[df.dead == False]
@@ -116,6 +117,7 @@ class Population:
                 riskFactorsAndTreatment[rf + "Next"] = self.applyMethod(alive,
                     self._risk_model_repository.get_model(rf).estimate_next_risk_vectorized,
                     axis="columns",
+                    rng=rng, 
                 )
 
             # advance treatment
@@ -124,6 +126,7 @@ class Population:
                 riskFactorsAndTreatment[treatment + "Next"] = alive.apply(
                     self._risk_model_repository.get_model(treatment).estimate_next_risk_vectorized,
                     axis="columns",
+                    rng=rng,
                 )
 
             # apply treatment modifications
@@ -153,12 +156,12 @@ class Population:
             #outcomeVars["ageAtFirstDementia"] = [np.nan] * len(df)
             alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(outcomeVars) ], axis='columns')
             alive = alive.apply(
-                self._outcome_model_repository.assign_cv_outcome_vectorized, axis="columns"
+                self._outcome_model_repository.assign_cv_outcome_vectorized, axis="columns", rng=rng
             )
 
             gcp = {}
             gcp["gcpNext"] = alive.apply(
-                self._outcome_model_repository.get_gcp_vectorized, axis="columns"
+                self._outcome_model_repository.get_gcp_vectorized, axis="columns", rng=rng
             )
             gcp["gcpSlope"] = gcp['gcpNext'] - alive['gcp']
             alive.drop(columns=['gcpSlope'], inplace=True)
@@ -168,7 +171,7 @@ class Population:
             alive.dementia = alive.dementia.astype('bool_')
             if len(alive.loc[~alive.dementia]) > 0:
                 newDementia = alive.loc[~alive.dementia].apply(
-                    self._outcome_model_repository.get_dementia_vectorized, axis="columns"
+                    self._outcome_model_repository.get_dementia_vectorized, rng=rng, axis="columns"
                 )
                 alive["dementiaNext"] = newDementia
             else:
@@ -186,7 +189,7 @@ class Population:
                 )
             alive["cvDeathNext"] = alive["deadNext"]
             alive["nonCVDeathNext"] = alive.apply(
-                self._outcome_model_repository.assign_non_cv_mortality_vectorized, axis="columns"
+                self._outcome_model_repository.assign_non_cv_mortality_vectorized, axis="columns", rng=rng
             )
             alive["deadNext"] = alive["nonCVDeathNext"] | alive["cvDeathNext"]
 
@@ -912,7 +915,8 @@ def initializeAFib(person):
     return statsModel.estimate_next_risk(person)
 
 
-def build_person(x, outcome_model_repository, randomEffects=None):
+def build_person(x, outcome_model_repository, randomEffects=None, rng=None):
+    #rng = np.random.default_rng(rng)
     return Person(
         age=x.age,
         gender=NHANESGender(int(x.gender)),
@@ -937,18 +941,20 @@ def build_person(x, outcome_model_repository, randomEffects=None):
         initializeAfib=initializeAFib,
         initializationRepository=InitializationRepository(),
         selfReportStrokeAge=x.selfReportStrokeAge,
-        selfReportMIAge=np.random.randint(18, x.age)
+        selfReportMIAge=rng.integers(18, x.age) #rng.integers replaces np.random.randint with endpoint=False
         if x.selfReportMIAge == 99999
         else x.selfReportMIAge,
-        randomEffects=outcome_model_repository.get_random_effects() if randomEffects is None else randomEffects,
+        randomEffects=outcome_model_repository.get_random_effects(rng) if randomEffects is None else randomEffects,
+        rng=rng,
         dfIndex=x.name,
         diedBy2015=x.diedBy2015 == True,
     )
 
 
 def build_people_using_nhanes_for_sampling(
-    nhanes, n, outcome_model_repository, filter=None, random_seed=None, weights=None
+    nhanes, n, outcome_model_repository, filter=None, random_seed=None, weights=None, rng=None
 ):
+    #rng = np.random.default_rng(rng)
     #cannot avoid this, eg by passing an argument, NHANESDirectSamplePopulation needs the result of this function before it can super().__init()
     if simSettings.pandarallelFlag: 
          applyMethod = pd.DataFrame.parallel_apply #uses pandarallel
@@ -961,7 +967,7 @@ def build_people_using_nhanes_for_sampling(
         weights = nhanes.WTINT2YR
     repeated_sample = nhanes.sample(n, weights=weights, random_state=random_seed, replace=True)
     people = applyMethod(repeated_sample,
-        build_person, outcome_model_repository=outcome_model_repository, axis="columns"
+        build_person, outcome_model_repository=outcome_model_repository, randomEffects=None, rng=rng, axis="columns"
     )
 
     for i in range(0, len(people)):
@@ -984,11 +990,13 @@ class NHANESDirectSamplePopulation(Population):
         model_reposistory_type="cohort",
         random_seed=None,
         weights=None,
+        rng=None,
     ):
 
         nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         nhanes = nhanes.loc[nhanes.year == year]
         self._outcome_model_repository = OutcomeModelRepository()
+        #rng = np.random.default_rng(rng)
         people = build_people_using_nhanes_for_sampling(
             nhanes,
             n,
@@ -996,6 +1004,7 @@ class NHANESDirectSamplePopulation(Population):
             filter=filter,
             random_seed=random_seed,
             weights=weights,
+            rng=rng,
         )
         super().__init__(people)
         self._qaly_assignment_strategy = QALYAssignmentStrategy()
