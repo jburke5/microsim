@@ -889,6 +889,7 @@ class Population:
 
         data['baseAge'] = [x._age[0] for _, x in self._people.items()]
         data['id'] = [x._populationIndex  for _, x in self._people.items()] 
+        data['nhanesIndex'] = [x.dfIndex  for _, x in self._people.items()] 
         data['finalAge'] = [x._age[-1]  for _, x in self._people.items()]
         data['education'] = [x._education  for _, x in self._people.items()]
         data['gender'] = [x._gender  for _, x in self._people.items()]
