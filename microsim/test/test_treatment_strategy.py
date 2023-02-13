@@ -139,10 +139,12 @@ class TestTreatmentStrategy(unittest.TestCase):
         self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, alive.sbp.max())
         self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, alive.sbp.min())
 
-        self.assertEqual(0, pop._people.iloc[0]._antiHypertensiveCount[-1])
-        self.assertEqual(4, pop._people.iloc[0]._bpMedsAdded[-1])
-        self.assertEqual(4, np.array(pop._people.iloc[0]._bpMedsAdded).sum())
-        self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, pop._people.iloc[0]._sbp[-1])
+        for j in range(0,100): #our population consists of 100 persons, check all of them
+            if pop._people.iloc[j]._age[-1]==75+1: #if person is alive, then check
+                self.assertEqual(0, pop._people.iloc[j]._antiHypertensiveCount[-1])
+                self.assertEqual(4, pop._people.iloc[j]._bpMedsAdded[-1])
+                self.assertEqual(4, np.array(pop._people.iloc[j]._bpMedsAdded).sum())
+                self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, pop._people.iloc[j]._sbp[-1])
 
 
     def testSprintStrategyAtPopLevelTwoWave(self):
@@ -164,10 +166,12 @@ class TestTreatmentStrategy(unittest.TestCase):
         self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, alive.sbp.max())
         self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, alive.sbp.min())
 
-        self.assertEqual(0, pop._people.iloc[0]._antiHypertensiveCount[-1])
-        self.assertEqual(0, pop._people.iloc[0]._bpMedsAdded[-1])
-        self.assertEqual(4, np.array(pop._people.iloc[0]._bpMedsAdded).sum())
-        self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, pop._people.iloc[0]._sbp[-1])
+        for j in range(0,100): #our population consists of 100 persons, check all of them
+            if pop._people.iloc[j]._age[-1]==75+2: #if person is alive, then check
+                self.assertEqual(0, pop._people.iloc[j]._antiHypertensiveCount[-1])
+                self.assertEqual(0, pop._people.iloc[j]._bpMedsAdded[-1])
+                self.assertEqual(4, np.array(pop._people.iloc[j]._bpMedsAdded).sum())
+                self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, pop._people.iloc[j]._sbp[-1])
 
 
     def testSprintStrategyAtPopLevelFiveWave(self):
@@ -177,11 +181,13 @@ class TestTreatmentStrategy(unittest.TestCase):
         pop.set_bp_treatment_strategy(jnc8ForHighRiskLowBpTarget(0.075, {'sbp' : 126, 'dbp': 0}))
         alive, df = pop.advance_vectorized(5)
 
-        for wave in range(2, 5):
-            self.assertEqual(0, pop._people.iloc[0]._antiHypertensiveCount[wave])
-            self.assertEqual(0, pop._people.iloc[0]._bpMedsAdded[wave])
-            self.assertEqual(4, np.array(pop._people.iloc[0]._bpMedsAdded).sum())
-            self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, pop._people.iloc[0]._sbp[wave])
+        for j in range(0,100): #our population consists of 100 persons, check all of them
+            if pop._people.iloc[j]._age[-1]==75+5: #if person is alive, then check
+                for wave in range(2, 5):
+                     self.assertEqual(0, pop._people.iloc[j]._antiHypertensiveCount[wave])
+                     self.assertEqual(0, pop._people.iloc[j]._bpMedsAdded[wave])
+                     self.assertEqual(4, np.array(pop._people.iloc[j]._bpMedsAdded).sum())
+                     self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, pop._people.iloc[j]._sbp[wave])
 
         # checking that anti hypertensives weren't accidentally added
         self.assertEqual(0, alive.antiHypertensiveCount.max())

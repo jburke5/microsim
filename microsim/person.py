@@ -329,7 +329,7 @@ class Person:
             tvcAttributes[var] = attr
         return tvcAttributes
 
-    def get_final_wave_state_as_dict(self):
+    def get_final_wave_state_as_dict(self): #this method works only for populations where all people have died
         tvc = ['sbp', 'dbp', 'a1c', 'hdl', 'ldl', 'a1c','trig', 'totChol','bmi', 
                 'anyPhysicalActivity', 'afib', 'alcoholPerWeek', 'creatinine', 'antiHypertensiveCount',
                 'statin',  'waist', 'alive', 'gcp',
@@ -340,9 +340,10 @@ class Person:
         # start of a wave...
         updatedAgeList = copy.deepcopy(self._age)
         # to get the state at the "end" of the last wave, we need an age value that doesn't exist, so we'll append -1
+        # we must do this, when a simulation person dies, they do have events that took place in the last wave, but their ._age array does not get another element
         updatedAgeList.append(-1)
         attributes['age'] = updatedAgeList[1:]
-        waveCount = len(self._age)
+        waveCount = len(self._age) #true for dead simulation people (when a simulation person is alive: waveCount = len(self._age) - 1)
         
         # build a list of ages that includes what a patient's age would have been at teh end of the last wave
         ageThroughEndOfSim = copy.deepcopy(self._age)
@@ -369,6 +370,7 @@ class Person:
         attributes["strokePriorToSim"] = [self._selfReportStrokePriorToSim] * waveCount
         attributes["mi"] = [self._selfReportMIPriorToSim or self.has_outcome_during_or_prior_to_wave(i, OutcomeType.MI) for i in range(1, waveCount+1)]
         attributes["stroke"] = [self._selfReportStrokePriorToSim or self.has_outcome_during_or_prior_to_wave(i, OutcomeType.STROKE) for i in range(1, waveCount+1)]
+        #ageAtFirstX lists: if person never had the outcome all elements are None, if person had outcome at age Y array is [-1,-1,...-1, Y,Y...Y]
         attributes["ageAtFirstStroke"] =  [None if self.get_age_at_first_outcome(OutcomeType.STROKE) is None else self.get_age_at_first_outcome(OutcomeType.STROKE) if self.get_age_at_first_outcome(OutcomeType.STROKE) < i else -1  for i in self._age]
         attributes["ageAtFirstMI"] =  [None if self.get_age_at_first_outcome(OutcomeType.MI) is None else self.get_age_at_first_outcome(OutcomeType.MI) if self.get_age_at_first_outcome(OutcomeType.MI) < i else -1  for i in self._age]
         attributes["ageAtFirstDementia"] =  [None if self.get_age_at_first_outcome(OutcomeType.DEMENTIA) is None else self.get_age_at_first_outcome(OutcomeType.DEMENTIA) if self.get_age_at_first_outcome(OutcomeType.DEMENTIA) < i else -1  for i in self._age]

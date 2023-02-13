@@ -80,7 +80,7 @@ class TestBasicTrialOperations(unittest.TestCase):
         #self.assertGreaterEqual(65, len(testTrial.untreatePop._people))
         #self.assertLessEqual(35, len(testTrial.untreatePop._people))
 
-        for i, person in testTrial.trialPopulation._people.iteritems():
+        for i, person in testTrial.trialPopulation._people.items():
             self.assertGreaterEqual(person._age[0],  self.ageThreshold)
 
 if __name__ == "__main__":
