@@ -488,6 +488,7 @@ class Population:
 
         # if negative, the model estimated too few events, if positive, too mnany
         #logging.info(f"bp recalibration, delta: {delta}, number of statuses to change: {numberOfEventStatusesToChange}")
+        logging.info(f"bp recalibration, delta: {delta}, {modelEstimatedRR} - {treatment_outcome_standard[outcomeType]}, {recalibration_pop[treatedRiskVar].mean()}, {recalibration_pop[untreatedRiskVar].mean()}, number of statuses to change: {numberOfEventStatusesToChange}")
 
         if delta < 0:
             if numberOfEventStatusesToChange > 0:
