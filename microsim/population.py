@@ -177,9 +177,11 @@ class Population:
             alive.loc[alive["dementiaNext"] == 1, "ageAtFirstDementia"] = alive.age
             alive["dementia"] = alive["dementiaNext"] | alive["dementia"]
 
+            alive = self.move_people_df_riskFactors_and_treatment_forward(alive) # estimate of risks in recalibration require updated values
+ 
             numberAliveBeforeRecal = len(alive)
 
-            alive = self.apply_recalibration_standards(alive)
+            alive = self.apply_recalibration_standards(alive) # modify mi and stroke outcomes
             if len(alive) != numberAliveBeforeRecal:
                 raise Exception(
                     f"number alive: {len(alive)} not equal to alive before recal {numberAliveBeforeRecal}"
@@ -199,7 +201,8 @@ class Population:
             alive.loc[~alive.dead, "age"] = alive.age + 1
             self._totalWavesAdvanced += 1
 
-            alive = self.move_people_df_forward(alive)
+            alive = self.move_people_df_outcomes_forward(alive)
+            alive["totalYearsInSim"] = alive["totalYearsInSim"] + 1
 
             # for efficieicny, we could try to do this all at the end...but, its a bit cleanear  to do it wave by wave
             alive.apply(self.push_updates_back_to_people, axis="columns")
@@ -259,7 +262,7 @@ class Population:
             person._alive.append(True)
         return person
 
-    def move_people_df_forward(self, df):
+    def move_people_df_riskFactors_and_treatment_forward(self, df):
         factorsToChange = copy.copy(self._riskFactors)
         factorsToChange.extend(self._treatments)
         
@@ -272,18 +275,9 @@ class Population:
             df["mean" + rf.capitalize()] = (
                 df["mean" + rf.capitalize()] * (df["totalYearsInSim"] + 1) + df[rf + "Next"]
             ) / (df["totalYearsInSim"] + 2)
-        for outcome in ["mi", "stroke"]:
-            df[outcome + "InSim"] = df[outcome + "InSim"] | df[outcome + "Next"]
-            newVariables[outcome + str(self._currentWave)] = df[outcome + "Next"]
-        df["dead"] = df["dead"] | df["deadNext"]
-        newVariables["dead" + str(self._currentWave)] = df["deadNext"]
 
-        df["totalYearsInSim"] = df["totalYearsInSim"] + 1
         df["current_diabetes"] = df["a1c"] > 6.5
-        df['gcp'] = df['gcpNext']
-        df["gfr"] = df.apply(GFREquation().get_gfr_for_person_vectorized, axis="columns")
         df["current_bp_treatment"] = df["antiHypertensiveCount"] >= 1
-        df["totalQalys"] = df["totalQalys"] + df["qalyNext"]
         df["bpMedsAdded"] = df["bpMedsAddedNext"]
         df["totalBPMedsAdded"] = df["totalBPMedsAddedNext"]
         
@@ -294,6 +288,21 @@ class Population:
 
         return pd.concat([df.reset_index(drop=True), pd.DataFrame(newVariables).reset_index(drop=True)], axis='columns', ignore_index=False)
 
+    def move_people_df_outcomes_forward(self, df):
+
+        newVariables = {}
+
+        for outcome in ["mi", "stroke"]:
+            df[outcome + "InSim"] = df[outcome + "InSim"] | df[outcome + "Next"]
+            newVariables[outcome + str(self._currentWave)] = df[outcome + "Next"]
+        df["dead"] = df["dead"] | df["deadNext"]
+        newVariables["dead" + str(self._currentWave)] = df["deadNext"]
+
+        df['gcp'] = df['gcpNext']
+        df["gfr"] = df.apply(GFREquation().get_gfr_for_person_vectorized, axis="columns")
+        df["totalQalys"] = df["totalQalys"] + df["qalyNext"]
+
+        return pd.concat([df.reset_index(drop=True), pd.DataFrame(newVariables).reset_index(drop=True)], axis='columns', ignore_index=False)
 
     def set_bp_treatment_strategy(self, bpTreatmentStrategy):
         self._bpTreatmentStrategy = bpTreatmentStrategy
@@ -316,7 +325,7 @@ class Population:
     # so, i thikn it should be based on the model-predicted risks...
 
     def recalibrate_bp_treatment(self, recalibration_df):
-        #logging.info(f"*** before recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
+        logging.info(f"*** before recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
         treatment_outcome_standard = (
             self._bpTreatmentStrategy.get_treatment_recalibration_for_population()
         )
@@ -337,7 +346,7 @@ class Population:
         recalibration_df = recalibration_df.apply(
             self._bpTreatmentStrategy.get_changes_vectorized, axis="columns"
         )
-        #logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
+        logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
         totalBPMedsAddedCapped = recalibration_df['totalBPMedsAddedNext']
         totalBPMedsAddedCapped.loc[totalBPMedsAddedCapped >= BaseTreatmentStrategy.MAX_BP_MEDS] = BaseTreatmentStrategy.MAX_BP_MEDS
         #recalibration_df.loc[recalibration_df['totalBPMedsAddedNext'] >= BaseTreatmentStrategy.MAX_BP_MEDS, 'totalBPMedsAddedCapped'] = BaseTreatmentStrategy.MAX_BP_MEDS
@@ -350,11 +359,11 @@ class Population:
         # it is the lesser of the total number of BP meds actually added (totalBpMedsAdded) or the max cap
         # so, if a treamtent strategy adds 10 medications, they'll effect the BP...but, they 
         # wont' have an additional efect on event reduction over the medication cap
-        #logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
+        logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
 
         # recalibrate within each group of added medicaitons so that we can stratify the treamtnet effects
         for i in range(1, BaseTreatmentStrategy.MAX_BP_MEDS + 1):
-            #logging.info(f"Roll back for med count: {i}")
+            logging.info(f"Roll back for med count: {i}")
             recalibrationPopForMedCount = recalibration_df.loc[recalibration_df.totalBPMedsAddedCapped == i]
             # the change standards are for a single medication
             recalibration_standard_for_med_count = treatment_outcome_standard.copy()
@@ -415,7 +424,7 @@ class Population:
                     recalibratedForMedCount.index, "rolledBackEventType"
                 ] = recalibratedForMedCount["rolledBackEventType"]
 
-        #logging.info(f"*** after recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
+        logging.info(f"*** after recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
         recalibration_df.drop(columns=['treatedcombinedRisks', 'treatedstrokeProbabilities', 'treatedstrokeRisks', 'treatedmiRisks', 
                     'untreatedcombinedRisks', 'untreatedstrokeProbabilities', 'untreatedstrokeRisks', 'untreatedmiRisks', 'totalBPMedsAddedCapped', 'rolledBackEventType'], inplace=True)
         return recalibration_df
