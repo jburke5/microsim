@@ -132,13 +132,13 @@ class Population:
             #while leaving *Next values untouched for now, so all estimates of risks will utilize the last, and most up to date, values
             alive = self.move_people_df_riskFactors_forward(alive)
  
-            ########################## RISKS BEFORE TREATMENT
+            ########################## RISKS WITH UPDATED RISK FACTORS AND BEFORE TREATMENT
 
             #now that we have the updated risk factors, but have not applied the treatment yet, obtain the untreated risks
             #untreated risks are used in recalibration of mi and stroke outcomes
             alive = self.estimate_risks(alive, "untreated")
 
-            ########################## TREATMENT
+            ########################## TREATMENT (WHICH INDIRECTLY MODIFIES RISK FACTORS)
 
             treatmentsDict = {}
             # advance treatment on *Next variables (antiHypertensiveCountNext, statinNext)
@@ -168,10 +168,14 @@ class Population:
                 )
 
             #now that treatment has been applied, copy the updated *Next values for treatment to the current (last) values, 
-            #while leaving *Next values untouched for now, so all estimates of risks will utilize the last, and most up to date, values
             alive = self.move_people_df_treatment_forward(alive) 
+            #because treatment can potentially affect the *Next risk factors, we need to move these again now
+            #while leaving *Next values untouched for now, so all estimates of risks will utilize the last, and most up to date, values
+            alive = self.move_people_df_riskFactors_forward(alive)
+            #now that we are completely done with changing risk factors, move their means forward too
+            alive = self.move_people_df_riskFactorsMeans_forward(alive)
 
-            ########################## RISKS AFTER TREATMENT
+            ########################## RISKS WITH UPDATED RISK FACTORS AFTER TREATMENT
 
             #now that we have updated risk factors and applied the treatment, obtain the risks of this group to use in recalibration
             alive = self.estimate_risks(alive, "treated")
@@ -320,18 +324,18 @@ class Population:
             person._alive.append(True)
         return person
 
-    def move_people_df_riskFactors_forward(self, df):
+    def move_people_df_riskFactors_forward(self, df):  
         factorsToChange = copy.copy(self._riskFactors)
 
-        newVariables = {}
+        newVariables = {} #will hold data from columns that need to be added to df
 
         for rf in factorsToChange:
             # the curent value is stored in the variable name
             df[rf] = df[rf + "Next"]
-            newVariables[rf + str(self._currentWave)] = df[rf + "Next"]
-            df["mean" + rf.capitalize()] = (
-                df["mean" + rf.capitalize()] * (df["totalYearsInSim"] + 1) + df[rf + "Next"]
-            ) / (df["totalYearsInSim"] + 2)
+            if (rf + str(self._currentWave) in df.columns):       #if column already exists, eg if you have already updated risk factors once in this iteration
+                df[rf + str(self._currentWave)] = df[rf + "Next"] #then update values in place 
+            else:                                                 #if this is the first time in the advanced_vectorized iteration I am updating risk factors
+                newVariables[rf + str(self._currentWave)] = df[rf + "Next"] #then I need to create this column 
 
         df["current_diabetes"] = df["a1c"] > 6.5
         df["gfr"] = df.apply(GFREquation().get_gfr_for_person_vectorized, axis="columns") #GFR calculation requires an updated age
@@ -341,7 +345,25 @@ class Population:
         # df.loc[(df.ageAtFirstMI.isnull()) & (df.miNext), 'ageAtFirstMI'] = df.age
         # df.loc[(df.ageAtFirstDementia.isnull()) & (df.dementiaNext), 'ageAtFirstDementia'] = df.age
 
-        return pd.concat([df.reset_index(drop=True), pd.DataFrame(newVariables).reset_index(drop=True)], axis='columns', ignore_index=False)
+        if (newVariables == {}):
+            return df #I have not created any new columns, just modified existing df column data
+        else:
+            return pd.concat([df.reset_index(drop=True), pd.DataFrame(newVariables).reset_index(drop=True)], axis='columns', ignore_index=False)
+
+    def move_people_df_riskFactorsMeans_forward(self, df):
+        factorsToChange = copy.copy(self._riskFactors)
+
+        for rf in factorsToChange:
+            df["mean" + rf.capitalize()] = (
+                df["mean" + rf.capitalize()] * (df["totalYearsInSim"] + 1) + df[rf + "Next"]
+            ) / (df["totalYearsInSim"] + 2)
+
+        # assign ages for new events
+        # df.loc[(df.ageAtFirstStroke.isnull()) & (df.strokeNext), 'ageAtFirstStroke'] = df.age
+        # df.loc[(df.ageAtFirstMI.isnull()) & (df.miNext), 'ageAtFirstMI'] = df.age
+        # df.loc[(df.ageAtFirstDementia.isnull()) & (df.dementiaNext), 'ageAtFirstDementia'] = df.age
+
+        return df
 
     def move_people_df_treatment_forward(self, df):
         factorsToChange = copy.copy(self._treatments)
