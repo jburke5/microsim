@@ -404,28 +404,12 @@ class Population:
     # so, i thikn it should be based on the model-predicted risks...
 
     def recalibrate_bp_treatment(self, recalibration_df):
-        logging.info(f"*** before recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
+        #logging.info(f"*** before recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
         treatment_outcome_standard = (
             self._bpTreatmentStrategy.get_treatment_recalibration_for_population()
         )
-        # estimate risk for the people alive at the start of the wave
-        #recalibration_df= self.estimate_risks(recalibration_df, "treated")
 
-        # rollback the treatment effect.
-        # redtag: would like to apply to this to a deeply cloned population, but i can't get that to work
-        # so, for now, applying it to the actual population and then rolling the effect back later.
-        #recalibration_df = recalibration_df.apply(
-        #    self._bpTreatmentStrategy.rollback_changes_on_current_values_vectorized, axis="columns"
-        #)
-
-        # estimate risk after applying the treamtent effect
-        #recalibration_df = self.estimate_risks(recalibration_df, "untreated")
-
-        # hacktag related to above — roll back the treatment effect...
-        #recalibration_df = recalibration_df.apply(
-        #    self._bpTreatmentStrategy.get_changes_on_current_values_vectorized, axis="columns"
-        #)
-        logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
+        #logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
         totalBPMedsAddedCapped = recalibration_df['totalBPMedsAddedNext']
         totalBPMedsAddedCapped.loc[totalBPMedsAddedCapped >= BaseTreatmentStrategy.MAX_BP_MEDS] = BaseTreatmentStrategy.MAX_BP_MEDS
         #recalibration_df.loc[recalibration_df['totalBPMedsAddedNext'] >= BaseTreatmentStrategy.MAX_BP_MEDS, 'totalBPMedsAddedCapped'] = BaseTreatmentStrategy.MAX_BP_MEDS
@@ -438,11 +422,11 @@ class Population:
         # it is the lesser of the total number of BP meds actually added (totalBpMedsAdded) or the max cap
         # so, if a treamtent strategy adds 10 medications, they'll effect the BP...but, they 
         # wont' have an additional efect on event reduction over the medication cap
-        logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
+        #logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
 
         # recalibrate within each group of added medicaitons so that we can stratify the treamtnet effects
         for i in range(1, BaseTreatmentStrategy.MAX_BP_MEDS + 1):
-            logging.info(f"Roll back for med count: {i}")
+            #logging.info(f"Roll back for med count: {i}")
             recalibrationPopForMedCount = recalibration_df.loc[recalibration_df.totalBPMedsAddedCapped == i]
             # the change standards are for a single medication
             recalibration_standard_for_med_count = treatment_outcome_standard.copy()
@@ -503,7 +487,7 @@ class Population:
                     recalibratedForMedCount.index, "rolledBackEventType"
                 ] = recalibratedForMedCount["rolledBackEventType"]
 
-        logging.info(f"*** after recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
+        #logging.info(f"*** after recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
         recalibration_df.drop(columns=['treatedcombinedRisks', 'treatedstrokeProbabilities', 'treatedstrokeRisks', 'treatedmiRisks', 
                     'untreatedcombinedRisks', 'untreatedstrokeProbabilities', 'untreatedstrokeRisks', 'untreatedmiRisks', 'totalBPMedsAddedCapped', 'rolledBackEventType'], inplace=True)
         return recalibration_df
@@ -540,7 +524,7 @@ class Population:
         fatalityDetermination,
         recalibration_pop,
     ):
-        logging.info(f"create or rollback {outcomeType}, standard: {treatment_outcome_standard[outcomeType]}")
+        #logging.info(f"create or rollback {outcomeType}, standard: {treatment_outcome_standard[outcomeType]}")
 
         modelEstimatedRR = (
             recalibration_pop[treatedRiskVar].mean() / recalibration_pop[untreatedRiskVar].mean()
@@ -567,8 +551,8 @@ class Population:
 
         # if negative, the model estimated too few events, if positive, too mnany
         #logging.info(f"bp recalibration, delta: {delta}, number of statuses to change: {numberOfEventStatusesToChange}")
-        logging.info(f"bp recalibration, delta: {delta} = {modelEstimatedRR} - {treatment_outcome_standard[outcomeType]}")
-        logging.info(f"bp recalibration, treated mean: {recalibration_pop[treatedRiskVar].mean()}, untreated mean: {recalibration_pop[untreatedRiskVar].mean()}")
+        #logging.info(f"bp recalibration, delta: {delta} = {modelEstimatedRR} - {treatment_outcome_standard[outcomeType]}")
+        #logging.info(f"bp recalibration, treated mean: {recalibration_pop[treatedRiskVar].mean()}, untreated mean: {recalibration_pop[untreatedRiskVar].mean()}")
 
         if delta < 0:
             if numberOfEventStatusesToChange > 0:
