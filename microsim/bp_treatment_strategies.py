@@ -47,19 +47,19 @@ class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
         x.dbpNext = x.dbpNext - AddASingleBPMedTreatmentStrategy.dbpLowering
         return x
 
-    def rollback_changes_on_current_values_vectorized(self, x):
-        x.sbp = x.sbp + AddASingleBPMedTreatmentStrategy.sbpLowering
-        x.dbp = x.dbp + AddASingleBPMedTreatmentStrategy.dbpLowering
-        x.bpMedsAdded = 0
-        x.totalBPMedsAdded = 0
-        return x
+#    def rollback_changes_on_current_values_vectorized(self, x):
+#        x.sbp = x.sbp + AddASingleBPMedTreatmentStrategy.sbpLowering
+#        x.dbp = x.dbp + AddASingleBPMedTreatmentStrategy.dbpLowering
+#        x.bpMedsAdded = 0
+#        x.totalBPMedsAdded = 0
+#        return x
 
-    def get_changes_on_current_values_vectorized(self, x):
-        x.bpMedsAdded = 1
-        x.totalBPMedsAdded = 1
-        x.sbp = x.sbp - AddASingleBPMedTreatmentStrategy.sbpLowering
-        x.dbp = x.dbp - AddASingleBPMedTreatmentStrategy.dbpLowering
-        return x
+#    def get_changes_on_current_values_vectorized(self, x):
+#        x.bpMedsAdded = 1
+#        x.totalBPMedsAdded = 1
+#        x.sbp = x.sbp - AddASingleBPMedTreatmentStrategy.sbpLowering
+#        x.dbp = x.dbp - AddASingleBPMedTreatmentStrategy.dbpLowering
+#        return x
 
 
 class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
