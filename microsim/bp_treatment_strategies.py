@@ -47,14 +47,6 @@ class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
         x.dbpNext = x.dbpNext - AddASingleBPMedTreatmentStrategy.dbpLowering
         return x
 
-    def rollback_changes_vectorized(self, x):
-        x.sbpNext = x.sbpNext + AddASingleBPMedTreatmentStrategy.sbpLowering
-        x.dbpNext = x.dbpNext + AddASingleBPMedTreatmentStrategy.dbpLowering
-        x.bpMedsAddedNext = 0
-        x.totalBPMedsAddedNext = 0
-        return x
-
-
 class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
     sbpLowering = 5.5
     dbpLowering = 3.1
@@ -113,14 +105,6 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
         x.dbpNext = x.dbpNext - medsNeeded * AddBPTreatmentMedsToGoal120.dbpLowering
         return x
 
-    def rollback_changes_vectorized(self, x):
-        x.sbpNext = x.sbpNext + x.bpMedsAddedNext * AddBPTreatmentMedsToGoal120.sbpLowering
-        x.dbpNext = x.dbpNext + x.bpMedsAddedNext * AddBPTreatmentMedsToGoal120.dbpLowering
-        # rollback to the prior number of BP meds added
-        x.bpMedsAddedNext = 0
-        x.totalBPMedsAddedNext = x.totalBPMedsAdded
-        return x
-
 class NoBPTreatment(BaseTreatmentStrategy):
     def __init__(self):
         pass
@@ -144,11 +128,6 @@ class NoBPTreatment(BaseTreatmentStrategy):
 
     # BP meds can change via the usual care risk model...but, we won't add any meds...
     def get_changes_vectorized(self, x):
-        x.bpMedsAddedNext = 0
-        x.totalBPMedsAddedNext = 0
-        return x
-
-    def rollback_changes_vectorized(self, x):
         x.bpMedsAddedNext = 0
         x.totalBPMedsAddedNext = 0
         return x
