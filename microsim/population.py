@@ -108,39 +108,77 @@ class Population:
                 break
             self._currentWave += 1
 
-            riskFactorsAndTreatment = {}
-            # advance risk factors
+            ########################## RISK FACTORS 
+
+            riskFactorsDict = {}
+            # advance risk factors on *Next variables
             #import pdb; pdb.set_trace()
             for rf in self._riskFactors:
                 # print(f"### Risk Factor: {rf}")
-                riskFactorsAndTreatment[rf + "Next"] = self.applyMethod(alive,
+                riskFactorsDict[rf + "Next"] = self.applyMethod(alive,
                     self._risk_model_repository.get_model(rf).estimate_next_risk_vectorized,
                     axis="columns",
                 )
 
-            # advance treatment
+            # bring *Next risk factors modifications to the dataframe
+            alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(riskFactorsDict).reset_index(drop=True)], axis='columns', ignore_index=False)
+
+            #now that new risk factors have been calculated, copy the updated *Next values for risk factors to the current (last) values, 
+            #while leaving *Next values untouched for now, so all estimates of risks will utilize the last, and most up to date, values
+            alive = self.move_people_df_riskFactors_forward(alive)
+ 
+            ########################## RISKS WITH UPDATED RISK FACTORS AND BEFORE TREATMENT
+
+            #now that we have the updated risk factors, but have not applied the treatment yet, obtain the untreated risks
+            #untreated risks are used in recalibration of mi and stroke outcomes
+            alive = self.estimate_risks(alive, "untreated")
+
+            ########################## TREATMENT (WHICH INDIRECTLY MODIFIES RISK FACTORS)
+
+            treatmentsDict = {}
+            # advance treatment on *Next variables (antiHypertensiveCountNext, statinNext)
             for treatment in self._treatments:
                 # print(f"### Treatment: {treatment}")
-                riskFactorsAndTreatment[treatment + "Next"] = alive.apply(
+                treatmentsDict[treatment + "Next"] = alive.apply(
                     self._risk_model_repository.get_model(treatment).estimate_next_risk_vectorized,
                     axis="columns",
                 )
 
-            # apply treatment modifications
-            alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(riskFactorsAndTreatment).reset_index(drop=True)], axis='columns', ignore_index=False)
+            # bring *Next treatment modifications to the dataframe
+            alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(treatmentsDict).reset_index(drop=True)], axis='columns', ignore_index=False)
             
-            # bp meds added in this wave are 0...
+            # initialize BP medications (on *Next variables)
+            # bp meds added in this wave are 0...(bpMedsAddedNext variable)
+            # total bp meds are carried forward from the prior wave...(totalBPMedsAddedNext variable)
             medsData = pd.DataFrame({'bpMedsAddedNext' :  pd.Series(np.zeros(len(alive))), 
                                     'totalBPMedsAddedNext' : pd.Series(alive['totalBPMedsAdded'])})
-            
-            # total bp meds are carried forward from teh prior wave
+
+            # bring preliminary *Next bp medications to the dataframe
             alive = pd.concat([alive.reset_index(drop=True), medsData], axis='columns', ignore_index=False)
+
+            # use the BP treatment strategy to modify *Next values (sbpNext, dbpNext, bpMedsAddedNext, totalBPMedsAddedNext)
             if self._bpTreatmentStrategy is not None:
                 alive = alive.apply(
                     self._bpTreatmentStrategy.get_changes_vectorized, axis="columns"
                 )
-            # advance outcomes
-            # first determine if there is a cv event
+
+            #now that treatment has been applied, copy the updated *Next values for treatment to the current (last) values, 
+            alive = self.move_people_df_treatment_forward(alive) 
+            #because treatment can potentially affect the *Next risk factors, we need to move these again now
+            #while leaving *Next values untouched for now, so all estimates of risks will utilize the last, and most up to date, values
+            alive = self.move_people_df_riskFactors_forward(alive)
+            #now that we are completely done with changing risk factors, move their means forward too
+            alive = self.move_people_df_riskFactorsMeans_forward(alive)
+
+            ########################## RISKS WITH UPDATED RISK FACTORS AFTER TREATMENT
+
+            #now that we have updated risk factors and applied the treatment, obtain the risks of this group to use in recalibration
+            alive = self.estimate_risks(alive, "treated")
+
+            ########################## CLINICAL OUTCOMES
+
+            #the order of the outcomes potentially becomes important if outcomes depend on each other (eg when gcp outcome depends on stroke outcome)
+
             # add these variables here to speed up performance...better than adding one at a time
             # in the advance method...
             outcomeVars = {}
@@ -152,10 +190,12 @@ class Population:
             #outcomeVars["qalyNext"] =np.zeros(len(alive))
             #outcomeVars["ageAtFirstDementia"] = [np.nan] * len(df)
             alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(outcomeVars) ], axis='columns')
-            alive = alive.apply(
-                self._outcome_model_repository.assign_cv_outcome_vectorized, axis="columns"
-            )
 
+            ############# NON-FATAL OUTCOMES
+
+            # advance outcomes
+
+            # calculate GCP and its slope
             gcp = {}
             gcp["gcpNext"] = alive.apply(
                 self._outcome_model_repository.get_gcp_vectorized, axis="columns"
@@ -175,34 +215,59 @@ class Population:
                 alive["dementiaNext"] = np.repeat(False, len(alive))
 
             alive.loc[alive["dementiaNext"] == 1, "ageAtFirstDementia"] = alive.age
-            alive["dementia"] = alive["dementiaNext"] | alive["dementia"]
 
+            ############# (POTENTIALLY) FATAL AND FATAL OUTCOMES
+
+            # first determine if there is a cv event
+            # find preliminary mi and stroke outcomes, these will be corrected in a bit with recalibration
+            # background: outcome_model_repository is based on models originally designed at the person class level
+            # background: the recalibration method is applied at the population class level because it addresses a population-level issue
+            alive = alive.apply(
+                self._outcome_model_repository.assign_cv_outcome_vectorized, axis="columns"
+            )
+
+            #perform recalibration, we are essentially modifying mi and stroke outcomes we obtained just above 
             numberAliveBeforeRecal = len(alive)
-
             alive = self.apply_recalibration_standards(alive)
             if len(alive) != numberAliveBeforeRecal:
                 raise Exception(
                     f"number alive: {len(alive)} not equal to alive before recal {numberAliveBeforeRecal}"
                 )
+
+            #now that we know with certainty all cv-based deaths, find the non-cv-based deaths and finalize the deadNext variable 
             alive["cvDeathNext"] = alive["deadNext"]
             alive["nonCVDeathNext"] = alive.apply(
                 self._outcome_model_repository.assign_non_cv_mortality_vectorized, axis="columns"
             )
             alive["deadNext"] = alive["nonCVDeathNext"] | alive["cvDeathNext"]
 
+            ############# FUNCTIONS OF CLINICAL OUTCOMES
+
+            # calculate and assign the QALYs
             qaly = {}
             qaly["qalyNext"] = alive.apply(
                 QALYAssignmentStrategy().get_qalys_vectorized, axis="columns"
             )
             alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(qaly)], axis='columns')
 
+            ############# OUTCOME UPDATES
+
+            alive = self.move_people_df_outcomes_forward(alive)
+
+            ########################## UPDATES
+            
+            #if they survived until now, they are now 1 year older
             alive.loc[~alive.dead, "age"] = alive.age + 1
+
             self._totalWavesAdvanced += 1
 
-            alive = self.move_people_df_forward(alive)
+            alive["totalYearsInSim"] = alive["totalYearsInSim"] + 1
+
+            alive.apply(self.push_updates_back_to_people, axis="columns")
+
+            ########################## DATAFRAME CLEAN-UP
 
             # for efficieicny, we could try to do this all at the end...but, its a bit cleanear  to do it wave by wave
-            alive.apply(self.push_updates_back_to_people, axis="columns")
             nextCols = [col for col in alive.columns if "Next" in col]
             alive.drop(columns=nextCols, inplace=True)
             fatalCols = [col for col in alive.columns if "Fatal" in col]
@@ -259,9 +324,49 @@ class Population:
             person._alive.append(True)
         return person
 
-    def move_people_df_forward(self, df):
+    def move_people_df_riskFactors_forward(self, df):  
         factorsToChange = copy.copy(self._riskFactors)
-        factorsToChange.extend(self._treatments)
+
+        newVariables = {} #will hold data from columns that need to be added to df
+
+        for rf in factorsToChange:
+            # the curent value is stored in the variable name
+            df[rf] = df[rf + "Next"]
+            if (rf + str(self._currentWave) in df.columns):       #if column already exists, eg if you have already updated risk factors once in this iteration
+                df[rf + str(self._currentWave)] = df[rf + "Next"] #then update values in place 
+            else:                                                 #if this is the first time in the advanced_vectorized iteration I am updating risk factors
+                newVariables[rf + str(self._currentWave)] = df[rf + "Next"] #then I need to create this column 
+
+        df["current_diabetes"] = df["a1c"] > 6.5
+        df["gfr"] = df.apply(GFREquation().get_gfr_for_person_vectorized, axis="columns") #GFR calculation requires an updated age
+
+        # assign ages for new events
+        # df.loc[(df.ageAtFirstStroke.isnull()) & (df.strokeNext), 'ageAtFirstStroke'] = df.age
+        # df.loc[(df.ageAtFirstMI.isnull()) & (df.miNext), 'ageAtFirstMI'] = df.age
+        # df.loc[(df.ageAtFirstDementia.isnull()) & (df.dementiaNext), 'ageAtFirstDementia'] = df.age
+
+        if (newVariables == {}):
+            return df #I have not created any new columns, just modified existing df column data
+        else:
+            return pd.concat([df.reset_index(drop=True), pd.DataFrame(newVariables).reset_index(drop=True)], axis='columns', ignore_index=False)
+
+    def move_people_df_riskFactorsMeans_forward(self, df):
+        factorsToChange = copy.copy(self._riskFactors)
+
+        for rf in factorsToChange:
+            df["mean" + rf.capitalize()] = (
+                df["mean" + rf.capitalize()] * (df["totalYearsInSim"] + 1) + df[rf + "Next"]
+            ) / (df["totalYearsInSim"] + 2)
+
+        # assign ages for new events
+        # df.loc[(df.ageAtFirstStroke.isnull()) & (df.strokeNext), 'ageAtFirstStroke'] = df.age
+        # df.loc[(df.ageAtFirstMI.isnull()) & (df.miNext), 'ageAtFirstMI'] = df.age
+        # df.loc[(df.ageAtFirstDementia.isnull()) & (df.dementiaNext), 'ageAtFirstDementia'] = df.age
+
+        return df
+
+    def move_people_df_treatment_forward(self, df):
+        factorsToChange = copy.copy(self._treatments)
         
         newVariables = {}
         
@@ -272,18 +377,8 @@ class Population:
             df["mean" + rf.capitalize()] = (
                 df["mean" + rf.capitalize()] * (df["totalYearsInSim"] + 1) + df[rf + "Next"]
             ) / (df["totalYearsInSim"] + 2)
-        for outcome in ["mi", "stroke"]:
-            df[outcome + "InSim"] = df[outcome + "InSim"] | df[outcome + "Next"]
-            newVariables[outcome + str(self._currentWave)] = df[outcome + "Next"]
-        df["dead"] = df["dead"] | df["deadNext"]
-        newVariables["dead" + str(self._currentWave)] = df["deadNext"]
 
-        df["totalYearsInSim"] = df["totalYearsInSim"] + 1
-        df["current_diabetes"] = df["a1c"] > 6.5
-        df['gcp'] = df['gcpNext']
-        df["gfr"] = df.apply(GFREquation().get_gfr_for_person_vectorized, axis="columns")
         df["current_bp_treatment"] = df["antiHypertensiveCount"] >= 1
-        df["totalQalys"] = df["totalQalys"] + df["qalyNext"]
         df["bpMedsAdded"] = df["bpMedsAddedNext"]
         df["totalBPMedsAdded"] = df["totalBPMedsAddedNext"]
         
@@ -294,6 +389,21 @@ class Population:
 
         return pd.concat([df.reset_index(drop=True), pd.DataFrame(newVariables).reset_index(drop=True)], axis='columns', ignore_index=False)
 
+    def move_people_df_outcomes_forward(self, df): #includes clinical outcomes and function of clinical outcomes (QALYs)
+
+        newVariables = {}
+
+        for outcome in ["mi", "stroke"]:
+            df[outcome + "InSim"] = df[outcome + "InSim"] | df[outcome + "Next"]
+            newVariables[outcome + str(self._currentWave)] = df[outcome + "Next"]
+        df["dead"] = df["dead"] | df["deadNext"]
+        newVariables["dead" + str(self._currentWave)] = df["deadNext"]
+
+        df["dementia"] = df["dementiaNext"] | df["dementia"]
+        df['gcp'] = df['gcpNext']
+        df["totalQalys"] = df["totalQalys"] + df["qalyNext"]
+
+        return pd.concat([df.reset_index(drop=True), pd.DataFrame(newVariables).reset_index(drop=True)], axis='columns', ignore_index=False)
 
     def set_bp_treatment_strategy(self, bpTreatmentStrategy):
         self._bpTreatmentStrategy = bpTreatmentStrategy
@@ -320,25 +430,9 @@ class Population:
         treatment_outcome_standard = (
             self._bpTreatmentStrategy.get_treatment_recalibration_for_population()
         )
-        # estimate risk for the people alive at the start of the wave
-        recalibration_df= self.estimate_risks(recalibration_df, "treated")
 
-        # rollback the treatment effect.
-        # redtag: would like to apply to this to a deeply cloned population, but i can't get that to work
-        # so, for now, applying it to the actual population and then rolling the effect back later.
-        recalibration_df = recalibration_df.apply(
-            self._bpTreatmentStrategy.rollback_changes_vectorized, axis="columns"
-        )
-
-        # estimate risk after applying the treamtent effect
-        recalibration_df = self.estimate_risks(recalibration_df, "untreated")
-
-        # hacktag related to above — roll back the treatment effect...
-        recalibration_df = recalibration_df.apply(
-            self._bpTreatmentStrategy.get_changes_vectorized, axis="columns"
-        )
         #logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
-        totalBPMedsAddedCapped = recalibration_df['totalBPMedsAddedNext']
+        totalBPMedsAddedCapped = recalibration_df['totalBPMedsAddedNext'].copy()
         totalBPMedsAddedCapped.loc[totalBPMedsAddedCapped >= BaseTreatmentStrategy.MAX_BP_MEDS] = BaseTreatmentStrategy.MAX_BP_MEDS
         #recalibration_df.loc[recalibration_df['totalBPMedsAddedNext'] >= BaseTreatmentStrategy.MAX_BP_MEDS, 'totalBPMedsAddedCapped'] = BaseTreatmentStrategy.MAX_BP_MEDS
         recalibrationVars = {"rolledBackEventType" : [None] * len(recalibration_df),
@@ -479,6 +573,8 @@ class Population:
 
         # if negative, the model estimated too few events, if positive, too mnany
         #logging.info(f"bp recalibration, delta: {delta}, number of statuses to change: {numberOfEventStatusesToChange}")
+        #logging.info(f"bp recalibration, delta: {delta} = {modelEstimatedRR} - {treatment_outcome_standard[outcomeType]}")
+        #logging.info(f"bp recalibration, treated mean: {recalibration_pop[treatedRiskVar].mean()}, untreated mean: {recalibration_pop[untreatedRiskVar].mean()}")
 
         if delta < 0:
             if numberOfEventStatusesToChange > 0:
