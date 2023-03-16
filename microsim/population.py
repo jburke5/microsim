@@ -432,7 +432,7 @@ class Population:
         )
 
         #logging.info(f"######## BP meds After redo: {recalibration_df.totalBPMedsAddedNext.value_counts()}")
-        totalBPMedsAddedCapped = recalibration_df['totalBPMedsAddedNext']
+        totalBPMedsAddedCapped = recalibration_df['totalBPMedsAddedNext'].copy()
         totalBPMedsAddedCapped.loc[totalBPMedsAddedCapped >= BaseTreatmentStrategy.MAX_BP_MEDS] = BaseTreatmentStrategy.MAX_BP_MEDS
         #recalibration_df.loc[recalibration_df['totalBPMedsAddedNext'] >= BaseTreatmentStrategy.MAX_BP_MEDS, 'totalBPMedsAddedCapped'] = BaseTreatmentStrategy.MAX_BP_MEDS
         recalibrationVars = {"rolledBackEventType" : [None] * len(recalibration_df),
