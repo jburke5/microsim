@@ -108,11 +108,6 @@ class Population:
                 break
             self._currentWave += 1
 
-            #if they survived until now, they are 1 year older, because if we wanted to keep age the same as the one we get initially, 
-            #then we should have started with predicting outcomes using the initial risk factors  
-            #so, I think we are now assuming that everyone survived to increase their age by at least 1 year
-            alive.loc[~alive.dead, "age"] = alive.age + 1 
-
             ########################## RISK FACTORS 
 
             riskFactorsDict = {}
@@ -181,6 +176,8 @@ class Population:
             alive = self.estimate_risks(alive, "treated")
 
             ########################## CLINICAL OUTCOMES
+
+            #the order of the outcomes potentially becomes important if outcomes depend on each other (eg when gcp outcome depends on stroke outcome)
 
             # add these variables here to speed up performance...better than adding one at a time
             # in the advance method...
@@ -259,6 +256,9 @@ class Population:
 
             ########################## UPDATES
             
+            #if they survived until now, they are now 1 year older
+            alive.loc[~alive.dead, "age"] = alive.age + 1
+
             self._totalWavesAdvanced += 1
 
             alive["totalYearsInSim"] = alive["totalYearsInSim"] + 1
