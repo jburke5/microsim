@@ -22,7 +22,7 @@ class StatsModelRandInterceptLogisticRiskFactorModel(StatsModelLogisticRiskFacto
         totalRisk = linearRisk + rand_intercept
         return np.exp(totalRisk) / (1 + np.exp(totalRisk))
 
-    def estimate_next_risk_vectorized(self, x):
+    def estimate_next_risk_vectorized(self, x, rng=None):
         linearRisk = super().estimate_linear_predictor_vectorized(x)
         rand_intercept = x[self.get_random_intercept_name_vectorized()]
         totalRisk = linearRisk + rand_intercept

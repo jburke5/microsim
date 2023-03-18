@@ -4,6 +4,7 @@ from microsim.outcome_model_type import OutcomeModelType
 from microsim.sim_settings import simSettings
 import pandas as pd
 import multiprocessing as mp
+import numpy as np
 
 class Trialset:
     
@@ -17,8 +18,13 @@ class Trialset:
     
     def prepareArgsForRun(self): #prepare all arguments needed to run the entire trial set 
         argsForRun = []	 #arguments will be stored in a list of tuples (multiprocessing map functions accept only tuples to be sent to processes)
+
+        seedSequence = np.random.SeedSequence()
+        rngSeeds = seedSequence.spawn(self.trialCount)
+        rngStreams = [np.random.default_rng(s) for s in rngSeeds]
+
         for iTrial in range(0,self.trialCount):  #for as many trials as the set asks for
-                argsForRun.append((iTrial)) #trialset instances contain all information needed by their trials, so just pass a trial index
+                argsForRun.append((iTrial,rngStreams[iTrial])) #pass a trial index and the random number generator
         return argsForRun
     
     #having the population as an argument passed to each trial is the reason why python makes copies of the population
@@ -27,12 +33,13 @@ class Trialset:
     #which suggests a solution: do not pass the actual population to the function the processes run but
     #some kind of index/link/list/function as an interface to the population
     #also, to maximize efficiency with TrialsetParallel, a single core must prepare, run and analyze a trial
-    def prepareRunAnalyzeTrial(self, iTrial):
+    def prepareRunAnalyzeTrial(self, iTrial, rng):
         print(f'starting trial {iTrial} now', flush=True) #helps to see when trials start
         trial = Trial(self.trialDescription, 
                       self.pop, 
+                      rng,
                       additionalLabels=self.additionalLabels) #initialize trial
-        trial.run() #run and analyze trial
+        trial.run(rng) #run and analyze trial
         resultsForTrial = list(trial.analyticResults.values())
         dfForTrial = pd.DataFrame(resultsForTrial)
         if trial.additionalLabels is not None:
@@ -55,7 +62,7 @@ class TrialsetParallel(Trialset): #Parallel refers to how trials are run, at any
         else:
             with mp.Pool(self.processesCount) as myPool: #context manager will terminate this pool of processes
                  #run trials and get back the list of dataframes with the results (trial instance is not returned to save memory)
-                 resultsTrialsetList = myPool.map(self.prepareRunAnalyzeTrial, self.prepareArgsForRun())
+                 resultsTrialsetList = myPool.starmap(self.prepareRunAnalyzeTrial, self.prepareArgsForRun())
                  resultsTrialsetPd = pd.concat(resultsTrialsetList).reset_index(drop=True) #convert list of dataframes to a single dataframe
             return resultsTrialsetPd
 
@@ -69,7 +76,7 @@ class TrialsetSerial(Trialset): #Serial refers to how trials are run, at any mom
         resultsTrialsetList = []
         argsForRun = self.prepareArgsForRun()
         for iTrial in range(self.trialCount):
-                resultsTrialsetList.append(self.prepareRunAnalyzeTrial(argsForRun[iTrial])) #prepare,run,analyze trial and append trial results to list
+                resultsTrialsetList.append(self.prepareRunAnalyzeTrial(*argsForRun[iTrial])) #prepare,run,analyze trial and append trial results to list
                 if (iTrial+1) % 10 == 0:
                         print(f"#################\n#################    Trial Completed: {iTrial}")
         resultsTrialsetPd = pd.concat(resultsTrialsetList).reset_index(drop=True) #convert list of dataframes to a single dataframe

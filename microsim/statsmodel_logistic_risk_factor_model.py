@@ -20,5 +20,5 @@ class StatsModelLogisticRiskFactorModel(StatsModelLinearRiskFactorModel):
     def estimate_next_risk(self, person):
         return self.logit(self.estimate_linear_predictor(person))
 
-    def estimate_next_risk_vectorized(self, x):
+    def estimate_next_risk_vectorized(self, x, rng=None):
         return self.logit(self.estimate_linear_predictor_vectorized(x))

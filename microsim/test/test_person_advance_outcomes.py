@@ -13,7 +13,7 @@ from microsim.test.helper.init_vectorized_population_dataframe import (
 )
 import unittest
 import copy
-
+import numpy as np
 
 def initializeAFib(person):
     return None
@@ -24,7 +24,7 @@ class AlwaysPositiveOutcomeRepository(OutcomeModelRepository):
         super(AlwaysPositiveOutcomeRepository, self).__init__()
 
     # override super to alays return a probability of each outcom eas 1
-    def get_risk_for_person(self, person, outcome, years=1, vectorized=False):
+    def get_risk_for_person(self, person, outcome, years=1, vectorized=False, rng=None):
         return 1
 
 
@@ -33,7 +33,7 @@ class AlwaysNegativeOutcomeRepository(OutcomeModelRepository):
         super(AlwaysNegativeOutcomeRepository, self).__init__()
 
     # override super to alays return a probability of each outcome as 0
-    def get_risk_for_person(self, person, outcome, years=1, vectorized=False):
+    def get_risk_for_person(self, person, outcome, years=1, vectorized=False, rng=None):
         return 0
 
 
@@ -61,6 +61,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             0,
             0,
             initializeAFib,
+            rng = np.random.default_rng()
         )
 
         self.joe_with_mi = copy.deepcopy(self.joe)
@@ -72,6 +73,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self._population_dataframe = init_vectorized_population_dataframe(
             [self.joe, self.joe_with_mi, self.joe_with_stroke],
             with_base_gcp=True,
+            rng = np.random.default_rng(),
         )
 
         self._always_positive_repository = AlwaysPositiveOutcomeRepository()
@@ -100,11 +102,13 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             joe_data,
             vectorized=True,
             overrideMIProb=1.0,
+            rng = np.random.default_rng(),
         )
         is_min_prob_mi_fatal = self.cvDeterminer._will_have_fatal_mi(
             joe_data,
             vectorized=True,
             overrideMIProb=0.0,
+            rng = np.random.default_rng(),
         )
 
         self.assertTrue(is_max_prob_mi_fatal)
@@ -120,11 +124,13 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             joe_data,
             vectorized=True,
             overrideMIProb=0.0,
+            rng = np.random.default_rng(),
         )
         will_have_fatal_second_mi = self.cvDeterminer._will_have_fatal_mi(
             joe_with_mi_data,
             vectorized=True,
             overrideMIProb=0.0,
+            rng = np.random.default_rng(),
         )
 
         self.assertFalse(will_have_fatal_first_mi)
@@ -142,11 +148,13 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             joe_data,
             vectorized=True,
             overrideStrokeProb=0.0,
+            rng = np.random.default_rng(),
         )
         will_have_fatal_second_stroke = self.cvDeterminer._will_have_fatal_stroke(
             joe_with_stroke_data,
             vectorized=True,
             overrideStrokeProb=0.0,
+            rng = np.random.default_rng(),
         )
 
         self.assertFalse(will_have_fatal_first_stroke)
@@ -161,11 +169,13 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             joe_data,
             vectorized=True,
             overrideStrokeProb=1.0,
+            rng = np.random.default_rng(),
         )
         is_min_prob_stroke_fatal = self.cvDeterminer._will_have_fatal_stroke(
             joe_data,
             vectorized=True,
             overrideStrokeProb=0.0,
+            rng = np.random.default_rng(),
         )
 
         self.assertTrue(is_max_prob_stroke_fatal)
@@ -179,12 +189,14 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
             outcome_model_repository=None,
             vectorized=False,
             manualMIProb=1.0,
+            rng = np.random.default_rng(),
         )
         has_mi_min_manual_prob = self.cvDeterminer._will_have_mi(
             joe_data,
             outcome_model_repository=None,
             vectorized=False,
             manualMIProb=0.0,
+            rng = np.random.default_rng(),
         )
 
         self.assertTrue(has_mi_max_manual_prob)
@@ -195,7 +207,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self._always_positive_repository.mi_case_fatality = 1.0
         self._always_positive_repository.manualStrokeMIProbability = 1.0
 
-        self.joe.advance_outcomes(self._always_positive_repository)
+        self.joe.advance_outcomes(self._always_positive_repository, rng = np.random.default_rng())
         self.assertTrue(self.joe.has_mi_during_simulation())
         self.assertFalse(self.joe.has_stroke_during_simulation())
         self.assertTrue(self.joe.is_dead())
@@ -205,7 +217,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self._always_positive_repository.mi_case_fatality = 1.0
         self._always_positive_repository.manualStrokeMIProbability = 0.0
 
-        self.joe.advance_outcomes(self._always_positive_repository)
+        self.joe.advance_outcomes(self._always_positive_repository, rng = np.random.default_rng())
         self.assertFalse(self.joe.has_mi_during_simulation())
         self.assertTrue(self.joe.has_stroke_during_simulation())
         self.assertTrue(self.joe.is_dead())
@@ -216,7 +228,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self._always_positive_repository.mi_case_fatality = 0.0
         self._always_positive_repository.manualStrokeMIProbability = 1.0
 
-        self.joe.advance_outcomes(self._always_positive_repository)
+        self.joe.advance_outcomes(self._always_positive_repository, rng = np.random.default_rng())
         self.assertTrue(self.joe.has_mi_during_simulation())
         self.assertFalse(self.joe.has_stroke_during_simulation())
 
@@ -225,6 +237,6 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self._always_positive_repository.mi_case_fatality = 0.0
         self._always_positive_repository.manualStrokeMIProbability = 0.0
 
-        self.joe.advance_outcomes(self._always_positive_repository)
+        self.joe.advance_outcomes(self._always_positive_repository, rng = np.random.default_rng())
         self.assertFalse(self.joe.has_mi_during_simulation())
         self.assertTrue(self.joe.has_stroke_during_simulation())

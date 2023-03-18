@@ -59,6 +59,7 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
             otherLipidLoweringMedicationCount=0,
             creatinine=0.0,
             initializeAfib=initializeAfib,
+            rng = np.random.default_rng(),
         )
 
         self.people = [
@@ -84,6 +85,7 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                 otherLipidLoweringMedicationCount=0,
                 creatinine=0.0,
                 initializeAfib=initializeAfib,
+                rng = np.random.default_rng(),
             )
             for bpinstance in sbp
         ]
@@ -92,6 +94,7 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
         self.population_dataframe = init_vectorized_population_dataframe(
             self.people,
             with_base_gcp=True,
+            rng = np.random.default_rng(),
         )
 
         df2 = pd.DataFrame(
@@ -185,7 +188,7 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
         )
 
     def testSimpleModel(self):
-        df = init_vectorized_population_dataframe([self.person], with_base_gcp=True)
+        df = init_vectorized_population_dataframe([self.person], with_base_gcp=True, rng = np.random.default_rng())
         person_data = df.iloc[0]
         expected_model_result = (
             self.simpleModelResultSM.params["age"] * person_data.age

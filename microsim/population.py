@@ -93,7 +93,8 @@ class Population:
     # (i.e. static attributes, time-varying attributes)
     # also, will need to thikn about ways to make sure that the dataframe version of reality stays synced with teh "patient-based" version of reality
     # for now, will build a DF at the beginnign and then update the peopel at the end...
-    def advance_vectorized(self, years):
+    def advance_vectorized(self, years, rng=None):
+        #rng = np.random.default_rng(rng)
         # get dataframe of people...
         df = self.get_people_current_state_and_summary_as_dataframe()
         alive = df.loc[df.dead == False]
@@ -118,6 +119,7 @@ class Population:
                 riskFactorsDict[rf + "Next"] = self.applyMethod(alive,
                     self._risk_model_repository.get_model(rf).estimate_next_risk_vectorized,
                     axis="columns",
+                    rng=rng, 
                 )
 
             # bring *Next risk factors modifications to the dataframe
@@ -142,6 +144,7 @@ class Population:
                 treatmentsDict[treatment + "Next"] = alive.apply(
                     self._risk_model_repository.get_model(treatment).estimate_next_risk_vectorized,
                     axis="columns",
+                    rng=rng,
                 )
 
             # bring *Next treatment modifications to the dataframe
@@ -198,7 +201,7 @@ class Population:
             # calculate GCP and its slope
             gcp = {}
             gcp["gcpNext"] = alive.apply(
-                self._outcome_model_repository.get_gcp_vectorized, axis="columns"
+                self._outcome_model_repository.get_gcp_vectorized, axis="columns", rng=rng
             )
             gcp["gcpSlope"] = gcp['gcpNext'] - alive['gcp']
             alive.drop(columns=['gcpSlope'], inplace=True)
@@ -208,7 +211,7 @@ class Population:
             alive.dementia = alive.dementia.astype('bool_')
             if len(alive.loc[~alive.dementia]) > 0:
                 newDementia = alive.loc[~alive.dementia].apply(
-                    self._outcome_model_repository.get_dementia_vectorized, axis="columns"
+                    self._outcome_model_repository.get_dementia_vectorized, rng=rng, axis="columns"
                 )
                 alive["dementiaNext"] = newDementia
             else:
@@ -223,12 +226,12 @@ class Population:
             # background: outcome_model_repository is based on models originally designed at the person class level
             # background: the recalibration method is applied at the population class level because it addresses a population-level issue
             alive = alive.apply(
-                self._outcome_model_repository.assign_cv_outcome_vectorized, axis="columns"
+                self._outcome_model_repository.assign_cv_outcome_vectorized, axis="columns", rng=rng
             )
 
             #perform recalibration, we are essentially modifying mi and stroke outcomes we obtained just above 
             numberAliveBeforeRecal = len(alive)
-            alive = self.apply_recalibration_standards(alive)
+            alive = self.apply_recalibration_standards(alive, rng=rng)
             if len(alive) != numberAliveBeforeRecal:
                 raise Exception(
                     f"number alive: {len(alive)} not equal to alive before recal {numberAliveBeforeRecal}"
@@ -237,7 +240,7 @@ class Population:
             #now that we know with certainty all cv-based deaths, find the non-cv-based deaths and finalize the deadNext variable 
             alive["cvDeathNext"] = alive["deadNext"]
             alive["nonCVDeathNext"] = alive.apply(
-                self._outcome_model_repository.assign_non_cv_mortality_vectorized, axis="columns"
+                self._outcome_model_repository.assign_non_cv_mortality_vectorized, axis="columns", rng=rng
             )
             alive["deadNext"] = alive["nonCVDeathNext"] | alive["cvDeathNext"]
 
@@ -410,11 +413,11 @@ class Population:
         for person in self._people:
             person._bpTreatmentStrategy = bpTreatmentStrategy
 
-    def apply_recalibration_standards(self, recalibration_df):
+    def apply_recalibration_standards(self, recalibration_df, rng=None):
         # treatment_standard is a dictionary of outcome types and effect sizees
         if self._bpTreatmentStrategy is not None:
             if self._bpTreatmentStrategy.get_treatment_recalibration_for_population() is not None:
-                recalibration_df = self.recalibrate_bp_treatment(recalibration_df)
+                recalibration_df = self.recalibrate_bp_treatment(recalibration_df, rng=rng)
         return recalibration_df
 
     # should the estiamted treatment effect be based on the number of events in the population
@@ -425,7 +428,7 @@ class Population:
     # genuine uncertainty.
     # so, i thikn it should be based on the model-predicted risks...
 
-    def recalibrate_bp_treatment(self, recalibration_df):
+    def recalibrate_bp_treatment(self, recalibration_df, rng=None):
         #logging.info(f"*** before recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
         treatment_outcome_standard = (
             self._bpTreatmentStrategy.get_treatment_recalibration_for_population()
@@ -465,6 +468,7 @@ class Population:
                     OutcomeType.STROKE,
                     CVOutcomeDetermination()._will_have_fatal_stroke,
                     recalibrationPopForMedCount,
+                    rng=rng,
                 )
 
                 recalibration_df.loc[
@@ -492,6 +496,7 @@ class Population:
                     OutcomeType.MI,
                     CVOutcomeDetermination()._will_have_fatal_mi,
                     recalibrationPopForMedCount,
+                    rng=rng,
                 )
                 recalibration_df.loc[
                     recalibratedForMedCount.index, "miNext"
@@ -545,6 +550,7 @@ class Population:
         outcomeType,
         fatalityDetermination,
         recalibration_pop,
+        rng=None
     ):
         #logging.info(f"create or rollback {outcomeType}, standard: {treatment_outcome_standard[outcomeType]}")
 
@@ -587,7 +593,7 @@ class Population:
                 recalibration_pop.loc[
                     new_events.index, eventVar + "Fatal"
                 ] = recalibration_pop.loc[new_events.index].apply(
-                    fatalityDetermination, axis="columns", args=(True,)
+                    fatalityDetermination, axis="columns", args=(True,None,rng)
                 )
                 recalibration_pop.loc[new_events.index, ageAtFirstVar] = np.fmin(
                     recalibration_pop.loc[new_events.index].age,
@@ -1009,7 +1015,8 @@ def initializeAFib(person):
     return statsModel.estimate_next_risk(person)
 
 
-def build_person(x, outcome_model_repository, randomEffects=None):
+def build_person(x, outcome_model_repository, randomEffects=None, rng=None):
+    #rng = np.random.default_rng(rng)
     return Person(
         age=x.age,
         gender=NHANESGender(int(x.gender)),
@@ -1034,18 +1041,20 @@ def build_person(x, outcome_model_repository, randomEffects=None):
         initializeAfib=initializeAFib,
         initializationRepository=InitializationRepository(),
         selfReportStrokeAge=x.selfReportStrokeAge,
-        selfReportMIAge=np.random.randint(18, x.age)
+        selfReportMIAge=rng.integers(18, x.age) #rng.integers replaces np.random.randint with endpoint=False
         if x.selfReportMIAge == 99999
         else x.selfReportMIAge,
-        randomEffects=outcome_model_repository.get_random_effects() if randomEffects is None else randomEffects,
+        randomEffects=outcome_model_repository.get_random_effects(rng) if randomEffects is None else randomEffects,
+        rng=rng,
         dfIndex=x.name,
         diedBy2015=x.diedBy2015 == True,
     )
 
 
 def build_people_using_nhanes_for_sampling(
-    nhanes, n, outcome_model_repository, filter=None, random_seed=None, weights=None
+    nhanes, n, outcome_model_repository, filter=None, random_seed=None, weights=None, rng=None
 ):
+    #rng = np.random.default_rng(rng)
     #cannot avoid this, eg by passing an argument, NHANESDirectSamplePopulation needs the result of this function before it can super().__init()
     if simSettings.pandarallelFlag: 
          applyMethod = pd.DataFrame.parallel_apply #uses pandarallel
@@ -1058,7 +1067,7 @@ def build_people_using_nhanes_for_sampling(
         weights = nhanes.WTINT2YR
     repeated_sample = nhanes.sample(n, weights=weights, random_state=random_seed, replace=True)
     people = applyMethod(repeated_sample,
-        build_person, outcome_model_repository=outcome_model_repository, axis="columns"
+        build_person, outcome_model_repository=outcome_model_repository, randomEffects=None, rng=rng, axis="columns"
     )
 
     for i in range(0, len(people)):
@@ -1081,11 +1090,13 @@ class NHANESDirectSamplePopulation(Population):
         model_reposistory_type="cohort",
         random_seed=None,
         weights=None,
+        rng=None,
     ):
 
         nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         nhanes = nhanes.loc[nhanes.year == year]
         self._outcome_model_repository = OutcomeModelRepository()
+        #rng = np.random.default_rng(rng)
         people = build_people_using_nhanes_for_sampling(
             nhanes,
             n,
@@ -1093,6 +1104,7 @@ class NHANESDirectSamplePopulation(Population):
             filter=filter,
             random_seed=random_seed,
             weights=weights,
+            rng=rng,
         )
         super().__init__(people)
         self._qaly_assignment_strategy = QALYAssignmentStrategy()
@@ -1130,12 +1142,12 @@ class PersonListPopulation(Population):
 
 
 class NHANESAgeStandardPopulation(NHANESDirectSamplePopulation):
-    def __init__(self, n, year):
+    def __init__(self, n, year, rng=None):
         nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         weights = self.get_weights(year)
         weights["gender"] = weights["female"] + 1
         weights = pd.merge(nhanes, weights, how="left", on=["age", "gender"]).popWeight
-        super().__init__(n=n, year=year, weights=weights)
+        super().__init__(n=n, year=year, weights=weights, rng=rng)
 
     def get_weights(self, year):
         standard = self.build_age_standard(year)
@@ -1197,7 +1209,8 @@ class ClonePopulation(Population):
                                             'selfReportMIAge' : -1,
                                             'diedBy2015' : 0}), 
                                             self._outcome_model_repository, 
-                                            randomEffects=person._randomEffects)
+                                            randomEffects=person._randomEffects,
+                                            rng=person._rng)
 
         # for factors that were initialized on the first person, we have to set them the same way on teh clones
         clonePerson._afib[0] = person._afib[0]

@@ -127,48 +127,54 @@ class OutcomeModelRepository:
         )
         self._models[OutcomeModelType.NON_CV_MORTALITY] = mortModel
 
-    def get_random_effects(self):
-        return {"gcp": npRand.normal(0, 4.84)}
+    def get_random_effects(self, rng=None):
+        #rng = np.random.default_rng(rng)
+        return {"gcp": rng.normal(0, 4.84)}
 
-    def get_risk_for_person_vectorized(self, x, outcome, years=1):
+    def get_risk_for_person_vectorized(self, x, outcome, years=1, rng=None):
+        #rng = np.random.default_rng(rng)
         personWrapper = PersonRowWrapper(x)
         return self.select_model_for_person(personWrapper, outcome).get_risk_for_person(
-            x, years, True
+            x, rng, years, True
         )
 
-    def get_risk_for_person(self, person, outcome, years=1, vectorized=False):
+    def get_risk_for_person(self, person, outcome, years=1, vectorized=False, rng=None):
+        #rng = np.random.default_rng(rng)
         if vectorized:
-            return self.get_risk_for_person_vectorized(person, outcome, years)
+            return self.get_risk_for_person_vectorized(person, outcome, years, rng)
         else:
             return self.select_model_for_person(person, outcome).get_risk_for_person(
-                person, years, False
+                person, rng, years, False
             )
 
-    def get_gcp(self, person):
+    def get_gcp(self, person, rng=None):
         gcp = (
-            self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE)
+            self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE, rng=rng)
             + person._randomEffects["gcp"]
         )
         return gcp if gcp > 0 else 0
 
     # should the GCP random effct be included here or in the risk model?
-    def get_gcp_vectorized(self, person):
+    def get_gcp_vectorized(self, person, rng=None):
+        #rng = np.random.default_rng(rng)
         gcp = (
             self.get_risk_for_person(
-                person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE, years=1, vectorized=True
+                person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE, years=1, vectorized=True, rng=rng
             )
             + person.gcpRandomEffect
         )
         return gcp if gcp > 0 else 0
 
-    def get_dementia(self, person):
-        if npRand.uniform(size=1) < self.get_risk_for_person(person, OutcomeModelType.DEMENTIA):
+    def get_dementia(self, person, rng=None):
+        #rng = np.random.default_rng(rng)
+        if rng.uniform(size=1) < self.get_risk_for_person(person, OutcomeModelType.DEMENTIA):
             return Outcome(OutcomeType.DEMENTIA, False)
         else:
             return None
 
-    def get_dementia_vectorized(self, person):
-        return npRand.uniform(size=1)[0] < self.get_risk_for_person(
+    def get_dementia_vectorized(self, person, rng=None):
+        #rng = np.random.default_rng(rng)
+        return rng.uniform(size=1)[0] < self.get_risk_for_person(
             person, OutcomeModelType.DEMENTIA, years=1, vectorized=True
         )
 
@@ -187,32 +193,37 @@ class OutcomeModelRepository:
         model_spec = load_model_spec(modelName)
         return StatsModelCoxModel(CoxRegressionModel(**model_spec))
 
-    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
+        #rng = np.random.default_rng(rng)
         return self.outcomeDet.assign_outcome_for_person(
-            self, person, False, years, self.manualStrokeMIProbability
+            self, person, False, years, self.manualStrokeMIProbability, rng
         )
 
-    def assign_cv_outcome_vectorized(self, x, years=1, manualStrokeMIProbability=None):
+    def assign_cv_outcome_vectorized(self, x, years=1, manualStrokeMIProbability=None, rng=None):
+        #rng = np.random.default_rng(rng)
         return self.outcomeDet.assign_outcome_for_person(
             self,
             x,
             vectorized=True,
             years=years,
             manualStrokeMIProbability=self.manualStrokeMIProbability,
+            rng=rng,
         )
 
         # Returns True if the model-based logic vs. the random comparison suggests death
 
-    def assign_non_cv_mortality(self, person, years=1):
+    def assign_non_cv_mortality(self, person, years=1, rng=None):
+        #rng = np.random.default_rng(rng)
         riskForPerson = self.get_risk_for_person(person, OutcomeModelType.NON_CV_MORTALITY)
-        if npRand.uniform(size=1)[0] < riskForPerson:
+        if rng.uniform(size=1)[0] < riskForPerson:
             return True
 
-    def assign_non_cv_mortality_vectorized(self, person, years=1):
+    def assign_non_cv_mortality_vectorized(self, person, years=1, rng=None):
+        #rng = np.random.default_rng(rng)
         riskForPerson = self.get_risk_for_person(
             person, OutcomeModelType.NON_CV_MORTALITY, years, vectorized=True
         )
-        return npRand.uniform(size=1)[0] < riskForPerson
+        return rng.uniform(size=1)[0] < riskForPerson
 
         # utility class to take a dataframe row and convert some salietn elements to a person to streamline model selection
 

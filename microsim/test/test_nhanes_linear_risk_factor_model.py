@@ -4,7 +4,7 @@ from microsim.alcohol_category import AlcoholCategory
 from microsim.test.test_risk_model_repository import TestRiskModelRepository
 
 import unittest
-
+import numpy as np
 
 def initializeAfib(person):
     return None
@@ -34,12 +34,13 @@ class TestNHANESLinearRiskFactorModel(unittest.TestCase):
             otherLipidLoweringMedicationCount=0,
             creatinine=0,
             initializeAfib=initializeAfib,
+            rng = np.random.default_rng(),
         )
 
         self._risk_model_repository = TestRiskModelRepository()
 
     def test_sbp_model(self):
-        self._test_person.advance_risk_factors(self._risk_model_repository)
+        self._test_person.advance_risk_factors(self._risk_model_repository, rng = np.random.default_rng())
         expectedSBP = 75 * 1 + 140 * 0.5 + 80
         self.assertEqual(expectedSBP, self._test_person._sbp[-1])
 
@@ -66,8 +67,9 @@ class TestNHANESLinearRiskFactorModel(unittest.TestCase):
             otherLipidLoweringMedicationCount=0,
             creatinine=0,
             initializeAfib=initializeAfib,
+            rng = np.random.default_rng(),
         )
-        highBPPerson.advance_risk_factors(self._risk_model_repository)
+        highBPPerson.advance_risk_factors(self._risk_model_repository, rng = np.random.default_rng())
         self.assertEqual(300, highBPPerson._sbp[-1])
 
         # TODO : write more tests — check the categorical variables and ensure

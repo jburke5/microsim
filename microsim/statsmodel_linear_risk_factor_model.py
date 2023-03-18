@@ -39,13 +39,14 @@ class StatsModelLinearRiskFactorModel:
                 keysForTransforms.append(key)
         return keysForTransforms
 
-    def draw_from_residual_distribution(self):
+    def draw_from_residual_distribution(self, rng=None):
+        #rng = np.random.default_rng(rng)
         if not hasattr(self, "residual_mean") and hasattr(self, "residual_standard_deviation"):
             raise RuntimeError(
                 "Cannot draw from residual distribution: model does not have"
                 " residual information"
             )
-        return np.random.normal(
+        return rng.normal(
             loc=self.residual_mean, scale=self.residual_standard_deviation, size=1
         )[0]
 
@@ -71,7 +72,7 @@ class StatsModelLinearRiskFactorModel:
     def get_interactions(self, coeff_name):
         return coeff_name.split(INTERACTION_INDICATOR)
 
-    def get_risk_for_person(self, person, years, vectorized=False):
+    def get_risk_for_person(self, person, rng, years, vectorized=False):
         linear_predictor = (
             self.estimate_next_risk_vectorized(person)
             if vectorized
@@ -79,7 +80,7 @@ class StatsModelLinearRiskFactorModel:
         )
         return linear_predictor
 
-    def estimate_next_risk(self, person):
+    def estimate_next_risk(self, person, rng=None):
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
         linearPredictor = self.get_intercept()
 
@@ -104,7 +105,7 @@ class StatsModelLinearRiskFactorModel:
 
         return linearPredictor
 
-    def estimate_next_risk_vectorized(self, x):
+    def estimate_next_risk_vectorized(self, x, rng=None):
 
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
         linearPredictor = self.get_intercept()

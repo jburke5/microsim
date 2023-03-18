@@ -49,11 +49,11 @@ class CohortRiskModelRepository(RiskModelRepository):
 
 
 class AlcoholCategoryModel(StatsModelRoundedLinearRiskFactorModel):
-    def estimate_next_risk(self, person):
+    def estimate_next_risk(self, person, rng=None):
         drinks = super(StatsModelRoundedLinearRiskFactorModel, self).estimate_next_risk(person)
         return AlcoholCategory.get_category_for_consumption(drinks if drinks > 0 else 0)
 
-    def estimate_next_risk_vectorized(self, x):
+    def estimate_next_risk_vectorized(self, x, rng=None):
         drinks = super(StatsModelRoundedLinearRiskFactorModel, self).estimate_next_risk_vectorized(
             x
         )

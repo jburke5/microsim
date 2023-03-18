@@ -52,49 +52,53 @@ class NHANESLinearRiskFactorModel:
 
         self._resids = resids
 
-    def get_coefficent_from_params(self, param):
-        return np.random.normal(self._params[param], self._ses[param])
+    def get_coefficent_from_params(self, param, rng=None):
+        #rng = np.random.default_rng(rng)
+        return rng.normal(self._params[param], self._ses[param])
 
-    def estimate_risk_for_params(self, age, gender, sbp, dbp, a1c, hdl, totChol, bmi, raceEthnicity, smokingStatus):
+    def estimate_risk_for_params(self, age, gender, sbp, dbp, a1c, hdl, totChol, bmi, raceEthnicity, smokingStatus, rng=None):
+        #rng = np.random.default_rng(rng)
         linear_pred = 0
-        linear_pred += age * self.get_coefficent_from_params("age")
-        linear_pred += gender * self.get_coefficent_from_params("gender")
-        linear_pred += sbp * self.get_coefficent_from_params("sbp")
-        linear_pred += dbp * self.get_coefficent_from_params("dbp")
-        linear_pred += a1c * self.get_coefficent_from_params("a1c")
-        linear_pred += hdl * self.get_coefficent_from_params("hdl")
-        linear_pred += totChol * self.get_coefficent_from_params("totChol")
-        linear_pred += bmi * self.get_coefficent_from_params("bmi")
-        linear_pred += self.get_coefficent_from_params("intercept")
+        linear_pred += age * self.get_coefficent_from_params("age", rng)
+        linear_pred += gender * self.get_coefficent_from_params("gender", rng)
+        linear_pred += sbp * self.get_coefficent_from_params("sbp", rng)
+        linear_pred += dbp * self.get_coefficent_from_params("dbp", rng)
+        linear_pred += a1c * self.get_coefficent_from_params("a1c", rng)
+        linear_pred += hdl * self.get_coefficent_from_params("hdl", rng)
+        linear_pred += totChol * self.get_coefficent_from_params("totChol", rng)
+        linear_pred += bmi * self.get_coefficent_from_params("bmi", rng)
+        linear_pred += self.get_coefficent_from_params("intercept", rng)
 
         if raceEthnicity == NHANESRaceEthnicity.OTHER_HISPANIC:
-            linear_pred += self.get_coefficent_from_params("raceEth2")
+            linear_pred += self.get_coefficent_from_params("raceEth2", rng)
         elif raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_WHITE:
-            linear_pred += self.get_coefficent_from_params("raceEth3")
+            linear_pred += self.get_coefficent_from_params("raceEth3", rng)
         elif raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
-            linear_pred += self.get_coefficent_from_params("raceEth4")
+            linear_pred += self.get_coefficent_from_params("raceEth4", rng)
         elif raceEthnicity == NHANESRaceEthnicity.OTHER:
-            linear_pred += self.get_coefficent_from_params("raceEth5")
+            linear_pred += self.get_coefficent_from_params("raceEth5", rng)
 
         if smokingStatus == SmokingStatus.FORMER:
-            linear_pred += self.get_coefficent_from_params("smokingStatus1")
+            linear_pred += self.get_coefficent_from_params("smokingStatus1", rng)
         elif smokingStatus == SmokingStatus.CURRENT:
-            linear_pred += self.get_coefficent_from_params("smokingStatus2")
+            linear_pred += self.get_coefficent_from_params("smokingStatus2", rng)
 
-        linear_pred += np.random.normal(self._resids.mean(), self._resids.std())
+        linear_pred += rng.normal(self._resids.mean(), self._resids.std())
 
         return self.transform_linear_predictor(linear_pred)
 
-    def estimate_next_risk(self, person):
+    def estimate_next_risk(self, person, rng=None):
+        #rng = np.random.default_rng(rng)
         return self.estimate_risk_for_params(age=person._age[-1], gender=person._gender, sbp=person._sbp[-1],
             dbp=person._dbp[-1], a1c=person._a1c[-1], hdl=person._hdl[-1], totChol=person._totChol[-1], bmi=person._bmi[-1], 
-            raceEthnicity=person._raceEthnicity, smokingStatus=person._smokingStatus)
+            raceEthnicity=person._raceEthnicity, smokingStatus=person._smokingStatus, rng=rng)
 
-    def estimate_next_risk_vectorized(self, x):
+    def estimate_next_risk_vectorized(self, x, rng=None):
+        #rng = np.random.default_rng(rng)
         #print(list(x.index))
         return self.estimate_risk_for_params(age=x.age, gender=x.gender, sbp=x.sbp,
             dbp=x.dbp, a1c=x.a1c, hdl=x.hdl, totChol=x.totChol, bmi=x.bmi, 
-            raceEthnicity=x.raceEthnicity, smokingStatus=x.smokingStatus)
+            raceEthnicity=x.raceEthnicity, smokingStatus=x.smokingStatus, rng=rng)
     
     """A stub method so that sub-classes can override to transform the risks """
 

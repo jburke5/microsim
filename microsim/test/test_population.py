@@ -24,7 +24,7 @@ class TestPopulation(unittest.TestCase):
 
     def test_people_from_population(self):
         test_population = NHANESDirectSamplePopulation(
-            n=self.test_n, year=2015, random_seed=self.pandas_seed
+            n=self.test_n, year=2015, random_seed=self.pandas_seed, rng= np.random.default_rng()
         )
         test_people = test_population._people
 
@@ -64,11 +64,12 @@ class TestPopulationAdvanceOutcomes(unittest.TestCase):
             selfReportMIAge=None,
             dfIndex=1,
             diedBy2015=0,
+            rng = np.random.default_rng(),
         )
 
     def test_dont_advance_dead_people_in_population(self):
         # add GCP to advance successfully
-        joe_base_gcp = GCPModel().get_risk_for_person(self.joe)
+        joe_base_gcp = GCPModel().get_risk_for_person(self.joe, rng = np.random.default_rng())
         self.joe._gcp.append(joe_base_gcp)
         # use ClonePopulation: sets up repositories, populationIndex, and 2+ people to workaround
         self.dummy_population = ClonePopulation(self.joe, 2)
@@ -78,7 +79,7 @@ class TestPopulationAdvanceOutcomes(unittest.TestCase):
 
         # this should NOT raise an error if it is (correctly) not trying to
         #  advance on poor dead, joe
-        self.dummy_population.advance_vectorized(1)
+        self.dummy_population.advance_vectorized(1, rng = np.random.default_rng())
 
         advanced_joe = self.dummy_population._people.iloc[0]
         self.assertEqual(expected_risk_factor_length, len(advanced_joe._sbp))

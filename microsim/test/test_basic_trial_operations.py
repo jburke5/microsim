@@ -12,6 +12,7 @@ from microsim.dementia_model import DementiaModel
 from microsim.trials.trial_description import TrialDescription
 from microsim.trials.trial import Trial
 from microsim.trials.risk_filter import RiskFilter
+from microsim.trials.trial_utils import randomizationSchema
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.cohort_risk_model_repository import CohortRiskModelRepository
 from microsim.outcome_model_type import OutcomeModelType
@@ -22,13 +23,14 @@ class TestBasicTrialOperations(unittest.TestCase):
     def setUp(self):  
         self.popSize = 100
         self.ageThreshold = 40
-        self.targetPopulation = NHANESDirectSamplePopulation(self.popSize, 1999)
+        self.targetPopulation = NHANESDirectSamplePopulation(self.popSize, 1999, rng = np.random.default_rng())
         self.trialDescription = TrialDescription(sampleSizes=[self.popSize], 
                                                 durations=[10], 
                                                 inclusionFilter=lambda x : x._age[0] > self.ageThreshold, 
                                                 exclusionFilter=None, 
                                                 analyses=None,
-                                                randomizationSchema=lambda x : np.random.uniform() < 0.5,
+                                                #randomizationSchema=lambda x : np.random.uniform() < 0.5,
+                                                randomizationSchema=randomizationSchema,
                                                 treatment=None)
 
         self.oldJoe = Person(
@@ -52,9 +54,10 @@ class TestBasicTrialOperations(unittest.TestCase):
             statin=0,
             otherLipidLoweringMedicationCount=0,
             creatinine=0,
-            initializeAfib=lambda x: False)    
+            initializeAfib=lambda x: False,
+            rng = np.random.default_rng())    
         # advance him one year to get an additional GCP value
-        self.oldJoe.advance_year(CohortRiskModelRepository(), OutcomeModelRepository())
+        self.oldJoe.advance_year(CohortRiskModelRepository(), OutcomeModelRepository(), rng = np.random.default_rng())
         self.oldJoe._antiHypertensiveCount[-1] = 0
 
 
@@ -71,7 +74,7 @@ class TestBasicTrialOperations(unittest.TestCase):
     
     # design a simple trial to only include patients over 40
     def test_simple_trial_inclusion(self):
-        testTrial = Trial(self.trialDescription, self.targetPopulation)
+        testTrial = Trial(self.trialDescription, self.targetPopulation, rng = np.random.default_rng())
         #self.assertEqual(self.popSize, len(testTrial.trialPopulation._people))
         # given that the populations involve ranodmization, we can't come up with a definite value
         # so, the approximate 99% CI on 50/100 has a LCI of 35...

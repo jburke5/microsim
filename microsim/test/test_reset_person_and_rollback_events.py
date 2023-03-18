@@ -1,5 +1,6 @@
 import unittest
 import copy
+import numpy as np
 
 from microsim.person import Person
 from microsim.test.test_risk_model_repository import TestRiskModelRepository
@@ -25,16 +26,16 @@ class AlwaysFatalStrokeOutcomeRepository(OutcomeModelRepository):
     def __init__(self):
         super(AlwaysFatalStrokeOutcomeRepository, self).__init__()
 
-    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return Outcome(OutcomeType.STROKE, True)
 
-    def assign_non_cv_mortality(self, person):
+    def assign_non_cv_mortality(self, person, rng=None):
         return False
 
     def get_random_effects(self):
         return {}
 
-    def get_gcp(self, person):
+    def get_gcp(self, person, rng=None):
         return GCPModel().get_risk_for_person(person, test=True)
 
     def get_gcp_vectorized(self, person):
@@ -45,16 +46,16 @@ class AlwaysNonCVDeathRepository(OutcomeModelRepository):
     def __init__(self):
         super(AlwaysNonCVDeathRepository, self).__init__()
 
-    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return None
 
-    def assign_non_cv_mortality(self, person):
+    def assign_non_cv_mortality(self, person, rng=None):
         return True
 
     def get_random_effects(self):
         return {}
 
-    def get_gcp(self, person):
+    def get_gcp(self, person, rng=None):
         return GCPModel().get_risk_for_person(person, test=True)
 
     def get_gcp_vectorized(self, person):
@@ -65,16 +66,16 @@ class AlwaysNonFatalStrokeOutcomeRepository(OutcomeModelRepository):
     def __init__(self):
         super(AlwaysNonFatalStrokeOutcomeRepository, self).__init__()
 
-    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return Outcome(OutcomeType.STROKE, False)
 
-    def assign_non_cv_mortality(self, person):
+    def assign_non_cv_mortality(self, person, rng=None):
         return False
 
     def get_random_effects(self):
         return {}
 
-    def get_gcp(self, person):
+    def get_gcp(self, person, rng=None):
         return GCPModel().get_risk_for_person(person, test=True)
 
     def get_gcp_vectorized(self, person):
@@ -85,16 +86,16 @@ class NothingHappensRepository(OutcomeModelRepository):
     def __init__(self):
         super(NothingHappensRepository, self).__init__()
 
-    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return None
 
-    def assign_non_cv_mortality(self, person):
+    def assign_non_cv_mortality(self, person, rng=None):
         return False
 
     def get_random_effects(self):
         return {}
 
-    def get_gcp(self, person):
+    def get_gcp(self, person, rng=None):
         return GCPModel().get_risk_for_person(person, test=True)
 
     def get_gcp_vectorized(self, person):
@@ -661,10 +662,10 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
 
     def testResetBasicAttributes(self):
         self._white_male.advance_year(
-            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository(), rng = np.random.default_rng()
         )
         self._baseline_stroke_person.advance_year(
-            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository()
+            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository(), rng = np.random.default_rng()
         )
         self.assertEqual(2, len(self._white_male._dbp))
 
@@ -681,10 +682,10 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
 
     def testResetOutcomes(self):
         self._white_male.advance_year(
-            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository(), rng = np.random.default_rng()
         )
         self._baseline_stroke_person.advance_year(
-            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository()
+            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository(), rng = np.random.default_rng()
         )
         self.assertEqual(1, len(self._white_male._outcomes[OutcomeType.STROKE]))
         self._white_male.reset_to_baseline()
@@ -692,10 +693,10 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
 
     def testResetOutcomesPreservesPreSimOutcomes(self):
         self._white_male.advance_year(
-            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository(), rng = np.random.default_rng()
         )
         self._baseline_stroke_person.advance_year(
-            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository()
+            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository(), rng = np.random.default_rng()
         )
         self.assertEqual(2, len(self._baseline_stroke_person._outcomes[OutcomeType.STROKE]))
         self._baseline_stroke_person.reset_to_baseline()
@@ -703,10 +704,10 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
 
     def testRollbackNonFatalEvent(self):
         self._white_male.advance_year(
-            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository(), rng = np.random.default_rng()
         )
         self._baseline_stroke_person.advance_year(
-            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository()
+            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository(), rng = np.random.default_rng()
         )
         self.assertEqual(False, self._white_male.has_stroke_prior_to_simulation())
         self.assertEqual(True, self._white_male.has_stroke_during_simulation())
@@ -720,10 +721,10 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
 
     def testRollbackFatalEvent(self):
         self._white_male.advance_year(
-            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository(), rng = np.random.default_rng()
         )
         self._baseline_stroke_person.advance_year(
-            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository()
+            TestRiskModelRepository(), AlwaysFatalStrokeOutcomeRepository(), rng = np.random.default_rng()
         )
         self.assertEqual(True, self._baseline_stroke_person.has_stroke_during_simulation())
         self.assertEqual(True, self._baseline_stroke_person.has_stroke_prior_to_simulation())
@@ -761,9 +762,9 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
         self.assertNotEqual(self._white_male, self._white_male_plus_waist)
 
     def testBaselineEqualityAfterAdvancingAYear(self):
-        self._white_male.advance_year(TestRiskModelRepository(), NothingHappensRepository())
+        self._white_male.advance_year(TestRiskModelRepository(), NothingHappensRepository(), rng = np.random.default_rng())
         self._white_male_copy_paste.advance_year(
-            TestRiskModelRepository(), NothingHappensRepository()
+            TestRiskModelRepository(), NothingHappensRepository(), rng = np.random.default_rng()
         )
         self.assertEqual(self._white_male, self._white_male_copy_paste)
 
@@ -771,49 +772,49 @@ class TestResetPersonAndRollBackEvents(unittest.TestCase):
         self.assertNotEqual(self._white_male, self._baseline_stroke_person)
         self.assertEqual(self._baseline_stroke_person, self._baseline_stroke_person_copy_paste)
         self._baseline_stroke_person.advance_year(
-            TestRiskModelRepository(), NothingHappensRepository()
+            TestRiskModelRepository(), NothingHappensRepository(), rng = np.random.default_rng()
         )
         self._baseline_stroke_person_copy_paste.advance_year(
-            TestRiskModelRepository(), NothingHappensRepository()
+            TestRiskModelRepository(), NothingHappensRepository(), rng = np.random.default_rng()
         )
         self.assertEqual(self._baseline_stroke_person, self._baseline_stroke_person_copy_paste)
 
     def testBasePatientWithCVEvents(self):
         self.assertEqual(self._white_male_copy_paste, self._white_male)
         self._white_male.advance_year(
-            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository(), rng = np.random.default_rng()
         )
         self.assertNotEqual(self._white_male, self._white_male_copy_paste)
         self._white_male_copy_paste.advance_year(
-            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository(), rng = np.random.default_rng()
         )
         self.assertEqual(self._white_male_copy_paste, self._white_male)
 
     def testBasePatientWithNonCVDeath(self):
         self.assertEqual(self._white_male_copy_paste, self._white_male)
-        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository())
+        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository(), rng = np.random.default_rng())
         self.assertNotEqual(self._white_male, self._white_male_copy_paste)
         self._white_male_copy_paste.advance_year(
-            TestRiskModelRepository(), NothingHappensRepository()
+            TestRiskModelRepository(), NothingHappensRepository(), rng = np.random.default_rng()
         )
         self.assertNotEqual(self._white_male_copy_paste, self._white_male)
 
     def testBasePatientWithNonCVDeathOtherWay(self):
         self.assertEqual(self._white_male_copy_paste, self._white_male)
-        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository())
+        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository(), rng = np.random.default_rng())
         self.assertNotEqual(self._white_male, self._white_male_copy_paste)
         self._white_male_copy_paste.advance_year(
-            TestRiskModelRepository(), AlwaysNonCVDeathRepository()
+            TestRiskModelRepository(), AlwaysNonCVDeathRepository(), rng = np.random.default_rng()
         )
         self.assertEqual(self._white_male_copy_paste, self._white_male)
 
     def testDeepCopy(self):
         self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
-        self._white_male.advance_year(TestRiskModelRepository(), NothingHappensRepository())
+        self._white_male.advance_year(TestRiskModelRepository(), NothingHappensRepository(), rng = np.random.default_rng())
         self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
         self._white_male.advance_year(
-            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository()
+            TestRiskModelRepository(), AlwaysNonFatalStrokeOutcomeRepository(), rng = np.random.default_rng()
         )
         self.assertEqual(self._white_male, copy.deepcopy(self._white_male))
-        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository())
+        self._white_male.advance_year(TestRiskModelRepository(), AlwaysNonCVDeathRepository(), rng = np.random.default_rng())
         self.assertEqual(self._white_male, copy.deepcopy(self._white_male))

@@ -19,9 +19,9 @@ class DoNothingModel:
     def __init__(self, name):
         self.name = name
 
-    def estimate_next_risk(self, person):
+    def estimate_next_risk(self, person, rng=None):
         return getattr(person, f"_{self.name}")[-1]
     
-    def estimate_next_risk_vectorized(self, x):
+    def estimate_next_risk_vectorized(self, x, rng=None):
         return x[self.name]
 
