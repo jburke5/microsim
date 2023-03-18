@@ -231,7 +231,7 @@ class Population:
 
             #perform recalibration, we are essentially modifying mi and stroke outcomes we obtained just above 
             numberAliveBeforeRecal = len(alive)
-            alive = self.apply_recalibration_standards(alive)
+            alive = self.apply_recalibration_standards(alive, rng=rng)
             if len(alive) != numberAliveBeforeRecal:
                 raise Exception(
                     f"number alive: {len(alive)} not equal to alive before recal {numberAliveBeforeRecal}"
@@ -413,11 +413,11 @@ class Population:
         for person in self._people:
             person._bpTreatmentStrategy = bpTreatmentStrategy
 
-    def apply_recalibration_standards(self, recalibration_df):
+    def apply_recalibration_standards(self, recalibration_df, rng=None):
         # treatment_standard is a dictionary of outcome types and effect sizees
         if self._bpTreatmentStrategy is not None:
             if self._bpTreatmentStrategy.get_treatment_recalibration_for_population() is not None:
-                recalibration_df = self.recalibrate_bp_treatment(recalibration_df)
+                recalibration_df = self.recalibrate_bp_treatment(recalibration_df, rng=rng)
         return recalibration_df
 
     # should the estiamted treatment effect be based on the number of events in the population
@@ -428,7 +428,7 @@ class Population:
     # genuine uncertainty.
     # so, i thikn it should be based on the model-predicted risks...
 
-    def recalibrate_bp_treatment(self, recalibration_df):
+    def recalibrate_bp_treatment(self, recalibration_df, rng=None):
         #logging.info(f"*** before recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
         treatment_outcome_standard = (
             self._bpTreatmentStrategy.get_treatment_recalibration_for_population()
@@ -468,6 +468,7 @@ class Population:
                     OutcomeType.STROKE,
                     CVOutcomeDetermination()._will_have_fatal_stroke,
                     recalibrationPopForMedCount,
+                    rng=rng,
                 )
 
                 recalibration_df.loc[
@@ -495,6 +496,7 @@ class Population:
                     OutcomeType.MI,
                     CVOutcomeDetermination()._will_have_fatal_mi,
                     recalibrationPopForMedCount,
+                    rng=rng,
                 )
                 recalibration_df.loc[
                     recalibratedForMedCount.index, "miNext"
@@ -548,6 +550,7 @@ class Population:
         outcomeType,
         fatalityDetermination,
         recalibration_pop,
+        rng=None
     ):
         #logging.info(f"create or rollback {outcomeType}, standard: {treatment_outcome_standard[outcomeType]}")
 
@@ -590,7 +593,7 @@ class Population:
                 recalibration_pop.loc[
                     new_events.index, eventVar + "Fatal"
                 ] = recalibration_pop.loc[new_events.index].apply(
-                    fatalityDetermination, axis="columns", args=(True,)
+                    fatalityDetermination, axis="columns", args=(True,None,rng)
                 )
                 recalibration_pop.loc[new_events.index, ageAtFirstVar] = np.fmin(
                     recalibration_pop.loc[new_events.index].age,
@@ -1139,12 +1142,12 @@ class PersonListPopulation(Population):
 
 
 class NHANESAgeStandardPopulation(NHANESDirectSamplePopulation):
-    def __init__(self, n, year):
+    def __init__(self, n, year, rng=None):
         nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         weights = self.get_weights(year)
         weights["gender"] = weights["female"] + 1
         weights = pd.merge(nhanes, weights, how="left", on=["age", "gender"]).popWeight
-        super().__init__(n=n, year=year, weights=weights)
+        super().__init__(n=n, year=year, weights=weights, rng=rng)
 
     def get_weights(self, year):
         standard = self.build_age_standard(year)
@@ -1206,7 +1209,8 @@ class ClonePopulation(Population):
                                             'selfReportMIAge' : -1,
                                             'diedBy2015' : 0}), 
                                             self._outcome_model_repository, 
-                                            randomEffects=person._randomEffects)
+                                            randomEffects=person._randomEffects,
+                                            rng=person._rng)
 
         # for factors that were initialized on the first person, we have to set them the same way on teh clones
         clonePerson._afib[0] = person._afib[0]

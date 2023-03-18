@@ -11,7 +11,7 @@ from microsim.test.helper.init_vectorized_population_dataframe import (
 )
 
 import unittest
-
+import numpy as np
 
 def initializeAfib(person):
     return None
@@ -41,6 +41,7 @@ class TestOutcomeRepository(unittest.TestCase):
             otherLipidLoweringMedicationCount=0,
             creatinine=0,
             initializeAfib=initializeAfib,
+            rng = np.random.default_rng(),
         )
 
         self._black_male = Person(
@@ -65,6 +66,7 @@ class TestOutcomeRepository(unittest.TestCase):
             otherLipidLoweringMedicationCount=0,
             creatinine=0,
             initializeAfib=initializeAfib,
+            rng = np.random.default_rng(),
         )
 
         self._black_treated_male = Person(
@@ -89,6 +91,7 @@ class TestOutcomeRepository(unittest.TestCase):
             otherLipidLoweringMedicationCount=0,
             creatinine=0,
             initializeAfib=initializeAfib,
+            rng = np.random.default_rng(),
         )
 
         self._white_female = Person(
@@ -113,6 +116,7 @@ class TestOutcomeRepository(unittest.TestCase):
             otherLipidLoweringMedicationCount=0,
             creatinine=0,
             initializeAfib=initializeAfib,
+            rng = np.random.default_rng()
         )
 
         self._black_female = Person(
@@ -137,6 +141,7 @@ class TestOutcomeRepository(unittest.TestCase):
             otherLipidLoweringMedicationCount=0,
             creatinine=0,
             initializeAfib=initializeAfib,
+            rng = np.random.default_rng(),
         )
 
         self._population_dataframe = init_vectorized_population_dataframe(
@@ -146,6 +151,7 @@ class TestOutcomeRepository(unittest.TestCase):
                 self._black_treated_male,
             ],
             with_base_gcp=True,
+            rng = np.random.default_rng(),
         )
         self._outcome_model_repository = OutcomeModelRepository()
 

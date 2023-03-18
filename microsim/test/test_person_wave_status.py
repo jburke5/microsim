@@ -13,7 +13,7 @@ from microsim.outcome_model_type import OutcomeModelType
 
 from microsim.smoking_status import SmokingStatus
 import unittest
-
+import numpy as np
 
 def initializeAFib(person):
     return None
@@ -27,13 +27,13 @@ class AgeOver50CausesFatalStroke(OutcomeModelRepository):
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
 
     # override super to alays return a probability of each outcom eas 1
-    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return Outcome(OutcomeType.STROKE, 1) if person._age[-1] > 50 else None
 
-    def assign_non_cv_mortality(self, person, years=1):
+    def assign_non_cv_mortality(self, person, years=1, rng=None):
         return False
 
-    def get_gcp(self, person):
+    def get_gcp(self, person, rng=None):
         return 50
 
 
@@ -45,13 +45,13 @@ class NonFatalStrokeAndNonCVMortality(OutcomeModelRepository):
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
 
     # override super to alays return a probability of each outcom eas 1
-    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return Outcome(OutcomeType.STROKE, 0)
 
-    def assign_non_cv_mortality(self, person, years=1):
+    def assign_non_cv_mortality(self, person, years=1, rng=None):
         return True
 
-    def get_gcp(self, person):
+    def get_gcp(self, person, rng=None):
         return 50
 
 
@@ -63,13 +63,13 @@ class AgeOver50CausesNonCVMortality(OutcomeModelRepository):
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
 
     # override super to alays return a probability of each outcom eas 1
-    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return None
 
-    def assign_non_cv_mortality(self, person, years=1):
+    def assign_non_cv_mortality(self, person, years=1, rng=None):
         return True if person._age[-1] > 50 else False
 
-    def get_gcp(self, person):
+    def get_gcp(self, person, rng=None):
         return 50
 
 
@@ -97,6 +97,7 @@ class TestPersonWaveStatus(unittest.TestCase):
             otherLipidLoweringMedicationCount=0,
             creatinine=0,
             initializeAfib=initializeAFib,
+            rng = np.random.default_rng(),
         )
 
         self.youngJoe = Person(
@@ -121,10 +122,11 @@ class TestPersonWaveStatus(unittest.TestCase):
             otherLipidLoweringMedicationCount=0,
             creatinine=0,
             initializeAfib=initializeAFib,
+            rng = np.random.default_rng(),
         )
 
     def testStatusAfterFatalStroke(self):
-        self.youngJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesFatalStroke())
+        self.youngJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesFatalStroke(), rng = np.random.default_rng())
         self.assertEqual(41, self.youngJoe._age[-1])
         self.assertEqual(False, self.youngJoe.is_dead())
         self.assertEqual(False, self.youngJoe._stroke)
@@ -134,10 +136,10 @@ class TestPersonWaveStatus(unittest.TestCase):
         with self.assertRaises(Exception):
             self.youngJoe.alive_at_start_of_wave(3)
 
-        self.youngJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesFatalStroke())
+        self.youngJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesFatalStroke(), rng = np.random.default_rng())
         self.assertEqual(True, self.youngJoe.alive_at_start_of_wave(3))
 
-        self.oldJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesFatalStroke())
+        self.oldJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesFatalStroke(), rng = np.random.default_rng())
         self.assertEqual(60, self.oldJoe._age[-1])
         self.assertEqual(True, self.oldJoe.is_dead())
         self.assertEqual(True, self.oldJoe._stroke)
@@ -149,7 +151,7 @@ class TestPersonWaveStatus(unittest.TestCase):
         self.oldJoe.alive_at_start_of_wave(3)
 
     def testNonCVMortalityLeadsToCorrectStatus(self):
-        self.youngJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesNonCVMortality())
+        self.youngJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesNonCVMortality(), rng = np.random.default_rng())
         self.assertEqual(41, self.youngJoe._age[-1])
         self.assertEqual(False, self.youngJoe.is_dead())
         self.assertEqual(False, self.youngJoe._stroke)
@@ -159,10 +161,10 @@ class TestPersonWaveStatus(unittest.TestCase):
         with self.assertRaises(Exception):
             self.youngJoe.alive_at_start_of_wave(3)
 
-        self.youngJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesNonCVMortality())
+        self.youngJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesNonCVMortality(), rng = np.random.default_rng())
         self.assertEqual(True, self.youngJoe.alive_at_start_of_wave(3))
 
-        self.oldJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesNonCVMortality())
+        self.oldJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesNonCVMortality(), rng = np.random.default_rng())
         self.assertEqual(60, self.oldJoe._age[-1])
         self.assertEqual(True, self.oldJoe.is_dead())
         self.assertEqual(False, self.oldJoe._stroke)
@@ -174,7 +176,7 @@ class TestPersonWaveStatus(unittest.TestCase):
         self.oldJoe.alive_at_start_of_wave(3)
 
     def testHasFatalStrokeInWaveIsCaptured(self):
-        self.oldJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesFatalStroke())
+        self.oldJoe.advance_year(TestRiskModelRepository(), AgeOver50CausesFatalStroke(), rng = np.random.default_rng())
         self.assertEqual(True, self.oldJoe.has_stroke_during_simulation())
         self.assertEqual(True, self.oldJoe.has_stroke_during_wave(1))
         with self.assertRaises(Exception):
@@ -185,7 +187,7 @@ class TestPersonWaveStatus(unittest.TestCase):
         self.assertEqual(False, self.oldJoe.has_stroke_during_wave(2))
 
     def testNonFatalStrokeInWaveWithNonCVDeathIsCaptured(self):
-        self.oldJoe.advance_year(TestRiskModelRepository(), NonFatalStrokeAndNonCVMortality())
+        self.oldJoe.advance_year(TestRiskModelRepository(), NonFatalStrokeAndNonCVMortality(), rng = np.random.default_rng())
         self.assertEqual(True, self.oldJoe.has_stroke_during_simulation())
         self.assertEqual(True, self.oldJoe.has_stroke_during_wave(1))
         self.assertEqual(True, self.oldJoe.is_dead())

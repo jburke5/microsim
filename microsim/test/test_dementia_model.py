@@ -60,6 +60,7 @@ class TestDementiaModel(unittest.TestCase):
             creatinine=0,
             initializeAfib=TestDementiaModel.initializeAfib,
             initializationRepository=InitializationRepository(),
+            rng = np.random.default_rng(),
         )
         self._test_case_one._gcp[0] = 58.68
         self._test_case_one._gcp.append(self._test_case_one._gcp[0] - 1.1078128)
@@ -89,6 +90,7 @@ class TestDementiaModel(unittest.TestCase):
             creatinine=0,
             initializeAfib=TestDementiaModel.initializeAfib,
             initializationRepository=InitializationRepository(),
+            rng = np.random.default_rng(),
         )
         self._test_case_two._gcp[0] = 58.68
         self._test_case_two._gcp.append(self._test_case_two._gcp[0] - 1.7339989)
@@ -117,6 +119,7 @@ class TestDementiaModel(unittest.TestCase):
             creatinine=0,
             initializeAfib=TestDementiaModel.initializeAfib,
             initializationRepository=InitializationRepository(),
+            rng = np.random.default_rng(),
         )
         self._test_case_one_parameteric._gcp[0] = 25
         # GCP slope is zero
@@ -147,6 +150,7 @@ class TestDementiaModel(unittest.TestCase):
             creatinine=0,
             initializeAfib=TestDementiaModel.initializeAfib,
             initializationRepository=InitializationRepository(),
+            rng = np.random.default_rng(),
         )
         self._test_case_two_parametric._gcp[0] = 75
         self._test_case_two_parametric._gcp.append(self._test_case_two._gcp[0])
@@ -176,6 +180,7 @@ class TestDementiaModel(unittest.TestCase):
             creatinine=0,
             initializeAfib=TestDementiaModel.initializeAfib,
             initializationRepository=InitializationRepository(),
+            rng = np.random.default_rng(),
         )
         self._test_case_three_parametric._gcp[0] = 75
         self._test_case_three_parametric._gcp.append(self._test_case_two._gcp[0])

@@ -80,7 +80,7 @@ class StatsModelLinearRiskFactorModel:
         )
         return linear_predictor
 
-    def estimate_next_risk(self, person):
+    def estimate_next_risk(self, person, rng=None):
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
         linearPredictor = self.get_intercept()
 

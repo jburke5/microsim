@@ -5,10 +5,10 @@ class DoNotChangeRiskFactorModel:
     def __init__(self, varName):
         self.varName = varName
 
-    def estimate_next_risk(self, person):
+    def estimate_next_risk(self, person, rng=None):
         return getattr(person, "_" + self.varName)[-1]
 
-    def estimate_next_risk_vectorized(self, person):
+    def estimate_next_risk_vectorized(self, person, rng=None):
         return getattr(person, self.varName)
 
 

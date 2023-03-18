@@ -131,6 +131,8 @@ class Person:
         if randomEffects is not None:
             self._randomEffects.update(randomEffects)
 
+        self._rng = rng
+
         # lucianatag: for this and GCP, this approach is a bit inelegant. the idea is to have classees that can be swapped out
         # at the population level to change the behavior about how people change over time.
         # but, when we instantiate a person, we don't want to keep a refernce tot the population.
@@ -476,9 +478,9 @@ class Person:
     def years_in_simulation(self):
         return len(self._age) - 1
 
-    def get_next_risk_factor(self, riskFactor, risk_model_repository):
+    def get_next_risk_factor(self, riskFactor, risk_model_repository, rng=None):
         model = risk_model_repository.get_model(riskFactor)
-        return model.estimate_next_risk(self)
+        return model.estimate_next_risk(self, rng=rng)
 
     def get_total_qalys(self):
         return sum(self._qalys)
@@ -509,14 +511,15 @@ class Person:
         risk_model_repository,
         outcome_model_repository,
         qaly_assignment_strategy=QALYAssignmentStrategy(),
+        rng=None,
     ):
         logging.debug(f"advance_year on person, age: {self._age[0]} sbp : {self._sbp[0]}")
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance year")
 
-        self.advance_risk_factors(risk_model_repository)
-        self.advance_treatment(risk_model_repository)
-        self.advance_outcomes(outcome_model_repository)
+        self.advance_risk_factors(risk_model_repository, rng=rng)
+        self.advance_treatment(risk_model_repository, rng=rng)
+        self.advance_outcomes(outcome_model_repository, rng=rng)
         self.assign_qalys(qaly_assignment_strategy)
         if not self.is_dead():
             self._age.append(self._age[-1] + 1)
@@ -666,10 +669,10 @@ class Person:
             self._alive[-1] = True
             self._age.append(self._age[-1] + 1)
 
-    def advance_treatment(self, risk_model_repository):
+    def advance_treatment(self, risk_model_repository, rng=None):
         if risk_model_repository is not None:
             new_antihypertensive_count = self.get_next_risk_factor(
-                "antiHypertensiveCount", risk_model_repository
+                "antiHypertensiveCount", risk_model_repository, rng=rng
             )
             self._antiHypertensiveCount.append(new_antihypertensive_count)
 
@@ -698,33 +701,33 @@ class Person:
             attribute_value = getattr(self, key)
             attribute_value.append(value)
 
-    def advance_risk_factors(self, risk_model_repository):
+    def advance_risk_factors(self, risk_model_repository, rng=None):
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance risk factors")
 
         self._sbp.append(
-            self.apply_bounds("sbp", self.get_next_risk_factor("sbp", risk_model_repository))
+            self.apply_bounds("sbp", self.get_next_risk_factor("sbp", risk_model_repository, rng=rng))
         )
 
         self._dbp.append(
-            self.apply_bounds("dbp", self.get_next_risk_factor("dbp", risk_model_repository))
+            self.apply_bounds("dbp", self.get_next_risk_factor("dbp", risk_model_repository, rng=rng))
         )
-        self._a1c.append(self.get_next_risk_factor("a1c", risk_model_repository))
-        self._hdl.append(self.get_next_risk_factor("hdl", risk_model_repository))
-        self._totChol.append(self.get_next_risk_factor("totChol", risk_model_repository))
-        self._bmi.append(self.get_next_risk_factor("bmi", risk_model_repository))
-        self._ldl.append(self.get_next_risk_factor("ldl", risk_model_repository))
-        self._trig.append(self.get_next_risk_factor("trig", risk_model_repository))
-        self._waist.append(self.get_next_risk_factor("waist", risk_model_repository))
+        self._a1c.append(self.get_next_risk_factor("a1c", risk_model_repository, rng=rng))
+        self._hdl.append(self.get_next_risk_factor("hdl", risk_model_repository, rng=rng))
+        self._totChol.append(self.get_next_risk_factor("totChol", risk_model_repository, rng=rng))
+        self._bmi.append(self.get_next_risk_factor("bmi", risk_model_repository, rng=rng))
+        self._ldl.append(self.get_next_risk_factor("ldl", risk_model_repository, rng=rng))
+        self._trig.append(self.get_next_risk_factor("trig", risk_model_repository, rng=rng))
+        self._waist.append(self.get_next_risk_factor("waist", risk_model_repository, rng=rng))
         self._anyPhysicalActivity.append(
-            self.get_next_risk_factor("anyPhysicalActivity", risk_model_repository)
+            self.get_next_risk_factor("anyPhysicalActivity", risk_model_repository, rng=rng)
         )
-        self._afib.append(self.get_next_risk_factor("afib", risk_model_repository))
-        self._statin.append(self.get_next_risk_factor("statin", risk_model_repository))
-        self._creatinine.append(self.get_next_risk_factor("creatinine", risk_model_repository))
+        self._afib.append(self.get_next_risk_factor("afib", risk_model_repository, rng=rng))
+        self._statin.append(self.get_next_risk_factor("statin", risk_model_repository, rng=rng))
+        self._creatinine.append(self.get_next_risk_factor("creatinine", risk_model_repository, rng=rng))
         self._alcoholPerWeek.append(
             AlcoholCategory.get_category_for_consumption(
-                self.get_next_risk_factor("alcoholPerWeek", risk_model_repository)
+                self.get_next_risk_factor("alcoholPerWeek", risk_model_repository, rng=rng)
             )
         )
 
@@ -765,27 +768,27 @@ class Person:
             selfReportMIAge=50 if self._outcomes[OutcomeType.MI] is not None else None,
         )
 
-    def advance_outcomes(self, outcome_model_repository):
+    def advance_outcomes(self, outcome_model_repository, rng=None):
         if self.is_dead():
             raise RuntimeError("Person is dead. Can not advance outcomes")
 
         # first determine if there is a cv event
-        cv_event = outcome_model_repository.assign_cv_outcome(self)
+        cv_event = outcome_model_repository.assign_cv_outcome(self, rng=rng)
         if cv_event is not None:
             self.add_outcome_event(cv_event)
 
         # then assign gcp and dementia...
-        self._gcp.append(outcome_model_repository.get_gcp(self))
+        self._gcp.append(outcome_model_repository.get_gcp(self, rng=rng))
 
         # dementia is conceptualized as a progressive process rather than an event you only "get" it onceexit
         if not self._dementia:
-            dementia = outcome_model_repository.get_dementia(self)
+            dementia = outcome_model_repository.get_dementia(self, rng=rng)
             if dementia is not None:
                 self.add_outcome_event(dementia)
 
         # if not dead from the CV event...assess non CV mortality
         if not self.is_dead():
-            non_cv_death = outcome_model_repository.assign_non_cv_mortality(self)
+            non_cv_death = outcome_model_repository.assign_non_cv_mortality(self, rng=rng)
             if non_cv_death:
                 self._alive.append(False)
 

@@ -41,6 +41,7 @@ class TestTreatmentStrategy(unittest.TestCase):
             creatinine=0.0,
             initializeAfib=TestTreatmentStrategy.initializeAfib,
             initializationRepository=InitializationRepository(),
+            rng = np.random.default_rng(),
             randomEffects={'gcp' : 0}
         )
 
@@ -66,7 +67,7 @@ class TestTreatmentStrategy(unittest.TestCase):
 
     def testSimpleBPTreatmentStrategy(self):
         self._test_person.advance_treatment(self._risk_model_repository)
-        self._test_person.advance_risk_factors(self._risk_model_repository)
+        self._test_person.advance_risk_factors(self._risk_model_repository, rng = np.random.default_rng())
 
         self.assertEqual(self.baselineSBP, self._test_person._sbp[1])
         self.assertEqual(self.baselineDBP, self._test_person._dbp[1])
@@ -75,7 +76,7 @@ class TestTreatmentStrategy(unittest.TestCase):
         self._test_person._bpTreatmentStrategy = self.singleMedStrategy
 
         self._test_person.advance_treatment(self._risk_model_repository)
-        self._test_person.advance_risk_factors(self._risk_model_repository)
+        self._test_person.advance_risk_factors(self._risk_model_repository, rng = np.random.default_rng())
 
         self.assertEqual(
             self.baselineSBP - self.singleMedStrategy.sbpLowering, self._test_person._sbp[2]
@@ -125,7 +126,7 @@ class TestTreatmentStrategy(unittest.TestCase):
         pop._risk_model_repository = TestRiskModelRepository(nullModels=True)
 
         pop.set_bp_treatment_strategy(jnc8ForHighRiskLowBpTarget(0.075, {'sbp' : 126, 'dbp': 0}))
-        alive, df = pop.advance_vectorized(1)
+        alive, df = pop.advance_vectorized(1, rng = np.random.default_rng())
 
         # checking that anti hypertensives weren't accidentally added
         self.assertEqual(0, alive.antiHypertensiveCount.max())
@@ -152,7 +153,7 @@ class TestTreatmentStrategy(unittest.TestCase):
         pop = ClonePopulation(maxMedPerson, 100)
         pop._risk_model_repository = TestRiskModelRepository(nullModels=True)
         pop.set_bp_treatment_strategy(jnc8ForHighRiskLowBpTarget(0.075, {'sbp' : 126, 'dbp': 0}))
-        alive, df = pop.advance_vectorized(2)
+        alive, df = pop.advance_vectorized(2, rng = np.random.default_rng())
 
         # checking that anti hypertensives weren't accidentally added
         self.assertEqual(0, alive.antiHypertensiveCount.max())
@@ -179,7 +180,7 @@ class TestTreatmentStrategy(unittest.TestCase):
         pop = ClonePopulation(maxMedPerson, 100)
         pop._risk_model_repository = TestRiskModelRepository(nullModels=True)
         pop.set_bp_treatment_strategy(jnc8ForHighRiskLowBpTarget(0.075, {'sbp' : 126, 'dbp': 0}))
-        alive, df = pop.advance_vectorized(5)
+        alive, df = pop.advance_vectorized(5, rng = np.random.default_rng())
 
         for j in range(0,100): #our population consists of 100 persons, check all of them
             if pop._people.iloc[j]._age[-1]==75+5: #if person is alive, then check

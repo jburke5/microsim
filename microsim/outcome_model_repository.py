@@ -144,12 +144,12 @@ class OutcomeModelRepository:
             return self.get_risk_for_person_vectorized(person, outcome, years, rng)
         else:
             return self.select_model_for_person(person, outcome).get_risk_for_person(
-                person, years, False
+                person, rng, years, False
             )
 
-    def get_gcp(self, person):
+    def get_gcp(self, person, rng=None):
         gcp = (
-            self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE)
+            self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE, rng=rng)
             + person._randomEffects["gcp"]
         )
         return gcp if gcp > 0 else 0

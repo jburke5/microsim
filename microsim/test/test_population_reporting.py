@@ -13,7 +13,7 @@ class AlwaysNonFatalMIOutcomeRepository(OutcomeModelRepository):
     def assign_cv_outcome(self, person):
         return Outcome(OutcomeType.MI, False)
 
-    def assign_cv_outcome_vectorized(self, person):
+    def assign_cv_outcome_vectorized(self, person, rng=None):
         person.miNext = True
         person.strokeNext = False
         person.deadNext = False
@@ -27,14 +27,14 @@ class AlwaysNonFatalMIOutcomeRepository(OutcomeModelRepository):
     def assign_non_cv_mortality(self, person):
         return False
 
-    def assign_non_cv_mortality_vectorized(self, person, years=1):
+    def assign_non_cv_mortality_vectorized(self, person, years=1, rng=None):
         return False
 
 
 class TestPopulationReporting(unittest.TestCase):
     def setUp(self):
         self.popSize = 10000
-        self.pop1 = NHANESAgeStandardPopulation(self.popSize, 1999)
+        self.pop1 = NHANESAgeStandardPopulation(self.popSize, 1999, rng = np.random.default_rng())
 
     def get_event_count(self, pop, outcomeType, wave):
         return pd.Series(
@@ -45,10 +45,10 @@ class TestPopulationReporting(unittest.TestCase):
         ).sum()
 
     def testAllCasesHaveEvent(self):
-        self.pop1 = NHANESAgeStandardPopulation(self.popSize, 1999)
+        self.pop1 = NHANESAgeStandardPopulation(self.popSize, 1999, rng = np.random.default_rng())
         self.pop1._outcome_model_repository = AlwaysNonFatalMIOutcomeRepository()
 
-        df, alive = self.pop1.advance_vectorized(1)
+        df, alive = self.pop1.advance_vectorized(1, rng = np.random.default_rng())
         self.assertEqual(self.popSize, self.get_event_count(self.pop1, OutcomeType.MI, 1))
 
         # events per 100000 = 100000
@@ -67,7 +67,7 @@ class TestPopulationReporting(unittest.TestCase):
         )
 
         self.pop1.reset_to_baseline()
-        self.pop1.advance_vectorized(1)
+        self.pop1.advance_vectorized(1, rng = np.random.default_rng())
         self.assertAlmostEqual(
             100000,
             self.pop1.calculate_mean_age_sex_standardized_incidence(OutcomeType.MI)[0],

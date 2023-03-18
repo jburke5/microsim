@@ -1,4 +1,5 @@
 import unittest
+import numpy as np
 
 from microsim.person import Person
 from microsim.test.test_risk_model_repository import TestRiskModelRepository
@@ -21,10 +22,10 @@ class AlwaysNonFatalStroke(OutcomeModelRepository):
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
         self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
 
-    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return Outcome(OutcomeType.STROKE, 0)
 
-    def assign_non_cv_mortality(self, person, years=1):
+    def assign_non_cv_mortality(self, person, years=1, rng=None):
         return False
 
 
@@ -35,10 +36,10 @@ class AlwaysFatalStroke(OutcomeModelRepository):
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
         self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
 
-    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return Outcome(OutcomeType.STROKE, 1)
 
-    def assign_non_cv_mortality(self, person, years=1):
+    def assign_non_cv_mortality(self, person, years=1, rng=None):
         return False
 
 
@@ -49,10 +50,10 @@ class AlwaysNonFatalMI(OutcomeModelRepository):
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
         self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
 
-    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return Outcome(OutcomeType.MI, 0)
 
-    def assign_non_cv_mortality(self, person, years=1):
+    def assign_non_cv_mortality(self, person, years=1, rng=None):
         return False
 
 
@@ -62,13 +63,13 @@ class AlwaysDementia(OutcomeModelRepository):
         self._models = {}
         self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
 
-    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None):
+    def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return None
 
-    def get_dementia(self, person):
+    def get_dementia(self, person, rng=None):
         return Outcome(OutcomeType.DEMENTIA, False)
 
-    def assign_non_cv_mortality(self, person, years=1):
+    def assign_non_cv_mortality(self, person, years=1, rng=None):
         return False
 
 
@@ -100,6 +101,7 @@ class TestQALYAssignment(unittest.TestCase):
             creatinine=0,
             initializeAfib=TestQALYAssignment.initializeAfib,
             initializationRepository=InitializationRepository(),
+            rng = np.random.default_rng(),
         )
 
     def setUp(self):
@@ -117,13 +119,13 @@ class TestQALYAssignment(unittest.TestCase):
     def testStrokeQALYS(self):
         self.assertEqual(1, self._hasStroke._qalys[0])
         self._hasStroke.advance_year(
-            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke()
+            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke(), rng = np.random.default_rng()
         )
         self._hasStroke.advance_year(
-            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke()
+            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke(), rng = np.random.default_rng()
         )
         self._hasStroke.advance_year(
-            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke()
+            DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke(), rng = np.random.default_rng()
         )
         self.assertEqual(1, self._hasStroke._qalys[0])
         self.assertEqual(0.67, self._hasStroke._qalys[1])
@@ -132,9 +134,9 @@ class TestQALYAssignment(unittest.TestCase):
 
     def testMIQALYS(self):
         self.assertEqual(1, self._hasMI._qalys[0])
-        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI())
-        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI())
-        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI())
+        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI(), rng = np.random.default_rng())
+        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI(), rng = np.random.default_rng())
+        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI(), rng = np.random.default_rng())
         self.assertEqual(1, self._hasMI._qalys[0])
         self.assertEqual(0.88, self._hasMI._qalys[1])
         self.assertEqual(0.9, self._hasMI._qalys[2])
@@ -142,9 +144,9 @@ class TestQALYAssignment(unittest.TestCase):
 
     def testDementiaQALYS(self):
         self.assertEqual(1, self._hasDementia._qalys[0])
-        self._hasDementia.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysDementia())
-        self._hasDementia.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysDementia())
-        self._hasDementia.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysDementia())
+        self._hasDementia.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysDementia(), rng = np.random.default_rng())
+        self._hasDementia.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysDementia(), rng = np.random.default_rng())
+        self._hasDementia.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysDementia(), rng = np.random.default_rng())
         self.assertEqual(1, self._hasDementia._qalys[0])
         self.assertEqual(0.80, self._hasDementia._qalys[1])
         self.assertEqual(0.79, self._hasDementia._qalys[2])
@@ -152,9 +154,9 @@ class TestQALYAssignment(unittest.TestCase):
 
     def testQALYSWithMultipleConditions(self):
         self.assertEqual(1, self._hasMI._qalys[0])
-        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI())
-        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke())
-        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI())
+        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI(), rng = np.random.default_rng())
+        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalStroke(), rng = np.random.default_rng())
+        self._hasMI.advance_year(DoNotChangeRiskFactorsModelRepository(), AlwaysNonFatalMI(), rng = np.random.default_rng())
         self.assertEqual(1, self._hasMI._qalys[0])
         self.assertEqual(0.88, self._hasMI._qalys[1])
         # 0.9 * 0.678
@@ -165,7 +167,7 @@ class TestQALYAssignment(unittest.TestCase):
     def testQALYsWithDeath(self):
         self.assertEqual(1, self._hasFatalStroke._qalys[0])
         self._hasFatalStroke.advance_year(
-            DoNotChangeRiskFactorsModelRepository(), AlwaysFatalStroke()
+            DoNotChangeRiskFactorsModelRepository(), AlwaysFatalStroke(), rng = np.random.default_rng()
         )
         self.assertEqual(1, self._hasFatalStroke._qalys[0])
         self.assertEqual(0, self._hasFatalStroke._qalys[1])
