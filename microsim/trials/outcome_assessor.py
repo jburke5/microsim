@@ -24,6 +24,27 @@ class OutcomeAssessor:
                 return True
         return False  
 
+    def get_outcome_time(self, person):
+        # initiatilize with the last follow-up time, which will be either when the simulation 
+        # stops or the time of death
+        times = [len(person._age)-1]
+        #print(self.outcomeTypes)
+        outcomeTypesForTime = self.outcomeTypes.copy()
+        outcomeTypesForTime.remove(OutcomeAssessor.DEATH)
+        for outcomeType in outcomeTypesForTime:
+            if outcomeType == OutcomeAssessor.CI: #assesses if _gcp change was less than half SD of population GCP
+                times.append(AttributeOutcomeAssessor(
+                                                    "_gcp",
+                                                    AssessmentMethod.INCREMENTALCHANGELESSTHAN,
+                                                    #SD was obtained from 300,000 NHANES population (not advanced) 
+                                                    attributeParameter= -0.5*10.3099).get_outcome_time(person)) 
+            else:
+                if person.has_outcome_during_simulation(outcomeType):
+                    ageAtFirstOutcome = person.get_age_at_first_outcome_in_sim(outcomeType)  
+                    times.append(ageAtFirstOutcome - person._age[0]-1)            
+        return min(times)
+
+
     def get_name(self):
         name = ""
         for outcome in self.outcomeTypes:

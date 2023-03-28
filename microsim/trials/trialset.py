@@ -76,9 +76,9 @@ class TrialsetSerial(Trialset): #Serial refers to how trials are run, at any mom
         resultsTrialsetList = []
         argsForRun = self.prepareArgsForRun()
         for iTrial in range(self.trialCount):
-                resultsTrialsetList.append(self.prepareRunAnalyzeTrial(*argsForRun[iTrial])) #prepare,run,analyze trial and append trial results to list
-                if (iTrial+1) % 10 == 0:
-                        print(f"#################\n#################    Trial Completed: {iTrial}")
+            resultsTrialsetList.append(self.prepareRunAnalyzeTrial(*argsForRun[iTrial])) #prepare,run,analyze trial and append trial results to list
+            if (iTrial+1) % 10 == 0:
+                print(f"#################\n#################    Trial Completed: {iTrial}")
         resultsTrialsetPd = pd.concat(resultsTrialsetList).reset_index(drop=True) #convert list of dataframes to a single dataframe
         return resultsTrialsetPd
 

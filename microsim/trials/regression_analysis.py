@@ -6,16 +6,25 @@ class RegressionAnalysis:
         self.outcomeAssessor = outcomeAssessor
         self.name = nameStem + outcomeAssessor.get_name()
 
-    def get_dataframe(self, treatedPopList, untreatedPopList):
+    def get_dataframe(self, treatedPopList, untreatedPopList, includeTime=False):
         treatedOutcomes = [self.outcomeAssessor.get_outcome(person) for i, person in enumerate(treatedPopList)]
         untreatedOutcomes = [self.outcomeAssessor.get_outcome(person) for i, person in enumerate(untreatedPopList)]
+
+        if includeTime:
+            treatedOutcomeTimes = [self.outcomeAssessor.get_outcome_time(person) for i, person in enumerate(treatedPopList)]
+            untreatedOutcomesTimes = [self.outcomeAssessor.get_outcome_time(person) for i, person in enumerate(untreatedPopList)]
+
 
         treatedOutcomes.extend(untreatedOutcomes)
         analysisDF = pd.DataFrame({'treatment' : np.append(np.ones(len(treatedPopList),dtype=int), np.zeros(len(untreatedPopList),dtype=int)),
                     'outcome' : treatedOutcomes})
+        if includeTime:
+            treatedOutcomeTimes.extend(untreatedOutcomesTimes)
+            analysisDF['time'] = treatedOutcomeTimes
+            analysisDF['time'] = analysisDF['time'].astype('int')
         analysisDF.outcome = analysisDF.outcome.astype('int')
         return analysisDF
-    
+      
     def get_means(self, analysisDF):
         #column names and flag values in this method are based on get_dataframe method above
         analysisDFTreated = analysisDF.loc[analysisDF["treatment"]==1]
