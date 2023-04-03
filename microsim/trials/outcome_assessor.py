@@ -30,7 +30,8 @@ class OutcomeAssessor:
         times = [len(person._age)-1]
         #print(self.outcomeTypes)
         outcomeTypesForTime = self.outcomeTypes.copy()
-        outcomeTypesForTime.remove(OutcomeAssessor.DEATH)
+        if OutcomeAssessor.DEATH in outcomeTypesForTime:
+            outcomeTypesForTime.remove(OutcomeAssessor.DEATH)
         for outcomeType in outcomeTypesForTime:
             if outcomeType == OutcomeAssessor.CI: #assesses if _gcp change was less than half SD of population GCP
                 times.append(AttributeOutcomeAssessor(
