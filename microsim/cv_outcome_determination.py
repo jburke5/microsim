@@ -1,6 +1,6 @@
-from microsim.outcome import OutcomeType
+from microsim.outcome import OutcomeType, Outcome
 from microsim.outcome_model_type import OutcomeModelType
-from microsim.outcome import Outcome
+from microsim.stroke_outcome import StrokeOutcome, StrokeSubtype, StrokeType, Localization
 from microsim.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
 from microsim.regression_model import RegressionModel
 from microsim.data_loader import load_model_spec
@@ -141,14 +141,44 @@ class CVOutcomeDetermination:
                     person, True, self._will_have_fatal_mi(person, vectorized, overrideMIProb=None, rng=rng), vectorized
                 )
             else:
-                return self.get_outcome(
-                    person, False, self._will_have_fatal_stroke(person, vectorized, overrideStrokeProb=None, rng=rng), vectorized
-                )
+                self.generate_stroke_outcome(self, person, vectorized, rng)
+                
         elif vectorized:
             person.miNext = False
             person.strokeNext = False
             person.deadNext = False
             return person
+        
+    def generate_stroke_outcome(self, person, vectorized, rng):
+
+        fatal = self._will_have_fatal_stroke(person, vectorized, 
+                                            overrideStrokeProb=None, rng=rng)
+        ### call other models that are for generating stroke phenotype here.
+        nihss = 12
+        strokeSubtype = StrokeSubtype.OTHER
+        strokeType = StrokeType.ISCHEMIC
+        localization = Localization.LEFT_HEMISPHERE
+        disability = 3 
+
+        if vectorized:
+            person.miNext = False
+            person.strokeNext = True
+            person.deadNext = fatal
+            person.miFatal = False
+            person.strokeFatal = fatal
+            person.ageAtFirstStroke = (
+                person.age
+                if (person.ageAtFirstStroke is None) or (np.isnan(person.ageAtFirstStroke))
+                else person.ageAtFirstStroke
+            )
+            person.nihss = nihss
+            person.strokeSubtype = strokeSubtype
+            person.strokeType = strokeType
+            person.localization = localization
+            person.disability = disability
+      
+        else:
+            return StrokeOutcome(fatal, nihss, strokeType, strokeSubtype, localization, disability)
 
     def get_outcome(self, person, mi, fatal, vectorized):
         if vectorized:

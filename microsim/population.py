@@ -27,6 +27,7 @@ from microsim.smoking_status import SmokingStatus
 from microsim.statsmodel_logistic_risk_factor_model import \
     StatsModelLogisticRiskFactorModel
 from microsim.sim_settings import simSettings
+from microsim.stroke_outcome import StrokeOutcome
 
 class Population:
     """
@@ -188,8 +189,10 @@ class Population:
             # first, setup outcome variables
             for outcome in ["stroke", "mi", "dementia", "dead", "cvDeath", 'nonCVDeath']:
                 outcomeVars[outcome + "Next"] = [False] * len(alive)
-            outcomeVars["strokeFatal"] = [False] * len(alive)
             outcomeVars["miFatal"] =[False] * len(alive)
+
+            outcomeVars = StrokeOutcome.add_outcome_vars(outcomeVars, len(alive))
+
             #outcomeVars["qalyNext"] =np.zeros(len(alive))
             #outcomeVars["ageAtFirstDementia"] = [np.nan] * len(df)
             alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(outcomeVars) ], axis='columns')
