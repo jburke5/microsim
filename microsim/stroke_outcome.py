@@ -1,0 +1,52 @@
+from microsim.outcome import Outcome, OutcomeType
+from enum import Enum
+import numpy as np
+
+class StrokeOutcome(Outcome):
+    def __init__(self, fatal, nihss, strokeType, strokeSubtype, location, disability):
+        self.fatal = fatal
+        super().__init__(OutcomeType.STROKE, self.fatal)
+        self.nihss = nihss
+        self.strokeType = strokeType
+        self.strokeSubtype = strokeSubtype
+        self.location = location 
+        self.disability = disability
+
+    @staticmethod
+    def add_outcome_vars(outcomeDict, numberVars):
+        outcomeDict['nihss'] = [np.nan] * numberVars
+        outcomeDict['strokeSubtype'] = [None] * numberVars
+        outcomeDict['strokeType'] = [None] * numberVars
+        outcomeDict['localization'] = [None] * numberVars
+        outcomeDict['disbility'] = [None] * numberVars
+        return outcomeDict
+    
+    def __repr__(self):
+        return f"""Stroke Outcome: {self.type}, fatal: {self.fatal}, nihss: {self.nihss}, 
+                stroke subtype: {self.strokeSubtype}, stroke type: {self.strokeType},
+                stroke location: {self.location}, disability: {self.disability}"""
+
+    def __eq__(self, other):
+        if not isinstance(other, StrokeOutcome):
+            return False
+        return ((self.type == other.type) and (self.fatal == other.fatal) and 
+                (self.nihss == other.nihss) and (self.strokeType == other.strokeType) and 
+                (self.location == other.location) and (self.disability ==other.disability ))
+    
+class StrokeType(Enum):
+    ISCHEMIC = "ischemic"
+    ICH = "ich"
+
+class StrokeSubtype(Enum):
+    LARGE_VESSEL = "largeVessel"
+    SMALL_VESSEL = "smallVessel"
+    CARDIOEMBOLIC = "cardioembolic"
+    OTHER = "other"
+
+class Localization(Enum):
+    RIGHT_HEMISPHERE = "rightHemisphere"
+    LEFT_HEMISPHERE = "leftHemisphere"
+    CEREBELLUM_BRAINSTEM = "cerebellumBrainstem"
+
+
+
