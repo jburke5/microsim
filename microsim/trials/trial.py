@@ -9,15 +9,17 @@ class Trial:
     
     def __init__(self, trialDescription, targetPopulation, rng=None, additionalLabels=None): 
         self.trialDescription = trialDescription
-        self.trialPopulation = self.select_trial_population(targetPopulation, trialDescription.inclusionFilter, trialDescription.exclusionFilter)
+        self.trialPopulation = self.select_trial_population(targetPopulation, trialDescription.inclusionFilters, trialDescription.exclusionFilters)
         # select our patients from the population
         self.maxSampleSize = pd.Series(trialDescription.sampleSizes).max()
         self.treatedPop, self.untreatedPop = self.randomize(trialDescription.randomizationSchema, rng)
         self.analyticResults = {}
         self.additionalLabels = additionalLabels 
 
-    def select_trial_population(self, targetPopulation, inclusionFilter, exclusionFilter):
-        filteredPeople = list(filter(inclusionFilter, list(targetPopulation._people))) 
+    def select_trial_population(self, targetPopulation, inclusionFilters, exclusionFilters): #inclusionFilters: a list of filters
+        filteredPeople = list(targetPopulation._people) #initialize
+        for inclusionFilter in inclusionFilters:
+            filteredPeople = list(filter(inclusionFilter, filteredPeople)) #applies logical AND to all inclusion filters provided
         return PersonListPopulation(filteredPeople)
 
     def randomize(self, randomizationSchema, rng=None):
@@ -64,6 +66,8 @@ class Trial:
                 self.analyze(duration, sampleSize, sampleTreated.tolist(), sampleUntreated.tolist(), sampleSizeIndex=i)
 
     def analyze(self, duration, sampleSize, treatedPopList, untreatedPopList, sampleSizeIndex=0):
+        totalBPMedsAddedTreated = sum([sum(x._bpMedsAdded) for x in treatedPopList])
+        totalBPMedsAddedUntreated = sum([sum(x._bpMedsAdded) for x in untreatedPopList])
         for analysis in self.trialDescription.analyses:
             reg, intercept, se, pvalue, meanUntreated, meanTreated = None, None, None, None, None, None
             try: #get_means returns both meanUntreated and meanTreated, in this order, hence the parenthesis
@@ -78,6 +82,8 @@ class Trial:
                                                                                          'intercept' : intercept,
                                                                                          'meanUntreated' : meanUntreated,
                                                                                          'meanTreated' : meanTreated,
+                                                                                         'totalBPMedsAddedUntreated' : totalBPMedsAddedUntreated,
+                                                                                         'totalBPMedsAddedTreated' : totalBPMedsAddedTreated,
                                                                                          'duration' : duration,
                                                                                          'sampleSize' : sampleSize,
                                                                                          'outcome' :  analysis.outcomeAssessor.get_name(),
