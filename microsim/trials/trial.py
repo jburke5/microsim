@@ -9,32 +9,33 @@ class Trial:
     
     def __init__(self, trialDescription, targetPopulation, rng=None, additionalLabels=None): 
         self.trialDescription = trialDescription
+        self.maxSampleSize = pd.Series(trialDescription.sampleSizes).max()
         self.trialPopulation = self.select_trial_population(targetPopulation, trialDescription.inclusionFilters, trialDescription.exclusionFilters)
         # select our patients from the population
-        self.maxSampleSize = pd.Series(trialDescription.sampleSizes).max()
         self.treatedPop, self.untreatedPop = self.randomize(trialDescription.randomizationSchema, rng)
         self.analyticResults = {}
         self.additionalLabels = additionalLabels 
 
     def select_trial_population(self, targetPopulation, inclusionFilters, exclusionFilters): #inclusionFilters: a list of filters
-        filteredPeople = list(targetPopulation._people) #initialize
+        #initialize by keeping alive persons
+        filteredPeople = list(filter(lambda x: not x.is_dead(), targetPopulation._people.tolist()))
         for inclusionFilter in inclusionFilters:
             filteredPeople = list(filter(inclusionFilter, filteredPeople)) #applies logical AND to all inclusion filters provided
-        return PersonListPopulation(filteredPeople)
+        #filteredPeople, in general, will not be of size equal to maxSampleSize
+        #sampling with replacement will create a population with size equal to maxSampleSize
+        filteredPeopleToSample = list(pd.Series(filteredPeople).sample(n=self.maxSampleSize, replace=True))
+        return PersonListPopulation(filteredPeopleToSample)
 
     def randomize(self, randomizationSchema, rng=None):
         #rng = np.random.default_rng(rng)
         treatedList = []
         untreatedList = []
         # might be able to make this more efficient by sampling from the filtered people...
-        for i, person in self.trialPopulation._people.items():
-            if not person.is_dead():
-                if randomizationSchema(person, rng):
-                    treatedList.append(copy.deepcopy(person))
-                else:
-                    untreatedList.append(copy.deepcopy(person))
+        for i, person in self.trialPopulation._people.items(): #assumes that size of self.trialPopulation is exactly equal to self.maxSampleSize
+            if randomizationSchema(person, rng):
+               treatedList.append(copy.deepcopy(person))
             else:
-                continue
+                untreatedList.append(copy.deepcopy(person))
         return PersonListPopulation(treatedList), PersonListPopulation(untreatedList)
 
     def run(self, rng=None):
