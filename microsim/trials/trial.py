@@ -26,18 +26,15 @@ class Trial:
         #rng = np.random.default_rng(rng)
         treatedList = []
         untreatedList = []
-        randomizedCount = 0
         # might be able to make this more efficient by sampling from the filtered people...
         for i, person in self.trialPopulation._people.items():
-            while randomizedCount < self.maxSampleSize:
-                if not person.is_dead():
-                    if randomizationSchema(person, rng):
-                        treatedList.append(copy.deepcopy(person))
-                    else:
-                        untreatedList.append(copy.deepcopy(person))
-                    randomizedCount+=1
+            if not person.is_dead():
+                if randomizationSchema(person, rng):
+                    treatedList.append(copy.deepcopy(person))
                 else:
-                    continue
+                    untreatedList.append(copy.deepcopy(person))
+            else:
+                continue
         return PersonListPopulation(treatedList), PersonListPopulation(untreatedList)
 
     def run(self, rng=None):
@@ -68,6 +65,8 @@ class Trial:
     def analyze(self, duration, sampleSize, treatedPopList, untreatedPopList, sampleSizeIndex=0):
         totalBPMedsAddedTreated = sum([sum(x._bpMedsAdded) for x in treatedPopList])
         totalBPMedsAddedUntreated = sum([sum(x._bpMedsAdded) for x in untreatedPopList])
+        uniqueIndicesTreated = len(set([x.dfIndex for x in treatedPopList]))
+        uniqueIndicesUntreated = len(set([x.dfIndex for x in untreatedPopList]))
         for analysis in self.trialDescription.analyses:
             reg, intercept, se, pvalue, meanUntreated, meanTreated = None, None, None, None, None, None
             try: #get_means returns both meanUntreated and meanTreated, in this order, hence the parenthesis
@@ -84,6 +83,8 @@ class Trial:
                                                                                          'meanTreated' : meanTreated,
                                                                                          'totalBPMedsAddedUntreated' : totalBPMedsAddedUntreated,
                                                                                          'totalBPMedsAddedTreated' : totalBPMedsAddedTreated,
+                                                                                         'uniqueIndicesUntreated' : uniqueIndicesUntreated,
+                                                                                         'uniqueIndicesTreated' : uniqueIndicesTreated,
                                                                                          'duration' : duration,
                                                                                          'sampleSize' : sampleSize,
                                                                                          'outcome' :  analysis.outcomeAssessor.get_name(),
