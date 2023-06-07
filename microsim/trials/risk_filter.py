@@ -16,3 +16,5 @@ class RiskFilter:
 
         return exceedsThresolds
 
+    def doesNotExceedThresholds(self, person):
+        return (not self.exceedsThresholds(person))

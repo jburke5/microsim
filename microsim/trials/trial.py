@@ -9,33 +9,33 @@ class Trial:
     
     def __init__(self, trialDescription, targetPopulation, rng=None, additionalLabels=None): 
         self.trialDescription = trialDescription
-        self.trialPopulation = self.select_trial_population(targetPopulation, trialDescription.inclusionFilter, trialDescription.exclusionFilter)
-        # select our patients from the population
         self.maxSampleSize = pd.Series(trialDescription.sampleSizes).max()
+        self.trialPopulation = self.select_trial_population(targetPopulation, trialDescription.inclusionFilters, trialDescription.exclusionFilters)
+        # select our patients from the population
         self.treatedPop, self.untreatedPop = self.randomize(trialDescription.randomizationSchema, rng)
         self.analyticResults = {}
         self.additionalLabels = additionalLabels 
 
-    def select_trial_population(self, targetPopulation, inclusionFilter, exclusionFilter):
-        filteredPeople = list(filter(inclusionFilter, list(targetPopulation._people))) 
-        return PersonListPopulation(filteredPeople)
+    def select_trial_population(self, targetPopulation, inclusionFilters, exclusionFilters): #inclusionFilters: a list of filters
+        #initialize by keeping alive persons
+        filteredPeople = list(filter(lambda x: not x.is_dead(), targetPopulation._people.tolist()))
+        for inclusionFilter in inclusionFilters:
+            filteredPeople = list(filter(inclusionFilter, filteredPeople)) #applies logical AND to all inclusion filters provided
+        #filteredPeople, in general, will not be of size equal to maxSampleSize
+        #sampling with replacement will create a population with size equal to maxSampleSize
+        filteredPeopleToSample = list(pd.Series(filteredPeople).sample(n=self.maxSampleSize, replace=True))
+        return PersonListPopulation(filteredPeopleToSample)
 
     def randomize(self, randomizationSchema, rng=None):
         #rng = np.random.default_rng(rng)
         treatedList = []
         untreatedList = []
-        randomizedCount = 0
         # might be able to make this more efficient by sampling from the filtered people...
-        for i, person in self.trialPopulation._people.items():
-            while randomizedCount < self.maxSampleSize:
-                if not person.is_dead():
-                    if randomizationSchema(person, rng):
-                        treatedList.append(copy.deepcopy(person))
-                    else:
-                        untreatedList.append(copy.deepcopy(person))
-                    randomizedCount+=1
-                else:
-                    continue
+        for i, person in self.trialPopulation._people.items(): #assumes that size of self.trialPopulation is exactly equal to self.maxSampleSize
+            if randomizationSchema(person, rng):
+               treatedList.append(copy.deepcopy(person))
+            else:
+                untreatedList.append(copy.deepcopy(person))
         return PersonListPopulation(treatedList), PersonListPopulation(untreatedList)
 
     def run(self, rng=None):
@@ -64,6 +64,10 @@ class Trial:
                 self.analyze(duration, sampleSize, sampleTreated.tolist(), sampleUntreated.tolist(), sampleSizeIndex=i)
 
     def analyze(self, duration, sampleSize, treatedPopList, untreatedPopList, sampleSizeIndex=0):
+        totalBPMedsAddedTreated = sum([sum(x._bpMedsAdded) for x in treatedPopList])
+        totalBPMedsAddedUntreated = sum([sum(x._bpMedsAdded) for x in untreatedPopList])
+        uniqueIndicesTreated = len(set([x.dfIndex for x in treatedPopList]))
+        uniqueIndicesUntreated = len(set([x.dfIndex for x in untreatedPopList]))
         for analysis in self.trialDescription.analyses:
             reg, intercept, se, pvalue, meanUntreated, meanTreated = None, None, None, None, None, None
             try: #get_means returns both meanUntreated and meanTreated, in this order, hence the parenthesis
@@ -78,6 +82,10 @@ class Trial:
                                                                                          'intercept' : intercept,
                                                                                          'meanUntreated' : meanUntreated,
                                                                                          'meanTreated' : meanTreated,
+                                                                                         'totalBPMedsAddedUntreated' : totalBPMedsAddedUntreated,
+                                                                                         'totalBPMedsAddedTreated' : totalBPMedsAddedTreated,
+                                                                                         'uniqueIndicesUntreated' : uniqueIndicesUntreated,
+                                                                                         'uniqueIndicesTreated' : uniqueIndicesTreated,
                                                                                          'duration' : duration,
                                                                                          'sampleSize' : sampleSize,
                                                                                          'outcome' :  analysis.outcomeAssessor.get_name(),
