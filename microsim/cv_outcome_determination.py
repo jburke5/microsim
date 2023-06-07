@@ -126,22 +126,22 @@ class CVOutcomeDetermination:
             cvRisk = cvRisk * self.secondary_prevention_multiplier
 
         return self.get_or_assign_outcomes(
-            cvRisk, person, outcome_model_repository, vectorized, manualStrokeMIProbability, rng
+            cvRisk, person, outcome_model_repository, vectorized, manualStrokeMIProbability, rng=rng
         )
 
     def get_or_assign_outcomes(
         self, cvRisk, person, outcome_model_repository, vectorized, manualStrokeMIProbability, rng=None
     ):
         #rng = np.random.default_rng(rng)
-        if self._will_have_cvd_event(cvRisk, rng):
+        if self._will_have_cvd_event(cvRisk, rng=rng):
             if self._will_have_mi(
-                person, outcome_model_repository, vectorized, manualStrokeMIProbability, rng
+                person, outcome_model_repository, vectorized, manualStrokeMIProbability, rng=rng
             ):
                 return self.get_outcome(
                     person, True, self._will_have_fatal_mi(person, vectorized, overrideMIProb=None, rng=rng), vectorized
                 )
             else:
-                self.generate_stroke_outcome(self, person, vectorized, rng)
+                self.generate_stroke_outcome(self, person, vectorized, rng=rng)
                 
         elif vectorized:
             person.miNext = False
@@ -149,7 +149,7 @@ class CVOutcomeDetermination:
             person.deadNext = False
             return person
         
-    def generate_stroke_outcome(self, person, vectorized, rng):
+    def generate_stroke_outcome(self, person, vectorized, rng=None):
 
         fatal = self._will_have_fatal_stroke(person, vectorized, 
                                             overrideStrokeProb=None, rng=rng)
