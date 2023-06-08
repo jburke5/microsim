@@ -141,7 +141,7 @@ class CVOutcomeDetermination:
                     person, True, self._will_have_fatal_mi(person, vectorized, overrideMIProb=None, rng=rng), vectorized
                 )
             else:
-                self.generate_stroke_outcome(self, person, vectorized, rng=rng)
+                return self.generate_stroke_outcome(person, vectorized, rng=rng)
                 
         elif vectorized:
             person.miNext = False
@@ -176,7 +176,7 @@ class CVOutcomeDetermination:
             person.strokeType = strokeType
             person.localization = localization
             person.disability = disability
-      
+            return person
         else:
             return StrokeOutcome(fatal, nihss, strokeType, strokeSubtype, localization, disability)
 

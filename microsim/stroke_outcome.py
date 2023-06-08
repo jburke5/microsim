@@ -18,7 +18,8 @@ class StrokeOutcome(Outcome):
         outcomeDict['strokeSubtype'] = [None] * numberVars
         outcomeDict['strokeType'] = [None] * numberVars
         outcomeDict['localization'] = [None] * numberVars
-        outcomeDict['disbility'] = [None] * numberVars
+        outcomeDict['disability'] = [None] * numberVars
+        outcomeDict["strokeFatal"] = [False] * numberVars
         return outcomeDict
     
     def __repr__(self):
