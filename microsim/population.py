@@ -278,6 +278,9 @@ class Population:
             alive.drop(columns=nextCols, inplace=True)
             fatalCols = [col for col in alive.columns if "Fatal" in col]
             alive.drop(columns=fatalCols, inplace=True)
+            riskCols = ['treatedcombinedRisks', 'treatedstrokeProbabilities', 'treatedstrokeRisks', 'treatedmiRisks', 
+                        'untreatedcombinedRisks', 'untreatedstrokeProbabilities', 'untreatedstrokeRisks', 'untreatedmiRisks']
+            alive.drop(columns=riskCols, inplace=True)
         return alive, df
 
     def push_updates_back_to_people(self, x):
@@ -518,8 +521,9 @@ class Population:
                 ] = recalibratedForMedCount["rolledBackEventType"]
 
         #logging.info(f"*** after recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
-        recalibration_df.drop(columns=['treatedcombinedRisks', 'treatedstrokeProbabilities', 'treatedstrokeRisks', 'treatedmiRisks', 
-                    'untreatedcombinedRisks', 'untreatedstrokeProbabilities', 'untreatedstrokeRisks', 'untreatedmiRisks', 'totalBPMedsAddedCapped', 'rolledBackEventType'], inplace=True)
+        #recalibration_df.drop(columns=['treatedcombinedRisks', 'treatedstrokeProbabilities', 'treatedstrokeRisks', 'treatedmiRisks', 
+         #           'untreatedcombinedRisks', 'untreatedstrokeProbabilities', 'untreatedstrokeRisks', 'untreatedmiRisks', 'totalBPMedsAddedCapped', 'rolledBackEventType'], inplace=True)
+        recalibration_df.drop(columns=['totalBPMedsAddedCapped', 'rolledBackEventType'], inplace=True)
         return recalibration_df
 
     def estimate_risks(self, recalibration_df, prefix):
