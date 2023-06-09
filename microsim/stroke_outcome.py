@@ -3,6 +3,9 @@ from enum import Enum
 import numpy as np
 
 class StrokeOutcome(Outcome):
+
+    phenotypeItems = ["nihss","strokeSubtype","strokeType","localization","disability"]
+
     def __init__(self, fatal, nihss, strokeType, strokeSubtype, location, disability):
         self.fatal = fatal
         super().__init__(OutcomeType.STROKE, self.fatal)
@@ -14,11 +17,11 @@ class StrokeOutcome(Outcome):
 
     @staticmethod
     def add_outcome_vars(outcomeDict, numberVars):
-        outcomeDict['nihss'] = [np.nan] * numberVars
-        outcomeDict['strokeSubtype'] = [None] * numberVars
-        outcomeDict['strokeType'] = [None] * numberVars
-        outcomeDict['localization'] = [None] * numberVars
-        outcomeDict['disability'] = [None] * numberVars
+        outcomeDict['nihssNext'] = [np.nan] * numberVars
+        outcomeDict['strokeSubtypeNext'] = [None] * numberVars
+        outcomeDict['strokeTypeNext'] = [None] * numberVars
+        outcomeDict['localizationNext'] = [None] * numberVars
+        outcomeDict['disabilityNext'] = [None] * numberVars
         outcomeDict["strokeFatal"] = [False] * numberVars
         return outcomeDict
     

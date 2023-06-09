@@ -171,11 +171,11 @@ class CVOutcomeDetermination:
                 if (person.ageAtFirstStroke is None) or (np.isnan(person.ageAtFirstStroke))
                 else person.ageAtFirstStroke
             )
-            person.nihss = nihss
-            person.strokeSubtype = strokeSubtype
-            person.strokeType = strokeType
-            person.localization = localization
-            person.disability = disability
+            person.nihssNext = nihss
+            person.strokeSubtypeNext = strokeSubtype
+            person.strokeTypeNext = strokeType
+            person.localizationNext = localization
+            person.disabilityNext = disability
             return person
         else:
             return StrokeOutcome(fatal, nihss, strokeType, strokeSubtype, localization, disability)
