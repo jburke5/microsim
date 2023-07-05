@@ -316,6 +316,10 @@ class Population:
                 # only one dementia event per person
                 if outcomeName == "dementia" and person._dementia:
                     break
+                elif outcomeName == "stroke":
+                    outcomePhenotypeColumns = [i + str(self._currentWave) for i in StrokeOutcome.phenotypeItems ]
+                    outcomePhenotypeDict = dict(zip( StrokeOutcome.phenotypeItems, x.loc[outcomePhenotypeColumns].tolist() ))
+                    person.add_outcome_event(Outcome(outcomeType, fatal, **outcomePhenotypeDict)) #Outcome.properties will hold the stroke phenotype as a dict
                 else:
                     person.add_outcome_event(Outcome(outcomeType, fatal))
 
