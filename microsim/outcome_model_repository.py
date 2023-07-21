@@ -10,6 +10,7 @@ from microsim.person import Person
 from microsim.data_loader import load_model_spec
 from microsim.regression_model import RegressionModel
 from microsim.gcp_model import GCPModel
+from microsim.gcp_stroke_model import GCPStrokeModel
 from microsim.outcome import Outcome, OutcomeType
 from microsim.dementia_model import DementiaModel
 from microsim.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFactorModel
@@ -113,7 +114,10 @@ class OutcomeModelRepository:
                 black_race_x_tot_chol_hdl_ratio=-0.117749,
             ),
         }
-        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel(self)
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = {
+            "preStroke": GCPModel(self),
+            "postStroke": GCPStrokeModel(self)
+        }
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
 
         # This represents non-cardiovascular mortality..
@@ -179,13 +183,24 @@ class OutcomeModelRepository:
         )
 
     def select_model_for_person(self, person, outcome):
-        return self.select_model_for_gender(person._gender, outcome)
+        if outcome == OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE:
+            return self.select_model_for_stroke(person, outcome)
+        else:
+            return self.select_model_for_gender(person._gender, outcome)
 
     def select_model_for_gender(self, gender, outcome):
         models_for_outcome = self._models[outcome]
         if outcome == OutcomeModelType.CARDIOVASCULAR:
             gender_stem = "male" if gender == NHANESGender.MALE else "female"
             return models_for_outcome[gender_stem]
+        else:
+            return models_for_outcome
+
+    def select_model_for_stroke(self, person, outcome):
+        models_for_outcome = self._models[outcome]
+        if outcome == OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE:
+            strokeStatus = "postStroke" if person.has_outcome_at_any_time(OutcomeModelType.STROKE) else "preStroke"
+            return models_for_outcome[strokeStatus]
         else:
             return models_for_outcome
 
