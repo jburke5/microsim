@@ -306,6 +306,7 @@ class Person:
             "ageAtFirstStroke": self.get_age_at_first_outcome(OutcomeType.STROKE),
             "ageAtFirstMI": self.get_age_at_first_outcome(OutcomeType.MI),
             "ageAtFirstDementia": self.get_age_at_first_outcome(OutcomeType.DEMENTIA),
+            "ageAtLastStroke": self.get_age_at_last_outcome(OutcomeType.STROKE),
             "miInSim": self.has_mi_during_simulation(),
             "strokePriorToSim": self._selfReportStrokePriorToSim,
             "strokeInSim": self.has_stroke_during_simulation(),
@@ -316,7 +317,13 @@ class Person:
             "totalYearsInSim": self.years_in_simulation(),
             "totalQalys": np.array(self._qalys).sum(),
             "totalBPMedsAdded": np.array(self._bpMedsAdded).sum(),
-            "bpMedsAdded": self._bpMedsAdded[-1]
+            "bpMedsAdded": self._bpMedsAdded[-1],
+            "medianBmiPriorToLastStroke": self.get_median_attr_prior_last_stroke("_bmi"),
+            "medianGcpPriorToLastStroke": self.get_median_attr_prior_last_stroke("_gcp"),
+            "meanSbpPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_sbp"),
+            "meanA1cPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_a1c"),
+            "meanLdlPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_ldl"),
+            "medianWaistPriorToLastStroke": self.get_median_attr_prior_last_stroke("_waist")
         }
 
     def get_tvc_state_as_dict(self, timeVaryingCovariates):
@@ -631,6 +638,15 @@ class Person:
             return age
         return None
 
+    def get_age_at_last_outcome(self, type):
+        age = self._outcomes[type][-1][0] if (len(self._outcomes[type]) > 0) else None
+        if ((age==-1) & (type == OutcomeType.STROKE)):
+            return self._selfReportStrokeAge
+        elif ((age==-1) & (type == OutcomeType.MI)):
+            return self._selfReportMIAge
+        else:
+            return age
+
     def get_age_at_first_outcome_in_sim(self, type):
         for outcome_tuple in self._outcomes[type]:
             age = outcome_tuple[0]
@@ -638,6 +654,41 @@ class Person:
                 return age
 
         return None
+
+    def get_age_at_last_outcome_in_sim(self, type):
+        age = self._outcomes[type][-1][0] if (len(self._outcomes[type]) > 0) else None
+        age = None if (age == -1) else age #if outcome was prior to sim, return None
+        return age
+
+    #def get_median_attr_prior_last_stroke(self, attr): #assuming that the attribute is a list of floats
+    #    attrList = getattr(self, attr)
+    #    ageAtLastStroke = self.get_age_at_last_outcome(OutcomeType.STROKE)
+    #    if (ageAtLastStroke is None): #never had stroke outcome
+    #        return None
+    #    elif (ageAtLastStroke==-1): #had stroke outcome prior to sim and not in sim
+    #        return attrList[0] #return the baseline attr as our best estimate of the median prestroke attribute
+    #    else: #had stroke outcome in sim
+    #        waveAtLastStroke = self.get_wave_for_age(ageAtLastStroke)
+    #        return np.median(attrList[:waveAtLastStroke])
+
+    def get_attr_prior_last_stroke(self, attr): #assuming that the attribute is a list of floats
+        attrList = getattr(self, attr)
+        ageAtLastStroke = self.get_age_at_last_outcome(OutcomeType.STROKE)
+        if (ageAtLastStroke is None): #never had stroke outcome
+            return None
+        elif (ageAtLastStroke==-1): #had stroke outcome prior to sim and not in sim
+            return attrList[0] #return the baseline attr as our best estimate of the median prestroke attribute
+        else: #had stroke outcome in sim
+            waveAtLastStroke = self.get_wave_for_age(ageAtLastStroke)
+            return (attrList[:waveAtLastStroke])
+
+    def get_median_attr_prior_last_stroke(self, attr): #assuming that the attribute is a list of floats
+        attrPriorToLastStroke = self.get_attr_prior_last_stroke(attr)
+        return None if (attrPriorToLastStroke is None) else np.median(attrPriorToLastStroke)
+
+    def get_mean_attr_prior_last_stroke(self, attr): #assuming that the attribute is a list of floats
+        attrPriorToLastStroke = self.get_attr_prior_last_stroke(attr)
+        return None if (attrPriorToLastStroke is None) else np.mean(attrPriorToLastStroke)
 
     def has_fatal_stroke(self):
         return any([stroke.fatal for _, stroke in self._outcomes[OutcomeType.STROKE]])

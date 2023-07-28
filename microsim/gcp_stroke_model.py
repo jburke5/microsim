@@ -25,14 +25,14 @@ class GCPStrokeModel:
         physicalActivity,
         alcoholPerWeek,
         medianBmiPrestroke,
-        medianSBP,
-        medianSBPPrestroke,
-        medianLdlPrestroke,
-        medianLdl,
+        meanSBP,
+        meanSBPPrestroke,
+        meanLdlPrestroke,
+        meanLdl,
         gfr,
         medianWaistPrestroke,
-        medianFastingGlucose,
-        medianFastingGlucosePrestroke,
+        meanFastingGlucose,
+        meanFastingGlucosePrestroke,
         anyAntiHypertensive,
         anyLipidLowering,
         afib,
@@ -65,8 +65,8 @@ class GCPStrokeModel:
        xb += 0.05502 * alcoholPerWeek                                     #alcperwk
        xb += -0.1372 * medianBmiPrestroke                                 #bs_bmimed
        xb += 0.2726 * medianWaistPrestroke                                #bs_waistcmmed10
-       xb += 0.2301 * (medianSBP/10.)                                     #sbpmed10
-       xb += 0.04248 * (medianSBP/10.) * yearsSinceStroke                 #sbpmed10*t_gcp_stk
+       xb += 0.2301 * (meanSBP/10.)                                     #sbpmed10
+       xb += 0.04248 * (meanSBP/10.) * yearsSinceStroke                 #sbpmed10*t_gcp_stk
        if anyAntiHypertensive:
            xb += (-1.3711)                                                #htntx
            xb += yearsSinceStroke * (0.2271)                              #t_gcp_stk*htntx
@@ -82,49 +82,50 @@ class GCPStrokeModel:
            xb += (-0.03788) * yearsSinceStroke                            #t_gcp_stk*diabetestx
        xb += 0.01751 * gfr                                                #gfr
        xb += 0.6632 * medianGCPPrestroke                                  #bs_fgcpmed (I cannot tell exactly what this means, prestroke median gcp?
-                                                                          #aric, chs, fos (not implemented in sim)
-       xb += -0.2535 * medianSBPPrestroke                                 #bs_sbpstkcogmed10
+       xb += -0.2535 * meanSBPPrestroke                                 #bs_sbpstkcogmed10
        if anyLipidLowering:
            xb += -0.7570                                                  #choltx
            xb += 0.1035 * yearsSinceStroke                                #t_gcp_stk*choltx
-       xb += -0.1866 * (medianLdlPrestroke/10.)                           #bs_cholldlmed10
-       xb += -0.09122 * (medianLdl/10.)                                   #cholldlmed10
-       xb += 0.007825 * (medianLdl/10.) * yearsSinceStroke                #t_gcp_stk*cholldlmed
+       xb += -0.1866 * (meanLdlPrestroke/10.)                           #bs_cholldlmed10
+       xb += -0.09122 * (meanLdl/10.)                                   #cholldlmed10
+       xb += 0.007825 * (meanLdl/10.) * yearsSinceStroke                #t_gcp_stk*cholldlmed
+       #weighted average to account for cohort (aric,chs,fos,regards-assumed to be baseline) 
+       xb += (238.*(-5.2897)+332.*(-3.7359)+101.*(-2.8168)) / (238.+332.+101.+311.)           
        return xb       
                                                                   
     def get_risk_for_person(self, person, rng=None, years=1, vectorized=False, test=False):
-        return 50.
+
         random_effect = rng.normal(0., 3.90) 
 
         residual = 0 if test else rng.normal(0, 6.08)
 
         linPred = 0
-       # if vectorized:
-           # linPred = self.calc_linear_predictor_for_patient_characteristics(
-            #    yearsSinceStroke,
-             #   ageAtStroke,
-              #  gender=person.gender,
-               # raceEthnicity=person.raceEthnicity,
-               # education=person.education,
-               # smokingStatus=person.smokingStatus,
-               # diabetes,
-               # physicalActivity=person.anyPhysicalActivity,
-               # alcoholPerWeek=person.alcoholPerWeek,
-               # medianBmiPrestroke,
-               # medianSBP,
-               # medianSBPPrestroke,
-               # medianLdlPrestroke,
-               # medianLdl,
-               # gfr,
-               # medianWaistPrestroke,
-               # medianFastingGlucose,
-               # medianFastingGlucosePrestroke,
-               # anyAntiHypertensive=((person.antiHypertensiveCount + person.totalBPMedsAdded)> 0),
-               # anyLipidLowering,
-               # afib=person.afib,
-               # mi,
-               # medianGCPPrestroke)
+        if vectorized:
+            linPred = self.calc_linear_predictor_for_patient_characteristics(
+                ageAtLastStroke=person.ageAtLastStroke,
+                yearsSinceStroke=person.age-ageAtLastStroke,
+                gender=person.gender,
+                raceEthnicity=person.raceEthnicity,
+                education=person.education,
+                smokingStatus=person.smokingStatus,
+                diabetes=person.current_diabetes,
+                physicalActivity=person.anyPhysicalActivity,
+                alcoholPerWeek=person.alcoholPerWeek,
+                medianBmiPrestroke=person.medianBmiPriorToLastStroke,
+                meanSBP=person.meanSbp,
+                meanSBPPrestroke=person.meanSbpPriorToLastStroke,
+                meanLdlPrestroke=person.meanLdlPriorToLastStroke,
+                meanLdl=person.meanLdl,
+                gfr=person.gfr,
+                medianWaistPrestroke=person.medianWaistPriorToLastStroke,
+                meanFastingGlucose=Person.convert_a1c_to_fasting_glucose(person.meanA1c),
+                meanFastingGlucosePrestroke=Person.convert_a1c_to_fasting_glucose(person.meanA1cPriorToLastStroke),
+                anyAntiHypertensive= ((person.antiHypertensiveCount + person.totalBPMedsAdded)> 0),
+                anyLipidLowering= (person.statin | (person.otherLipidLoweringMedicationCount>0.)),
+                afib=person.afib,
+                mi=person.mi,
+                medianGCPPrestroke=person.medianGcpPriorToLastStroke)
         #else:
             #not implemented yet
 
-        #return linPred + random_effect + residual      
+        return linPred + random_effect + residual      

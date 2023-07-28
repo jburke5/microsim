@@ -199,7 +199,7 @@ class OutcomeModelRepository:
     def select_model_for_stroke(self, person, outcome):
         models_for_outcome = self._models[outcome]
         if outcome == OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE:
-            strokeStatus = "postStroke" if person.has_outcome_at_any_time(OutcomeModelType.STROKE) else "preStroke"
+            strokeStatus = "postStroke" if (len(person._outcomes[OutcomeType.STROKE])>0) else "preStroke" #using the PersonRowWrapper class here is not ideal
             return models_for_outcome[strokeStatus]
         else:
             return models_for_outcome
@@ -258,3 +258,7 @@ class PersonRowWrapper:
         self._raceEthnicity = NHANESRaceEthnicity(x.raceEthnicity)
         self._education = Education(x.education)
         self._smokingStatus = SmokingStatus(x.smokingStatus)
+        self._outcomes = {OutcomeType.MI: [], OutcomeType.STROKE: [], OutcomeType.DEMENTIA: []}
+        if x.stroke:
+            #since this is a dummy person class, create a dummy stroke outcome
+            self._outcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False))) 

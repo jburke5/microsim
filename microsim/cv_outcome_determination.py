@@ -171,6 +171,13 @@ class CVOutcomeDetermination:
                 if (person.ageAtFirstStroke is None) or (np.isnan(person.ageAtFirstStroke))
                 else person.ageAtFirstStroke
             )
+            person.ageAtLastStroke = person.age
+            person.medianGcpPriorToLastStroke = person.medianGcp
+            person.medianBmiPriorToLastStroke = person.medianBmi
+            person.meanSbpPriorToLastStroke = person.meanSbp
+            person.meanLdlPriorToLastStroke = person.meanLdl
+            person.meanA1cPriorToLastStroke = person.meanA1c
+            person.medianWaistPriorToLastStroke = person.medianWaist
             person.nihssNext = nihss
             person.strokeSubtypeNext = strokeSubtype
             person.strokeTypeNext = strokeType

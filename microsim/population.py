@@ -259,6 +259,7 @@ class Population:
             ############# OUTCOME UPDATES
 
             alive = self.move_people_df_outcomes_forward(alive)
+            alive = self.move_people_df_outcomesMeans_forward(alive)
 
             ########################## UPDATES
             
@@ -376,6 +377,10 @@ class Population:
         # df.loc[(df.ageAtFirstMI.isnull()) & (df.miNext), 'ageAtFirstMI'] = df.age
         # df.loc[(df.ageAtFirstDementia.isnull()) & (df.dementiaNext), 'ageAtFirstDementia'] = df.age
 
+        #with GCPStrokeModel we started including medianBmi so I need to update this as well
+        #note: because bmi is updated prior to generating stroke outcomes I use range(0,self._currentWave) (compare this with the medianGcp update)
+        df["medianBmi"] = df.apply(lambda y: y[["bmi" + f"{x}" for x in range(0,self._currentWave)]].median(), axis=1)
+        df["medianWaist"] = df.apply(lambda y: y[["waist" + f"{x}" for x in range(0,self._currentWave)]].median(), axis=1)
         return df
 
     def move_people_df_treatment_forward(self, df):
@@ -415,10 +420,18 @@ class Population:
         newVariables["dead" + str(self._currentWave)] = df["deadNext"]
 
         df["dementia"] = df["dementiaNext"] | df["dementia"]
+        newVariables["gcp" + str(self._currentWave)] = df['gcpNext']
         df['gcp'] = df['gcpNext']
         df["totalQalys"] = df["totalQalys"] + df["qalyNext"]
 
         return pd.concat([df.reset_index(drop=True), pd.DataFrame(newVariables).reset_index(drop=True)], axis='columns', ignore_index=False)
+
+    def move_people_df_outcomesMeans_forward(self, df):
+        #the GCPStrokeModel needs only the updated median GCP
+        #note: there is no gcp0 but baseGcp on the df 
+        #note: because gcp is updated after we generate stroke outcomes I use range(1,self._currentWave+1) (compare this with the medianBmi update)
+        df["medianGcp"] = df.apply(lambda y: y[["baseGcp"]+["gcp" + f"{x}" for x in range(1,self._currentWave+1)]].median(), axis=1)
+        return df
 
     def set_bp_treatment_strategy(self, bpTreatmentStrategy):
         self._bpTreatmentStrategy = bpTreatmentStrategy
@@ -944,7 +957,16 @@ class Population:
                 pd.Series(getattr(person, "_" + var)).mean()
                 for i, person in self._people.items()
             ]   
-        return pd.concat([df, pd.DataFrame(tvcMeans)], axis=1)
+        df = pd.concat([df, pd.DataFrame(tvcMeans)], axis=1)
+        #the GCP Stroke model needs the median of some quantities (will not get the medians for all TVCs for now) 
+        varMedians = {}
+        for var in ["bmi", "gcp", "waist"]:
+            varMedians["median" + var.capitalize()] = [
+                pd.Series(getattr(person, "_" + var)).median()
+                for i, person in self._people.items()
+            ]   
+        df = pd.concat([df, pd.DataFrame(varMedians)], axis=1)
+        return df
 
     def get_people_initial_state_as_dataframe(self):
         return pd.DataFrame(
