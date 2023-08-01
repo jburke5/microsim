@@ -5,6 +5,7 @@ from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.person import Person
+from microsim.outcome import OutcomeType
 from collections import OrderedDict
 
 # based on https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2805003, Model M2
@@ -15,8 +16,8 @@ class GCPStrokeModel:
 
     def calc_linear_predictor_for_patient_characteristics(
         self,
+        ageAtLastStroke,
         yearsSinceStroke,
-        ageAtStroke,
         gender,
         raceEthnicity,
         education,
@@ -41,8 +42,8 @@ class GCPStrokeModel:
 
        xb = 51.9602                                                       #Intercept
        xb += yearsSinceStroke * (-0.5249)                                 #slope, t_gcp_stk
-       xb += (-1.4919) * (ageAtStroke/10.)                                #agemed10
-       xb += (-0.1970) * (ageAtStroke/10.) * yearsSinceStroke             #t_gcp_stk*agemed10
+       xb += (-1.4919) * (ageAtLastStroke/10.)                                #agemed10
+       xb += (-0.1970) * (ageAtLastStroke/10.) * yearsSinceStroke             #t_gcp_stk*agemed10
        if gender == NHANESGender.FEMALE:
            xb += 1.4858                                                   #female0
            xb += yearsSinceStroke * (-0.2864)                             #t_gcp_stk*female0, change in the slope due to gender
@@ -70,9 +71,9 @@ class GCPStrokeModel:
        if anyAntiHypertensive:
            xb += (-1.3711)                                                #htntx
            xb += yearsSinceStroke * (0.2271)                              #t_gcp_stk*htntx
-       xb += 0.1562 * (medianFastingGlucose/10.)                          #glucosefmed10
-       xb += -0.04266 * (medianFastingGlucose/10.) * yearsSinceStroke     #t_gcp_stk*glucosefme
-       xb += -0.02933 * medianFastingGlucosePrestroke                     #bs_glucosefmed10
+       xb += 0.1562 * (meanFastingGlucose/10.)                          #glucosefmed10
+       xb += -0.04266 * (meanFastingGlucose/10.) * yearsSinceStroke     #t_gcp_stk*glucosefme
+       xb += -0.02933 * meanFastingGlucosePrestroke                     #bs_glucosefmed10
        if afib:
            xb += -1.5329                                                  #Hxafib
        if mi:
@@ -95,14 +96,18 @@ class GCPStrokeModel:
                                                                   
     def get_risk_for_person(self, person, rng=None, years=1, vectorized=False, test=False):
 
-        random_effect = rng.normal(0., 3.90) 
+        if not vectorized:
+            random_effect = person._randomEffects["gcp"] if "gcp" in person._randomEffects else 0
+        else:
+            random_effect = rng.normal(0., 3.90) 
 
         residual = 0 if test else rng.normal(0, 6.08)
 
         linPred = 0
         if vectorized:
+            ageAtLastStroke=person.ageAtLastStroke
             linPred = self.calc_linear_predictor_for_patient_characteristics(
-                ageAtLastStroke=person.ageAtLastStroke,
+                ageAtLastStroke=ageAtLastStroke,
                 yearsSinceStroke=person.age-ageAtLastStroke,
                 gender=person.gender,
                 raceEthnicity=person.raceEthnicity,
@@ -125,7 +130,32 @@ class GCPStrokeModel:
                 afib=person.afib,
                 mi=person.mi,
                 medianGCPPrestroke=person.medianGcpPriorToLastStroke)
-        #else:
-            #not implemented yet
+        else:
+            ageAtLastStroke=person.get_age_at_last_outcome(OutcomeType.STROKE)
+            waveAtLastStroke=person.get_wave_for_age(ageAtLastStroke)
+            linPred = self.calc_linear_predictor_for_patient_characteristics(
+                ageAtLastStroke=ageAtLastStroke,
+                yearsSinceStroke=person._age[-1]-ageAtLastStroke,
+                gender=person._gender,
+                raceEthnicity=person._raceEthnicity,
+                education=person._education,
+                smokingStatus=person._smokingStatus,
+                diabetes=person.has_diabetes(),
+                physicalActivity=person._anyPhysicalActivity[-1],
+                alcoholPerWeek=person._alcoholPerWeek[-1],
+                medianBmiPrestroke=np.median(np.array(person._bmi[:waveAtLastStroke])),
+                meanSBP=np.array(person._sbp).mean(),
+                meanSBPPrestroke=np.array(person._sbp[:waveAtLastStroke]).mean(),
+                meanLdlPrestroke=np.array(person._ldl[:waveAtLastStroke]).mean(),
+                meanLdl=np.array(person._ldl).mean(),
+                gfr=person._gfr,
+                medianWaistPrestroke=np.median(np.array(person._waist[:waveAtLastStroke])),
+                meanFastingGlucose=Person.convert_a1c_to_fasting_glucose(np.array(person._a1c).mean()),
+                meanFastingGlucosePrestroke=Person.convert_a1c_to_fasting_glucose(np.array(person._a1c[:waveAtLastStroke]).mean()),
+                anyAntiHypertensive=((person._antiHypertensiveCount[-1] + np.array(person._bpMedsAdded).sum()) > 0),
+                anyLipidLowering= (person._statin[-1] | (person._otherLipidLoweringMedicationCount[-1]>0.)),
+                afib=person._afib[-1],
+                mi=person._mi,
+                medianGCPPrestroke=np.median(np.array(person._gcp[:waveAtLastStroke])))    
 
         return linPred + random_effect + residual      

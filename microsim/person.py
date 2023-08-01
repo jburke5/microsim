@@ -674,9 +674,10 @@ class Person:
     def get_attr_prior_last_stroke(self, attr): #assuming that the attribute is a list of floats
         attrList = getattr(self, attr)
         ageAtLastStroke = self.get_age_at_last_outcome(OutcomeType.STROKE)
+        #print(f"ageAtLastStroke={ageAtLastStroke} age={self._age}")
         if (ageAtLastStroke is None): #never had stroke outcome
             return None
-        elif (ageAtLastStroke==-1): #had stroke outcome prior to sim and not in sim
+        elif (ageAtLastStroke<self._age[0]): #had stroke outcome prior to sim and not in sim
             return attrList[0] #return the baseline attr as our best estimate of the median prestroke attribute
         else: #had stroke outcome in sim
             waveAtLastStroke = self.get_wave_for_age(ageAtLastStroke)

@@ -430,7 +430,7 @@ class Population:
         #the GCPStrokeModel needs only the updated median GCP
         #note: there is no gcp0 but baseGcp on the df 
         #note: because gcp is updated after we generate stroke outcomes I use range(1,self._currentWave+1) (compare this with the medianBmi update)
-        df["medianGcp"] = df.apply(lambda y: y[["baseGcp"]+["gcp" + f"{x}" for x in range(1,self._currentWave+1)]].median(), axis=1)
+        #df["medianGcp"] = df.apply(lambda y: y[["baseGcp"]+["gcp" + f"{x}" for x in range(1,self._currentWave+1)]].median(), axis=1)
         return df
 
     def set_bp_treatment_strategy(self, bpTreatmentStrategy):
@@ -939,11 +939,13 @@ class Population:
         return attrForPerson
 
     def get_people_current_state_as_dataframe(self):
+            timeVaryingCovariatesAndOutcomes = self._timeVaryingCovariates
+            timeVaryingCovariatesAndOutcomes.append("gcp")
             return pd.DataFrame(
                 list(
                     self.applyMethodSeries(self._people,
                         self.get_person_attributes_from_person,
-                        timeVaryingCovariates=self._timeVaryingCovariates,
+                        timeVaryingCovariates=timeVaryingCovariatesAndOutcomes,
                     )
                 )
             )

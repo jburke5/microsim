@@ -12,6 +12,7 @@ from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.outcome_model_type import OutcomeModelType
 from microsim.dementia_model import DementiaModel
 from microsim.gcp_model import GCPModel
+from microsim.gcp_stroke_model import GCPStrokeModel
 from microsim.initialization_repository import InitializationRepository
 
 
@@ -20,7 +21,11 @@ class AlwaysNonFatalStroke(OutcomeModelRepository):
         super(OutcomeModelRepository, self).__init__()
         self._models = {}
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
-        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+        #self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = {
+            "preStroke": GCPModel(self),
+            "postStroke": GCPStrokeModel(self)
+        }
 
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return Outcome(OutcomeType.STROKE, 0)
@@ -34,7 +39,11 @@ class AlwaysFatalStroke(OutcomeModelRepository):
         super(OutcomeModelRepository, self).__init__()
         self._models = {}
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
-        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+        #self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = {
+            "preStroke": GCPModel(self),
+            "postStroke": GCPStrokeModel(self)
+        }
 
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return Outcome(OutcomeType.STROKE, 1)
@@ -48,7 +57,11 @@ class AlwaysNonFatalMI(OutcomeModelRepository):
         super(OutcomeModelRepository, self).__init__()
         self._models = {}
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
-        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+        #self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = {
+            "preStroke": GCPModel(self),
+            "postStroke": GCPStrokeModel(self)
+        }
 
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return Outcome(OutcomeType.MI, 0)
@@ -61,7 +74,11 @@ class AlwaysDementia(OutcomeModelRepository):
     def __init__(self):
         super(OutcomeModelRepository, self).__init__()
         self._models = {}
-        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+        #self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel()
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = {
+            "preStroke": GCPModel(self),
+            "postStroke": GCPStrokeModel(self)
+        }
 
     def assign_cv_outcome(self, person, years=1, manualStrokeMIProbability=None, rng=None):
         return None
