@@ -57,7 +57,7 @@ class GFREquation:
             )
         ].iloc[0]["constant"]
 
-        # print(f"thresholds: {crThreshold} constant: {constant} exponent: {exponent} female: {self._gender==NHANESGender.FEMALE}, black: {self._raceEthnicity==NHANESRaceEthnicity.NON_HISPANIC_BLACK}, cr: {self._creatinine[-1]}")
+        #print(f"thresholds: {crThreshold} constant: {constant} exponent: {exponent} female: {gender==NHANESGender.FEMALE}, black: {raceEthnicity==NHANESRaceEthnicity.NON_HISPANIC_BLACK}, cr: {creatinine}")
         return (
             constant
             * (creatinine / crThreshold) ** exponent

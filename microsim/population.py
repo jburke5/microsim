@@ -381,6 +381,13 @@ class Population:
         #note: because bmi is updated prior to generating stroke outcomes I use range(0,self._currentWave) (compare this with the medianGcp update)
         df["medianBmi"] = df.apply(lambda y: y[["bmi" + f"{x}" for x in range(0,self._currentWave)]].median(), axis=1)
         df["medianWaist"] = df.apply(lambda y: y[["waist" + f"{x}" for x in range(0,self._currentWave)]].median(), axis=1)
+
+        df["meanSbpSinceLastStroke"] = df.apply(lambda y: None if pd.isna(y.waveAtLastStroke) 
+                                                               else y[["sbp" + f"{x}" for x in range(round(y.waveAtLastStroke),self._currentWave)]].mean(), axis=1)
+        df["meanLdlSinceLastStroke"] = df.apply(lambda y: None if pd.isna(y.waveAtLastStroke) 
+                                                               else y[["ldl" + f"{x}" for x in range(round(y.waveAtLastStroke),self._currentWave)]].mean(), axis=1)
+        df["meanA1cSinceLastStroke"] = df.apply(lambda y: None if pd.isna(y.waveAtLastStroke) 
+                                                               else y[["a1c" + f"{x}" for x in range(round(y.waveAtLastStroke),self._currentWave)]].mean(), axis=1)
         return df
 
     def move_people_df_treatment_forward(self, df):

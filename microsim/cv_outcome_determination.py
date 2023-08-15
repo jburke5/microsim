@@ -178,6 +178,7 @@ class CVOutcomeDetermination:
             person.meanLdlPriorToLastStroke = person.meanLdl
             person.meanA1cPriorToLastStroke = person.meanA1c
             person.medianWaistPriorToLastStroke = person.medianWaist
+            person.waveAtLastStroke = round(person.ageAtLastStroke - person.baseAge + 1) #need an int
             person.nihssNext = nihss
             person.strokeSubtypeNext = strokeSubtype
             person.strokeTypeNext = strokeType

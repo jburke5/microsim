@@ -323,7 +323,11 @@ class Person:
             "meanSbpPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_sbp"),
             "meanA1cPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_a1c"),
             "meanLdlPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_ldl"),
-            "medianWaistPriorToLastStroke": self.get_median_attr_prior_last_stroke("_waist")
+            "medianWaistPriorToLastStroke": self.get_median_attr_prior_last_stroke("_waist"),
+            "waveAtLastStroke": self.get_wave_at_last_stroke(),
+            "meanSbpSinceLastStroke": self.get_mean_attr_since_last_stroke("_sbp"),
+            "meanLdlSinceLastStroke": self.get_mean_attr_since_last_stroke("_ldl"),
+            "meanA1cSinceLastStroke": self.get_mean_attr_since_last_stroke("_a1c")
         }
 
     def get_tvc_state_as_dict(self, timeVaryingCovariates):
@@ -671,10 +675,18 @@ class Person:
     #        waveAtLastStroke = self.get_wave_for_age(ageAtLastStroke)
     #        return np.median(attrList[:waveAtLastStroke])
 
+    def get_wave_at_last_stroke(self):
+        ageAtLastStroke = self.get_age_at_last_outcome(OutcomeType.STROKE)
+        if (ageAtLastStroke is None): #never had stroke outcome
+            return None
+        elif (ageAtLastStroke<self._age[0]): #had stroke outcome prior to sim and not in sim
+            return None
+        else:
+            return self.get_wave_for_age(ageAtLastStroke)
+
     def get_attr_prior_last_stroke(self, attr): #assuming that the attribute is a list of floats
         attrList = getattr(self, attr)
         ageAtLastStroke = self.get_age_at_last_outcome(OutcomeType.STROKE)
-        #print(f"ageAtLastStroke={ageAtLastStroke} age={self._age}")
         if (ageAtLastStroke is None): #never had stroke outcome
             return None
         elif (ageAtLastStroke<self._age[0]): #had stroke outcome prior to sim and not in sim
@@ -683,6 +695,17 @@ class Person:
             waveAtLastStroke = self.get_wave_for_age(ageAtLastStroke)
             return (attrList[:waveAtLastStroke])
 
+    def get_attr_since_last_stroke(self, attr): #assuming that the attribute is a list of floats
+        attrList = getattr(self, attr)
+        ageAtLastStroke = self.get_age_at_last_outcome(OutcomeType.STROKE)
+        if (ageAtLastStroke is None): #never had stroke outcome
+            return None
+        elif (ageAtLastStroke<self._age[0]): #had stroke outcome prior to sim and not in sim
+            return attrList #return the entire list
+        else: #had stroke outcome in sim
+            waveAtLastStroke = self.get_wave_for_age(ageAtLastStroke)
+            return (attrList[waveAtLastStroke:])
+
     def get_median_attr_prior_last_stroke(self, attr): #assuming that the attribute is a list of floats
         attrPriorToLastStroke = self.get_attr_prior_last_stroke(attr)
         return None if (attrPriorToLastStroke is None) else np.median(attrPriorToLastStroke)
@@ -690,6 +713,10 @@ class Person:
     def get_mean_attr_prior_last_stroke(self, attr): #assuming that the attribute is a list of floats
         attrPriorToLastStroke = self.get_attr_prior_last_stroke(attr)
         return None if (attrPriorToLastStroke is None) else np.mean(attrPriorToLastStroke)
+
+    def get_mean_attr_since_last_stroke(self, attr): #assuming that the attribute is a list of floats
+        attrSinceLastStroke = self.get_attr_since_last_stroke(attr)
+        return None if (attrSinceLastStroke is None) else np.mean(attrSinceLastStroke)
 
     def has_fatal_stroke(self):
         return any([stroke.fatal for _, stroke in self._outcomes[OutcomeType.STROKE]])
