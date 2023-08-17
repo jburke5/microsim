@@ -6,6 +6,7 @@ from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.person import Person
 from microsim.outcome import OutcomeType
+from microsim.alcohol_category import AlcoholCategory
 from collections import OrderedDict
 
 # based on https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2805003, Model M2
@@ -71,7 +72,12 @@ class GCPStrokeModel:
            xb += 0.4707                                            #currsmoker
        if physicalActivity:
            xb += 1.0047                                            #physact
-       xb += 0.05502 * alcoholPerWeek                              #alcperwk
+       if alcoholPerWeek == AlcoholCategory.ONETOSIX:              #alcperwk
+           xb += 0.05502 * 3.5                                     
+       elif alcoholPerWeek == AlcoholCategory.SEVENTOTHIRTEEN:
+           xb += 0.05502 * 10
+       elif alcoholPerWeek == AlcoholCategory.FOURTEENORMORE:
+           xb += 0.05502 * 17
        xb += -0.1372 * medianBmiPrestrokeS                         #bs_bmimed
        xb += 0.2726 * medianWaistPrestrokeS                        #bs_waistcmmed10
        xb += 0.2301 * meanSBPS                                     #sbpmed10
