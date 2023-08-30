@@ -12,6 +12,21 @@ from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.outcome import Outcome, OutcomeType
 from microsim.gcp_stroke_model import GCPStrokeModel
 
+#main idea: construct persons that at some point in their simulation history had a stroke outcome
+#we want to test the GCP stroke model with persons that resemble simulation persons as much as possible
+#for every person, lists are created, these lists define the person's history in the simulation
+#these lists have the form [prestroke value, ..., prestroke value, after stroke value, ... after stroke value]
+#with the stroke outcome taking place at the wave of the last prestroke value
+#prestroke values and after stroke values were taken from data used to develop this model
+#for variables where only prestroke values contributed to the model the lists had the form 
+# [prestroke value, ..., prestroke value, prestroke value + a number, prestroke value + another number...]
+#so that we could see if any after stroke value was accidentally included in our implementation of the model
+#also, the current GCP stroke model implementation does not take every model factor into account so at the end for each
+#test case presented here we need to adjust for the cohort (remove the weighted average our implementation includes and add
+#the correct cohort), income, diabetes treatment (2 terms), random effects (2 terms), remove the average alcohol per week
+#term our implementation includes and add the correct one
+#tried to include test cases with diverse histories so that we can test as many model components as possible (I think no test case had afib though)
+
 #row 2 in excel file 
 class TestCaseOne(Person):
 
