@@ -159,6 +159,7 @@ class CVOutcomeDetermination:
         strokeType = StrokeType.ISCHEMIC
         localization = Localization.LEFT_HEMISPHERE
         disability = 3 
+        gcpStrokeRandomEffect = rng.normal(0., 3.90)
 
         if vectorized:
             person.miNext = False
@@ -184,8 +185,10 @@ class CVOutcomeDetermination:
             person.strokeTypeNext = strokeType
             person.localizationNext = localization
             person.disabilityNext = disability
+            person.gcpStrokeRandomEffect = gcpStrokeRandomEffect
             return person
         else:
+            person._randomEffects["gcpStroke"] = gcpStrokeRandomEffect
             return StrokeOutcome(fatal, nihss, strokeType, strokeSubtype, localization, disability)
 
     def get_outcome(self, person, mi, fatal, vectorized):

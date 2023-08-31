@@ -110,10 +110,13 @@ class GCPStrokeModel:
                                                                   
     def get_risk_for_person(self, person, rng=None, years=1, vectorized=False, test=False):
 
-        if not vectorized:
-            random_effect = person._randomEffects["gcp"] if "gcp" in person._randomEffects else 0
+        if test:
+            random_effect = 0
         else:
-            random_effect = 0 if test else rng.normal(0., 3.90) 
+            if not vectorized:
+                random_effect = person._randomEffects["gcpStroke"] if "gcpStroke" in person._randomEffects else 0
+            else:
+                random_effect = person.gcpStrokeRandomEffect
 
         residual = 0 if test else rng.normal(0, 6.08)
 

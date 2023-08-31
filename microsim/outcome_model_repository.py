@@ -154,7 +154,6 @@ class OutcomeModelRepository:
     def get_gcp(self, person, rng=None):
         gcp = (
             self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE, rng=rng)
-            + person._randomEffects["gcp"]
         )
         return gcp if gcp > 0 else 0
 
@@ -165,7 +164,6 @@ class OutcomeModelRepository:
             self.get_risk_for_person(
                 person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE, years=1, vectorized=True, rng=rng
             )
-            + person.gcpRandomEffect
         )
         return gcp if gcp > 0 else 0
 
