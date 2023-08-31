@@ -420,6 +420,7 @@ class Population:
 
         for outcome in ["mi", "stroke"]:
             df[outcome + "InSim"] = df[outcome + "InSim"] | df[outcome + "Next"]
+            df[outcome] = df[outcome + "InSim"] | df[outcome + "PriorToSim"]
             newVariables[outcome + str(self._currentWave)] = df[outcome + "Next"]
         for item in StrokeOutcome.phenotypeItems:
             newVariables[item + str(self._currentWave)] = df[item + "Next"]
