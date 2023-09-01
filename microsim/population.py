@@ -1080,7 +1080,7 @@ def build_person(x, outcome_model_repository, randomEffects=None, rng=None):
         alcohol=AlcoholCategory.get_category_for_consumption(x.alcoholPerWeek),
         education=Education(int(x.education)),
         antiHypertensiveCount=x.antiHypertensive,
-        statin=x.statin,
+        statin=round(x.statin),
         otherLipidLoweringMedicationCount=x.otherLipidLowering,
         creatinine=x.serumCreatinine,
         initializeAfib=initializeAFib,
