@@ -128,7 +128,8 @@ class Person:
 
         # for outcome mocels that require random effects, store in this dictionary
         self._randomEffects = {"gcp": 0, 
-                               "gcpStroke": 0}
+                               "gcpStroke": 0,
+                               "gcpStrokeSlope": 0}
         if randomEffects is not None:
             self._randomEffects.update(randomEffects)
 
@@ -302,6 +303,7 @@ class Person:
             "dead": self.is_dead(),
             "gcpRandomEffect": self._randomEffects["gcp"],
             "gcpStrokeRandomEffect": self._randomEffects["gcpStroke"],
+            "gcpStrokeSlopeRandomEffect": self._randomEffects["gcpStrokeSlope"],
             "miPriorToSim": self._selfReportMIPriorToSim,
             "mi": self._selfReportMIPriorToSim or self.has_mi_during_simulation(),
             "stroke": self._selfReportStrokePriorToSim or self.has_stroke_during_simulation(),

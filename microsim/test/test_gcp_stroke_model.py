@@ -106,6 +106,9 @@ class TestCaseOne(Person):
         self._otherLipidLoweringMedicationCount = otherLipidLoweringMedicationCountList
         self._creatinine = creatinineList
         self._gcp = gcpList
+        self._randomEffects={"gcp": 0,
+                             "gcpStroke": 1.989499,
+                             "gcpStrokeSlope": 0.0925494}
 
         #expected results based on model
         self._expectedGcp = 58.45580379
@@ -118,9 +121,7 @@ class TestCaseOne(Person):
                                          0. -                   #group
                                          0.4819 -               #income
                                          0. -                   #diabetes treatment
-                                         0.*(-0.03788) -        #diabetes treatment * t_gcp_stk
-                                         1.989499 -             #reffect2
-                                         0.0925494*3.170431211) #reffect1*t_gcp_stk
+                                         0.*(-0.03788) )        #diabetes treatment * t_gcp_stk
     
     @property
     def _gfr(self):
@@ -205,7 +206,10 @@ class TestCaseTwo(Person):
         self._otherLipidLoweringMedicationCount = otherLipidLoweringMedicationCountList
         self._creatinine = creatinineList                             
         self._gcp = gcpList
-           
+        self._randomEffects={"gcp": 0,
+                             "gcpStroke": 2.216342,
+                             "gcpStrokeSlope": 0.0920485}         
+  
         #expected results based on model
         self._expectedGcp = 45.043121
         self._expectedYhat = 50.527
@@ -217,9 +221,7 @@ class TestCaseTwo(Person):
                                          0. -                   #group
                                          0.05448 -               #income
                                          0. -                   #diabetes treatment
-                                         0.*(-0.03788) -        #diabetes treatment * t_gcp_stk
-                                         2.216342 -             #reffect2
-                                         0.0920485*5.4318959) #reffect1*t_gcp_stk
+                                         0.*(-0.03788) )        #diabetes treatment * t_gcp_stk
             
     @property
     def _gfr(self):
@@ -304,6 +306,9 @@ class TestCaseThree(Person):
         self._otherLipidLoweringMedicationCount = otherLipidLoweringMedicationCountList
         self._creatinine = creatinineList                             
         self._gcp = gcpList
+        self._randomEffects={"gcp": 0,
+                             "gcpStroke": 0.5671927,                   
+                             "gcpStrokeSlope": 0.1222775}   
            
         #expected results based on model
         self._expectedGcp = 52.8837385
@@ -316,9 +321,7 @@ class TestCaseThree(Person):
                                          -2.8168 -                   #group
                                          0.05448 -               #income
                                          0. -                   #diabetes treatment
-                                         0.*(-0.03788) -        #diabetes treatment * t_gcp_stk
-                                         0.5671927 -             #reffect2
-                                         0.1222775*3.3976728) #reffect1*t_gcp_stk
+                                         0.*(-0.03788) )        #diabetes treatment * t_gcp_stk
 
     @property
     def _gfr(self):
@@ -404,6 +407,9 @@ class TestCaseFour(Person):
         self._otherLipidLoweringMedicationCount = otherLipidLoweringMedicationCountList
         self._creatinine = creatinineList                             
         self._gcp = gcpList
+        self._randomEffects={"gcp": 0,
+                             "gcpStroke": 1.410774,
+                             "gcpStrokeSlope": 0.0976629}
             
         #expected results based on model                              
         self._expectedGcp = 50.834723
@@ -416,9 +422,7 @@ class TestCaseFour(Person):
                                          -3.7359 -                   #group
                                          0.05448 -               #income
                                          0. -                   #diabetes treatment
-                                         0.*(-0.03788) -        #diabetes treatment * t_gcp_stk
-                                         1.410774 -             #reffect2
-                                         0.0976629*8.2655715) #reffect1*t_gcp_stk
+                                         0.*(-0.03788) )        #diabetes treatment * t_gcp_stk
 
     @property
     def _gfr(self):
@@ -490,13 +494,13 @@ class TestGCPStrokeModel(unittest.TestCase):
             places=2)
  
     #with the random effects now part of get_risk_for_person method I think this test is no longer possible
-    #def test_random_effect_nonvectorized(self):
-    #
-    #     self._test_case_one._randomEffects["gcpStroke"] = 5
-    #     self.assertAlmostEqual(
-    #        GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=None, years=1, vectorized=False, test=False),
-    #        self._test_case_one._expectedLinearPredictor+5,
-    #        places=2)
+    def test_random_effect_nonvectorized(self):
+    
+         self._test_case_one._randomEffects["gcpStroke"] = self._test_case_one._randomEffects["gcpStroke"] + 5
+         self.assertAlmostEqual(
+            GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=None, years=1, vectorized=False, test=True),
+            self._test_case_one._expectedLinearPredictor+5,
+            places=2)
 
     def test_randomness_vectorized_independent_per_draw(self):
 

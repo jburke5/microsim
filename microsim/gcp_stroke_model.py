@@ -13,7 +13,6 @@ from collections import OrderedDict
 class GCPStrokeModel:
     def __init__(self, outcomeModelRepository=None):
         self._outcome_model_repository = outcomeModelRepository
-        pass
 
     def calc_linear_predictor_for_patient_characteristics(
         self,
@@ -110,22 +109,17 @@ class GCPStrokeModel:
                                                                   
     def get_risk_for_person(self, person, rng=None, years=1, vectorized=False, test=False):
 
-        if test:
-            random_effect = 0
-        else:
-            if not vectorized:
-                random_effect = person._randomEffects["gcpStroke"] if "gcpStroke" in person._randomEffects else 0
-            else:
-                random_effect = person.gcpStrokeRandomEffect
-
+        random_effect = person.gcpStrokeRandomEffect if vectorized else person._randomEffects["gcpStroke"]
+        random_effect_slope = person.gcpStrokeSlopeRandomEffect if vectorized else person._randomEffects["gcpStrokeSlope"]
         residual = 0 if test else rng.normal(0, 6.08)
 
         linPred = 0
         if vectorized:
             ageAtLastStroke=person.ageAtLastStroke
+            yearsSinceStroke=person.age-ageAtLastStroke
             linPred = self.calc_linear_predictor_for_patient_characteristics(
                 ageAtLastStroke=ageAtLastStroke,
-                yearsSinceStroke=person.age-ageAtLastStroke,
+                yearsSinceStroke=yearsSinceStroke,
                 gender=person.gender,
                 raceEthnicity=person.raceEthnicity,
                 education=person.education,
@@ -147,13 +141,15 @@ class GCPStrokeModel:
                 afib=person.afib,
                 mi=person.mi,
                 medianGCPPrestroke=person.medianGcpPriorToLastStroke)
+            random_effect_slope_term = random_effect_slope * yearsSinceStroke
         else:
             ageAtLastStroke=person.get_age_at_last_outcome(OutcomeType.STROKE)
+            yearsSinceStroke=person._age[-1]-ageAtLastStroke
             #the get_wave function gives me the wave that follows the updates to the person object, but I want the wave when the last updates took place
             waveAtLastStroke=person.get_wave_for_age(ageAtLastStroke)-1
             linPred = self.calc_linear_predictor_for_patient_characteristics(
                 ageAtLastStroke=ageAtLastStroke,
-                yearsSinceStroke=person._age[-1]-ageAtLastStroke,
+                yearsSinceStroke=yearsSinceStroke,
                 gender=person._gender,
                 raceEthnicity=person._raceEthnicity,
                 education=person._education,
@@ -174,6 +170,7 @@ class GCPStrokeModel:
                 anyLipidLowering= (person._statin[-1] | (person._otherLipidLoweringMedicationCount[-1]>0.)),
                 afib=person._afib[-1],
                 mi=person._mi,
-                medianGCPPrestroke=np.median(np.array(person._gcp[:waveAtLastStroke+1])))    
+                medianGCPPrestroke=np.median(np.array(person._gcp[:waveAtLastStroke+1]))) 
+            random_effect_slope_term = random_effect_slope * yearsSinceStroke   
 
-        return linPred + random_effect + residual      
+        return linPred + random_effect + random_effect_slope_term + residual      
