@@ -4,7 +4,7 @@ from microsim.stroke_outcome import StrokeOutcome, StrokeSubtype, StrokeType, Lo
 from microsim.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
 from microsim.regression_model import RegressionModel
 from microsim.data_loader import load_model_spec
-from microsim.outcome_details.stroke_details import StrokeSubtypeModelRepository, StrokeNihssModel, StrokeTypeModelRepository
+from microsim.outcome_details.stroke_details import StrokeSubtypeModelRepository, StrokeNihssModel, StrokeTypeModel
 
 import numpy.random as npRand
 import numpy as np
@@ -155,8 +155,8 @@ class CVOutcomeDetermination:
                                             overrideStrokeProb=None, rng=rng)
         ### call other models that are for generating stroke phenotype here.
         nihss = StrokeNihssModel().estimate_next_risk_vectorized(person) if vectorized else StrokeNihssModel().estimate_next_risk(person)
-        strokeSubtype = StrokeSubtypeModelRepository().get_stroke_subtype_vectorized(person) if vectorized else StrokeSubtypeModelRepository().get_stroke_subtype(person)
-        strokeType = StrokeTypeModelRepository(rng=rng).get_stroke_type_vectorized(person) if vectorized else StrokeTypeModelRepository(rng=rng).get_stroke_type(person)
+        strokeSubtype = StrokeSubtypeModelRepository(rng=rng).get_stroke_subtype_vectorized(person) if vectorized else StrokeSubtypeModelRepository(rng=rng).get_stroke_subtype(person)
+        strokeType = StrokeTypeModel(rng=rng).get_stroke_type_vectorized(person) if vectorized else StrokeTypeModel(rng=rng).get_stroke_type(person)
         localization = Localization.LEFT_HEMISPHERE
         disability = 3 
         gcpStrokeRandomEffect = rng.normal(0., 3.90)

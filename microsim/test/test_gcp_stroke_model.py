@@ -49,7 +49,7 @@ class TestCaseOne(Person):
         ldlMean = 2.6*10 + 94.1
         ldlList = [ldlMeanPrestroke] * (indexStroke+1) + [ldlMean]*4
         trigList = [150]*7
-        totCholList = [hdlList[i]+ldlList[i]+trigList[i] for i in range(len(ldlList))]
+        totCholList = [hdlList[i]+ldlList[i]+0.2*trigList[i] for i in range(len(ldlList))]
         bmiMedianPrestroke = 27.2 + 1.467401286
         bmiList = [bmiMedianPrestroke] * (indexStroke+1) + [bmiMedianPrestroke+x for x in range(10,50,10)]
         waistMedianPrestroke = 97.5 - 1.618*10
@@ -149,7 +149,7 @@ class TestCaseTwo(Person):
         ldlMean = 94.1 + 0.21*10 
         ldlList = [ldlMeanPrestroke] * (indexStroke+1) + [ldlMean]*6
         trigList = [150]*9
-        totCholList = [hdlList[i]+ldlList[i]+trigList[i] for i in range(len(ldlList))]
+        totCholList = [hdlList[i]+ldlList[i]+0.2*trigList[i] for i in range(len(ldlList))]
         bmiMedianPrestroke = 27.2 + -2.36183
         bmiList = [bmiMedianPrestroke] * (indexStroke+1) + [bmiMedianPrestroke+x for x in range(10,70,10)]
         waistMedianPrestroke = 97.5 - 1.237*10
@@ -249,7 +249,7 @@ class TestCaseThree(Person):
         ldlMean = 94.1 + -0.2*10
         ldlList = [ldlMeanPrestroke] * (indexStroke+1) + [ldlMean]*4
         trigList = [150]*7
-        totCholList = [hdlList[i]+ldlList[i]+trigList[i] for i in range(len(ldlList))]
+        totCholList = [hdlList[i]+ldlList[i]+0.2*trigList[i] for i in range(len(ldlList))]
         bmiMedianPrestroke = 27.2 + 2.7184726
         bmiList = [bmiMedianPrestroke] * (indexStroke+1) + [bmiMedianPrestroke+x for x in range(10,50,10)]
         waistMedianPrestroke = 97.5 - 0.475*10
@@ -349,7 +349,7 @@ class TestCaseFour(Person):
         ldlMean = 94.1 + -1.2*10
         ldlList = [ldlMeanPrestroke] * (indexStroke+1) + [ldlMean]*9
         trigList = [150]*12
-        totCholList = [hdlList[i]+ldlList[i]+trigList[i] for i in range(len(ldlList))]
+        totCholList = [hdlList[i]+ldlList[i]+0.2*trigList[i] for i in range(len(ldlList))]
         bmiMedianPrestroke = 27.2 + 2.295926
         bmiList = [bmiMedianPrestroke] * (indexStroke+1) + [bmiMedianPrestroke+x for x in range(10,100,10)]
         waistMedianPrestroke = 97.5 + 0.03333*10
