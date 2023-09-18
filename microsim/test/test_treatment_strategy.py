@@ -15,7 +15,7 @@ from microsim.bp_treatment_strategies import (
 
 class TestTreatmentStrategy(unittest.TestCase):
     def initializeAfib(person):
-        return None
+        return 0 #modified to 0 from None, because afib was utilized as part of a model
 
     def getPerson(self, baselineSBP=140, baselineDBP=80):
         return Person(
@@ -42,7 +42,9 @@ class TestTreatmentStrategy(unittest.TestCase):
             initializeAfib=TestTreatmentStrategy.initializeAfib,
             initializationRepository=InitializationRepository(),
             rng = np.random.default_rng(),
-            randomEffects={'gcp' : 0}
+            randomEffects={'gcp' : 0,
+                           'gcpStroke': 0,
+                           'gcpStrokeSlope': 0}
         )
 
     def setUp(self):

@@ -16,8 +16,7 @@ import copy
 import numpy as np
 
 def initializeAFib(person):
-    return None
-
+    return 0 #modified to 0 from None, because afib was utilized as part of a model
 
 class AlwaysPositiveOutcomeRepository(OutcomeModelRepository):
     def __init__(self):

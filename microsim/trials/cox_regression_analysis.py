@@ -1,5 +1,6 @@
 from lifelines import CoxPHFitter
 from numpy.linalg import LinAlgError
+from lifelines.exceptions import ConvergenceError
 import numpy as np
 from microsim.trials.regression_analysis import RegressionAnalysis
 
@@ -14,7 +15,7 @@ class CoxRegressionAnalysis(RegressionAnalysis):
             cph.fit(data, duration_col='time', event_col='outcome')
 
             return cph.params_['treatment'], None, cph.standard_errors_['treatment'], cph.summary.loc['treatment', 'p'], self.get_means(data)
-        except LinAlgError:
-            return np.nan, np.nan, np.nap, np.nan, np.nan, np.nan
+        except (LinAlgError, ConvergenceError):
+            return np.nan, np.nan, np.nan, np.nan, (np.nan, np.nan)
 
 

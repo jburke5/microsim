@@ -1,13 +1,13 @@
 import numpy as np
 
 class TrialDescription:
-    def __init__(self, sampleSizes, durations, inclusionFilter, exclusionFilter, analyses, treatment,
+    def __init__(self, sampleSizes, durations, inclusionFilters, exclusionFilters, analyses, treatment,
                 randomizationSchema):
 
         self.sampleSizes = sampleSizes
         self.durations = durations
-        self.inclusionFilter = inclusionFilter
-        self.exclusionFilter = exclusionFilter
+        self.inclusionFilters = inclusionFilters
+        self.exclusionFilters = exclusionFilters
         self.randomizationSchema = randomizationSchema
         self.treatment = treatment
         self.analyses = analyses

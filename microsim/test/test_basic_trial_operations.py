@@ -26,8 +26,8 @@ class TestBasicTrialOperations(unittest.TestCase):
         self.targetPopulation = NHANESDirectSamplePopulation(self.popSize, 1999, rng = np.random.default_rng())
         self.trialDescription = TrialDescription(sampleSizes=[self.popSize], 
                                                 durations=[10], 
-                                                inclusionFilter=lambda x : x._age[0] > self.ageThreshold, 
-                                                exclusionFilter=None, 
+                                                inclusionFilters=[lambda x : x._age[0] > self.ageThreshold], 
+                                                exclusionFilters=None, 
                                                 analyses=None,
                                                 #randomizationSchema=lambda x : np.random.uniform() < 0.5,
                                                 randomizationSchema=randomizationSchema,
