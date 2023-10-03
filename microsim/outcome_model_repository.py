@@ -197,6 +197,9 @@ class OutcomeModelRepository:
     def select_model_for_stroke(self, person, outcome):
         models_for_outcome = self._models[outcome]
         if outcome == OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE:
+            #we are interested in strokes that occured during the simulation, not so much on strokes that NHANES had registered for people
+            #so we are selecting the gcp stroke model only when there is a stroke during the simulation
+            #plus, the gcp stroke model requires quantities that we do not have from NHANES (we would need to come up with estimates)
             strokeStatus = "postStroke" if (len(person._outcomes[OutcomeType.STROKE])>0) else "preStroke" #using the PersonRowWrapper class here is not ideal
             return models_for_outcome[strokeStatus]
         else:

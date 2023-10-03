@@ -688,6 +688,17 @@ class Person:
         else:
             return self.get_wave_for_age(ageAtLastStroke)
 
+    def get_attr_prior_first_stroke_in_sim(self, attr): #assuming that the attribute is a list of floats
+        attrList = getattr(self, attr)
+        ageAtFirstStroke = self.get_age_at_first_outcome(OutcomeType.STROKE)
+        if (ageAtFirstStroke is None): #never had stroke outcome
+            return None
+        elif (ageAtFirstStroke<self._age[0]): #had stroke outcome prior to sim and not in sim
+            return None 
+        else: #had stroke outcome in sim
+            waveAtFirstStroke = self.get_wave_for_age(ageAtFirstStroke)
+            return (attrList[:waveAtFirstStroke])
+
     def get_attr_prior_last_stroke(self, attr): #assuming that the attribute is a list of floats
         attrList = getattr(self, attr)
         ageAtLastStroke = self.get_age_at_last_outcome(OutcomeType.STROKE)
