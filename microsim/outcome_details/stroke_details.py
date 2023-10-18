@@ -6,7 +6,7 @@ from microsim.regression_model import RegressionModel
 
 class StrokeNihssModel(StatsModelLinearRiskFactorModel):
 
-    def __init__(self):
+    def __init__(self, rng=None):
         self._model = {"coefficients": {
             "Intercept":           -2.6063356,   #_cons + aric + glucose_sim * (-46.7)
             "age":                  0.0771289,   #stroke_age
@@ -35,17 +35,22 @@ class StrokeNihssModel(StatsModelLinearRiskFactorModel):
             "creatinine":           0.2782118    #creatin_sim
             },
                 "coefficient_standard_errors": {} ,
-                "residual_mean": {},
-                "residual_standard_deviation": {} }
+                "residual_mean": 0.,
+                "residual_standard_deviation": 4.329692 }
         
         self._regressionModel = RegressionModel(**self._model)
+        self._rng = rng
         super().__init__(self._regressionModel)
 
     def estimate_next_risk_vectorized(self, person):
-        return min( max(0, round(super().estimate_next_risk_vectorized(person))), 42) #constrain regression results
+        #constrain regression results
+        #StatsModelLinearRiskFactorModel estimate next risk does not include a residual draw (in contrast with other next risk estimations)
+        #so added it here manually (see GitHub issue as well for more info)
+        return min( max(0, round(super().estimate_next_risk_vectorized(person)+super().draw_from_residual_distribution(self._rng))), 42) 
 
     def estimate_next_risk(self, person):
-        return min( max(0, round(super().estimate_next_risk(person))), 42) #constrain regression results
+        #constrain regression results
+        return min( max(0, round(super().estimate_next_risk(person)+super().draw_from_residual_distribution(self._rng))), 42) 
 
 class StrokeTypeModel():
     
