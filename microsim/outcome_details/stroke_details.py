@@ -44,13 +44,11 @@ class StrokeNihssModel(StatsModelLinearRiskFactorModel):
 
     def estimate_next_risk_vectorized(self, person):
         #constrain regression results
-        #StatsModelLinearRiskFactorModel estimate next risk does not include a residual draw (in contrast with other next risk estimations)
-        #so added it here manually (see GitHub issue as well for more info)
-        return min( max(0, round(super().estimate_next_risk_vectorized(person)+super().draw_from_residual_distribution(self._rng))), 42) 
+        return min( max(0, round(super().estimate_next_risk_vectorized(person, rng=self._rng, withResidual=True))), 42) 
 
     def estimate_next_risk(self, person):
         #constrain regression results
-        return min( max(0, round(super().estimate_next_risk(person)+super().draw_from_residual_distribution(self._rng))), 42) 
+        return min( max(0, round(super().estimate_next_risk(person, rng=self._rng, withResidual=True))), 42)  
 
 class StrokeTypeModel():
     
