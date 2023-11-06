@@ -174,12 +174,12 @@ class CVOutcomeDetermination:
                 else person.ageAtFirstStroke
             )
             person.ageAtLastStroke = person.age
-            person.medianGcpPriorToLastStroke = person.medianGcp
-            person.medianBmiPriorToLastStroke = person.medianBmi
+            person.meanGcpPriorToLastStroke = person.meanGcp
+            person.meanBmiPriorToLastStroke = person.meanBmi
             person.meanSbpPriorToLastStroke = person.meanSbp
             person.meanLdlPriorToLastStroke = person.meanLdl
             person.meanA1cPriorToLastStroke = person.meanA1c
-            person.medianWaistPriorToLastStroke = person.medianWaist
+            person.meanWaistPriorToLastStroke = person.meanWaist
             person.waveAtLastStroke = round(person.ageAtLastStroke - person.baseAge + 1) #need an int
             person.nihssNext = nihss
             person.strokeSubtypeNext = strokeSubtype

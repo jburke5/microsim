@@ -33,34 +33,34 @@ class TestCaseOne(Person):
     def __init__(self):
 
         #make the lists that will be used to define the person's path in the simulation
-        ageAtStroke = 74.6 + 0.389117043*10 
+        ageAtStroke = 65 + 0.389117043*10 
         indexStroke = 2
         ageList = [ageAtStroke + 3.17 + x for x in range(-5,1)]
         ageList.insert(indexStroke, ageAtStroke)
-        sbpMeanPrestroke = 140.4 -1.9*10
-        sbpMean = -1.*10 +134.9
+        sbpMeanPrestroke = 130. - 1.9*10
+        sbpMean = -1.*10 + 130.
         sbpList = [sbpMeanPrestroke] * (indexStroke+1) + [sbpMean]*4
         dbpList = [80]*7
-        a1cMeanPrestroke = Person.convert_fasting_glucose_to_a1c(112.8 + 0.5*10)
-        a1cMean = Person.convert_fasting_glucose_to_a1c(108.1 + 2.2*10)
+        a1cMeanPrestroke = Person.convert_fasting_glucose_to_a1c(100. + 0.5*10)
+        a1cMean = Person.convert_fasting_glucose_to_a1c(100. + 2.2*10)
         a1cList = [a1cMeanPrestroke] * (indexStroke+1) + [a1cMean]*4
         hdlList = [50]*7
-        ldlMeanPrestroke = 126.4 + 3.8*10
-        ldlMean = 2.6*10 + 94.1
+        ldlMeanPrestroke = 93. + 3.8*10
+        ldlMean = 2.6*10 + 93.
         ldlList = [ldlMeanPrestroke] * (indexStroke+1) + [ldlMean]*4
         trigList = [150]*7
         totCholList = [hdlList[i]+ldlList[i]+0.2*trigList[i] for i in range(len(ldlList))]
-        bmiMedianPrestroke = 27.2 + 1.467401286
-        bmiList = [bmiMedianPrestroke] * (indexStroke+1) + [bmiMedianPrestroke+x for x in range(10,50,10)]
-        waistMedianPrestroke = 97.5 - 1.618*10
-        waistList = [waistMedianPrestroke] * (indexStroke+1) + [waistMedianPrestroke+x for x in range(10,50,10)]
+        bmiMeanPrestroke = 25. + 1.467401286
+        bmiList = [bmiMeanPrestroke] * (indexStroke+1) + [bmiMeanPrestroke+x for x in range(10,50,10)]
+        waistMeanPrestroke = 100 - 1.618*10
+        waistList = [waistMeanPrestroke] * (indexStroke+1) + [waistMeanPrestroke+x for x in range(10,50,10)]
         antiHypertensiveCountList = [0]*7
         statinList = [1]*7
         otherLipidLoweringMedicationCountList = [0]*7
         creatinineList = [1]*7
         anyPhysicalActivityList=[1]*7
-        medianGcpPrestroke = 6.104780222+52.7
-        gcpList = [medianGcpPrestroke]*7
+        meanGcpPrestroke = 6.104780222+50.
+        gcpList = [meanGcpPrestroke]*7
     
         #create the person
         super().__init__(
@@ -133,34 +133,34 @@ class TestCaseTwo(Person):
     def __init__(self):
 
         #make the lists that will be used to define the person's path in the simulation
-        ageAtStroke = 74.6 + 1.81013*10
+        ageAtStroke = 65 + 1.81013*10
         indexStroke = 2
         ageList = [ageAtStroke + 5.43189 + x for x in range(-7,1)]
         ageList.insert(indexStroke, ageAtStroke)
-        sbpMeanPrestroke = 140.4 + 1.6*10
-        sbpMean = 134.9 - 0.8*10 
+        sbpMeanPrestroke = 130. + 1.6*10
+        sbpMean = 130. - 0.8*10 
         sbpList = [sbpMeanPrestroke] * (indexStroke+1) + [sbpMean]*6
         dbpList = [80]*9
-        a1cMeanPrestroke = Person.convert_fasting_glucose_to_a1c(112.8 - 0.8*10)
-        a1cMean = Person.convert_fasting_glucose_to_a1c(108.1 - 0.1*10)
+        a1cMeanPrestroke = Person.convert_fasting_glucose_to_a1c(100. - 0.8*10)
+        a1cMean = Person.convert_fasting_glucose_to_a1c(100. - 0.1*10)
         a1cList = [a1cMeanPrestroke] * (indexStroke+1) + [a1cMean]*6
         hdlList = [50]*9
-        ldlMeanPrestroke = 126.4 + 3.8*10
-        ldlMean = 94.1 + 0.21*10 
+        ldlMeanPrestroke = 93. + 3.8*10
+        ldlMean = 93. + 0.21*10 
         ldlList = [ldlMeanPrestroke] * (indexStroke+1) + [ldlMean]*6
         trigList = [150]*9
         totCholList = [hdlList[i]+ldlList[i]+0.2*trigList[i] for i in range(len(ldlList))]
-        bmiMedianPrestroke = 27.2 + -2.36183
-        bmiList = [bmiMedianPrestroke] * (indexStroke+1) + [bmiMedianPrestroke+x for x in range(10,70,10)]
-        waistMedianPrestroke = 97.5 - 1.237*10
-        waistList = [waistMedianPrestroke] * (indexStroke+1) + [waistMedianPrestroke+x for x in range(10,70,10)]
+        bmiMeanPrestroke = 25. + -2.36183
+        bmiList = [bmiMeanPrestroke] * (indexStroke+1) + [bmiMeanPrestroke+x for x in range(10,70,10)]
+        waistMeanPrestroke = 100. - 1.237*10
+        waistList = [waistMeanPrestroke] * (indexStroke+1) + [waistMeanPrestroke+x for x in range(10,70,10)]
         antiHypertensiveCountList = [0]*9
         statinList = [1]*9
         otherLipidLoweringMedicationCountList = [0]*9
         creatinineList = [1]*9
         anyPhysicalActivityList=[1]*9
-        medianGcpPrestroke = 52.7 + 5.40984283
-        gcpList = [medianGcpPrestroke]*9
+        meanGcpPrestroke = 50. + 5.40984283
+        gcpList = [meanGcpPrestroke]*9
 
         #create the person
         super().__init__(
@@ -233,34 +233,34 @@ class TestCaseThree(Person):
     def __init__(self):
 
         #make the lists that will be used to define the person's path in the simulation
-        ageAtStroke = 74.6 + -1.21225*10
+        ageAtStroke = 65 + -1.21225*10
         indexStroke = 2
         ageList = [ageAtStroke + 3.3976728 + x for x in range(-5,1)]
         ageList.insert(indexStroke, ageAtStroke)
-        sbpMeanPrestroke = 140.4 + 0.93285*10
-        sbpMean = 134.9 - 0.1*10
+        sbpMeanPrestroke = 130. + 0.93285*10
+        sbpMean = 130. - 0.1*10
         sbpList = [sbpMeanPrestroke] * (indexStroke+1) + [sbpMean]*4
         dbpList = [80]*7
-        a1cMeanPrestroke = Person.convert_fasting_glucose_to_a1c(112.8 + 1.1*10)
-        a1cMean = Person.convert_fasting_glucose_to_a1c(108.1 + 1.0*10)
+        a1cMeanPrestroke = Person.convert_fasting_glucose_to_a1c(100. + 1.1*10)
+        a1cMean = Person.convert_fasting_glucose_to_a1c(100. + 1.0*10)
         a1cList = [a1cMeanPrestroke] * (indexStroke+1) + [a1cMean]*4
         hdlList = [50]*7
-        ldlMeanPrestroke = 126.4 + 1.6571428*10
-        ldlMean = 94.1 + -0.2*10
+        ldlMeanPrestroke = 93. + 1.6571428*10
+        ldlMean = 93. + -0.2*10
         ldlList = [ldlMeanPrestroke] * (indexStroke+1) + [ldlMean]*4
         trigList = [150]*7
         totCholList = [hdlList[i]+ldlList[i]+0.2*trigList[i] for i in range(len(ldlList))]
-        bmiMedianPrestroke = 27.2 + 2.7184726
-        bmiList = [bmiMedianPrestroke] * (indexStroke+1) + [bmiMedianPrestroke+x for x in range(10,50,10)]
-        waistMedianPrestroke = 97.5 - 0.475*10
-        waistList = [waistMedianPrestroke] * (indexStroke+1) + [waistMedianPrestroke+x for x in range(10,50,10)]
+        bmiMeanPrestroke = 25. + 2.7184726
+        bmiList = [bmiMeanPrestroke] * (indexStroke+1) + [bmiMeanPrestroke+x for x in range(10,50,10)]
+        waistMeanPrestroke = 100. - 0.475*10
+        waistList = [waistMeanPrestroke] * (indexStroke+1) + [waistMeanPrestroke+x for x in range(10,50,10)]
         antiHypertensiveCountList = [1]*7
         statinList = [0]*7
         otherLipidLoweringMedicationCountList = [0]*7
         creatinineList = [1]*7
         anyPhysicalActivityList=[1]*7
-        medianGcpPrestroke = 52.7 + 13.656746
-        gcpList = [medianGcpPrestroke]*7
+        meanGcpPrestroke = 50. + 13.656746
+        gcpList = [meanGcpPrestroke]*7
 
         #create the person
         super().__init__(
@@ -333,34 +333,34 @@ class TestCaseFour(Person):
     def __init__(self):
         
         #make the lists that will be used to define the person's path in the simulation
-        ageAtStroke = 74.6 + 0.85400*10
+        ageAtStroke = 65. + 0.85400*10
         indexStroke = 2
         ageList = [ageAtStroke + 8.265571 + x for x in range(-10,1)]
         ageList.insert(indexStroke, ageAtStroke) 
-        sbpMeanPrestroke = 140.4 + 1.238571*10
-        sbpMean = 134.9 + 2.0333*10         
+        sbpMeanPrestroke = 130. + 1.238571*10
+        sbpMean = 130. + 2.0333*10         
         sbpList = [sbpMeanPrestroke] * (indexStroke+1) + [sbpMean]*9
         dbpList = [80]*12                 
-        a1cMeanPrestroke = Person.convert_fasting_glucose_to_a1c(112.8 + - 0.030749*10)
-        a1cMean = Person.convert_fasting_glucose_to_a1c(108.1 + -0.252000*10)
+        a1cMeanPrestroke = Person.convert_fasting_glucose_to_a1c(100. + - 0.030749*10)
+        a1cMean = Person.convert_fasting_glucose_to_a1c(100. + -0.252000*10)
         a1cList = [a1cMeanPrestroke] * (indexStroke+1) + [a1cMean]*9
         hdlList = [50]*12                 
-        ldlMeanPrestroke = 126.4 + 6.2865*10
-        ldlMean = 94.1 + -1.2*10
+        ldlMeanPrestroke = 93. + 6.2865*10
+        ldlMean = 93. + -1.2*10
         ldlList = [ldlMeanPrestroke] * (indexStroke+1) + [ldlMean]*9
         trigList = [150]*12
         totCholList = [hdlList[i]+ldlList[i]+0.2*trigList[i] for i in range(len(ldlList))]
-        bmiMedianPrestroke = 27.2 + 2.295926
-        bmiList = [bmiMedianPrestroke] * (indexStroke+1) + [bmiMedianPrestroke+x for x in range(10,100,10)]
-        waistMedianPrestroke = 97.5 + 0.03333*10
-        waistList = [waistMedianPrestroke] * (indexStroke+1) + [waistMedianPrestroke+x for x in range(10,100,10)]
+        bmiMeanPrestroke = 25. + 2.295926
+        bmiList = [bmiMeanPrestroke] * (indexStroke+1) + [bmiMeanPrestroke+x for x in range(10,100,10)]
+        waistMeanPrestroke = 100. + 0.03333*10
+        waistList = [waistMeanPrestroke] * (indexStroke+1) + [waistMeanPrestroke+x for x in range(10,100,10)]
         antiHypertensiveCountList = [1]*12
         statinList = [1]*12
         otherLipidLoweringMedicationCountList = [0]*12
         creatinineList = [1]*12
         anyPhysicalActivityList=[1]*12
-        medianGcpPrestroke = 52.7 + 2.946463
-        gcpList = [medianGcpPrestroke]*12
+        meanGcpPrestroke = 50. + 2.946463
+        gcpList = [meanGcpPrestroke]*12
 
         #create the person
         super().__init__(
