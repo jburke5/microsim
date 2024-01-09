@@ -1059,6 +1059,8 @@ class Population:
             self.applyMethodSeries = pd.Series.apply
 
 def initializeAFib(person):
+    #the intercept of this model was modified in order to have agreement with the 2019 global burden of disease data
+    #optimization of the intercept was performed on the afibModelRecalibrations notebook
     model = load_regression_model("BaselineAFibModel")
     statsModel = StatsModelLogisticRiskFactorModel(model)
     return statsModel.estimate_next_risk(person)
