@@ -1063,7 +1063,7 @@ def initializeAFib(person):
     #optimization of the intercept was performed on the afibModelRecalibrations notebook
     model = load_regression_model("BaselineAFibModel")
     statsModel = StatsModelLogisticRiskFactorModel(model)
-    return statsModel.estimate_next_risk(person)
+    return person._rng.uniform() < statsModel.estimate_next_risk(person)
 
 
 def build_person(x, outcome_model_repository, randomEffects=None, rng=None):

@@ -64,6 +64,7 @@ class Person:
     ) -> None:
 
         #rng = np.random.default_rng(rng)  
+        self._rng = rng
 
         # building in manual bounds on extreme values
         self._lowerBounds = {"sbp": 60, "dbp": 20}
@@ -132,8 +133,6 @@ class Person:
                                "gcpStrokeSlope": 0}
         if randomEffects is not None:
             self._randomEffects.update(randomEffects)
-
-        self._rng = rng
 
         # lucianatag: for this and GCP, this approach is a bit inelegant. the idea is to have classees that can be swapped out
         # at the population level to change the behavior about how people change over time.
