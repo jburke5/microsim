@@ -25,32 +25,34 @@ class GCPStrokeModel:
         #diabetestx, #simulation does not currently include diabetes treatment
         physicalActivity,
         alcoholPerWeek,
-        medianBmiPrestroke,
+        meanBmiPrestroke,
         meanSBP,
         meanSBPPrestroke,
         meanLdlPrestroke,
         meanLdl,
         gfr,
-        medianWaistPrestroke,
+        meanWaistPrestroke,
         meanFastingGlucose,
         meanFastingGlucosePrestroke,
         anyAntiHypertensive,
         anyLipidLowering,
         afib,
         mi,
-        medianGCPPrestroke):
+        meanGCPPrestroke):
 
        #standardize some variables first, if a variable is ending on "med10" that meant it was centered and standardized by 10
-       ageAtLastStrokeS = (ageAtLastStroke-74.6)/10.
-       medianBmiPrestrokeS = (medianBmiPrestroke-27.2)
-       medianWaistPrestrokeS = (medianWaistPrestroke-97.5)/10.
-       meanSBPS = (meanSBP-134.9)/10.
-       meanFastingGlucoseS = (meanFastingGlucose-108.1)/10.
-       meanFastingGlucosePrestrokeS = (meanFastingGlucosePrestroke-112.8)/10.
-       medianGCPPrestrokeS = medianGCPPrestroke - 52.7 
-       meanSBPPrestrokeS = (meanSBPPrestroke-140.4)/10.
-       meanLdlS = (meanLdl-94.1)/10.
-       meanLdlPrestrokeS = (meanLdlPrestroke - 126.4)/10.
+       #initially I thought the centers were the actual means as described in the original publication, that was wrong
+       #the centers used were included in an excel file that the group sent us via email
+       ageAtLastStrokeS = (ageAtLastStroke-65.)/10.
+       meanBmiPrestrokeS = (meanBmiPrestroke-25.)
+       meanWaistPrestrokeS = (meanWaistPrestroke-100.)/10.
+       meanSBPS = (meanSBP-130.)/10.
+       meanFastingGlucoseS = (meanFastingGlucose-100.)/10.
+       meanFastingGlucosePrestrokeS = (meanFastingGlucosePrestroke-100.)/10.
+       meanGCPPrestrokeS = meanGCPPrestroke - 50. 
+       meanSBPPrestrokeS = (meanSBPPrestroke-130.)/10.
+       meanLdlS = (meanLdl-93.)/10.
+       meanLdlPrestrokeS = (meanLdlPrestroke - 93.)/10.
 
        xb = 51.9602                                                #Intercept
        xb += yearsSinceStroke * (-0.5249)                          #slope, t_gcp_stk
@@ -77,8 +79,8 @@ class GCPStrokeModel:
            xb += 0.05502 * 10
        elif alcoholPerWeek == AlcoholCategory.FOURTEENORMORE:
            xb += 0.05502 * 17
-       xb += -0.1372 * medianBmiPrestrokeS                         #bs_bmimed
-       xb += 0.2726 * medianWaistPrestrokeS                        #bs_waistcmmed10
+       xb += -0.1372 * meanBmiPrestrokeS                           #bs_bmimed
+       xb += 0.2726 * meanWaistPrestrokeS                          #bs_waistcmmed10
        xb += 0.2301 * meanSBPS                                     #sbpmed10
        xb += 0.04248 * meanSBPS * yearsSinceStroke                 #sbpmed10*t_gcp_stk
        if anyAntiHypertensive:
@@ -95,7 +97,7 @@ class GCPStrokeModel:
        #    xb += -1.4601                                           #diabetestx
        #    xb += (-0.03788) * yearsSinceStroke                     #t_gcp_stk*diabetestx
        xb += 0.01751 * gfr                                         #gfr
-       xb += 0.6632 * medianGCPPrestrokeS                          #bs_fgcpmed (I cannot tell exactly what this means, prestroke median gcp?
+       xb += 0.6632 * meanGCPPrestrokeS                            #bs_fgcpmed 
        xb += -0.2535 * meanSBPPrestrokeS                           #bs_sbpstkcogmed10
        if anyLipidLowering:
            xb += -0.7570                                           #choltx
@@ -127,20 +129,20 @@ class GCPStrokeModel:
                 #diabetes=person.current_diabetestx,
                 physicalActivity=person.anyPhysicalActivity,
                 alcoholPerWeek=person.alcoholPerWeek,
-                medianBmiPrestroke=person.medianBmiPriorToLastStroke,
+                meanBmiPrestroke=person.meanBmiPriorToLastStroke,
                 meanSBP=person.meanSbpSinceLastStroke,
                 meanSBPPrestroke=person.meanSbpPriorToLastStroke,
                 meanLdlPrestroke=person.meanLdlPriorToLastStroke,
                 meanLdl=person.meanLdlSinceLastStroke,
                 gfr=person.gfr,
-                medianWaistPrestroke=person.medianWaistPriorToLastStroke,
+                meanWaistPrestroke=person.meanWaistPriorToLastStroke,
                 meanFastingGlucose=Person.convert_a1c_to_fasting_glucose(person.meanA1cSinceLastStroke),
                 meanFastingGlucosePrestroke=Person.convert_a1c_to_fasting_glucose(person.meanA1cPriorToLastStroke),
                 anyAntiHypertensive= ((person.antiHypertensiveCount + person.totalBPMedsAdded)> 0),
                 anyLipidLowering= (person.statin | (person.otherLipidLoweringMedicationCount>0.)),
                 afib=person.afib,
                 mi=person.mi,
-                medianGCPPrestroke=person.medianGcpPriorToLastStroke)
+                meanGCPPrestroke=person.meanGcpPriorToLastStroke)
             random_effect_slope_term = random_effect_slope * yearsSinceStroke
         else:
             ageAtLastStroke=person.get_age_at_last_outcome(OutcomeType.STROKE)
@@ -157,20 +159,20 @@ class GCPStrokeModel:
                 #diabetes=person.has_diabetestx(),
                 physicalActivity=person._anyPhysicalActivity[-1],
                 alcoholPerWeek=person._alcoholPerWeek[-1],
-                medianBmiPrestroke=np.median(np.array(person._bmi[:waveAtLastStroke+1])),
+                meanBmiPrestroke=np.mean(np.array(person._bmi[:waveAtLastStroke+1])),
                 meanSBP=np.array(person._sbp[waveAtLastStroke+1:]).mean(),
                 meanSBPPrestroke=np.array(person._sbp[:waveAtLastStroke+1]).mean(),
                 meanLdlPrestroke=np.array(person._ldl[:waveAtLastStroke+1]).mean(),
                 meanLdl=np.array(person._ldl[waveAtLastStroke+1:]).mean(),
                 gfr=person._gfr,
-                medianWaistPrestroke=np.median(np.array(person._waist[:waveAtLastStroke+1])),
+                meanWaistPrestroke=np.mean(np.array(person._waist[:waveAtLastStroke+1])),
                 meanFastingGlucose=Person.convert_a1c_to_fasting_glucose(np.array(person._a1c[waveAtLastStroke+1:]).mean()),
                 meanFastingGlucosePrestroke=Person.convert_a1c_to_fasting_glucose(np.array(person._a1c[:waveAtLastStroke+1]).mean()),
                 anyAntiHypertensive=person._current_bp_treatment,
                 anyLipidLowering= (person._statin[-1] | (person._otherLipidLoweringMedicationCount[-1]>0.)),
                 afib=person._afib[-1],
                 mi=person._mi,
-                medianGCPPrestroke=np.median(np.array(person._gcp[:waveAtLastStroke+1]))) 
+                meanGCPPrestroke=np.mean(np.array(person._gcp[:waveAtLastStroke+1]))) 
             random_effect_slope_term = random_effect_slope * yearsSinceStroke   
 
         return linPred + random_effect + random_effect_slope_term + residual      

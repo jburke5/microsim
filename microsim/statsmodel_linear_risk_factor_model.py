@@ -80,7 +80,7 @@ class StatsModelLinearRiskFactorModel:
         )
         return linear_predictor
 
-    def estimate_next_risk(self, person, rng=None):
+    def estimate_next_risk(self, person, rng=None, withResidual=False):
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
         linearPredictor = self.get_intercept()
 
@@ -103,9 +103,9 @@ class StatsModelLinearRiskFactorModel:
         if self.log_transform:
             linearPredictor = np.exp(linearPredictor)
 
-        return linearPredictor
+        return linearPredictor+self.draw_from_residual_distribution(rng=rng) if withResidual else linearPredictor
 
-    def estimate_next_risk_vectorized(self, x, rng=None):
+    def estimate_next_risk_vectorized(self, x, rng=None, withResidual=False):
 
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
         linearPredictor = self.get_intercept()
@@ -131,7 +131,7 @@ class StatsModelLinearRiskFactorModel:
         if self.log_transform:
             linearPredictor = np.exp(linearPredictor)
 
-        return linearPredictor
+        return linearPredictor+self.draw_from_residual_distribution(rng=rng) if withResidual else linearPredictor
 
     def get_model_argument_for_coeff_name_vectorized(self, coeff_name, x):
         if coeff_name not in self.argument_transforms_vectorized:

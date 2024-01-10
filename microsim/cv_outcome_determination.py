@@ -154,11 +154,11 @@ class CVOutcomeDetermination:
         fatal = self._will_have_fatal_stroke(person, vectorized, 
                                             overrideStrokeProb=None, rng=rng)
         ### call other models that are for generating stroke phenotype here.
-        nihss = StrokeNihssModel().estimate_next_risk_vectorized(person) if vectorized else StrokeNihssModel().estimate_next_risk(person)
+        nihss = StrokeNihssModel(rng=rng).estimate_next_risk_vectorized(person) if vectorized else StrokeNihssModel(rng=rng).estimate_next_risk(person)
         strokeSubtype = StrokeSubtypeModelRepository(rng=rng).get_stroke_subtype_vectorized(person) if vectorized else StrokeSubtypeModelRepository(rng=rng).get_stroke_subtype(person)
         strokeType = StrokeTypeModel(rng=rng).get_stroke_type_vectorized(person) if vectorized else StrokeTypeModel(rng=rng).get_stroke_type(person)
-        localization = Localization.LEFT_HEMISPHERE
-        disability = 3 
+        #localization = Localization.LEFT_HEMISPHERE
+        #disability = 3 
         gcpStrokeRandomEffect = rng.normal(0., 3.90)
         gcpStrokeSlopeRandomEffect = rng.normal(0., 0.264)
 
@@ -174,25 +174,26 @@ class CVOutcomeDetermination:
                 else person.ageAtFirstStroke
             )
             person.ageAtLastStroke = person.age
-            person.medianGcpPriorToLastStroke = person.medianGcp
-            person.medianBmiPriorToLastStroke = person.medianBmi
+            person.meanGcpPriorToLastStroke = person.meanGcp
+            person.meanBmiPriorToLastStroke = person.meanBmi
             person.meanSbpPriorToLastStroke = person.meanSbp
             person.meanLdlPriorToLastStroke = person.meanLdl
             person.meanA1cPriorToLastStroke = person.meanA1c
-            person.medianWaistPriorToLastStroke = person.medianWaist
+            person.meanWaistPriorToLastStroke = person.meanWaist
             person.waveAtLastStroke = round(person.ageAtLastStroke - person.baseAge + 1) #need an int
             person.nihssNext = nihss
             person.strokeSubtypeNext = strokeSubtype
             person.strokeTypeNext = strokeType
-            person.localizationNext = localization
-            person.disabilityNext = disability
+            #person.localizationNext = localization
+            #person.disabilityNext = disability
             person.gcpStrokeRandomEffect = gcpStrokeRandomEffect
             person.gcpStrokeSlopeRandomEffect = gcpStrokeSlopeRandomEffect
             return person
         else:
             person._randomEffects["gcpStroke"] = gcpStrokeRandomEffect
             person._randomEffects["gcpStrokeSlope"] = gcpStrokeSlopeRandomEffect
-            return StrokeOutcome(fatal, nihss, strokeType, strokeSubtype, localization, disability)
+            #return StrokeOutcome(fatal, nihss, strokeType, strokeSubtype, localization, disability)
+            return StrokeOutcome(fatal, nihss, strokeType, strokeSubtype)
 
     def get_outcome(self, person, mi, fatal, vectorized):
         if vectorized:

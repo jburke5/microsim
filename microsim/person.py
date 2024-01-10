@@ -64,6 +64,7 @@ class Person:
     ) -> None:
 
         #rng = np.random.default_rng(rng)  
+        self._rng = rng
 
         # building in manual bounds on extreme values
         self._lowerBounds = {"sbp": 60, "dbp": 20}
@@ -132,8 +133,6 @@ class Person:
                                "gcpStrokeSlope": 0}
         if randomEffects is not None:
             self._randomEffects.update(randomEffects)
-
-        self._rng = rng
 
         # lucianatag: for this and GCP, this approach is a bit inelegant. the idea is to have classees that can be swapped out
         # at the population level to change the behavior about how people change over time.
@@ -322,12 +321,12 @@ class Person:
             "totalQalys": np.array(self._qalys).sum(),
             "totalBPMedsAdded": np.array(self._bpMedsAdded).sum(),
             "bpMedsAdded": self._bpMedsAdded[-1],
-            "medianBmiPriorToLastStroke": self.get_median_attr_prior_last_stroke("_bmi"),
-            "medianGcpPriorToLastStroke": self.get_median_attr_prior_last_stroke("_gcp"),
+            "meanBmiPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_bmi"),
+            "meanGcpPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_gcp"),
             "meanSbpPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_sbp"),
             "meanA1cPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_a1c"),
             "meanLdlPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_ldl"),
-            "medianWaistPriorToLastStroke": self.get_median_attr_prior_last_stroke("_waist"),
+            "meanWaistPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_waist"),
             "waveAtLastStroke": self.get_wave_at_last_stroke(),
             "meanSbpSinceLastStroke": self.get_mean_attr_since_last_stroke("_sbp"),
             "meanLdlSinceLastStroke": self.get_mean_attr_since_last_stroke("_ldl"),
@@ -687,6 +686,17 @@ class Person:
             return None
         else:
             return self.get_wave_for_age(ageAtLastStroke)
+
+    def get_attr_prior_first_stroke_in_sim(self, attr): #assuming that the attribute is a list of floats
+        attrList = getattr(self, attr)
+        ageAtFirstStroke = self.get_age_at_first_outcome(OutcomeType.STROKE)
+        if (ageAtFirstStroke is None): #never had stroke outcome
+            return None
+        elif (ageAtFirstStroke<self._age[0]): #had stroke outcome prior to sim and not in sim
+            return None 
+        else: #had stroke outcome in sim
+            waveAtFirstStroke = self.get_wave_for_age(ageAtFirstStroke)
+            return (attrList[:waveAtFirstStroke])
 
     def get_attr_prior_last_stroke(self, attr): #assuming that the attribute is a list of floats
         attrList = getattr(self, attr)
