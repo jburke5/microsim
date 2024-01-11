@@ -27,6 +27,7 @@ from microsim.smoking_status import SmokingStatus
 from microsim.statsmodel_logistic_risk_factor_model import \
     StatsModelLogisticRiskFactorModel
 from microsim.sim_settings import simSettings
+from microsim.stroke_outcome import StrokeOutcome
 
 class Population:
     """
@@ -188,8 +189,10 @@ class Population:
             # first, setup outcome variables
             for outcome in ["stroke", "mi", "dementia", "dead", "cvDeath", 'nonCVDeath']:
                 outcomeVars[outcome + "Next"] = [False] * len(alive)
-            outcomeVars["strokeFatal"] = [False] * len(alive)
             outcomeVars["miFatal"] =[False] * len(alive)
+
+            outcomeVars = StrokeOutcome.add_outcome_vars(outcomeVars, len(alive))
+
             #outcomeVars["qalyNext"] =np.zeros(len(alive))
             #outcomeVars["ageAtFirstDementia"] = [np.nan] * len(df)
             alive = pd.concat([alive.reset_index(drop=True), pd.DataFrame(outcomeVars) ], axis='columns')
@@ -256,6 +259,7 @@ class Population:
             ############# OUTCOME UPDATES
 
             alive = self.move_people_df_outcomes_forward(alive)
+            alive = self.move_people_df_outcomesMeans_forward(alive)
 
             ########################## UPDATES
             
@@ -275,6 +279,9 @@ class Population:
             alive.drop(columns=nextCols, inplace=True)
             fatalCols = [col for col in alive.columns if "Fatal" in col]
             alive.drop(columns=fatalCols, inplace=True)
+            riskCols = ['treatedcombinedRisks', 'treatedstrokeProbabilities', 'treatedstrokeRisks', 'treatedmiRisks', 
+                        'untreatedcombinedRisks', 'untreatedstrokeProbabilities', 'untreatedstrokeRisks', 'untreatedmiRisks']
+            alive.drop(columns=riskCols, inplace=True)
         return alive, df
 
     def push_updates_back_to_people(self, x):
@@ -310,6 +317,12 @@ class Population:
                 # only one dementia event per person
                 if outcomeName == "dementia" and person._dementia:
                     break
+                elif outcomeName == "stroke":
+                    outcomePhenotypeColumns = [i + str(self._currentWave) for i in StrokeOutcome.phenotypeItems ]
+                    outcomePhenotypeDict = dict(zip( StrokeOutcome.phenotypeItems, x.loc[outcomePhenotypeColumns].tolist() ))
+                    person.add_outcome_event(Outcome(outcomeType, fatal, **outcomePhenotypeDict)) #Outcome.properties will hold the stroke phenotype as a dict
+                    person._randomEffects["gcpStroke"] = x.gcpStrokeRandomEffect
+                    person._randomEffects["gcpStrokeSlope"] = x.gcpStrokeSlopeRandomEffect
                 else:
                     person.add_outcome_event(Outcome(outcomeType, fatal))
 
@@ -366,6 +379,18 @@ class Population:
         # df.loc[(df.ageAtFirstMI.isnull()) & (df.miNext), 'ageAtFirstMI'] = df.age
         # df.loc[(df.ageAtFirstDementia.isnull()) & (df.dementiaNext), 'ageAtFirstDementia'] = df.age
 
+        #note: I used these when I thought I needed median bmi and waist, I think now the above for loop will do
+        #with GCPStrokeModel we started including meanBmi so I need to update this as well
+        #note: because bmi is updated prior to generating stroke outcomes I use range(0,self._currentWave) (compare this with the medianGcp update)
+        #df["meanBmi"] = df.apply(lambda y: y[["bmi" + f"{x}" for x in range(0,self._currentWave)]].mean(), axis=1)
+        #df["meanWaist"] = df.apply(lambda y: y[["waist" + f"{x}" for x in range(0,self._currentWave)]].mean(), axis=1)
+
+        df["meanSbpSinceLastStroke"] = df.apply(lambda y: None if pd.isna(y.waveAtLastStroke) 
+                                                               else y[["sbp" + f"{x}" for x in range(round(y.waveAtLastStroke),self._currentWave)]].mean(), axis=1)
+        df["meanLdlSinceLastStroke"] = df.apply(lambda y: None if pd.isna(y.waveAtLastStroke) 
+                                                               else y[["ldl" + f"{x}" for x in range(round(y.waveAtLastStroke),self._currentWave)]].mean(), axis=1)
+        df["meanA1cSinceLastStroke"] = df.apply(lambda y: None if pd.isna(y.waveAtLastStroke) 
+                                                               else y[["a1c" + f"{x}" for x in range(round(y.waveAtLastStroke),self._currentWave)]].mean(), axis=1)
         return df
 
     def move_people_df_treatment_forward(self, df):
@@ -398,15 +423,26 @@ class Population:
 
         for outcome in ["mi", "stroke"]:
             df[outcome + "InSim"] = df[outcome + "InSim"] | df[outcome + "Next"]
+            df[outcome] = df[outcome + "InSim"] | df[outcome + "PriorToSim"]
             newVariables[outcome + str(self._currentWave)] = df[outcome + "Next"]
+        for item in StrokeOutcome.phenotypeItems:
+            newVariables[item + str(self._currentWave)] = df[item + "Next"]
         df["dead"] = df["dead"] | df["deadNext"]
         newVariables["dead" + str(self._currentWave)] = df["deadNext"]
 
         df["dementia"] = df["dementiaNext"] | df["dementia"]
+        newVariables["gcp" + str(self._currentWave)] = df['gcpNext']
         df['gcp'] = df['gcpNext']
         df["totalQalys"] = df["totalQalys"] + df["qalyNext"]
 
         return pd.concat([df.reset_index(drop=True), pd.DataFrame(newVariables).reset_index(drop=True)], axis='columns', ignore_index=False)
+
+    def move_people_df_outcomesMeans_forward(self, df):
+        #the GCPStrokeModel needs only the updated median GCP
+        #note: there is no gcp0 but baseGcp on the df 
+        #note: because gcp is updated after we generate stroke outcomes I use range(1,self._currentWave+1) (compare this with the medianBmi update)
+        df["meanGcp"] = df.apply(lambda y: y[["baseGcp"]+["gcp" + f"{x}" for x in range(1,self._currentWave+1)]].mean(), axis=1)
+        return df
 
     def set_bp_treatment_strategy(self, bpTreatmentStrategy):
         self._bpTreatmentStrategy = bpTreatmentStrategy
@@ -515,8 +551,9 @@ class Population:
                 ] = recalibratedForMedCount["rolledBackEventType"]
 
         #logging.info(f"*** after recalibration, mi count: {recalibration_df.miNext.sum()}, stroke count: {recalibration_df.strokeNext.sum()}")
-        recalibration_df.drop(columns=['treatedcombinedRisks', 'treatedstrokeProbabilities', 'treatedstrokeRisks', 'treatedmiRisks', 
-                    'untreatedcombinedRisks', 'untreatedstrokeProbabilities', 'untreatedstrokeRisks', 'untreatedmiRisks', 'totalBPMedsAddedCapped', 'rolledBackEventType'], inplace=True)
+        #recalibration_df.drop(columns=['treatedcombinedRisks', 'treatedstrokeProbabilities', 'treatedstrokeRisks', 'treatedmiRisks', 
+         #           'untreatedcombinedRisks', 'untreatedstrokeProbabilities', 'untreatedstrokeRisks', 'untreatedmiRisks', 'totalBPMedsAddedCapped', 'rolledBackEventType'], inplace=True)
+        recalibration_df.drop(columns=['totalBPMedsAddedCapped', 'rolledBackEventType'], inplace=True)
         return recalibration_df
 
     def estimate_risks(self, recalibration_df, prefix):
@@ -913,11 +950,13 @@ class Population:
         return attrForPerson
 
     def get_people_current_state_as_dataframe(self):
+            timeVaryingCovariatesAndOutcomes = self._timeVaryingCovariates
+            timeVaryingCovariatesAndOutcomes.append("gcp")
             return pd.DataFrame(
                 list(
                     self.applyMethodSeries(self._people,
                         self.get_person_attributes_from_person,
-                        timeVaryingCovariates=self._timeVaryingCovariates,
+                        timeVaryingCovariates=timeVaryingCovariatesAndOutcomes,
                     )
                 )
             )
@@ -931,7 +970,17 @@ class Population:
                 pd.Series(getattr(person, "_" + var)).mean()
                 for i, person in self._people.items()
             ]   
-        return pd.concat([df, pd.DataFrame(tvcMeans)], axis=1)
+        df = pd.concat([df, pd.DataFrame(tvcMeans)], axis=1)
+        #I thought I needed these, I no longer do
+        #the GCP Stroke model needs the median of some quantities (will not get the medians for all TVCs for now) 
+        #varMedians = {}
+        #for var in ["bmi", "gcp", "waist"]:
+        #    varMedians["median" + var.capitalize()] = [
+        #        pd.Series(getattr(person, "_" + var)).median()
+        #        for i, person in self._people.items()
+        #    ]   
+        #df = pd.concat([df, pd.DataFrame(varMedians)], axis=1)
+        return df
 
     def get_people_initial_state_as_dataframe(self):
         return pd.DataFrame(
@@ -1010,9 +1059,11 @@ class Population:
             self.applyMethodSeries = pd.Series.apply
 
 def initializeAFib(person):
+    #the intercept of this model was modified in order to have agreement with the 2019 global burden of disease data
+    #optimization of the intercept was performed on the afibModelRecalibrations notebook
     model = load_regression_model("BaselineAFibModel")
     statsModel = StatsModelLogisticRiskFactorModel(model)
-    return statsModel.estimate_next_risk(person)
+    return person._rng.uniform() < statsModel.estimate_next_risk(person)
 
 
 def build_person(x, outcome_model_repository, randomEffects=None, rng=None):
@@ -1035,7 +1086,7 @@ def build_person(x, outcome_model_repository, randomEffects=None, rng=None):
         alcohol=AlcoholCategory.get_category_for_consumption(x.alcoholPerWeek),
         education=Education(int(x.education)),
         antiHypertensiveCount=x.antiHypertensive,
-        statin=x.statin,
+        statin=round(x.statin),
         otherLipidLoweringMedicationCount=x.otherLipidLowering,
         creatinine=x.serumCreatinine,
         initializeAfib=initializeAFib,

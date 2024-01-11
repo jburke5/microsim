@@ -10,6 +10,7 @@ from microsim.person import Person
 from microsim.data_loader import load_model_spec
 from microsim.regression_model import RegressionModel
 from microsim.gcp_model import GCPModel
+from microsim.gcp_stroke_model import GCPStrokeModel
 from microsim.outcome import Outcome, OutcomeType
 from microsim.dementia_model import DementiaModel
 from microsim.statsmodel_logistic_risk_factor_model import StatsModelLogisticRiskFactorModel
@@ -113,7 +114,10 @@ class OutcomeModelRepository:
                 black_race_x_tot_chol_hdl_ratio=-0.117749,
             ),
         }
-        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = GCPModel(self)
+        self._models[OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE] = {
+            "preStroke": GCPModel(self),
+            "postStroke": GCPStrokeModel(self)
+        }
         self._models[OutcomeModelType.DEMENTIA] = DementiaModel()
 
         # This represents non-cardiovascular mortality..
@@ -150,7 +154,6 @@ class OutcomeModelRepository:
     def get_gcp(self, person, rng=None):
         gcp = (
             self.get_risk_for_person(person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE, rng=rng)
-            + person._randomEffects["gcp"]
         )
         return gcp if gcp > 0 else 0
 
@@ -161,7 +164,6 @@ class OutcomeModelRepository:
             self.get_risk_for_person(
                 person, OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE, years=1, vectorized=True, rng=rng
             )
-            + person.gcpRandomEffect
         )
         return gcp if gcp > 0 else 0
 
@@ -179,13 +181,27 @@ class OutcomeModelRepository:
         )
 
     def select_model_for_person(self, person, outcome):
-        return self.select_model_for_gender(person._gender, outcome)
+        if outcome == OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE:
+            return self.select_model_for_stroke(person, outcome)
+        else:
+            return self.select_model_for_gender(person._gender, outcome)
 
     def select_model_for_gender(self, gender, outcome):
         models_for_outcome = self._models[outcome]
         if outcome == OutcomeModelType.CARDIOVASCULAR:
             gender_stem = "male" if gender == NHANESGender.MALE else "female"
             return models_for_outcome[gender_stem]
+        else:
+            return models_for_outcome
+
+    def select_model_for_stroke(self, person, outcome):
+        models_for_outcome = self._models[outcome]
+        if outcome == OutcomeModelType.GLOBAL_COGNITIVE_PERFORMANCE:
+            #we are interested in strokes that occured during the simulation, not so much on strokes that NHANES had registered for people
+            #so we are selecting the gcp stroke model only when there is a stroke during the simulation
+            #plus, the gcp stroke model requires quantities that we do not have from NHANES (we would need to come up with estimates)
+            strokeStatus = "postStroke" if (len(person._outcomes[OutcomeType.STROKE])>0) else "preStroke" #using the PersonRowWrapper class here is not ideal
+            return models_for_outcome[strokeStatus]
         else:
             return models_for_outcome
 
@@ -243,3 +259,7 @@ class PersonRowWrapper:
         self._raceEthnicity = NHANESRaceEthnicity(x.raceEthnicity)
         self._education = Education(x.education)
         self._smokingStatus = SmokingStatus(x.smokingStatus)
+        self._outcomes = {OutcomeType.MI: [], OutcomeType.STROKE: [], OutcomeType.DEMENTIA: []}
+        if x.stroke:
+            #since this is a dummy person class, create a dummy stroke outcome
+            self._outcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False))) 

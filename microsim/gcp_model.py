@@ -106,9 +106,7 @@ class GCPModel:
 
     def get_risk_for_person(self, person, rng=None, years=1, vectorized=False, test=False):
         #rng = np.random.default_rng(rng)
-        random_effect = 0
-        if not vectorized:
-            random_effect = person._randomEffects["gcp"] if "gcp" in person._randomEffects else 0
+        random_effect = person.gcpRandomEffect if vectorized else person._randomEffects["gcp"] 
         residual = 0 if test else rng.normal(0.38, 6.99)
 
         linPred = 0
