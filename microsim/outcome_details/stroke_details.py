@@ -68,6 +68,8 @@ class StrokeTypeModel():
     def get_stroke_type_vectorized(self, person):
         return StrokeType.ISCHEMIC if (self.estimate_ischemic_risk_vectorized(person)<self._ischemicRatio) else StrokeType.ICH
 
+#the stroke subtype model produces a lot more than expected cardioembolic strokes
+#this model will need to be adjusted when it is needed
 class StrokeSubtypeCEModel(StatsModelRelRiskFactorModel):
     def __init__(self):
         
