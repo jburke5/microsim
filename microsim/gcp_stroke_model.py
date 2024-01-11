@@ -10,6 +10,8 @@ from microsim.alcohol_category import AlcoholCategory
 from collections import OrderedDict
 
 # based on https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2805003, Model M2
+# the gcp stroke model will need to be adjusted, there seems to be a difference between
+# the stroke population in the paper and the microsim stroke population, which leads to an increase in gcp after a stroke in microsim....
 class GCPStrokeModel:
     def __init__(self, outcomeModelRepository=None):
         self._outcome_model_repository = outcomeModelRepository
