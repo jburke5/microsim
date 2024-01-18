@@ -134,7 +134,6 @@ class PVDIncidenceModel:
         risk = np.exp(lp)/(1+np.exp(lp)) #this is a logistic model
 
         return rng.uniform()<risk
-        #return risk
 
     def estimate_next_risk_vectorized(self, x, rng=None):
 
@@ -152,7 +151,6 @@ class PVDIncidenceModel:
         risk = np.exp(lp)/(1+np.exp(lp)) #this is a logistic model
 
         return rng.uniform()<risk
-        #return risk
 
 
 
