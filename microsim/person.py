@@ -15,6 +15,7 @@ from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 from microsim.gfr_equation import GFREquation
+from microsim.pvd_model import PVDPrevalenceModel
 
 # luciana-tag...lne thing that tripped me up was probable non clear communication regarding "waves"
 # so, i'm going to spell it out here and try to make the code consistent.
@@ -126,7 +127,8 @@ class Person:
             self._afib = [initializeAfib(self)]
         else:
             self._afib = [False]
-
+        self._pvd = [PVDPrevalenceModel().estimate_next_risk(self, self._rng)]
+        
         # for outcome mocels that require random effects, store in this dictionary
         self._randomEffects = {"gcp": 0, 
                                "gcpStroke": 0,
@@ -283,6 +285,7 @@ class Person:
             "ldl": self._ldl[-1],
             "trig": self._trig[-1],
             "totChol": self._totChol[-1],
+            "pvd": self._pvd[-1],
             "bmi": self._bmi[-1],
             "anyPhysicalActivity": self._anyPhysicalActivity[-1],
             "education": self._education.value,

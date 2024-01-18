@@ -75,6 +75,7 @@ class Population:
             "waist",
             "alcoholPerWeek",
             "creatinine",
+            "pvd",
         ]
         # , 'otherLipidLoweringMedicationCount']
         self._treatments = ["antiHypertensiveCount", "statin"]

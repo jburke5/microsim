@@ -8,7 +8,7 @@ from microsim.stats_model_rounded_linear_risk_factor_model import (
 )
 from microsim.data_loader import load_regression_model
 from microsim.alcohol_category import AlcoholCategory
-
+from microsim.pvd_model import PVDIncidenceModel
 
 class CohortRiskModelRepository(RiskModelRepository):
     def __init__(self):
@@ -24,6 +24,7 @@ class CohortRiskModelRepository(RiskModelRepository):
             "anyPhysicalActivity", "anyPhysicalActivityCohortModel"
         )
         self._repository["afib"] = AfibModel(load_regression_model("afibCohortModel"))
+        self._repository["pvd"] = PVDIncidenceModel()
         self._initialize_linear_probability_risk_model("statin", "statinCohortModel")
         self._initialize_linear_risk_model("creatinine", "creatinineCohortModel")
         self._initialize_int_rounded_linear_risk_model(
