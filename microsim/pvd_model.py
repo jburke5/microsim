@@ -4,6 +4,8 @@ from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.gender import NHANESGender
 
 # based on the publication: https://doi.org/10.1097%2FMD.0000000000003454
+# the models, both prevalence and incidence, produce results quantitatively different from, but qualitatively similar to, the GBD data
+# perhaps a small adjustment may be done in the future
 class PVDPrevalenceModel:
 
     def  __init__(self):
@@ -90,6 +92,8 @@ class PVDIncidenceModel:
         raceEthnicity,
         lagPVD):
 
+        # this ensures that if someone gets PVD, they will continue having it
+        # in the future, we could adjust this to include misdiagnosis etc
         if lagPVD:
             xb = 10
         else:
