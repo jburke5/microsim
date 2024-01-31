@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from microsim.gcp_outcome import GCPOutcome
 from microsim.smoking_status import SmokingStatus
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.education import Education
@@ -10,8 +11,17 @@ from collections import OrderedDict
 
 class GCPModel:
     def __init__(self, outcomeModelRepository=None):
+        #Q why are we doing this?
         self._outcome_model_repository = outcomeModelRepository
         pass
+
+    def generate_next_outcome(self, person):
+        fatal = False
+        gcp = self.get_risk_for_person(person, person._rng)
+        return GCPOutcome(fatal, gcp)
+
+    def get_next_outcome(self, person):
+        return self.generate_next_outcome(person)
 
     # TODO — what do we need to do with the random intercept? shouls we take a draw per person and assign it?
     # if we don't do that there is going to be mroe change in cognitive trajectory per person that we'd expect...
@@ -106,6 +116,8 @@ class GCPModel:
 
     def get_risk_for_person(self, person, rng=None, years=1, vectorized=False, test=False):
         #rng = np.random.default_rng(rng)
+        if "gcp" not in list(person._randomEffects.keys()):
+            person._randomEffects["gcp"] = person._rng.normal(0, 4.84)
         random_effect = person.gcpRandomEffect if vectorized else person._randomEffects["gcp"] 
         residual = 0 if test else rng.normal(0.38, 6.99)
 

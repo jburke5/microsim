@@ -16,7 +16,22 @@ class Outcome:
         return (self.type == other.type) and self.fatal == other.fatal
 
 
+# not all outcomes are equal...some outcomes depend on other outcomes
+# maybe define 2 outcome levels, base/fundamental and outcome functions that are at a higher level
+# but also, different outcomes have different data structures/types, others are time dependent numbers (gcp, qalys)
+# others are discrete events (mi, stroke, death)
+# for now I will not work on making a taxonomy of outcomes, but simply organizing in a simple way the outcomes of interest 
+# so for now, only the sequence of these outcometypes is important
+
 class OutcomeType(Enum):
+    CARDIOVASCULAR = "cv"
     STROKE = "stroke"
     MI = "mi"
+    NONCARDIOVASCULAR = "noncv"
+    GLOBAL_COGNITIVE_PERFORMANCE = "gcp"
     DEMENTIA = "dementia"
+    DEATH = "death"
+    QUALITYADJUSTED_LIFE_YEARS = "qalys"
+    #making the order explicit here because some outcomes depend on other ones
+    _order_ = ["CARDIOVASCULAR", "STROKE", "MI", "NONCARDIOVASCULAR",  
+               "GLOBAL_COGNITIVE_PERFORMANCE", "DEMENTIA", "DEATH",  "QUALITYADJUSTED_LIFE_YEARS"]

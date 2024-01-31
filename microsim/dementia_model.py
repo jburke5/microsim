@@ -3,7 +3,7 @@ from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.statsmodel_cox_model import StatsModelCoxModel
 from microsim.cox_regression_model import CoxRegressionModel
-
+from microsim.outcome import OutcomeType, Outcome
 
 class DementiaModel(StatsModelCoxModel):
 
@@ -18,11 +18,24 @@ class DementiaModel(StatsModelCoxModel):
             self.one_year_linear_cumulative_hazard = self.one_year_linear_cumulative_hazard * 0.5
             self.one_year_quad_cumulative_hazard = self.one_year_quad_cumulative_hazard * 0.175
 
+    def generate_next_outcome(self, person):
+        fatal = False
+        return Outcome(OutcomeType.DEMENTIA, fatal)
+
+    def get_next_outcome(self, person):
+        return self.generate_next_outcome(person) if person._rng.uniform(size=1)<self.linear_predictor(person) else None
+
     def linear_predictor(self, person):
+        baselineGcp=person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][0][1].gcp
+        if len(person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE])>=2:
+            gcpSlope = ( person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][-1][1].gcp -
+                         person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][-2][1].gcp )
+        else:
+            gcpSlope = 0
         return self.linear_predictor_for_patient_characteristics(
             currentAge=person._age[-1],
-            baselineGcp=person._gcp[0],
-            gcpSlope=person._gcp[-1] - person._gcp[-2] if len(person._gcp) >= 2 else 0,
+            baselineGcp=baselineGcp,
+            gcpSlope=gcpSlope,
             gender=person._gender,
             education=person._education,
             raceEthnicity=person._raceEthnicity,

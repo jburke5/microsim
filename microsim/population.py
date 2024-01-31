@@ -28,6 +28,10 @@ from microsim.statsmodel_logistic_risk_factor_model import \
     StatsModelLogisticRiskFactorModel
 from microsim.sim_settings import simSettings
 from microsim.stroke_outcome import StrokeOutcome
+from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
+from microsim.afib_model import AFibPrevalenceModel
+from microsim.pvd_model import PVDPrevalenceModel
+from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType
 
 class Population:
     """
@@ -1067,64 +1071,91 @@ def initializeAFib(person):
     return person._rng.uniform() < statsModel.estimate_next_risk(person)
 
 
-def build_person(x, outcome_model_repository, randomEffects=None, rng=None):
-    #rng = np.random.default_rng(rng)
-    return Person(
-        age=x.age,
-        gender=NHANESGender(int(x.gender)),
-        raceEthnicity=NHANESRaceEthnicity(int(x.raceEthnicity)),
-        sbp=x.meanSBP,
-        dbp=x.meanDBP,
-        a1c=x.a1c,
-        hdl=x.hdl,
-        ldl=x.ldl,
-        trig=x.trig,
-        totChol=x.tot_chol,
-        bmi=x.bmi,
-        waist=x.waist,
-        anyPhysicalActivity=x.anyPhysicalActivity,
-        smokingStatus=SmokingStatus(int(x.smokingStatus)),
-        alcohol=AlcoholCategory.get_category_for_consumption(x.alcoholPerWeek),
-        education=Education(int(x.education)),
-        antiHypertensiveCount=x.antiHypertensive,
-        statin=round(x.statin),
-        otherLipidLoweringMedicationCount=x.otherLipidLowering,
-        creatinine=x.serumCreatinine,
-        initializeAfib=initializeAFib,
-        initializationRepository=InitializationRepository(),
-        selfReportStrokeAge=x.selfReportStrokeAge,
-        selfReportMIAge=rng.integers(18, x.age) #rng.integers replaces np.random.randint with endpoint=False
-        if x.selfReportMIAge == 99999
-        else x.selfReportMIAge,
-        randomEffects=outcome_model_repository.get_random_effects(rng) if randomEffects is None else randomEffects,
-        rng=rng,
-        dfIndex=x.name,
-        diedBy2015=x.diedBy2015 == True,
-    )
+def build_person(x, initializationModelRepository, rng=None):
+    """Takes all Person-instance-related data via x and initializationModelRepository and organizes it,
+       passes the organized data to the Person class and returns a Person instance.
+       A random number generator is needed."""
+
+    name = x.name
+    
+    personStaticRiskFactors = {
+                        StaticRiskFactorsType.RACE_ETHNICITY.value: NHANESRaceEthnicity(int(x.raceEthnicity)),
+                        StaticRiskFactorsType.EDUCATION.value: Education(int(x.education)),
+                        StaticRiskFactorsType.GENDER.value: NHANESGender(int(x.gender)),
+                        StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus(int(x.smokingStatus))}
+    
+    #TO DO: find a way to include everything here, including the rfs that need initialization
+    #the PVD model would be easy to implement, eg with an estimate_next_risk_for_patient_characteristics function
+    #but the AFIB model would be more difficult because it relies on statsmodel_logistic_risk file
+    #for now include None, in order to create the risk factor lists correctly at the Person instance
+    personDynamicRiskFactors = {
+                        DynamicRiskFactorsType.AGE.value: x.age,
+                        DynamicRiskFactorsType.SBP.value: x.meanSBP,
+                        DynamicRiskFactorsType.DBP.value: x.meanDBP,
+                        DynamicRiskFactorsType.A1C.value: x.a1c,
+                        DynamicRiskFactorsType.HDL.value: x.hdl,
+                        DynamicRiskFactorsType.LDL.value: x.ldl,
+                        DynamicRiskFactorsType.TRIG.value: x.trig,
+                        DynamicRiskFactorsType.TOT_CHOL.value: x.tot_chol,
+                        DynamicRiskFactorsType.BMI.value: x.bmi,
+                        DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: x.anyPhysicalActivity,
+                        DynamicRiskFactorsType.AFIB.value: None,
+                        DynamicRiskFactorsType.WAIST.value: x.waist,
+                        DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.get_category_for_consumption(x.alcoholPerWeek),
+                        DynamicRiskFactorsType.CREATININE.value: x.serumCreatinine,
+                        DynamicRiskFactorsType.PVD.value: None}
+    
+    #Q do we need otherLipid treatment?
+    personDefaultTreatments = {
+                        DefaultTreatmentsType.STATIN.value: round(x.statin),
+                        #DefaultTreatmentsType.OTHER_LIPID_LOWERING_MEDICATION_COUNT.value: x.otherLipidLowering,
+                        DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: x.antiHypertensive}
+    
+    personTreatmentStrategies = dict(zip([strategy.value for strategy in TreatmentStrategiesType],
+                                         [[0] for strategy in range(len(TreatmentStrategiesType))]))
+    
+    personOutcomes = dict(zip([outcome for outcome in OutcomeType],
+                                  [list() for outcome in range(len(OutcomeType))]))
+    #add pre-simulation stroke outcomes
+    selfReportStrokeAge=x.selfReportStrokeAge
+    if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
+            selfReportStrokeAge = selfReportStrokeAge if selfReportStrokeAge <= x.age else x.age
+            personOutcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False)))
+    #add pre-simulation mi outcomes
+    selfReportMIAge=rng.integers(18, x.age) if x.selfReportMIAge == 99999 else x.selfReportMIAge
+    if selfReportMIAge is not None and selfReportMIAge > 1:
+            selfReportMIAge = selfReportMIAge if selfReportMIAge <= x.age else x.age
+            personOutcomes[OutcomeType.MI].append((-1, Outcome(OutcomeType.MI, False)))
+
+    person = Person(name, 
+                   personStaticRiskFactors,
+                   personDynamicRiskFactors, 
+                   personDefaultTreatments,
+                   personTreatmentStrategies,
+                   personOutcomes)    
+    
+    #find a way to initialize these rfs above with everything else
+    person._pvd = [initializationModelRepository[DynamicRiskFactorsType.PVD].estimate_next_risk(person, person._rng)]
+    person._afib = [initializationModelRepository[DynamicRiskFactorsType.AFIB].estimate_next_risk(person)]
+    return person
 
 
-def build_people_using_nhanes_for_sampling(
-    nhanes, n, outcome_model_repository, filter=None, random_seed=None, weights=None, rng=None
-):
-    #rng = np.random.default_rng(rng)
-    #cannot avoid this, eg by passing an argument, NHANESDirectSamplePopulation needs the result of this function before it can super().__init()
-    if simSettings.pandarallelFlag: 
-         applyMethod = pd.DataFrame.parallel_apply #uses pandarallel
-         applyMethodSeries = pd.Series.parallel_apply
-    else:
-         applyMethod = pd.DataFrame.apply #uses python apply 
-         applyMethodSeries = pd.Series.apply
+def build_people_using_nhanes_for_sampling(nhanes, n, rng=None, filter=None, random_seed=None, weights=None):
+    """Creates a Pandas Series collection of Person instances.
+       A random number generator is required."""
 
     if weights is None:
         weights = nhanes.WTINT2YR
     repeated_sample = nhanes.sample(n, weights=weights, random_state=random_seed, replace=True)
-    people = applyMethod(repeated_sample,
-        build_person, outcome_model_repository=outcome_model_repository, randomEffects=None, rng=rng, axis="columns"
-    )
+    initializationModelRepository = {DynamicRiskFactorsType.AFIB: AFibPrevalenceModel(), 
+                                     DynamicRiskFactorsType.PVD: PVDPrevalenceModel()}
+    people = pd.DataFrame.apply(repeated_sample,
+                                build_person, initializationModelRepository=initializationModelRepository, rng=rng, axis="columns")
 
-    for i in range(0, len(people)):
-        people.iloc[i]._populationIndex = i
+    #sets the unique identifier for each Person instance
+    list(map(lambda person, i: setattr(person, "_index", i), people, range(n))) 
 
+    #why are we not applying the filter on the nhanes df, before we create all the Person instances?
     if filter is not None:
         people = people.loc[people.apply(filter)]
     return people
@@ -1142,21 +1173,20 @@ class NHANESDirectSamplePopulation(Population):
         model_reposistory_type="cohort",
         random_seed=None,
         weights=None,
-        rng=None,
     ):
 
         nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         nhanes = nhanes.loc[nhanes.year == year]
         self._outcome_model_repository = OutcomeModelRepository()
-        #rng = np.random.default_rng(rng)
+        #I am assuming here that Population-based functions will run serially
+        rng = np.random.default_rng()
         people = build_people_using_nhanes_for_sampling(
             nhanes,
             n,
-            self._outcome_model_repository,
+            rng=rng,
             filter=filter,
             random_seed=random_seed,
             weights=weights,
-            rng=rng,
         )
         super().__init__(people)
         self._qaly_assignment_strategy = QALYAssignmentStrategy()

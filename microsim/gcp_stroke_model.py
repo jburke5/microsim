@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from microsim.gcp_outcome import GCPOutcome
 from microsim.smoking_status import SmokingStatus
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.education import Education
@@ -14,7 +15,16 @@ from collections import OrderedDict
 # the stroke population in the paper and the microsim stroke population, which leads to an increase in gcp after a stroke in microsim....
 class GCPStrokeModel:
     def __init__(self, outcomeModelRepository=None):
+        #Q why are we passing an outcome model repo here?
         self._outcome_model_repository = outcomeModelRepository
+
+    def generate_next_outcome(self, person):
+        fatal = False
+        gcp = self.get_risk_for_person(person, person._rng)
+        return GCPOutcome(fatal, gcp)
+
+    def get_next_outcome(self, person):
+        return self.generate_next_outcome(person)
 
     def calc_linear_predictor_for_patient_characteristics(
         self,
@@ -113,7 +123,12 @@ class GCPStrokeModel:
                                                                   
     def get_risk_for_person(self, person, rng=None, years=1, vectorized=False, test=False):
 
+        if "gcpStroke" not in list(person._randomEffects.keys()):
+            person._randomEffects["gcpStroke"] = person._rng.normal(0., 3.90)
         random_effect = person.gcpStrokeRandomEffect if vectorized else person._randomEffects["gcpStroke"]
+
+        if "gcpStrokeSlope" not in list(person._randomEffects.keys()):
+            person._randomEffects["gcpStrokeSlope"] = person._rng.normal(0., 0.264)
         random_effect_slope = person.gcpStrokeSlopeRandomEffect if vectorized else person._randomEffects["gcpStrokeSlope"]
         residual = 0 if test else rng.normal(0, 6.08)
 

@@ -16,6 +16,7 @@ from microsim.alcohol_category import AlcoholCategory
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 from microsim.gfr_equation import GFREquation
 from microsim.pvd_model import PVDPrevalenceModel
+from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
 
 # luciana-tag...lne thing that tripped me up was probable non clear communication regarding "waves"
 # so, i'm going to spell it out here and try to make the code consistent.
@@ -29,127 +30,151 @@ from microsim.pvd_model import PVDPrevalenceModel
 # so, if a patient has an event during wave 1, their status would be Negatve at subscript[0] and
 # Positive at subscript[1]
 
+# lucianatag: for this and GCP, this approach is a bit inelegant. the idea is to have classees that can be swapped out
+# at the population level to change the behavior about how people change over time.
+# but, when we instantiate a person, we don't want to keep a refernce tot the population.
+# is the fix just to have the population create people (such that the repository/strategy/model classes can be assigned from within
+# the population)
 
 class Person:
     """Person is using risk factors and demographics based off NHANES"""
 
-    def __init__(
-        self,
-        age: int,
-        gender: NHANESGender,
-        raceEthnicity: NHANESRaceEthnicity,
-        sbp: int,
-        dbp: int,
-        a1c: float,
-        hdl: int,
-        totChol: int,
-        bmi: float,
-        ldl: int,
-        trig: int,
-        waist: int,  # Waist circumference in cm
-        anyPhysicalActivity: int,
-        education: Education,
-        smokingStatus: SmokingStatus,
-        alcohol: AlcoholCategory,
-        antiHypertensiveCount: int,
-        statin: int,
-        otherLipidLoweringMedicationCount: int,
-        creatinine: float,
-        initializeAfib: Callable,
-        initializationRepository=None,
-        selfReportStrokeAge=None,
-        selfReportMIAge=None,
-        randomEffects=None,
-        rng=None,
-        **kwargs,
-    ) -> None:
+    _lowerBounds = {DynamicRiskFactorsType.SBP.value: 60,
+                    DynamicRiskFactorsType.DBP.value: 20}
+    _upperBounds = {DynamicRiskFactorsType.SBP.value: 300,
+                    DynamicRiskFactorsType.DBP.value: 180}
 
-        #rng = np.random.default_rng(rng)  
-        self._rng = rng
+    def __init__(self, 
+                 name, 
+                 staticRiskFactorsDict, 
+                 dynamicRiskFactorsDict, 
+                 defaultTreatmentsDict, 
+                 treatmentStrategiesDict, 
+                 outcomesDict) -> None:
 
-        # building in manual bounds on extreme values
-        self._lowerBounds = {"sbp": 60, "dbp": 20}
-        self._upperBounds = {"sbp": 300, "dbp": 180}
+        #the name attribute will indicate the origin of the Person's instance data, eg in NHANES it will be the NHANES person unique identifier
+        #more than one Person instances can have the same name
+        self._name = name
+        #the index attribute will be a unique identifier when the Person-instance is part of a bigger group, eg a Population instance
+        #the index will be set from the Population instance
+        self._index = None
 
-        self._gender = gender
-        self._raceEthnicity = raceEthnicity
-
-        self._alive = [True]
-
-        self._age = [age]
-        self._sbp = [self.apply_bounds("sbp", sbp)]
-        self._dbp = [self.apply_bounds("dbp", dbp)]
-        self._a1c = [a1c]
-        self._hdl = [hdl]
-        self._ldl = [ldl]
-        self._trig = [trig]
-        self._totChol = [totChol]
-        self._bmi = [bmi]
-        self._waist = [waist]
-        self._anyPhysicalActivity = [anyPhysicalActivity]
-        self._alcoholPerWeek = [alcohol]
-        self._education = education
-        # TODO : change smoking status into a factor that changes over time
-        self._smokingStatus = smokingStatus
-        self._antiHypertensiveCount = [antiHypertensiveCount]
-        self._statin = [statin]
-        self._otherLipidLoweringMedicationCount = [otherLipidLoweringMedicationCount]
-        self._creatinine = [creatinine]
-
+        #will it be better if static, dynamic RiskFactors and treatments were attributes-dictionaries like the outcomes?
+        #will it double the attribute access time by having to find 2 pointers as opposed to 1? how significant will that be?
+        #also, there is currently an inconsistency: outcomes are provided ready to the Person instance but everything 
+        #else is not, eg the lists are created here and not in the build_person method, if all were dictionaries this would be resolved
+        #an attempt on this showed that there are deep dependencies on Person attributes, 
+        #eg StatsModelLinearRiskFactorModel.get_model_argument_for_coeff_name expects to finds these attributes directly on Person instances
+        #for now I will keep lists of the static, dynamic risk factors etc so that I know how to advance each person
+        #even though it is not ideal for memory purposes all Person instances to have exactly the same lists...
+        for key,value in staticRiskFactorsDict.items():
+            setattr(self, "_"+key, value)
+        self._staticRiskFactors = list(staticRiskFactorsDict.keys())
+        #self._staticRiskFactors = staticRiskFactorsDict
+        #for now, only dynamicRiskFactors have bounds, building in manual bounds on extreme values
+        for key,value in dynamicRiskFactorsDict.items():
+            setattr(self, "_"+key, [self.apply_bounds(key, value)])
+        self._dynamicRiskFactors = list(dynamicRiskFactorsDict.keys())
+        #self._dynamicRiskFactors = dynamicRiskFactorsDict
+        for key,value in defaultTreatmentsDict.items():
+            setattr(self, "_"+key, [value])
+        self._defaultTreatments = list(defaultTreatmentsDict.keys())
+        #self._defaultTreatments = defaultTreatmentsDict
+        for key, value in treatmentStrategiesDict.items():
+            setattr(self, "_"+key, [value])
+        self._treatmentStrategies = list(treatmentStrategiesDict.keys())
+        #self._treatmentStrategies = treatmentStrategiesDict
         # outcomes is a dictionary of arrays. each element in the dictionary represents
         # a differnet outcome type each element in the array is a tuple representting
         # the age of the patient at the time of an event (element zero). and the outcome
         # (element one).multiple events can be accounted for by having multiple
         # elements in the array.
-        self._outcomes = {OutcomeType.MI: [], OutcomeType.STROKE: [], OutcomeType.DEMENTIA: []}
-        self._selfReportStrokePriorToSim = 0
-        self._selfReportMIPriorToSim = 0
+        self._outcomes = outcomesDict
+        #for now, I assume that the OS-derived entropy will be different for each person instance even when mp is used
+        self._rng = np.random.default_rng()
+        # for outcome models that require random effects, store in this dictionary, each outcome model sets these
+        self._randomEffects = dict()
 
-        # a variable to track changes in BP meds compared to the baseline
-        self._bpMedsAdded = [0]
+    def advance(self, years, dynamicRiskFactorRepository, defaultTreatmentRepository, outcomeModelRepository, treatmentStrategies=None):
+        for yearIndex in range(years):
+            if self.is_alive:
+                self.advance_risk_factors(dynamicRiskFactorRepository)
+                self.advance_treatments_and_update_risk_factors(defaultTreatmentRepository, treatmentStrategies)
+                self.advance_outcomes(outcomeModelRepository)
 
-        # convert events for events prior to simulation
-        if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
-            self._selfReportStrokeAge = (
-                selfReportStrokeAge if selfReportStrokeAge <= self._age[-1] else self._age[-1]
-            )
-            self._selfReportStrokePriorToSim = 1
-            self._outcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False)))
-        if selfReportMIAge is not None and selfReportMIAge > 1:
-            self._selfReportMIAge = (
-                selfReportMIAge if selfReportMIAge <= self._age[-1] else self._age[-1]
-            )
-            self._selfReportMIPriorToSim = 1
-            self._outcomes[OutcomeType.MI].append((-1, Outcome(OutcomeType.MI, False)))
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-        if initializeAfib is not None:
-            self._afib = [initializeAfib(self)]
+
+    #may need to fix alcohol because it needs to convert the risk to a category I think
+    #may also need to implement the apply bounds functionality that is present in the current advance risk factors method
+    #the rng=self._rng will eventually not be needed when estimate_next_risk functions utilize the person's own rng stream
+    def advance_risk_factors(self, rfdRepository):
+        for rf in self._dynamicRiskFactors:
+            #rfdRepository.get_model(rf).estimate_next_risk(self)])
+            setattr(self, "_"+rf, getattr(self,"_"+rf)+[self.get_next_risk_factor(rf, rfdRepository, rng=self._rng)]) 
+
+    def advance_treatments_and_update_risk_factors(self, treatmentRepository, treatmentStrategies):
+        for treatment in self._defaultTreatments:
+            #applies the default treatments
+            #it is not clear to me why treatment strategies affect the person attributes directly
+            #whereas treatments affect the person attributes indirectly through the attribute regression models
+            #will it always be like that? keep in mind that the regression models were designed to be 1 year based predictions
+            #the assumption is that the effect of the treatment strategies is instantaneous but
+            #there is nothing preventing us from using a regression model as the effect of a treatment strategy
+            #also, notice that dynamic risk factors and treatments are lists that get their next quantity in the same way
+            setattr(self, "_"+treatment, getattr(self,"_"+treatment)+[self.get_next_treatment(treatment, treatmentRepository, 
+                                                                                              rng=self._rng)]) 
+        #TO DO:
+        #choice of words: get_next implies that it returns the final/next wave quantity, update implies that it modifies
+        #that quantity in place
+        #the vectorized bp treatment strategies are modifying the rows in place whereas the changes/absolute values are 
+        #returned for person objects, the code is much more simple if the person is modified in place with treatment
+        #strategies so do that for person objects
+        #these two functions will need to be defined
+        if treatmentStrategies is not None:
+        #if treatmentStrategies[treatment] is not None:
+            treatmentStrategies[treatment].update_next_treatment(self)
+            #I want to make it explicit and more obvious that treatments update the risk factors
+            treatmentStrategies[treatment].update_next_risk_factors(self)
+
+    def advance_outcomes(self, outcomeModelRepository):
+        for outcomeType in OutcomeType:
+            outcome = outcomeModelRepository._modelRepository[outcomeType].select_outcome_model_for_person(self).get_next_outcome(self)
+            self.add_outcome(outcome)
+
+    def has_outcome_at_current_age(self, outcome):
+        ageAtLastOutcome = self.get_age_at_last_outcome(outcome)
+        if (ageAtLastOutcome is None) | (self._age[-1]!=ageAtLastOutcome):
+            return False
         else:
-            self._afib = [False]
-        self._pvd = [PVDPrevalenceModel().estimate_next_risk(self, self._rng)]
-        
-        # for outcome mocels that require random effects, store in this dictionary
-        self._randomEffects = {"gcp": 0, 
-                               "gcpStroke": 0,
-                               "gcpStrokeSlope": 0}
-        if randomEffects is not None:
-            self._randomEffects.update(randomEffects)
-
-        # lucianatag: for this and GCP, this approach is a bit inelegant. the idea is to have classees that can be swapped out
-        # at the population level to change the behavior about how people change over time.
-        # but, when we instantiate a person, we don't want to keep a refernce tot the population.
-        # is the fix just to have the population create people (such that the repository/strategy/model classes can be assigned from within
-        # the population)
-        self._qalys = []
-        self._gcp = []
-        if initializationRepository is not None:
-            initializers = initializationRepository.get_initializers()
-            for initializerName, method in initializers.items():
-                attr = getattr(self, initializerName)
-                attr.append(method(self, rng=rng))
-
-        self._bpTreatmentStrategy = None
+            return True
+    
+    def has_fatal_outcome_at_current_age(self, outcome):
+        if self.has_outcome_at_current_age(outcome):
+            return True if self._outcomes[outcome][-1][1].fatal else False
+        else:
+            return False
+    
+    @property
+    def _current_age(self):
+        return self._age[-1]
+    
+    @property
+    def _alive(self):
+        return len(self._outcomes[OutcomeType.DEATH])==0
+    @property
+    def _dead(self):
+        return not self._alive
+    
+    @property
+    def _selfReportStrokePriorToSim(self):
+        return False if len(self._outcomes[OutcomeType.STROKE])==0 else self._outcomes[OutcomeType.STROKE][0][0]==-1
+    
+    @property
+    def _selfReportMIPriorToSim(self):
+        return False if len(self._outcomes[OutcomeType.MI])==0 else self._outcomes[OutcomeType.MI][0][0]==-1
+    
+    def get_next_treatment(self, treatment, treatmentRepository, rng=None):
+        model = treatmentRepository.get_model(treatment)
+        return model.estimate_next_risk(self, rng=rng)
 
     def reset_to_baseline(self):
         self._alive = [True]
@@ -543,7 +568,7 @@ class Person:
             self._alive.append(True)
 
     def is_dead(self):
-        return not self._alive[-1]
+        return not self._alive
 
     def dead_at_start_of_wave(self, wave):
         return (wave > len(self._age)) or (self._alive[wave-1] == False)
@@ -601,11 +626,11 @@ class Person:
         return self.has_outcome_during_wave(wave, OutcomeType.MI)
 
     def valid_outcome_wave(self, wave, addOneWave=False):
-        if (wave <= 0) or (self._alive[-1] and (wave > len(self._age) - (0 if addOneWave else 1))):
+        if (wave <= 0) or (self._alive and (wave > len(self._age) - (0 if addOneWave else 1))):
             raise Exception(
                 f"Can not have an event in a wave ({wave}) before 1 or after last wave ({len(self._age)-1} for person: {self}))"
             )
-        elif (not self._alive[-1]) and (wave > len(self._age)):
+        elif (not self._alive) and (wave > len(self._age)):
             return False
         else:
             return True
@@ -797,36 +822,6 @@ class Person:
             attribute_value = getattr(self, key)
             attribute_value.append(value)
 
-    def advance_risk_factors(self, risk_model_repository, rng=None):
-        if self.is_dead():
-            raise RuntimeError("Person is dead. Can not advance risk factors")
-
-        self._sbp.append(
-            self.apply_bounds("sbp", self.get_next_risk_factor("sbp", risk_model_repository, rng=rng))
-        )
-
-        self._dbp.append(
-            self.apply_bounds("dbp", self.get_next_risk_factor("dbp", risk_model_repository, rng=rng))
-        )
-        self._a1c.append(self.get_next_risk_factor("a1c", risk_model_repository, rng=rng))
-        self._hdl.append(self.get_next_risk_factor("hdl", risk_model_repository, rng=rng))
-        self._totChol.append(self.get_next_risk_factor("totChol", risk_model_repository, rng=rng))
-        self._bmi.append(self.get_next_risk_factor("bmi", risk_model_repository, rng=rng))
-        self._ldl.append(self.get_next_risk_factor("ldl", risk_model_repository, rng=rng))
-        self._trig.append(self.get_next_risk_factor("trig", risk_model_repository, rng=rng))
-        self._waist.append(self.get_next_risk_factor("waist", risk_model_repository, rng=rng))
-        self._anyPhysicalActivity.append(
-            self.get_next_risk_factor("anyPhysicalActivity", risk_model_repository, rng=rng)
-        )
-        self._afib.append(self.get_next_risk_factor("afib", risk_model_repository, rng=rng))
-        self._statin.append(self.get_next_risk_factor("statin", risk_model_repository, rng=rng))
-        self._creatinine.append(self.get_next_risk_factor("creatinine", risk_model_repository, rng=rng))
-        self._alcoholPerWeek.append(
-            AlcoholCategory.get_category_for_consumption(
-                self.get_next_risk_factor("alcoholPerWeek", risk_model_repository, rng=rng)
-            )
-        )
-
     # redraw from models to pick new risk factors for person
 
     def slightly_randomly_modify_baseline_risk_factors(self, risk_model_repository, rng=None):
@@ -864,34 +859,9 @@ class Person:
             selfReportMIAge=50 if self._outcomes[OutcomeType.MI] is not None else None,
         )
 
-    def advance_outcomes(self, outcome_model_repository, rng=None):
-        if self.is_dead():
-            raise RuntimeError("Person is dead. Can not advance outcomes")
-
-        # first determine if there is a cv event
-        cv_event = outcome_model_repository.assign_cv_outcome(self, rng=rng)
-        if cv_event is not None:
-            self.add_outcome_event(cv_event)
-
-        # then assign gcp and dementia...
-        self._gcp.append(outcome_model_repository.get_gcp(self, rng=rng))
-
-        # dementia is conceptualized as a progressive process rather than an event you only "get" it onceexit
-        if not self._dementia:
-            dementia = outcome_model_repository.get_dementia(self, rng=rng)
-            if dementia is not None:
-                self.add_outcome_event(dementia)
-
-        # if not dead from the CV event...assess non CV mortality
-        if not self.is_dead():
-            non_cv_death = outcome_model_repository.assign_non_cv_mortality(self, rng=rng)
-            if non_cv_death:
-                self._alive.append(False)
-
-    def add_outcome_event(self, cv_event):
-        self._outcomes[cv_event.type].append((self._age[-1], cv_event))
-        if cv_event.fatal:
-            self._alive.append(False)
+    def add_outcome(self, outcome):
+        if outcome is not None:
+            self._outcomes[outcome.type].append((self._current_age, outcome))
 
     def assign_qalys(self, qaly_assignment_strategy):
         self._qalys.append(qaly_assignment_strategy.get_next_qaly(self))
