@@ -121,7 +121,7 @@ class Person:
         # with either 1 or 2 above if we are to work with more than just NHANES Person instances
 
         for yearIndex in range(years):
-            if self._alive:
+            if self.is_alive:
                 #choice of words: advance=append, update=modify last quantity in place
                 if self._waveCompleted > -1:
                     self.advance_risk_factors(dynamicRiskFactorRepository)
@@ -188,11 +188,11 @@ class Person:
         return self._age[-1]
     
     @property
-    def _alive(self):
+    def is_alive(self):
         return len(self._outcomes[OutcomeType.DEATH])==0
     @property
-    def _dead(self):
-        return not self._alive
+    def is_dead(self):
+        return not self.is_alive
     
     @property
     def _selfReportStrokePriorToSim(self):
@@ -597,9 +597,6 @@ class Person:
             self._age.append(self._age[-1] + 1)
             self._alive.append(True)
 
-    def is_dead(self):
-        return not self._alive
-
     def dead_at_start_of_wave(self, wave):
         return (wave > len(self._age)) or (self._alive[wave-1] == False)
 
@@ -656,11 +653,11 @@ class Person:
         return self.has_outcome_during_wave(wave, OutcomeType.MI)
 
     def valid_outcome_wave(self, wave, addOneWave=False):
-        if (wave <= 0) or (self._alive and (wave > len(self._age) - (0 if addOneWave else 1))):
+        if (wave <= 0) or (self.is_alive and (wave > len(self._age) - (0 if addOneWave else 1))):
             raise Exception(
                 f"Can not have an event in a wave ({wave}) before 1 or after last wave ({len(self._age)-1} for person: {self}))"
             )
-        elif (not self._alive) and (wave > len(self._age)):
+        elif (not self.is_alive) and (wave > len(self._age)):
             return False
         else:
             return True

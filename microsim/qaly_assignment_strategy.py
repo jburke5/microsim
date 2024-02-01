@@ -27,7 +27,7 @@ class QALYAssignmentStrategy:
         # qaly assignment happens prior to advancing an age, but after condtiions are set...
         wave = person.get_wave_for_age(age) 
         conditions = self.get_conditions_for_person(person, wave)
-        return self.get_qalys_for_age_and_conditions(age, conditions, person.is_dead())
+        return self.get_qalys_for_age_and_conditions(age, conditions, person.is_dead)
 
     def get_qalys_for_age_and_conditions(self, age, conditions, dead, x=None):
         base = self.get_base_qaly_for_age(age)
