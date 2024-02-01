@@ -166,6 +166,10 @@ class Person:
             outcome = outcomeModelRepository._modelRepository[outcomeType].select_outcome_model_for_person(self).get_next_outcome(self)
             self.add_outcome(outcome)
 
+    def add_outcome(self, outcome):
+        if outcome is not None:
+            self._outcomes[outcome.type].append((self._current_age, outcome))
+
     def has_outcome_at_current_age(self, outcome):
         ageAtLastOutcome = self.get_age_at_last_outcome(outcome)
         if (ageAtLastOutcome is None) | (self._current_age!=ageAtLastOutcome):
@@ -816,28 +820,6 @@ class Person:
             self._alive[-1] = True
             self._age.append(self._age[-1] + 1)
 
-    def advance_treatment(self, risk_model_repository, rng=None):
-        if risk_model_repository is not None:
-            new_antihypertensive_count = self.get_next_risk_factor(
-                "antiHypertensiveCount", risk_model_repository, rng=rng
-            )
-            self._antiHypertensiveCount.append(new_antihypertensive_count)
-
-        if self._bpTreatmentStrategy is not None:
-            (
-                additive_changes,
-                static_changes,
-                addititive_risk_changes,
-            ) = self._bpTreatmentStrategy.get_changes_for_person(self)
-
-            self.apply_static_modifications(static_changes)
-            self.apply_linear_modifications(additive_changes)
-            self.apply_linear_modifications(addititive_risk_changes)
-            # simple starting assumption...a treatment is applied once and has a persistent effect
-            # so, the treastment strategy is nulled out after being applied
-            if not self._bpTreatmentStrategy.repeat_treatment_strategy():
-                self._bpTreatmentStrategy = None
-
     def apply_linear_modifications(self, modifications):
         for key, value in modifications.items():
             attribute_value = getattr(self, key)
@@ -884,10 +866,6 @@ class Person:
             selfReportStrokeAge=50 if self._outcomes[OutcomeType.STROKE] is not None else None,
             selfReportMIAge=50 if self._outcomes[OutcomeType.MI] is not None else None,
         )
-
-    def add_outcome(self, outcome):
-        if outcome is not None:
-            self._outcomes[outcome.type].append((self._current_age, outcome))
 
     def assign_qalys(self, qaly_assignment_strategy):
         self._qalys.append(qaly_assignment_strategy.get_next_qaly(self))
