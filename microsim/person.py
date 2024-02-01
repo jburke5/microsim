@@ -41,15 +41,24 @@ class Person:
        A Person-instance is essentially a data structure that holds all person-related data, the past and the present.
        The Person class includes functions for essentially two things:
           1) How to predict a Person-instance's future, when the models for making the predictions are provided.
-          2) Tools for analyzing and reporting a Person-instance's state."""
+             The predictive models are not stored in Person-instances but only provided as arguments to the Person functions.
+          2) Tools for analyzing and reporting a Person-instance's state.
+       In order to initialize a Person-instance, the risk factors, treatments, treatment strategies and outcomes need to be 
+       provided to the class in an organized way, in their corresponding dictionaries.
+       _name: indicates the origin of the Person's instance data, eg in NHANES it will be the NHANES person unique identifier, 
+              more than one Person instances can have the same name.
+       _index: a unique identifier when the Person-instance is part of a bigger group, eg a Population instance (this is set from the Population instance).
+       _waveCompleted: every time a complete advanced has been performed, increase this by 1, first complete advanced corresponds to 0.
+                       A complete advanced = risk factors, treatment, treatment strategies, updated risk factors, outcomes.
+       _outcomes: a dictionary of arrays with the keys being OutcomeTypes, each element in the array is a tuple (age, outcome).
+                  Multiple events can be accounted for by having multiple elements in the array.
+       _randomEffects: some outcome models require random effects, store them in this dictionary, the outcome models set their key:value."""
 
     _lowerBounds = {DynamicRiskFactorsType.SBP.value: 60,
                     DynamicRiskFactorsType.DBP.value: 20}
     _upperBounds = {DynamicRiskFactorsType.SBP.value: 300,
                     DynamicRiskFactorsType.DBP.value: 180}
 
-    # in order to initialize a Person-instance, the risk factors, treatments, treatment strategies and outcomes need to be 
-    # provided to the class in an organized way, in their corresponding dictionaries.
     def __init__(self, 
                  name, 
                  staticRiskFactorsDict, 
@@ -58,16 +67,12 @@ class Person:
                  treatmentStrategiesDict, 
                  outcomesDict) -> None:
 
-        #the name attribute will indicate the origin of the Person's instance data, eg in NHANES it will be the NHANES person unique identifier
-        #more than one Person instances can have the same name
         self._name = name
-        #the index attribute will be a unique identifier when the Person-instance is part of a bigger group, eg a Population instance
-        #the index will be set from the Population instance
         self._index = None
-
-        #every time a complete advanced has been performed, increase this by 1
-        #complete advanced = risk factors, treatment, treatment strategies, updated risk factors, outcomes
         self._waveCompleted = -1    
+        self._randomEffects = dict()
+        #for now, I assume that the OS-derived entropy will be different for each person instance even when mp is used
+        self._rng = np.random.default_rng()
 
         #will it be better if static, dynamic RiskFactors and treatments were attributes-dictionaries like the outcomes?
         #will it double the attribute access time by having to find 2 pointers as opposed to 1? how significant will that be?
@@ -86,24 +91,18 @@ class Person:
             setattr(self, "_"+key, [self.apply_bounds(key, value)])
         self._dynamicRiskFactors = list(dynamicRiskFactorsDict.keys())
         #self._dynamicRiskFactors = dynamicRiskFactorsDict
+
         for key,value in defaultTreatmentsDict.items():
             setattr(self, "_"+key, [value])
         self._defaultTreatments = list(defaultTreatmentsDict.keys())
         #self._defaultTreatments = defaultTreatmentsDict
+
         for key, value in treatmentStrategiesDict.items():
             setattr(self, "_"+key, [value])
         self._treatmentStrategies = list(treatmentStrategiesDict.keys())
         #self._treatmentStrategies = treatmentStrategiesDict
-        # outcomes is a dictionary of arrays. each element in the dictionary represents
-        # a differnet outcome type each element in the array is a tuple representting
-        # the age of the patient at the time of an event (element zero). and the outcome
-        # (element one).multiple events can be accounted for by having multiple
-        # elements in the array.
+
         self._outcomes = outcomesDict
-        #for now, I assume that the OS-derived entropy will be different for each person instance even when mp is used
-        self._rng = np.random.default_rng()
-        # for outcome models that require random effects, store in this dictionary, each outcome model sets these
-        self._randomEffects = dict()
 
     def advance(self, years, dynamicRiskFactorRepository, defaultTreatmentRepository, outcomeModelRepository, treatmentStrategies=None):
         """years: for how many years we want to make predictions for.
@@ -132,12 +131,11 @@ class Person:
                 #finished one more complete advance 
                 self._waveCompleted += 1
 
-    #may need to fix alcohol because it needs to convert the risk to a category I think
-    #may also need to implement the apply bounds functionality that is present in the current advance risk factors method
+    # Q: may also need to implement the apply bounds functionality that is present in the current advance risk factors method
+    #    but the population class does not apply bounds in the next risk factor estimates....
     #the rng=self._rng will eventually not be needed when estimate_next_risk functions utilize the person's own rng stream
     def advance_risk_factors(self, rfdRepository):
         for rf in self._dynamicRiskFactors:
-            #rfdRepository.get_model(rf).estimate_next_risk(self)])
             setattr(self, "_"+rf, getattr(self,"_"+rf)+[self.get_next_risk_factor(rf, rfdRepository, rng=self._rng)]) 
 
     def advance_treatments(self, defaultTreatmentRepository):
@@ -149,7 +147,7 @@ class Person:
             #the assumption is that the effect of the treatment strategies is instantaneous but
             #there is nothing preventing us from using a regression model as the effect of a treatment strategy
             #also, notice that dynamic risk factors and treatments are lists that get their next quantity in the same way
-            setattr(self, "_"+treatment, getattr(self,"_"+treatment)+[self.get_next_treatment(treatment, treatmentRepository, 
+            setattr(self, "_"+treatment, getattr(self,"_"+treatment)+[self.get_next_treatment(treatment, defaultTreatmentRepository, 
                                                                                               rng=self._rng)]) 
 
     def advance_treatment_strategies_and_update_risk_factors(self, treatmentStrategies):      
@@ -173,7 +171,7 @@ class Person:
 
     def has_outcome_at_current_age(self, outcome):
         ageAtLastOutcome = self.get_age_at_last_outcome(outcome)
-        if (ageAtLastOutcome is None) | (self._age[-1]!=ageAtLastOutcome):
+        if (ageAtLastOutcome is None) | (self._current_age!=ageAtLastOutcome):
             return False
         else:
             return True
