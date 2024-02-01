@@ -1,6 +1,7 @@
 import numpy as np
 
-from microsim.outcome import OutcomeType, Outcome
+from microsim.qaly_outcome import QALYOutcome
+from microsim.outcome import OutcomeType
 
 class QALYAssignmentStrategy:
     def __init__(self):
@@ -14,7 +15,7 @@ class QALYAssignmentStrategy:
     def generate_next_outcome(self, person):
         qaly = self.get_next_qaly(person)
         fatal = False
-        return Outcome(OutcomeType.QUALITYADJUSTED_LIFE_YEARS, fatal)
+        return QALYOutcome(fatal, qaly)
 
     def get_next_outcome(self, person):
         return self.generate_next_outcome(person)

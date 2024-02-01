@@ -37,13 +37,19 @@ from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
 # the population)
 
 class Person:
-    """Person is using risk factors and demographics based off NHANES"""
+    """Person is using risk factors and demographics based off NHANES.
+       A Person-instance is essentially a data structure that holds all person-related data, the past and the present.
+       The Person class includes functions for essentially two things:
+          1) How to predict a Person-instance's future, when the models for making the predictions are provided.
+          2) Tools for analyzing and reporting a Person-instance's state."""
 
     _lowerBounds = {DynamicRiskFactorsType.SBP.value: 60,
                     DynamicRiskFactorsType.DBP.value: 20}
     _upperBounds = {DynamicRiskFactorsType.SBP.value: 300,
                     DynamicRiskFactorsType.DBP.value: 180}
 
+    # in order to initialize a Person-instance, the risk factors, treatments, treatment strategies and outcomes need to be 
+    # provided to the class in an organized way, in their corresponding dictionaries.
     def __init__(self, 
                  name, 
                  staticRiskFactorsDict, 
@@ -58,6 +64,10 @@ class Person:
         #the index attribute will be a unique identifier when the Person-instance is part of a bigger group, eg a Population instance
         #the index will be set from the Population instance
         self._index = None
+
+        #every time a complete advanced has been performed, increase this by 1
+        #complete advanced = risk factors, treatment, treatment strategies, updated risk factors, outcomes
+        self._waveCompleted = -1    
 
         #will it be better if static, dynamic RiskFactors and treatments were attributes-dictionaries like the outcomes?
         #will it double the attribute access time by having to find 2 pointers as opposed to 1? how significant will that be?
@@ -96,12 +106,31 @@ class Person:
         self._randomEffects = dict()
 
     def advance(self, years, dynamicRiskFactorRepository, defaultTreatmentRepository, outcomeModelRepository, treatmentStrategies=None):
-        for yearIndex in range(years):
-            if self.is_alive:
-                self.advance_risk_factors(dynamicRiskFactorRepository)
-                self.advance_treatments_and_update_risk_factors(defaultTreatmentRepository, treatmentStrategies)
-                self.advance_outcomes(outcomeModelRepository)
+        """years: for how many years we want to make predictions for.
+           dynamicRiskFactorRepository, defaultTreatmentRepository, outcomeModelRepository, treatmentStrategies: the rules/models
+                  that predict the state of the Person-instance in the future."""
+        
+        #Q: how we do the first advance right after the initialization of an instance depends on the structure of the instance
+        #   which depends in turn on the database we used to do the initialization
+        #   eg, NHANES has risk factor information (incomplete but most of it at least) and default treatment information
+        #   but no treatment strategy information and no outcome information for the first year
+        #   so if we imagine Person instances created from different databases, we can 
+        #   1) either modify each build_person method to create Person-instances with a complete advance cycle (call advance treatment strategy
+        #      and advance outcomes)
+        #   2) have the Person class do all of this work
+        # For now, I have modified this advance function to accomodate the NHANES Person-instances but this will need to be modified
+        # with either 1 or 2 above if we are to work with more than just NHANES Person instances
 
+        for yearIndex in range(years):
+            if self._alive:
+                #choice of words: advance=append, update=modify last quantity in place
+                if self._waveCompleted > -1:
+                    self.advance_risk_factors(dynamicRiskFactorRepository)
+                    self.advance_treatments(defaultTreatmentRepository)
+                self.advance_treatment_strategies_and_update_risk_factors(treatmentStrategies)
+                self.advance_outcomes(outcomeModelRepository)
+                #finished one more complete advance 
+                self._waveCompleted += 1
 
     #may need to fix alcohol because it needs to convert the risk to a category I think
     #may also need to implement the apply bounds functionality that is present in the current advance risk factors method
@@ -111,7 +140,7 @@ class Person:
             #rfdRepository.get_model(rf).estimate_next_risk(self)])
             setattr(self, "_"+rf, getattr(self,"_"+rf)+[self.get_next_risk_factor(rf, rfdRepository, rng=self._rng)]) 
 
-    def advance_treatments_and_update_risk_factors(self, treatmentRepository, treatmentStrategies):
+    def advance_treatments(self, defaultTreatmentRepository):
         for treatment in self._defaultTreatments:
             #applies the default treatments
             #it is not clear to me why treatment strategies affect the person attributes directly
@@ -122,6 +151,8 @@ class Person:
             #also, notice that dynamic risk factors and treatments are lists that get their next quantity in the same way
             setattr(self, "_"+treatment, getattr(self,"_"+treatment)+[self.get_next_treatment(treatment, treatmentRepository, 
                                                                                               rng=self._rng)]) 
+
+    def advance_treatment_strategies_and_update_risk_factors(self, treatmentStrategies):      
         #TO DO:
         #choice of words: get_next implies that it returns the final/next wave quantity, update implies that it modifies
         #that quantity in place
