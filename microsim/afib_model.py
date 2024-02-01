@@ -20,9 +20,9 @@ class AFibIncidenceModel(StatsModelLinearRiskFactorModel):
         regression_model = load_regression_model("afibCohortModel")
         super().__init__(regression_model, False)
 
-    def estimate_next_risk(self, person, rng=None):
+    def estimate_next_risk(self, person):
         linearRisk = super().estimate_next_risk(person)
-        riskWithResidual = linearRisk + self.draw_from_residual_distribution(rng)
+        riskWithResidual = linearRisk + self.draw_from_residual_distribution(person._rng)
         return person._rng.uniform() < riskWithResidual
 
     def estimate_next_risk_vectorized(self, x, rng=None):

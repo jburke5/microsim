@@ -118,7 +118,7 @@ class PVDIncidenceModel:
 
         return xb
 
-    def estimate_next_risk(self, person, rng=None):
+    def estimate_next_risk(self, person):
 
         lp = self.calc_linear_predictor_for_patient_characteristics(
                  person._age[-1],
@@ -133,7 +133,7 @@ class PVDIncidenceModel:
 
         risk = np.exp(lp)/(1+np.exp(lp)) #this is a logistic model
 
-        return rng.uniform()<risk
+        return person._rng.uniform()<risk
 
     def estimate_next_risk_vectorized(self, x, rng=None):
 

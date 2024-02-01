@@ -6,12 +6,11 @@ class StatsModelLinearProbabilityRiskFactorModel(StatsModelLinearRiskFactorModel
     def __init__(self, regression_model):
         super(StatsModelLinearProbabilityRiskFactorModel, self).__init__(regression_model, False)
 
-    def estimate_next_risk(self, person, rng=None):
-        #rng = np.random.default_rng(rng)
+    def estimate_next_risk(self, person):
         linearRisk = super(StatsModelLinearProbabilityRiskFactorModel, self).estimate_next_risk(
             person
         )
-        riskWithResidual = linearRisk + self.draw_from_residual_distribution(rng)
+        riskWithResidual = linearRisk + self.draw_from_residual_distribution(person._rng)
         return riskWithResidual > 0.5
 
     def estimate_next_risk_vectorized(self, x, rng=None):

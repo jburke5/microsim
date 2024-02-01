@@ -133,10 +133,9 @@ class Person:
 
     # Q: may also need to implement the apply bounds functionality that is present in the current advance risk factors method
     #    but the population class does not apply bounds in the next risk factor estimates....
-    #the rng=self._rng will eventually not be needed when estimate_next_risk functions utilize the person's own rng stream
     def advance_risk_factors(self, rfdRepository):
         for rf in self._dynamicRiskFactors:
-            setattr(self, "_"+rf, getattr(self,"_"+rf)+[self.get_next_risk_factor(rf, rfdRepository, rng=self._rng)]) 
+            setattr(self, "_"+rf, getattr(self,"_"+rf)+[self.get_next_risk_factor(rf, rfdRepository)]) 
 
     def advance_treatments(self, defaultTreatmentRepository):
         for treatment in self._defaultTreatments:
@@ -549,9 +548,9 @@ class Person:
     def years_in_simulation(self):
         return len(self._age) - 1
 
-    def get_next_risk_factor(self, riskFactor, risk_model_repository, rng=None):
+    def get_next_risk_factor(self, riskFactor, risk_model_repository):
         model = risk_model_repository.get_model(riskFactor)
-        return model.estimate_next_risk(self, rng=rng)
+        return model.estimate_next_risk(self)
 
     def get_total_qalys(self):
         return sum(self._qalys)
