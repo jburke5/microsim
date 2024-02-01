@@ -137,17 +137,15 @@ class Person:
         for rf in self._dynamicRiskFactors:
             setattr(self, "_"+rf, getattr(self,"_"+rf)+[self.get_next_risk_factor(rf, rfdRepository)]) 
 
+    # Q: it is not clear to me why treatment strategies affect the person attributes directly
+    #whereas treatments affect the person attributes indirectly through the attribute regression models
+    #will it always be like that? keep in mind that the regression models were designed to be 1 year based predictions
+    #the assumption is that the effect of the treatment strategies is instantaneous but
+    #there is nothing preventing us from using a regression model as the effect of a treatment strategy
+    #also, notice that dynamic risk factors and treatments are lists that get their next quantity in the same way
     def advance_treatments(self, defaultTreatmentRepository):
         for treatment in self._defaultTreatments:
-            #applies the default treatments
-            #it is not clear to me why treatment strategies affect the person attributes directly
-            #whereas treatments affect the person attributes indirectly through the attribute regression models
-            #will it always be like that? keep in mind that the regression models were designed to be 1 year based predictions
-            #the assumption is that the effect of the treatment strategies is instantaneous but
-            #there is nothing preventing us from using a regression model as the effect of a treatment strategy
-            #also, notice that dynamic risk factors and treatments are lists that get their next quantity in the same way
-            setattr(self, "_"+treatment, getattr(self,"_"+treatment)+[self.get_next_treatment(treatment, defaultTreatmentRepository, 
-                                                                                              rng=self._rng)]) 
+            setattr(self, "_"+treatment, getattr(self,"_"+treatment)+[self.get_next_treatment(treatment, defaultTreatmentRepository)]) 
 
     def advance_treatment_strategies_and_update_risk_factors(self, treatmentStrategies):      
         #TO DO:
@@ -200,9 +198,9 @@ class Person:
     def _selfReportMIPriorToSim(self):
         return False if len(self._outcomes[OutcomeType.MI])==0 else self._outcomes[OutcomeType.MI][0][0]==-1
     
-    def get_next_treatment(self, treatment, treatmentRepository, rng=None):
+    def get_next_treatment(self, treatment, treatmentRepository):
         model = treatmentRepository.get_model(treatment)
-        return model.estimate_next_risk(self, rng=rng)
+        return model.estimate_next_risk(self)
 
     def reset_to_baseline(self):
         self._alive = [True]
