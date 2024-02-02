@@ -1188,6 +1188,7 @@ class NHANESDirectSamplePopulation(Population):
         # we will later reject....
         nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         nhanes = nhanes.loc[nhanes.year == year]
+        self._rng = np.random.default_rng()
         people = build_people_using_nhanes_for_sampling(
             nhanes,
             n,

@@ -11,7 +11,7 @@ class MIPartitionModel:
         
     def update_cv_outcome(self, person, fatal):
         #need to double check this
-        person._outcomes[OutcomeType.CARDIOVASCULAR][-1].fatal = fatal    
+        person._outcomes[OutcomeType.CARDIOVASCULAR][-1][1].fatal = fatal    
     
     def will_have_fatal_mi(self, person):
         fatalMIProb = self._mi_case_fatality
@@ -20,7 +20,7 @@ class MIPartitionModel:
     
     def generate_next_outcome(self, person):
         fatal = self.will_have_fatal_mi(person)
-        return Outcome(outcomeType.MI, fatal)
+        return Outcome(OutcomeType.MI, fatal)
         
     def get_next_outcome(self, person):
         if person.has_outcome_at_current_age(OutcomeType.CARDIOVASCULAR):

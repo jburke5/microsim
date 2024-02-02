@@ -1,6 +1,7 @@
 from microsim.ascvd_outcome_model import ASCVDOutcomeModel
 from microsim.regression_model import RegressionModel
 from microsim.data_loader import load_model_spec
+from microsim.outcome import Outcome, OutcomeType
 
 class CVModelBase(ASCVDOutcomeModel):
     """CV is an outcome type that we need to use with some outcome type model implementations (stroke and mi).
