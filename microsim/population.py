@@ -35,7 +35,30 @@ from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType
 from microsim.population_model_repository import PopulationRepositoryType, PopulationModelRepository
 
 class Population:
-    """
+    """A Population-instance has three main parts:
+           1) A set of Person-instances. The state of the Population-instance is essentially the state of all Person-instances (past and present).
+           2) The models for predicting the future of these Person-instances in a default way (I explain default in a bit)
+           3) Tools for analyzing and reporting the state of the Population-instance.
+       people: The set of Person-instances. They are completely independent of each other.
+       popModelRepository: a PopulationRepositoryType instance. Holds all rules/models for predicting the future of people.
+                           The models included in this instance must create a self-consistent set of models.
+                           Currently, this instance needs to have the rules for predicting dynamic risk factors, default treatment, and outcomes.
+                           Static risk factors are also included for consistency and uniformity but of course static risk factors are not 
+                           a function of time. 
+       The Population-instance knows how to predict the future of its people but only in a default way, meaning with a default treatment
+       (in order to create the self-consistent set of models). This is done with the advance method of the Population class.
+       The advance method includes a treatmentStrategies argument which can be used by classes that utilize a set of Population-instances,
+       eg a Trial class. A Trial-instance would then be able to apply diffferent treatmentStrategies to the Population-instances
+       by passing a different argument to the Population advance method.
+       _wavesCompleted: how many times the Population has predicted the future of its people (-1 is none, 0 is 1 year, 1 is 2 years).
+       _people: Pandas Series of the Person-instances.
+       _n: population size
+       _rng: the random number generator for the Population-instance, used only for Population-level methods as all Person-instances
+             have their own rng.
+       Each instance will have two attributes for each PopulationRepositoryType item: the repository itself, and a list of the keys.
+       For example, self._dynamicRiskFactorsRepository is the attribute that holds the repository with all models for predicting the risk factors
+       and self._dynamicRiskFactors is a list that holds all those risk factors.
+
     Unit of people subject to treatment program over time.
 
     (WIP) THe basic idea is that this is a generic superclass which will manage a group of
@@ -45,12 +68,14 @@ class Population:
     turn into an abstract class...
     """
    
+    #Q: what is this doing?
     _ageStandards = {}
 
     def __init__(self, people, popModelRepository):
 
         self._wavesCompleted = -1
         self._people = people
+        self._n = self._people.shape[0]
         self._rng = np.random.default_rng() 
         for repositoryType in PopulationRepositoryType:
             #set each repository as a Population-instance attribute
@@ -1146,6 +1171,9 @@ class NHANESDirectSamplePopulation(Population):
 
     def __init__(
         self,
+        #Q: there is an issue with making this n to be the population size
+        #the population class must set the pop size depending on what is passed on to it
+        #because this n may be modified by the filter later on, the way it is currently set up
         n,
         year,
         popModelRepository=None,
@@ -1156,29 +1184,27 @@ class NHANESDirectSamplePopulation(Population):
         weights=None,
     ):
 
+        #Q: why are we not applying the filter to the NHANES dataframe? Instead we spend all the time creating Person-instances
+        # we will later reject....
         nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         nhanes = nhanes.loc[nhanes.year == year]
-        self._outcome_model_repository = OutcomeModelRepository()
-        #I am assuming here that Population-based functions will run serially
-        rng = np.random.default_rng()
         people = build_people_using_nhanes_for_sampling(
             nhanes,
             n,
-            rng=rng,
+            rng=self._rng,
             filter=filter,
             random_seed=random_seed,
             weights=weights,
         )
+        #This is the default, self-consistent set of models for advancing an NHANES Population
+        #Q: how to create one for the NHANESRiskModelRepository? Do we even need to do this? I have never used that.
         if popModelRepository is None:
             popModelRepository = PopulationModelRepository(CohortRiskModelRepository(),
                                                            CohortRiskModelRepository(),
                                                            OutcomeModelRepository(),
                                                            CohortStaticRiskFactorModelRepository()) 
         super().__init__(people, popModelRepository)
-        self._qaly_assignment_strategy = QALYAssignmentStrategy()
-        self.n = n
         self.year = year
-        self._initialize_risk_models(model_reposistory_type)
 
     def copy(self):
         newPop = NHANESDirectSamplePopulation(self.n, self.year, False)
