@@ -11,6 +11,14 @@ from microsim.alcohol_category import AlcoholCategory
 from microsim.pvd_model import PVDIncidenceModel
 from microsim.age_model import AgeModel
 from microsim.afib_model import AFibIncidenceModel
+from microsim.risk_factor import StaticRiskFactorsType
+
+class CohortStaticRiskFactorModelRepository:
+    def __init__(self):
+        self._repository = {StaticRiskFactorsType.RACE_ETHNICITY.value: None,
+                            StaticRiskFactorsType.EDUCATION.value: None,
+                            StaticRiskFactorsType.GENDER.value: None,
+                            StaticRiskFactorsType.SMOKING_STATUS.value: None}
 
 class CohortRiskModelRepository(RiskModelRepository):
     def __init__(self):

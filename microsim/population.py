@@ -8,7 +8,7 @@ from pandarallel import pandarallel
 
 from microsim.alcohol_category import AlcoholCategory
 from microsim.bp_treatment_strategies import *
-from microsim.cohort_risk_model_repository import CohortRiskModelRepository
+from microsim.cohort_risk_model_repository import CohortRiskModelRepository, CohortStaticRiskFactorModelRepository
 from microsim.cv_outcome_determination import CVOutcomeDetermination
 from microsim.data_loader import (get_absolute_datafile_path,
                                   load_regression_model)
@@ -32,6 +32,7 @@ from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
 from microsim.afib_model import AFibPrevalenceModel
 from microsim.pvd_model import PVDPrevalenceModel
 from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType
+from microsim.population_model_repository import PopulationRepositoryType, PopulationModelRepository
 
 class Population:
     """
@@ -46,47 +47,26 @@ class Population:
    
     _ageStandards = {}
 
-    def __init__(self, people):
+    def __init__(self, people, popModelRepository):
 
-        if simSettings.pandarallelFlag:
-             self.applyMethod = pd.DataFrame.parallel_apply #uses pandarallel
-             self.applyMethodSeries = pd.Series.parallel_apply
-        else:
-             self.applyMethod = pd.DataFrame.apply #uses python apply 
-             self.applyMethodSeries = pd.Series.apply
-
+        self._wavesCompleted = -1
         self._people = people
-        self._ageStandards = {}
-        # luciana tag: discuss with luciana...want to keep track of the sim wave htat is currently running, while running
-        # and also the total number of years advanced...need to think about how to do this is a way that will be safe
-        # this approach has major risks if you forget to update one of these variables
-        self._totalWavesAdvanced = 0
-        self._currentWave = 0
-        self._bpTreatmentStrategy = None
-        self.num_of_processes = 8
+        self._rng = np.random.default_rng() 
+        for repositoryType in PopulationRepositoryType:
+            #set each repository as a Population-instance attribute
+            setattr(self, "_"+repositoryType.value+"Repository", getattr(popModelRepository, "_"+repositoryType.value+"Repository"))
+            #set the keys of each repository as a Population-instance attribute
+            setattr(self, "_"+repositoryType.value, list(getattr(popModelRepository, "_"+repositoryType.value+"Repository")._repository.keys()))
 
-        self._riskFactors = [
-            "sbp",
-            "dbp",
-            "a1c",
-            "hdl",
-            "ldl",
-            "trig",
-            "totChol",
-            "bmi",
-            "anyPhysicalActivity",
-            "afib",
-            "waist",
-            "alcoholPerWeek",
-            "creatinine",
-            "pvd",
-        ]
-        # , 'otherLipidLoweringMedicationCount']
-        self._treatments = ["antiHypertensiveCount", "statin"]
-        self._timeVaryingCovariates = copy.copy(self._riskFactors)
-        self._timeVaryingCovariates.append("age")
-        self._timeVaryingCovariates.extend(self._treatments)
-        self._timeVaryingCovariates.append("bpMedsAdded")
+    def advance(self, years, treatmentStrategies=None):
+        list(map(lambda x: x.advance(years, 
+                                     getattr(self,"_"+PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value+"Repository"),
+                                     getattr(self,"_"+PopulationRepositoryType.DEFAULT_TREATMENTS.value+"Repository"),     
+                                     getattr(self,"_"+PopulationRepositoryType.OUTCOMES.value+"Repository"), 
+                                     treatmentStrategies),
+                 self._people))
+        self._wavesCompleted += years
+
 
     def reset_to_baseline(self):
         self._totalWavesAdvanced = 0
@@ -1168,6 +1148,7 @@ class NHANESDirectSamplePopulation(Population):
         self,
         n,
         year,
+        popModelRepository=None,
         filter=None,
         generate_new_people=True,
         model_reposistory_type="cohort",
@@ -1188,7 +1169,12 @@ class NHANESDirectSamplePopulation(Population):
             random_seed=random_seed,
             weights=weights,
         )
-        super().__init__(people)
+        if popModelRepository is None:
+            popModelRepository = PopulationModelRepository(CohortRiskModelRepository(),
+                                                           CohortRiskModelRepository(),
+                                                           OutcomeModelRepository(),
+                                                           CohortStaticRiskFactorModelRepository()) 
+        super().__init__(people, popModelRepository)
         self._qaly_assignment_strategy = QALYAssignmentStrategy()
         self.n = n
         self.year = year

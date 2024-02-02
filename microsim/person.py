@@ -163,7 +163,7 @@ class Person:
 
     def advance_outcomes(self, outcomeModelRepository):
         for outcomeType in OutcomeType:
-            outcome = outcomeModelRepository._modelRepository[outcomeType].select_outcome_model_for_person(self).get_next_outcome(self)
+            outcome = outcomeModelRepository._repository[outcomeType].select_outcome_model_for_person(self).get_next_outcome(self)
             self.add_outcome(outcome)
 
     def add_outcome(self, outcome):

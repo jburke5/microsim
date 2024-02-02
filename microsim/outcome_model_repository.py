@@ -18,7 +18,7 @@ class OutcomeModelRepository:
        Outcomes are Outcome subclasses, eg StrokeOutcome, when more information about the outcome need to be stored, an outcome phenotype.
        Examples are StrokeOutcome (nihss, type etc), GCPOutcome (gcp), QALYOutcome (qaly)."""
     def __init__(self):
-        self._modelRepository = {OutcomeType.DEMENTIA: DementiaModelRepository(),
+        self._repository = {OutcomeType.DEMENTIA: DementiaModelRepository(),
                           OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE: GCPModelRepository(),
                           OutcomeType.QUALITYADJUSTED_LIFE_YEARS: QALYModelRepository(),
                           OutcomeType.CARDIOVASCULAR: CVModelRepository(),
@@ -32,7 +32,7 @@ class OutcomeModelRepository:
     #I wonder if this is more appropriate for a test function       
     def check_repository_completeness(self):
         for outcome in OutcomeType:
-            if outcome not in list(self._modelRepository.keys()):
+            if outcome not in list(self._repository.keys()):
                 raise RuntimeError("OutcomeModelRepository is incomplete")
 
 
