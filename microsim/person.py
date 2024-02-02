@@ -701,13 +701,9 @@ class Person:
         return None
 
     def get_age_at_last_outcome(self, type):
-        age = self._outcomes[type][-1][0] if (len(self._outcomes[type]) > 0) else None
-        if ((age==-1) & (type == OutcomeType.STROKE)):
-            return self._selfReportStrokeAge
-        elif ((age==-1) & (type == OutcomeType.MI)):
-            return self._selfReportMIAge
-        else:
-            return age
+        #Q: should we move the age to the outcome class?
+        #TO DO: need to include the selfReported argument to the MI phenotype as I did for the stroke outcome
+        return self._outcomes[type][-1][0] if (len(self._outcomes[type]) > 0) else None
 
     def get_age_at_first_outcome_in_sim(self, type):
         for outcome_tuple in self._outcomes[type]:

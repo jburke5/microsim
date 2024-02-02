@@ -5,10 +5,10 @@ import numpy as np
 class StrokeOutcome(Outcome):
 
     #phenotypeItems = ["nihss","strokeSubtype","strokeType","localization","disability"]
-    phenotypeItems = ["nihss","strokeSubtype","strokeType"]
+    phenotypeItems = ["nihss","strokeSubtype","strokeType", "selfReported"]
 
     #def __init__(self, fatal, nihss, strokeType, strokeSubtype, location, disability):
-    def __init__(self, fatal, nihss, strokeType, strokeSubtype):
+    def __init__(self, fatal, nihss, strokeType, strokeSubtype, selfReported=False):
         self.fatal = fatal
         super().__init__(OutcomeType.STROKE, self.fatal)
         self.nihss = nihss
@@ -16,6 +16,7 @@ class StrokeOutcome(Outcome):
         self.strokeSubtype = strokeSubtype
         #self.location = location 
         #self.disability = disability
+        self.selfReported = selfReported
 
     @staticmethod
     def add_outcome_vars(outcomeDict, numberVars):

@@ -1123,9 +1123,11 @@ def build_person(x, initializationModelRepository, rng=None):
                                   [list() for outcome in range(len(OutcomeType))]))
     #add pre-simulation stroke outcomes
     selfReportStrokeAge=x.selfReportStrokeAge
+    #Q: we should not add the stroke outcome in case of "else"?
     if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
             selfReportStrokeAge = selfReportStrokeAge if selfReportStrokeAge <= x.age else x.age
-            personOutcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False)))
+            #personOutcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False)))
+            personOutcomes[OutcomeType.STROKE].append((selfReportStrokeAge, StrokeOutcome(False, None, None, None, selfReported=True)))
     #add pre-simulation mi outcomes
     selfReportMIAge=rng.integers(18, x.age) if x.selfReportMIAge == 99999 else x.selfReportMIAge
     if selfReportMIAge is not None and selfReportMIAge > 1:

@@ -164,8 +164,10 @@ class GCPStrokeModel:
         else:
             ageAtLastStroke=person.get_age_at_last_outcome(OutcomeType.STROKE)
             yearsSinceStroke=person._age[-1]-ageAtLastStroke
+            personGCP = list(map(lambda x: x[1].gcp, person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE]))
             #the get_wave function gives me the wave that follows the updates to the person object, but I want the wave when the last updates took place
             waveAtLastStroke=person.get_wave_for_age(ageAtLastStroke)-1
+            print("waveAtLastStroke ",waveAtLastStroke, " person index ", person._index) 
             linPred = self.calc_linear_predictor_for_patient_characteristics(
                 ageAtLastStroke=ageAtLastStroke,
                 yearsSinceStroke=yearsSinceStroke,
@@ -186,10 +188,12 @@ class GCPStrokeModel:
                 meanFastingGlucose=Person.convert_a1c_to_fasting_glucose(np.array(person._a1c[waveAtLastStroke+1:]).mean()),
                 meanFastingGlucosePrestroke=Person.convert_a1c_to_fasting_glucose(np.array(person._a1c[:waveAtLastStroke+1]).mean()),
                 anyAntiHypertensive=person._current_bp_treatment,
-                anyLipidLowering= (person._statin[-1] | (person._otherLipidLoweringMedicationCount[-1]>0.)),
+                #Q: how to deal with otherLipidlowering meds?
+                #anyLipidLowering= (person._statin[-1] | (person._otherLipidLoweringMedicationCount[-1]>0.)),
+                anyLipidLowering= person._statin[-1],
                 afib=person._afib[-1],
                 mi=person._mi,
-                meanGCPPrestroke=np.mean(np.array(person._gcp[:waveAtLastStroke+1]))) 
+                meanGCPPrestroke=np.mean(np.array(personGCP[:waveAtLastStroke+1]))) 
             random_effect_slope_term = random_effect_slope * yearsSinceStroke   
 
         return linPred + random_effect + random_effect_slope_term + residual      
