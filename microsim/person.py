@@ -131,8 +131,9 @@ class Person:
                 #finished one more complete advance 
                 self._waveCompleted += 1
 
-    # Q: may also need to implement the apply bounds functionality that is present in the current advance risk factors method
-    #    but the population class does not apply bounds in the next risk factor estimates....
+    # Q: may also need to implement the apply bounds functionality that is present in the current advance risk factors method 
+    #    for Person-objects, I do not know when this was last used though...
+    #    also, the population class does not apply bounds in the next risk factor estimates using the df....
     def advance_risk_factors(self, rfdRepository):
         for rf in self._dynamicRiskFactors:
             setattr(self, "_"+rf, getattr(self,"_"+rf)+[self.get_next_risk_factor(rf, rfdRepository)]) 
@@ -172,7 +173,6 @@ class Person:
 
     def has_outcome_at_current_age(self, outcome):
         ageAtLastOutcome = self.get_age_at_last_outcome(outcome)
-        #print(ageAtLastOutcome, self._current_age)
         if (ageAtLastOutcome is None) | (self._current_age!=ageAtLastOutcome):
             return False
         else:

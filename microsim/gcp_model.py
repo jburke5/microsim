@@ -11,18 +11,20 @@ from collections import OrderedDict
 
 class GCPModel:
     def __init__(self, outcomeModelRepository=None):
-        #Q why are we doing this?
+        #Q why are we doing this? I am not sure how/if this was used in the past
         self._outcome_model_repository = outcomeModelRepository
         pass
 
     def generate_next_outcome(self, person):
         fatal = False
         gcp = self.get_risk_for_person(person, person._rng)
-        return GCPOutcome(fatal, gcp)
+        selfReported = False
+        return GCPOutcome(fatal, selfReported, gcp)
 
     def get_next_outcome(self, person):
         return self.generate_next_outcome(person)
 
+    #Q: I am not sure what the issue is here...
     # TODO — what do we need to do with the random intercept? shouls we take a draw per person and assign it?
     # if we don't do that there is going to be mroe change in cognitive trajectory per person that we'd expect...
     def calc_linear_predictor_for_patient_characteristics(
@@ -115,7 +117,6 @@ class GCPModel:
         return xb
 
     def get_risk_for_person(self, person, rng=None, years=1, vectorized=False, test=False):
-        #rng = np.random.default_rng(rng)
         if "gcp" not in list(person._randomEffects.keys()):
             person._randomEffects["gcp"] = person._rng.normal(0, 4.84)
         random_effect = person.gcpRandomEffect if vectorized else person._randomEffects["gcp"] 

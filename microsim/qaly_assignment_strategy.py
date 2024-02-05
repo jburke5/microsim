@@ -15,7 +15,8 @@ class QALYAssignmentStrategy:
     def generate_next_outcome(self, person):
         qaly = self.get_next_qaly(person)
         fatal = False
-        return QALYOutcome(fatal, qaly)
+        selfReported = False
+        return QALYOutcome(fatal, selfReported, qaly)
 
     def get_next_outcome(self, person):
         return self.generate_next_outcome(person)

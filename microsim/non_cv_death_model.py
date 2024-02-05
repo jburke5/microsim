@@ -14,7 +14,8 @@ class NonCVDeathModel(StatsModelLogisticRiskFactorModel):
         
     def generate_next_outcome(self, person):
         fatal=True
-        return Outcome(OutcomeType.NONCARDIOVASCULAR, fatal)
+        selfReported = False
+        return Outcome(OutcomeType.NONCARDIOVASCULAR, fatal, selfReported)
         
     def get_next_outcome(self, person):
         #need to find a better way to check for mortality during current age outcomes

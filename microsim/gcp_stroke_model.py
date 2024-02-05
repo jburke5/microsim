@@ -186,7 +186,9 @@ class GCPStrokeModel:
                 meanFastingGlucose=Person.convert_a1c_to_fasting_glucose(np.array(person._a1c[waveAtLastStroke:]).mean()),
                 meanFastingGlucosePrestroke=Person.convert_a1c_to_fasting_glucose(np.array(person._a1c[:waveAtLastStroke+1]).mean()),
                 anyAntiHypertensive=person._current_bp_treatment,
-                #Q: how to deal with otherLipidlowering meds?
+                #Q: how to deal with otherLipidlowering meds? We used to use this attribute but now that I have not
+                #   included a treatment model for this (and I think I do not even bring it in from NHANES)
+                #   is it ok to use just statin for the gcp stroke model, like I do below?
                 #anyLipidLowering= (person._statin[-1] | (person._otherLipidLoweringMedicationCount[-1]>0.)),
                 anyLipidLowering= person._statin[-1],
                 afib=person._afib[-1],

@@ -29,7 +29,7 @@ class OutcomeModelRepository:
         #must have a model repository for all outcome types
         self.check_repository_completeness()
  
-    #I wonder if this is more appropriate for a test function       
+    #Q: I wonder if this is more appropriate for a test function rather than a function call during runtime...       
     def check_repository_completeness(self):
         for outcome in OutcomeType:
             if outcome not in list(self._repository.keys()):

@@ -17,7 +17,7 @@ class CohortStaticRiskFactorModelRepository:
 
 class CohortDynamicRiskFactorModelRepository(RiskModelRepository):
     def __init__(self):
-        #Q do we need the 2 arguments in super()?
+        #Q do we need the 2 arguments in super()? I deleted them...
         super().__init__()
         self._repository[DynamicRiskFactorsType.AFIB.value] = AFibIncidenceModel()
         self._repository[DynamicRiskFactorsType.PVD.value] = PVDIncidenceModel()
@@ -47,7 +47,7 @@ class CohortDefaultTreatmentModelRepository(RiskModelRepository):
         self._initialize_int_rounded_linear_risk_model(DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value, "antiHypertensiveCountCohortModel")
 
 class AlcoholCategoryModel(StatsModelRoundedLinearRiskFactorModel):
-    def estimate_next_risk(self, person, rng=None):
+    def estimate_next_risk(self, person):
         drinks = super(StatsModelRoundedLinearRiskFactorModel, self).estimate_next_risk(person)
         return AlcoholCategory.get_category_for_consumption(drinks if drinks > 0 else 0)
 

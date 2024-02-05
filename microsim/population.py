@@ -1114,7 +1114,7 @@ def build_person(x, initializationModelRepository, rng=None):
                         DynamicRiskFactorsType.CREATININE.value: x.serumCreatinine,
                         DynamicRiskFactorsType.PVD.value: None}
     
-    #Q do we need otherLipid treatment?
+    #Q: do we need otherLipid treatment? I am not bringing it to the Person objects for now.
     personDefaultTreatments = {
                         DefaultTreatmentsType.STATIN.value: round(x.statin),
                         #DefaultTreatmentsType.OTHER_LIPID_LOWERING_MEDICATION_COUNT.value: x.otherLipidLowering,
@@ -1145,7 +1145,7 @@ def build_person(x, initializationModelRepository, rng=None):
                    personTreatmentStrategies,
                    personOutcomes)    
     
-    #find a way to initialize these rfs above with everything else
+    #TO DO: find a way to initialize these rfs above with everything else
     person._pvd = [initializationModelRepository[DynamicRiskFactorsType.PVD].estimate_next_risk(person)]
     person._afib = [initializationModelRepository[DynamicRiskFactorsType.AFIB].estimate_next_risk(person)]
     return person
@@ -1166,7 +1166,7 @@ def build_people_using_nhanes_for_sampling(nhanes, n, rng=None, filter=None, ran
     #sets the unique identifier for each Person instance
     list(map(lambda person, i: setattr(person, "_index", i), people, range(n))) 
 
-    #why are we not applying the filter on the nhanes df, before we create all the Person instances?
+    #Q: why are we not applying the filter on the nhanes df, before we create all the Person instances?
     if filter is not None:
         people = people.loc[people.apply(filter)]
     return people
@@ -1178,8 +1178,8 @@ class NHANESDirectSamplePopulation(Population):
     def __init__(
         self,
         #Q: there is an issue with making this n to be the population size
-        #the population class must set the pop size depending on what is passed on to it
-        #because this n may be modified by the filter later on, the way it is currently set up
+        #   the population class must set the pop size depending on what is passed on to it
+        #   because this n may be modified by the filter later on, the way it is currently set up
         n,
         year,
         popModelRepository=None,
@@ -1204,7 +1204,7 @@ class NHANESDirectSamplePopulation(Population):
             weights=weights,
         )
         #This is the default, self-consistent set of models for advancing an NHANES Population
-        #Q: how to create one for the NHANESRiskModelRepository? Do we even need to do this? I have never used that.
+        #Q: how to create one for the NHANESRiskModelRepository? Do we even need to do this? I have never used that....
         if popModelRepository is None:
             popModelRepository = PopulationModelRepository(CohortDynamicRiskFactorModelRepository(),
                                                            CohortDefaultTreatmentModelRepository(),

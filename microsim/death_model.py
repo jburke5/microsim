@@ -1,7 +1,8 @@
 from microsim.outcome import Outcome, OutcomeType
 
 class DeathModel:
-    """Checks if any outcome produced in the current year was fatal."""
+    """Checks if any outcome produced in the current year was fatal.
+       Does not produce any additional fatalities."""
 
     def __init__(self):
         pass
