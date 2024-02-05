@@ -1134,7 +1134,7 @@ def build_person(x, initializationModelRepository, rng=None):
     selfReportMIAge=rng.integers(18, x.age) if x.selfReportMIAge == 99999 else x.selfReportMIAge
     if selfReportMIAge is not None and selfReportMIAge > 1:
             selfReportMIAge = selfReportMIAge if selfReportMIAge <= x.age else x.age
-            personOutcomes[OutcomeType.MI].append((-1, Outcome(OutcomeType.MI, False)))
+            personOutcomes[OutcomeType.MI].append((-1, Outcome(OutcomeType.MI, False, selfReported=True)))
 
     person = Person(name, 
                    personStaticRiskFactors,

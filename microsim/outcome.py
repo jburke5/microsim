@@ -2,9 +2,10 @@ from enum import Enum
 
 
 class Outcome:
-    def __init__(self, type, fatal, **kwargs):
+    def __init__(self, type, fatal, selfReported=False, **kwargs):
         self.type = type
         self.fatal = fatal
+        self.selfReported = selfReported
         self.properties = {**kwargs}
 
     def __repr__(self):

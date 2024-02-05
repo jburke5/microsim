@@ -10,13 +10,13 @@ class StrokeOutcome(Outcome):
     #def __init__(self, fatal, nihss, strokeType, strokeSubtype, location, disability):
     def __init__(self, fatal, nihss, strokeType, strokeSubtype, selfReported=False):
         self.fatal = fatal
-        super().__init__(OutcomeType.STROKE, self.fatal)
+        self.selfReported = selfReported
+        super().__init__(OutcomeType.STROKE, self.fatal, self.selfReported)
         self.nihss = nihss
         self.strokeType = strokeType
         self.strokeSubtype = strokeSubtype
         #self.location = location 
         #self.disability = disability
-        self.selfReported = selfReported
 
     @staticmethod
     def add_outcome_vars(outcomeDict, numberVars):
