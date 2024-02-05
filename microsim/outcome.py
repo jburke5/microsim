@@ -24,14 +24,14 @@ class Outcome:
 # so for now, only the sequence of these outcometypes is important
 
 class OutcomeType(Enum):
+    GLOBAL_COGNITIVE_PERFORMANCE = "gcp"
     CARDIOVASCULAR = "cv"
     STROKE = "stroke"
     MI = "mi"
     NONCARDIOVASCULAR = "noncv"
-    GLOBAL_COGNITIVE_PERFORMANCE = "gcp"
     DEMENTIA = "dementia"
     DEATH = "death"
     QUALITYADJUSTED_LIFE_YEARS = "qalys"
     #making the order explicit here because some outcomes depend on other ones
-    _order_ = ["CARDIOVASCULAR", "STROKE", "MI", "NONCARDIOVASCULAR",  
-               "GLOBAL_COGNITIVE_PERFORMANCE", "DEMENTIA", "DEATH",  "QUALITYADJUSTED_LIFE_YEARS"]
+    _order_ = ["GLOBAL_COGNITIVE_PERFORMANCE", "CARDIOVASCULAR", "STROKE", "MI", "NONCARDIOVASCULAR",  
+               "DEMENTIA", "DEATH",  "QUALITYADJUSTED_LIFE_YEARS"]

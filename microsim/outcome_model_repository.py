@@ -22,8 +22,8 @@ class OutcomeModelRepository:
                           OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE: GCPModelRepository(),
                           OutcomeType.QUALITYADJUSTED_LIFE_YEARS: QALYModelRepository(),
                           OutcomeType.CARDIOVASCULAR: CVModelRepository(),
-                          OutcomeType.MI: StrokePartitionModelRepository(),
-                          OutcomeType.STROKE: MIPartitionModelRepository(),
+                          OutcomeType.MI: MIPartitionModelRepository(),
+                          OutcomeType.STROKE: StrokePartitionModelRepository(),
                           OutcomeType.NONCARDIOVASCULAR: NonCVModelRepository(),
                           OutcomeType.DEATH: DeathModelRepository()}
         #must have a model repository for all outcome types

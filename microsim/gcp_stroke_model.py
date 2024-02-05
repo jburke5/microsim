@@ -165,9 +165,7 @@ class GCPStrokeModel:
             ageAtLastStroke=person.get_age_at_last_outcome(OutcomeType.STROKE)
             yearsSinceStroke=person._age[-1]-ageAtLastStroke
             personGCP = list(map(lambda x: x[1].gcp, person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE]))
-            #the get_wave function gives me the wave that follows the updates to the person object, but I want the wave when the last updates took place
-            waveAtLastStroke=person.get_wave_for_age(ageAtLastStroke)-1
-            print("waveAtLastStroke ",waveAtLastStroke, " person index ", person._index) 
+            waveAtLastStroke=person.get_wave_for_age(ageAtLastStroke)
             linPred = self.calc_linear_predictor_for_patient_characteristics(
                 ageAtLastStroke=ageAtLastStroke,
                 yearsSinceStroke=yearsSinceStroke,
@@ -179,13 +177,13 @@ class GCPStrokeModel:
                 physicalActivity=person._anyPhysicalActivity[-1],
                 alcoholPerWeek=person._alcoholPerWeek[-1],
                 meanBmiPrestroke=np.mean(np.array(person._bmi[:waveAtLastStroke+1])),
-                meanSBP=np.array(person._sbp[waveAtLastStroke+1:]).mean(),
+                meanSBP=np.array(person._sbp[waveAtLastStroke:]).mean(),
                 meanSBPPrestroke=np.array(person._sbp[:waveAtLastStroke+1]).mean(),
                 meanLdlPrestroke=np.array(person._ldl[:waveAtLastStroke+1]).mean(),
-                meanLdl=np.array(person._ldl[waveAtLastStroke+1:]).mean(),
+                meanLdl=np.array(person._ldl[waveAtLastStroke:]).mean(),
                 gfr=person._gfr,
                 meanWaistPrestroke=np.mean(np.array(person._waist[:waveAtLastStroke+1])),
-                meanFastingGlucose=Person.convert_a1c_to_fasting_glucose(np.array(person._a1c[waveAtLastStroke+1:]).mean()),
+                meanFastingGlucose=Person.convert_a1c_to_fasting_glucose(np.array(person._a1c[waveAtLastStroke:]).mean()),
                 meanFastingGlucosePrestroke=Person.convert_a1c_to_fasting_glucose(np.array(person._a1c[:waveAtLastStroke+1]).mean()),
                 anyAntiHypertensive=person._current_bp_treatment,
                 #Q: how to deal with otherLipidlowering meds?

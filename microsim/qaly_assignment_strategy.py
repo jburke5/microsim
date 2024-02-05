@@ -40,14 +40,14 @@ class QALYAssignmentStrategy:
     def get_conditions_for_person(self, person, wave):
         return {
             OutcomeType.DEMENTIA: (
-                person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.DEMENTIA, True),
+                person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.DEMENTIA),
                 person.get_age_at_first_outcome(OutcomeType.DEMENTIA),
             ),
             OutcomeType.STROKE: (
-                person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.STROKE, True),
+                person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.STROKE),
                 person.get_age_at_first_outcome(OutcomeType.STROKE),
             ),
-            OutcomeType.MI: (person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.MI, True), person.get_age_at_first_outcome(OutcomeType.MI)),
+            OutcomeType.MI: (person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.MI), person.get_age_at_first_outcome(OutcomeType.MI)),
         }
 
     # simple age-based approximation that after age 70, you lose about 0.01 QALYs per year

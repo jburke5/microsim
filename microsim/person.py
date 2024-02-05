@@ -172,6 +172,7 @@ class Person:
 
     def has_outcome_at_current_age(self, outcome):
         ageAtLastOutcome = self.get_age_at_last_outcome(outcome)
+        #print(ageAtLastOutcome, self._current_age)
         if (ageAtLastOutcome is None) | (self._current_age!=ageAtLastOutcome):
             return False
         else:
@@ -239,14 +240,9 @@ class Person:
     def get_wave_for_age(self, ageTarget):
         if ageTarget < self._age[0] or ageTarget > self._age[-1]:
             raise RuntimeError(f'Age:: {ageTarget} out of range {self._age[0]}-{self._age[-1]}')
-        
-        wave = -1
-        for i, age in enumerate(self._age):
-            if ageTarget==age:
-                wave = i+1
-                break
-        return wave
-
+        else:
+            return self._age.index(ageTarget)
+       
     def get_age_at_start_of_wave(self, wave):
         return self._age[wave]
 
@@ -652,31 +648,23 @@ class Person:
     def has_mi_during_wave(self, wave):
         return self.has_outcome_during_wave(wave, OutcomeType.MI)
 
-    def valid_outcome_wave(self, wave, addOneWave=False):
-        if (wave <= 0) or (self.is_alive and (wave > len(self._age) - (0 if addOneWave else 1))):
-            raise Exception(
-                f"Can not have an event in a wave ({wave}) before 1 or after last wave ({len(self._age)-1} for person: {self}))"
-            )
-        elif (not self.is_alive) and (wave > len(self._age)):
+    def valid_outcome_wave(self, wave):
+        if (wave<0) | (wave>self._waveCompleted):
             return False
         else:
             return True
-    
+ 
     def has_outcome_during_wave(self, wave, outcomeType):
         if not self.valid_outcome_wave(wave):
             return False
         else:
             return len(self._outcomes[outcomeType]) != 0 and self.has_outcome_at_age(outcomeType, self._age[wave - 1])
 
-    # addOneWave is a variable that tries to deal with the idea that a valid wave number
-    # depends on when the query is performed. while teh data is advancing, it is possible that 
-    # outcomes may have already been set, but that the person's age hasn't yet advanced...
-    # in that case, set addOneWave=True and we won't raise an exception
-    def has_outcome_during_or_prior_to_wave(self, wave, outcomeType, addOneWave=False):
-        if not self.valid_outcome_wave(wave, addOneWave):
+    def has_outcome_during_or_prior_to_wave(self, wave, outcomeType):
+        if not self.valid_outcome_wave(wave):
             return False
         else:
-            return len(self._outcomes[outcomeType]) != 0 and self.has_outcome_by_age(outcomeType, self._age[wave - 1])
+            return len(self._outcomes[outcomeType]) != 0 and self.has_outcome_by_age(outcomeType, self._age[wave])
 
     def has_outcome_at_age(self, type, age):
         for outcome_tuple in self._outcomes[type]:
