@@ -73,7 +73,7 @@ class Population:
 
     def __init__(self, people, popModelRepository):
 
-        self._wavesCompleted = -1
+        self._waveCompleted = -1
         self._people = people
         self._n = self._people.shape[0]
         self._rng = np.random.default_rng() 
@@ -90,7 +90,9 @@ class Population:
                                      getattr(self,"_"+PopulationRepositoryType.OUTCOMES.value+"Repository"), 
                                      treatmentStrategies),
                  self._people))
-        self._wavesCompleted += years
+        #note: need to remember that each Person-instance will have their own _waveCompleted attribute, which may be different than the
+        #      Population-level _waveCompleted attribute
+        self._waveCompleted += years
 
 
     def reset_to_baseline(self):
@@ -1142,7 +1144,7 @@ def build_person(x, initializationModelRepository, rng=None):
                    personOutcomes)    
     
     #find a way to initialize these rfs above with everything else
-    person._pvd = [initializationModelRepository[DynamicRiskFactorsType.PVD].estimate_next_risk(person, person._rng)]
+    person._pvd = [initializationModelRepository[DynamicRiskFactorsType.PVD].estimate_next_risk(person)]
     person._afib = [initializationModelRepository[DynamicRiskFactorsType.AFIB].estimate_next_risk(person)]
     return person
 

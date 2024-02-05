@@ -43,7 +43,7 @@ class PVDPrevalenceModel:
 
         return xb
         
-    def estimate_next_risk(self, person, rng=None, boolean=True):
+    def estimate_next_risk(self, person, boolean=True):
 
         lp = self.calc_linear_predictor_for_patient_characteristics(
                  person._age[-1], 
@@ -57,7 +57,7 @@ class PVDPrevalenceModel:
        
         risk = np.exp(lp)/(1+np.exp(lp)) #this is a logistic model
 
-        return rng.uniform()<risk if boolean else risk
+        return person._rng.uniform()<risk if boolean else risk
 
     def estimate_next_risk_vectorized(self, x, rng=None, boolean=True):
 
