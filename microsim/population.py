@@ -8,7 +8,9 @@ from pandarallel import pandarallel
 
 from microsim.alcohol_category import AlcoholCategory
 from microsim.bp_treatment_strategies import *
-from microsim.cohort_risk_model_repository import CohortRiskModelRepository, CohortStaticRiskFactorModelRepository
+from microsim.cohort_risk_model_repository import (CohortDynamicRiskFactorModelRepository, 
+                                                   CohortStaticRiskFactorModelRepository,
+                                                   CohortDefaultTreatmentModelRepository)
 from microsim.cv_outcome_determination import CVOutcomeDetermination
 from microsim.data_loader import (get_absolute_datafile_path,
                                   load_regression_model)
@@ -1204,8 +1206,8 @@ class NHANESDirectSamplePopulation(Population):
         #This is the default, self-consistent set of models for advancing an NHANES Population
         #Q: how to create one for the NHANESRiskModelRepository? Do we even need to do this? I have never used that.
         if popModelRepository is None:
-            popModelRepository = PopulationModelRepository(CohortRiskModelRepository(),
-                                                           CohortRiskModelRepository(),
+            popModelRepository = PopulationModelRepository(CohortDynamicRiskFactorModelRepository(),
+                                                           CohortDefaultTreatmentModelRepository(),
                                                            OutcomeModelRepository(),
                                                            CohortStaticRiskFactorModelRepository()) 
         super().__init__(people, popModelRepository)
