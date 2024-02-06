@@ -55,7 +55,14 @@ class PVDPrevalenceModel:
                  person._smokingStatus,
                  person._raceEthnicity)
        
-        risk = np.exp(lp)/(1+np.exp(lp)) #this is a logistic model
+        # note: this is a logistic model
+        # note: limit the calculation to avoid over/under-flow issues
+        if lp<-10:
+            risk = 0.
+        elif lp>10.:
+            risk = 1.
+        else:
+            risk = 1/(1+np.exp(-lp))
 
         return person._rng.uniform()<risk if boolean else risk
 
@@ -131,7 +138,14 @@ class PVDIncidenceModel:
                  person._raceEthnicity,
                  person._pvd[-1])
 
-        risk = np.exp(lp)/(1+np.exp(lp)) #this is a logistic model
+        # note: this is a logistic model
+        # note: limit the calculation to avoid over/under-flow issues
+        if lp<-10:
+            risk = 0.
+        elif lp>10.:
+            risk = 1.
+        else:
+            risk = 1/(1+np.exp(-lp))
 
         return person._rng.uniform()<risk
 

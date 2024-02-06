@@ -54,8 +54,10 @@ class Person:
                   Multiple events can be accounted for by having multiple elements in the array.
        _randomEffects: some outcome models require random effects, store them in this dictionary, the outcome models set their key:value."""
 
+    # Q: I think these would be better stored with a risk factor class, not here....
     _lowerBounds = {DynamicRiskFactorsType.SBP.value: 60,
-                    DynamicRiskFactorsType.DBP.value: 20}
+                    DynamicRiskFactorsType.DBP.value: 20,
+                    DynamicRiskFactorsType.CREATININE.value: 0.1}
     _upperBounds = {DynamicRiskFactorsType.SBP.value: 300,
                     DynamicRiskFactorsType.DBP.value: 180}
 
@@ -136,7 +138,8 @@ class Person:
     #    also, the population class does not apply bounds in the next risk factor estimates using the df....
     def advance_risk_factors(self, rfdRepository):
         for rf in self._dynamicRiskFactors:
-            setattr(self, "_"+rf, getattr(self,"_"+rf)+[self.get_next_risk_factor(rf, rfdRepository)]) 
+            nextRiskFactor = self.apply_bounds(rf, self.get_next_risk_factor(rf, rfdRepository))
+            setattr(self, "_"+rf, getattr(self,"_"+rf)+[nextRiskFactor]) 
 
     # Q: it is not clear to me why treatment strategies affect the person attributes directly
     #whereas treatments affect the person attributes indirectly through the attribute regression models
@@ -474,6 +477,7 @@ class Person:
     def _current_diabetes(self):
         return self.has_diabetes()
 
+    # Q: should we make GFR a dynamic risk factor or outcome or leave it as is?
     @property
     def _gfr(self):
         return GFREquation().get_gfr_for_person(self)
@@ -623,7 +627,10 @@ class Person:
         return any([ageAtEvent < 0 for ageAtEvent, _ in self._outcomes[outcomeType]])
 
     def has_outcome_during_simulation(self, outcomeType):
-        return any([ageAtEvent >= 0 for ageAtEvent, _ in self._outcomes[outcomeType]])
+        if len(self._outcomes[outcomeType])>0:
+           return any([outcome.selfReported == False for _, outcome in self._outcomes[outcomeType]])
+        else:
+           return False
 
     def get_outcomes_during_simulation(self, outcomeType):
         return list(filter(lambda x: x[0] > 0, self._outcomes[outcomeType]))
@@ -678,15 +685,11 @@ class Person:
                 return True
         return False
 
-    def get_age_at_first_outcome(self, type):
-        for outcome_tuple in self._outcomes[type]:
-            age = outcome_tuple[0]
-            if type == OutcomeType.STROKE and age == -1:
-                age = self._selfReportStrokeAge
-            elif type == OutcomeType.MI and age == -1:
-                age = self._selfReportMIAge
-            return age
-        return None
+    def get_age_at_first_outcome(self, outcomeType):
+        if len(self._outcomes[outcomeType])>0:
+            return self._outcomes[outcomeType][0][0]
+        else:
+            return None
 
     def get_age_at_last_outcome(self, type):
         #Q: should we move the age to the outcome class?

@@ -42,7 +42,13 @@ class ASCVDOutcomeModel(StatsModelLinearRiskFactorModel):
         )
 
     def transform_to_ten_year_risk(self, linearRisk):
-        return 1 / (1 + np.exp(-1 * linearRisk))
+        # bound the calculation to avoid over/under-flow errors
+        if linearRisk<-10:
+            return 0.
+        elif linearRisk>10:
+            return 1.
+        else:
+            return 1 / (1 + np.exp(-1 * linearRisk))
 
     # time is accounted for simply...
     # our model gives us a 10 year risk. yet, we want the risk for the next year, on average, which
