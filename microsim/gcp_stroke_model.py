@@ -20,8 +20,9 @@ class GCPStrokeModel:
 
     def generate_next_outcome(self, person):
         fatal = False
+        selfReported = False
         gcp = self.get_risk_for_person(person, person._rng)
-        return GCPOutcome(fatal, gcp)
+        return GCPOutcome(fatal, selfReported, gcp)
 
     def get_next_outcome(self, person):
         return self.generate_next_outcome(person)
