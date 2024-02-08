@@ -71,10 +71,6 @@ class Population:
     turn into an abstract class...
     """
    
-    #Q: what is this doing?
-    #A: I saw it being used in build_age_standard function but I am not sure about its usefulness...at least about it at this point...
-    _ageStandards = {}
-
     def __init__(self, people, popModelRepository):
 
         self._waveCompleted = -1
@@ -141,7 +137,7 @@ class Population:
                         countsGrouped[gender.value][i] += counts[gender.value][age]
         return countsGrouped
 
-    def calculate_mean_age_sex_standardized_incidence_using_person(self, outcomeType, year=2016):
+    def calculate_mean_age_sex_standardized_incidence(self, outcomeType, year=2016):
         """Calculates the gender and age standardized # of events pers 100,000 person years. """
 
         #standardized population age groups and percentages
@@ -166,7 +162,7 @@ class Population:
             outcomeRates[gender.value] = [(10**5)*x/y if y!=0 else 0 for x,y in zip(outcomeCountsGrouped[gender.value],
                                                                                     personYearCountsGrouped[gender.value])]
             expectedOutcomes += sum([x*y for x,y in zip(outcomeRates[gender.value],
-                                                        standardPopulation.populationPercents[gender.value])])
+                                                        standardizedPop.populationPercents[gender.value])])
         return expectedOutcomes
 
     def reset_to_baseline(self):
