@@ -35,6 +35,7 @@ from microsim.afib_model import AFibPrevalenceModel
 from microsim.pvd_model import PVDPrevalenceModel
 from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType
 from microsim.population_model_repository import PopulationRepositoryType, PopulationModelRepository
+from microsim.standardized_population import StandardizedPopulation
 
 class Population:
     """A Population-instance has three main parts:
@@ -107,30 +108,11 @@ class Population:
         return genderAge
 
     def calculate_mean_age_sex_standardized_incidence_using_person(self, outcomeType, year=2016):
-        #Q: move the next 15 or so lines to biuld_age_standard? Currently I am undoing here what that function did....
-        #get the df with the population counts, and remove the multi-index
-        ageStandard = self.build_age_standard(year)
-        ageStandard = (ageStandard.droplevel("female").reset_index(level="ageGroup")
-                                  .drop(["outcomeCount","simPersonYears","simPeople"], axis=1))
 
-        #instead of using the female flag, use the NHANESGender values
-        genderDict = {0: NHANESGender.MALE.value, 1: NHANESGender.FEMALE.value}
-        ageStandard[StaticRiskFactorsType.GENDER.value] = ageStandard["female"].replace(genderDict)
-        ageStandard.drop("female", inplace=True, axis=1)
-
-        standardPopulation = dict()
-        standardPopulationPercent = dict()
-        ageGroups = dict()
-        for gender in NHANESGender:
-            ageStandardForGender = ageStandard.loc[ageStandard["gender"]==gender.value]
-            standardPopulation[gender.value] = ageStandardForGender["standardPopulation"].to_list()
-            ageGroups[gender.value] = (ageStandardForGender
-                                       .apply(lambda x: [i for i in range(x["lowerAgeBound"],x["upperAgeBound"]+1)], axis=1)).to_list()
-
-        #find the size of the standard population, which includes all genders
-        standardPopulationSum = sum([sum(standardPopulation[gender.value]) for gender in NHANESGender])
-        for gender in NHANESGender:
-            standardPopulationPercent[gender.value] = [x/standardPopulationSum for x in standardPopulation[gender.value]]
+        #standardized population age groups and percentages
+        standardizedPop = StandardizedPopulation(year=2016)
+        ageGroups = standardizedPop.ageGroups
+        standardPopulationPercent = standardizedPop.populationPercents
         
         #get [ (gender, age), (gender, age),...] from simulation
         outcomeGenderAge = self.get_gender_age_of_all_outcomes_in_sim(outcomeType)
@@ -879,53 +861,6 @@ class Population:
         )
 
     # refactorrtag: we should probably build a specific class that loads data files...
-
-    def build_age_standard(self, yearOfStandardizedPopulation):
-        if yearOfStandardizedPopulation in Population._ageStandards:
-            return copy.deepcopy(Population._ageStandards[yearOfStandardizedPopulation])
-
-        datafile_path = get_absolute_datafile_path("us.1969_2017.19ages.adjusted.txt")
-        ageStandard = pd.read_csv(datafile_path, header=0, names=["raw"])
-        # https://seer.cancer.gov/popdata/popdic.html
-        ageStandard["year"] = ageStandard["raw"].str[0:4]
-        ageStandard["year"] = ageStandard.year.astype(int)
-        # format changes in 1990...so, we'll go forward from there...
-        ageStandard = ageStandard.loc[ageStandard.year >= 1990]
-        ageStandard["state"] = ageStandard["raw"].str[4:6]
-        ageStandard["state"] = ageStandard["raw"].str[4:6]
-        # 1 = white, 2 = black, 3 = american indian/alaskan, 4 = asian/pacific islander
-        ageStandard["race"] = ageStandard["raw"].str[13:14]
-        ageStandard["hispanic"] = ageStandard["raw"].str[14:15]
-        ageStandard["female"] = ageStandard["raw"].str[15:16]
-        ageStandard["female"] = ageStandard["female"].astype(int)
-        ageStandard["female"] = ageStandard["female"].replace({1: 0, 2: 1})
-        ageStandard["ageGroup"] = ageStandard["raw"].str[16:18]
-        ageStandard["ageGroup"] = ageStandard["ageGroup"].astype(int)
-        ageStandard["standardPopulation"] = ageStandard["raw"].str[18:26]
-        ageStandard["standardPopulation"] = ageStandard["standardPopulation"].astype(int)
-        ageStandard["lowerAgeBound"] = (ageStandard.ageGroup - 1) * 5
-        ageStandard["upperAgeBound"] = (ageStandard.ageGroup * 5) - 1
-        ageStandard["lowerAgeBound"] = ageStandard["lowerAgeBound"].replace({-5: 0, 0: 1})
-        ageStandard["upperAgeBound"] = ageStandard["upperAgeBound"].replace({-1: 0, 89: 150})
-        ageStandardYear = ageStandard.loc[ageStandard.year == yearOfStandardizedPopulation]
-        ageStandardGroupby = ageStandardYear[
-            ["female", "standardPopulation", "lowerAgeBound", "upperAgeBound", "ageGroup"]
-        ].groupby(["ageGroup", "female"])
-        ageStandardHeaders = ageStandardGroupby.first()[["lowerAgeBound", "upperAgeBound"]]
-        ageStandardHeaders["female"] = ageStandardHeaders.index.get_level_values(1)
-        ageStandardPopulation = ageStandardYear[["female", "standardPopulation", "ageGroup"]]
-        ageStandardPopulation = ageStandardPopulation.groupby(["ageGroup", "female"]).sum()
-        ageStandardPopulation = ageStandardHeaders.join(ageStandardPopulation, how="inner")
-        # cache the age standard populations...they're not that big and it takes a while
-        # to build one
-        ageStandardPopulation["outcomeCount"] = 0
-        ageStandardPopulation["simPersonYears"] = 0
-        ageStandardPopulation["simPeople"] = 0
-        Population._ageStandards[yearOfStandardizedPopulation] = copy.deepcopy(
-            ageStandardPopulation
-        )
-
-        return ageStandardPopulation
 
     def tabulate_age_specific_rates(self, ageStandard):
         ageStandard["percentStandardPopInGroup"] = ageStandard["standardPopulation"] / (
