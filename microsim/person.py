@@ -210,6 +210,14 @@ class Person:
         model = treatmentRepository.get_model(treatment)
         return model.estimate_next_risk(self)
 
+    def get_gender_age_of_all_outcomes_in_sim(self, outcomeType):
+        genderAge = []
+        if len(self._outcomes[outcomeType])>0:
+            for outcome in self._outcomes[outcomeType]:
+                if not outcome[1].selfReported:
+                    genderAge += [(getattr(self, "_"+StaticRiskFactorsType.GENDER.value).value, outcome[0])]
+        return genderAge
+
     def reset_to_baseline(self):
         self._alive = [True]
         self._age = [self._age[0]]
