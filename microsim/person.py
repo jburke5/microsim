@@ -218,6 +218,9 @@ class Person:
                     genderAge += [(getattr(self, "_"+StaticRiskFactorsType.GENDER.value).value, outcome[0])]
         return genderAge
 
+    def get_gender_age_of_all_years_in_sim(self):
+        return [(getattr(self, "_"+StaticRiskFactorsType.GENDER.value).value, age) for age in getattr(self, "_"+DynamicRiskFactorsType.AGE.value)] 
+
     def reset_to_baseline(self):
         self._alive = [True]
         self._age = [self._age[0]]

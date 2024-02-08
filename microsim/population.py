@@ -107,78 +107,66 @@ class Population:
         genderAge = [x for sublist in genderAge for x in sublist]
         return genderAge
 
+    def get_gender_age_of_all_years_in_sim(self):
+        genderAge = list(map( lambda x: x.get_gender_age_of_all_years_in_sim(), self._people))
+        #flatten the list
+        genderAge = [x for sublist in genderAge for x in sublist]
+        return genderAge
+
+    def get_gender_age_counts(self, genderAgeList):
+        ages = dict()
+        minAge = dict()
+        maxAge = dict()
+        counts = dict()
+        for gender in NHANESGender:
+            ages[gender.value] = list(map(lambda x: int(x[1]), list(filter(lambda y: y[0]==gender.value, genderAgeList))))
+            minAge[gender.value] = min(ages[gender.value])
+            maxAge[gender.value] = max(ages[gender.value])
+            #initialize the dictionary with 0 for all counts
+            counts[gender.value] = dict(zip([i for i in range(minAge[gender.value],maxAge[gender.value])],
+                                            [0 for i in range(minAge[gender.value],maxAge[gender.value])]))
+            #do the counting
+            for age in range(minAge[gender.value],maxAge[gender.value]+1):
+                counts[gender.value][age] = len(list(filter( lambda x: x==age, ages[gender.value])))
+        return counts
+
+    def get_gender_age_counts_grouped(self, counts, ageGroups):
+        #the standardized population was in groups, so I need to group my simulation counts too....
+        countsGrouped = dict()
+        for gender in NHANESGender:
+            countsGrouped[gender.value] = [0 for i in range(len(ageGroups[gender.value]))]
+            for i, ageGroup in enumerate(ageGroups[gender.value]):
+                for age in ageGroup:
+                    if age in counts[gender.value].keys():
+                        countsGrouped[gender.value][i] += counts[gender.value][age]
+        return countsGrouped
+
     def calculate_mean_age_sex_standardized_incidence_using_person(self, outcomeType, year=2016):
+        """Calculates the gender and age standardized # of events pers 100,000 person years. """
 
         #standardized population age groups and percentages
         standardizedPop = StandardizedPopulation(year=2016)
-        ageGroups = standardizedPop.ageGroups
-        standardPopulationPercent = standardizedPop.populationPercents
         
-        #get [ (gender, age), (gender, age),...] from simulation
+        #get [ (gender, age), (gender, age),...] from simulation for all outcomes and do the counting
         outcomeGenderAge = self.get_gender_age_of_all_outcomes_in_sim(outcomeType)
+        outcomeCounts = self.get_gender_age_counts(outcomeGenderAge)
 
-        #do the counting for all outcome genders and ages, store in outcomeCounts[gender][age] nested dictionary
-        outcomeAge = dict()
-        minOutcomeAge = dict()
-        maxOutcomeAge = dict()   
-        outcomeCounts = dict()
-        for gender in NHANESGender:
-            outcomeAge[gender.value] = list(map(lambda x: int(x[1]), list(filter(lambda y: y[0]==gender.value, outcomeGenderAge))))
-            minOutcomeAge[gender.value] = min(outcomeAge[gender.value])
-            maxOutcomeAge[gender.value] = max(outcomeAge[gender.value])
-            #initialize the dictionary with 0 for all counts
-            outcomeCounts[gender.value] = dict(zip([i for i in range(minOutcomeAge[gender.value],maxOutcomeAge[gender.value])], 
-                                                   [0 for i in range(minOutcomeAge[gender.value],maxOutcomeAge[gender.value])]))
-            #do the counting, number of outcomes for each age
-            for age in range(minOutcomeAge[gender.value],maxOutcomeAge[gender.value]+1):
-                outcomeCounts[gender.value][age] = len(list(filter( lambda x: x==age, outcomeAge[gender.value])))
-
-        #do the counting of all Person-years in simulation
-        personAge = dict()
-        personAgeCounts = dict()
-        minPersonAge = dict()
-        maxPersonAge = dict()
-        for gender in NHANESGender:
-            #get the list of lists with all person ages [ [18,19,...], [34,35,..],... ]
-            personAge[gender.value] = list(map(lambda x: getattr(x, "_"+DynamicRiskFactorsType.AGE.value),
-                                               list(filter(lambda y: getattr(y, "_"+StaticRiskFactorsType.GENDER.value)==gender.value, self._people))))
-            #flatten the list
-            personAge[gender.value] = [int(x) for sublist in personAge[gender.value] for x in sublist]
-            minPersonAge[gender.value] = min(personAge[gender.value])
-            maxPersonAge[gender.value] = max(personAge[gender.value])
-
-            #initialize dictionary with 0 for all values
-            personAgeCounts[gender.value] = dict(zip([i for i in range(minPersonAge[gender.value],maxPersonAge[gender.value])], 
-                                                     [0 for i in range(minPersonAge[gender.value],maxPersonAge[gender.value])]))
-            #do the counting, number of people for each age
-            for age in range(minPersonAge[gender.value], maxPersonAge[gender.value]+1):
-                personAgeCounts[gender.value][age] = len(list(filter(lambda x: x==age, personAge[gender.value])))
+        #get [ (gender, age), (gender, age),...] from simulation for all persons and do the counting
+        personGenderAge = self.get_gender_age_of_all_years_in_sim()
+        personYearCounts = self.get_gender_age_counts(personGenderAge)
 
         #the standardized population was in groups, so I need to group my simulation counts too....
-        outcomeCountsGrouped = dict()
-        for gender in NHANESGender:
-            outcomeCountsGrouped[gender.value] = [0 for i in range(len(ageGroups[gender.value]))]
-            for i, ageGroup in enumerate(ageGroups[gender.value]):
-                for age in ageGroup:
-                    if age in outcomeCounts[gender.value].keys():
-                        outcomeCountsGrouped[gender.value][i] += outcomeCounts[gender.value][age]
+        outcomeCountsGrouped = self.get_gender_age_counts_grouped(outcomeCounts,  standardizedPop.ageGroups)
+        personYearCountsGrouped = self.get_gender_age_counts_grouped(personYearCounts, standardizedPop.ageGroups)
 
-        #and now group the Person ages as well
-        personAgeCountsGrouped = dict()
-        for gender in NHANESGender:
-            personAgeCountsGrouped[gender.value] = [0 for i in range(len(ageGroups[gender.value]))]
-            for i, ageGroup in enumerate(ageGroups[gender.value]):
-                for age in ageGroup:
-                    if age in personAgeCounts[gender.value].keys():
-                        personAgeCountsGrouped[gender.value][i] += personAgeCounts[gender.value][age]
-
+        #do the calculation
         outcomeRates = dict()
         expectedOutcomes = 0
         for gender in NHANESGender:
             outcomeRates[gender.value] = [(10**5)*x/y if y!=0 else 0 for x,y in zip(outcomeCountsGrouped[gender.value],
-                                                                                    personAgeCountsGrouped[gender.value])]
-            expectedOutcomes += sum([x*y for x,y in zip(outcomeRates[gender.value],standardPopulationPercent[gender.value])])
-   
+                                                                                    personYearCountsGrouped[gender.value])]
+            expectedOutcomes += sum([x*y for x,y in zip(outcomeRates[gender.value],
+                                                        standardPopulation.populationPercents[gender.value])])
         return expectedOutcomes
 
     def reset_to_baseline(self):
