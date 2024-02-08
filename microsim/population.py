@@ -94,17 +94,19 @@ class Population:
         #      Population-level _waveCompleted attribute
         self._waveCompleted += years
 
-    def get_gender_age_of_all_outcomes_in_sim(self, outcomeType):
+    def get_gender_age_of_all_outcomes_in_sim(self, outcomeType, personFilter=None):
         #get [(gender, age), ...] for all people and their outcomes
-        genderAge = list(map( lambda x: x.get_gender_age_of_all_outcomes_in_sim(outcomeType), self._people))
+        genderAge = list(map( lambda x: x.get_gender_age_of_all_outcomes_in_sim(outcomeType), 
+                              list(filter(personFilter, self._people))))
         #remove empty lists (for Person-objects with no outcomes)
         genderAge = list(filter( lambda y: len(y)>0, genderAge))
         #flatten the list of lists
         genderAge = [x for sublist in genderAge for x in sublist]
         return genderAge
 
-    def get_gender_age_of_all_years_in_sim(self):
-        genderAge = list(map( lambda x: x.get_gender_age_of_all_years_in_sim(), self._people))
+    def get_gender_age_of_all_years_in_sim(self, personFilter=None):
+        genderAge = list(map( lambda x: x.get_gender_age_of_all_years_in_sim(), 
+                              list(filter(personFilter, self._people))))
         #flatten the list
         genderAge = [x for sublist in genderAge for x in sublist]
         return genderAge
@@ -137,18 +139,18 @@ class Population:
                         countsGrouped[gender.value][i] += counts[gender.value][age]
         return countsGrouped
 
-    def calculate_mean_age_sex_standardized_incidence(self, outcomeType, year=2016):
+    def calculate_mean_age_sex_standardized_incidence(self, outcomeType, year=2016, personFilter=None):
         """Calculates the gender and age standardized # of events pers 100,000 person years. """
 
         #standardized population age groups and percentages
         standardizedPop = StandardizedPopulation(year=2016)
         
         #get [ (gender, age), (gender, age),...] from simulation for all outcomes and do the counting
-        outcomeGenderAge = self.get_gender_age_of_all_outcomes_in_sim(outcomeType)
+        outcomeGenderAge = self.get_gender_age_of_all_outcomes_in_sim(outcomeType, personFilter)
         outcomeCounts = self.get_gender_age_counts(outcomeGenderAge)
 
         #get [ (gender, age), (gender, age),...] from simulation for all persons and do the counting
-        personGenderAge = self.get_gender_age_of_all_years_in_sim()
+        personGenderAge = self.get_gender_age_of_all_years_in_sim(personFilter)
         personYearCounts = self.get_gender_age_counts(personGenderAge)
 
         #the standardized population was in groups, so I need to group my simulation counts too....
