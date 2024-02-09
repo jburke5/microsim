@@ -94,6 +94,37 @@ class Population:
         #      Population-level _waveCompleted attribute
         self._waveCompleted += years
 
+    def get_age_counts(self, itemList):
+        counts = dict()
+        for item in range(int(min(itemList)),int(max(itemList)+1)):
+            counts[item] = len(list(filter(lambda x: x==item, itemList)))
+        return counts
+
+    def get_age_at_first_outcome(self, outcomeType):
+        #we get None from Person objects that had no outcome
+        ages = list(map(lambda x: x.get_age_at_first_outcome(outcomeType), self._people))
+        #remove Nones 
+        ages = list(filter(lambda x: x is not None,ages))
+        return ages
+
+    def get_age_of_all_years_in_sim(self):
+        ages = list(map(lambda x: getattr(x, "_"+DynamicRiskFactorsType.AGE.value), self._people))
+        ages = [x for sublist in ages for x in sublist]
+        return ages
+
+    def get_raw_incidence_by_age(self, outcomeType):
+        outcomeIncidenceAges = self.get_age_at_first_outcome(outcomeType)
+        ages = self.get_age_of_all_years_in_sim()
+        outcomeCounts = self.get_age_counts(outcomeIncidenceAges)
+        ageCounts = self.get_age_counts(ages)
+        outcomeIncidenceRate = dict()
+        for age in ageCounts.keys():
+            if age in outcomeCounts.keys():
+                outcomeIncidenceRate[age] = outcomeCounts[age]/ageCounts[age]
+            else:
+                outcomeIncidenceRate[age] = 0
+        return outcomeIncidenceRate 
+
     def get_gender_age_of_all_outcomes_in_sim(self, outcomeType, personFilter=None):
         #get [(gender, age), ...] for all people and their outcomes
         genderAge = list(map( lambda x: x.get_gender_age_of_all_outcomes_in_sim(outcomeType), 
@@ -802,49 +833,6 @@ class Population:
             for i, person in self._people.items()
         ]
         return np.array(events).sum() / np.array(totalTime).sum()
-
-    def get_raw_incidence_by_age(self, eventType):
-        popDF = self.get_people_current_state_as_dataframe()
-
-        for year in range(1, self._totalWavesAdvanced + 1):
-            eventVarName = "event" + str(year)
-            ageVarName = "age" + str(year)
-            popDF[ageVarName] = popDF["baseAge"] + year
-            popDF[eventVarName] = [
-                person.has_outcome_during_wave(year, OutcomeType.DEMENTIA)
-                for person in self._people
-            ]
-
-        popDF = popDF[
-            list(filter(lambda x: x.startswith("age") or x.startswith("event"), popDF.columns))
-        ]
-        popDF["id"] = popDF.index
-        popDF.drop(columns=["age"], inplace=True)
-        longAgesEvents = pd.wide_to_long(df=popDF, stubnames=["age", "event"], i="id", j="wave")
-
-        agesAliveDF = self.get_people_current_state_as_dataframe()
-        for year in range(1, self._totalWavesAdvanced + 1):
-            aliveVarName = "alive" + str(year)
-            ageVarName = "age" + str(year)
-            agesAliveDF[ageVarName] = agesAliveDF["baseAge"] + year
-            agesAliveDF[aliveVarName] = [
-                person.alive_at_start_of_wave(year) for i, person in self._people.items()
-            ]
-
-        agesAliveDF = agesAliveDF[
-            list(
-                filter(lambda x: x.startswith("age") or x.startswith("alive"), agesAliveDF.columns)
-            )
-        ]
-        agesAliveDF.drop(columns=["age"], inplace=True)
-        agesAliveDF["id"] = agesAliveDF.index
-        longAgesDead = pd.wide_to_long(
-            df=agesAliveDF, stubnames=["age", "alive"], i="id", j="wave"
-        )
-        return (
-            longAgesEvents.groupby("age")["event"].sum()
-            / longAgesDead.groupby("age")["alive"].sum()
-        )
 
     # refactorrtag: we should probably build a specific class that loads data files...
 
