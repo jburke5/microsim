@@ -197,7 +197,20 @@ class Person:
     @property
     def is_dead(self):
         return not self.is_alive
-    
+ 
+    @property
+    def _baselineGcp(self):
+        return self._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][0][1].gcp
+
+    @property
+    def _gcpSlope(self):
+        if len(self._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE])>=2:
+            gcpSlope = ( self._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][-1][1].gcp -
+                         self._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][-2][1].gcp )
+        else:
+            gcpSlope = 0
+        return gcpSlope
+   
     @property
     def _selfReportStrokePriorToSim(self):
         return False if len(self._outcomes[OutcomeType.STROKE])==0 else self._outcomes[OutcomeType.STROKE][0][0]==-1

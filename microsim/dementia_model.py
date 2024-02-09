@@ -26,16 +26,16 @@ class DementiaModel(StatsModelCoxModel):
         return self.generate_next_outcome(person) if person._rng.uniform(size=1)<self.linear_predictor(person) else None
 
     def linear_predictor(self, person):
-        baselineGcp=person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][0][1].gcp
-        if len(person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE])>=2:
-            gcpSlope = ( person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][-1][1].gcp -
-                         person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][-2][1].gcp )
-        else:
-            gcpSlope = 0
+        #baselineGcp=person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][0][1].gcp
+        #if len(person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE])>=2:
+        #    gcpSlope = ( person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][-1][1].gcp -
+        #                 person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][-2][1].gcp )
+        #else:
+        #    gcpSlope = 0
         return self.linear_predictor_for_patient_characteristics(
             currentAge=person._age[-1],
-            baselineGcp=baselineGcp,
-            gcpSlope=gcpSlope,
+            baselineGcp=person._baselineGcp,
+            gcpSlope=person._gcpSlope,
             gender=person._gender,
             education=person._education,
             raceEthnicity=person._raceEthnicity,
