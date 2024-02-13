@@ -1,5 +1,4 @@
 from microsim.outcome import OutcomeType
-from microsim.outcome_model_type import OutcomeModelType
 from microsim.outcome_model_repository import OutcomeModelRepository
 
 from abc import ABC

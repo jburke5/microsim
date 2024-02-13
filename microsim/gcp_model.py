@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from microsim.gcp_outcome import GCPOutcome
+from microsim.cognition_outcome import CognitionOutcome
 from microsim.smoking_status import SmokingStatus
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.education import Education
@@ -19,7 +19,7 @@ class GCPModel:
         fatal = False
         gcp = self.get_risk_for_person(person, person._rng)
         selfReported = False
-        return GCPOutcome(fatal, selfReported, gcp)
+        return CognitionOutcome(fatal, selfReported, gcp)
 
     def get_next_outcome(self, person):
         return self.generate_next_outcome(person)

@@ -1,5 +1,4 @@
 from microsim.outcome import OutcomeType, Outcome
-from microsim.outcome_model_type import OutcomeModelType
 from microsim.stroke_outcome import StrokeOutcome, StrokeSubtype, StrokeType, Localization
 from microsim.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
 from microsim.regression_model import RegressionModel

@@ -29,14 +29,13 @@ class StrokePartitionModel(StatsModelLinearRiskFactorModel):
         return person._rng.uniform(size=1) < fatalProb
 
     def get_next_stroke_probability(self, person):
-        #I am not sure why it was set to 0 at the beginning
+        #Q: I am not sure why it was set to 0 at the beginning
         strokeProbability = 0
         strokeProbability = scipySpecial.expit( super().estimate_next_risk(person) )
         return strokeProbability
     
     def generate_next_outcome(self, person):
         fatal = self.will_have_fatal_stroke(person)
-        ### call other models that are for generating stroke phenotype here.
         nihss = StrokeNihssModel().estimate_next_risk(person)
         strokeSubtype = StrokeSubtypeModelRepository().get_stroke_subtype(person)
         strokeType = StrokeTypeModel().get_stroke_type(person)
@@ -46,13 +45,13 @@ class StrokePartitionModel(StatsModelLinearRiskFactorModel):
         return StrokeOutcome(fatal, nihss, strokeType, strokeSubtype)
         
     def update_cv_outcome(self, person, fatal):
-        #need to double check this
         person._outcomes[OutcomeType.CARDIOVASCULAR][-1][1].fatal = fatal
         
     def get_next_outcome(self, person):
         if person.has_outcome_at_current_age(OutcomeType.CARDIOVASCULAR):
             if person._rng.uniform(size=1) < self.get_next_stroke_probability(person):
                 strokeOutcome = self.generate_next_outcome(person)
+                #if we decide to use different stroke/mi models, double check if fatality needs to be decided in CVModel
                 self.update_cv_outcome(person, strokeOutcome.fatal)
                 return strokeOutcome
             else: 

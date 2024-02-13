@@ -1,6 +1,6 @@
 from microsim.outcome import OutcomeType
 from microsim.dementia_model_repository import DementiaModelRepository
-from microsim.gcp_model_repository import GCPModelRepository
+from microsim.cognition_model_repository import CognitionModelRepository
 from microsim.qaly_model_repository import QALYModelRepository
 from microsim.cv_model_repository import CVModelRepository
 from microsim.stroke_partition_model_repository import StrokePartitionModelRepository
@@ -19,7 +19,7 @@ class OutcomeModelRepository:
        Examples are StrokeOutcome (nihss, type etc), GCPOutcome (gcp), QALYOutcome (qaly)."""
     def __init__(self):
         self._repository = {OutcomeType.DEMENTIA: DementiaModelRepository(),
-                          OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE: GCPModelRepository(),
+                          OutcomeType.COGNITION: CognitionModelRepository(),
                           OutcomeType.QUALITYADJUSTED_LIFE_YEARS: QALYModelRepository(),
                           OutcomeType.CARDIOVASCULAR: CVModelRepository(),
                           OutcomeType.MI: MIPartitionModelRepository(),
@@ -29,7 +29,6 @@ class OutcomeModelRepository:
         #must have a model repository for all outcome types
         self.check_repository_completeness()
  
-    #Q: I wonder if this is more appropriate for a test function rather than a function call during runtime...       
     def check_repository_completeness(self):
         for outcome in OutcomeType:
             if outcome not in list(self._repository.keys()):

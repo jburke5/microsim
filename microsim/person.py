@@ -43,8 +43,10 @@ class Person:
           1) How to predict a Person-instance's future, when the models for making the predictions are provided.
              The predictive models are not stored in Person-instances but only provided as arguments to the Person functions.
           2) Tools for analyzing and reporting a Person-instance's state.
-       In order to initialize a Person-instance, the risk factors, treatments, treatment strategies and outcomes need to be 
+       In order to initialize a Person-instance, the risk factors, default treatments, treatment strategies and outcomes need to be 
        provided to the class in an organized way, in their corresponding dictionaries.
+       Default treatments correspond to the usual care, whereas treatment strategies correspond to approaches we would like to
+       try and discover their effect.
        _name: indicates the origin of the Person's instance data, eg in NHANES it will be the NHANES person unique identifier, 
               more than one Person instances can have the same name.
        _index: a unique identifier when the Person-instance is part of a bigger group, eg a Population instance (this is set from the Population instance).
@@ -53,13 +55,6 @@ class Person:
        _outcomes: a dictionary of arrays with the keys being OutcomeTypes, each element in the array is a tuple (age, outcome).
                   Multiple events can be accounted for by having multiple elements in the array.
        _randomEffects: some outcome models require random effects, store them in this dictionary, the outcome models set their key:value."""
-
-    # Q: I think these would be better stored with a risk factor class, not here....
-    _lowerBounds = {DynamicRiskFactorsType.SBP.value: 60,
-                    DynamicRiskFactorsType.DBP.value: 20,
-                    DynamicRiskFactorsType.CREATININE.value: 0.1}
-    _upperBounds = {DynamicRiskFactorsType.SBP.value: 300,
-                    DynamicRiskFactorsType.DBP.value: 180}
 
     def __init__(self, 
                  name, 
@@ -78,31 +73,32 @@ class Person:
 
         #will it be better if static, dynamic RiskFactors and treatments were attributes-dictionaries like the outcomes?
         #will it double the attribute access time by having to find 2 pointers as opposed to 1? how significant will that be?
+        #self._staticRiskFactors = staticRiskFactorsDict
+        #self._dynamicRiskFactors = dynamicRiskFactorsDict
+        #self._defaultTreatments = defaultTreatmentsDict
+        #self._treatmentStrategies = treatmentStrategiesDict
+
         #also, there is currently an inconsistency: outcomes are provided ready to the Person instance but everything 
         #else is not, eg the lists are created here and not in the build_person method, if all were dictionaries this would be resolved
         #an attempt on this showed that there are deep dependencies on Person attributes, 
         #eg StatsModelLinearRiskFactorModel.get_model_argument_for_coeff_name expects to finds these attributes directly on Person instances
         #for now I will keep lists of the static, dynamic risk factors etc so that I know how to advance each person
         #even though it is not ideal for memory purposes all Person instances to have exactly the same lists...
+
         for key,value in staticRiskFactorsDict.items():
             setattr(self, "_"+key, value)
         self._staticRiskFactors = list(staticRiskFactorsDict.keys())
-        #self._staticRiskFactors = staticRiskFactorsDict
-        #for now, only dynamicRiskFactors have bounds, building in manual bounds on extreme values
         for key,value in dynamicRiskFactorsDict.items():
-            setattr(self, "_"+key, [self.apply_bounds(key, value)])
+            setattr(self, "_"+key, [value])
         self._dynamicRiskFactors = list(dynamicRiskFactorsDict.keys())
-        #self._dynamicRiskFactors = dynamicRiskFactorsDict
 
         for key,value in defaultTreatmentsDict.items():
             setattr(self, "_"+key, [value])
         self._defaultTreatments = list(defaultTreatmentsDict.keys())
-        #self._defaultTreatments = defaultTreatmentsDict
 
         for key, value in treatmentStrategiesDict.items():
             setattr(self, "_"+key, [value])
         self._treatmentStrategies = list(treatmentStrategiesDict.keys())
-        #self._treatmentStrategies = treatmentStrategiesDict
 
         self._outcomes = outcomesDict
 
@@ -133,12 +129,9 @@ class Person:
                 #finished one more complete advance 
                 self._waveCompleted += 1
 
-    # Q: may also need to implement the apply bounds functionality that is present in the current advance risk factors method 
-    #    for Person-objects, I do not know when this was last used though...
-    #    also, the population class does not apply bounds in the next risk factor estimates using the df....
     def advance_risk_factors(self, rfdRepository):
         for rf in self._dynamicRiskFactors:
-            nextRiskFactor = self.apply_bounds(rf, self.get_next_risk_factor(rf, rfdRepository))
+            nextRiskFactor = rfdRepository.apply_bounds(rf, self.get_next_risk_factor(rf, rfdRepository))
             setattr(self, "_"+rf, getattr(self,"_"+rf)+[nextRiskFactor]) 
 
     # Q: it is not clear to me why treatment strategies affect the person attributes directly
@@ -200,13 +193,13 @@ class Person:
  
     @property
     def _baselineGcp(self):
-        return self._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][0][1].gcp
+        return self._outcomes[OutcomeType.COGNITION][0][1].gcp
 
     @property
     def _gcpSlope(self):
-        if len(self._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE])>=2:
-            gcpSlope = ( self._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][-1][1].gcp -
-                         self._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE][-2][1].gcp )
+        if len(self._outcomes[OutcomeType.COGNITION])>=2:
+            gcpSlope = ( self._outcomes[OutcomeType.COGNITION][-1][1].gcp -
+                         self._outcomes[OutcomeType.COGNITION][-2][1].gcp )
         else:
             gcpSlope = 0
         return gcpSlope
@@ -227,7 +220,7 @@ class Person:
         genderAge = []
         if len(self._outcomes[outcomeType])>0:
             for outcome in self._outcomes[outcomeType]:
-                if not outcome[1].selfReported:
+                if not outcome[1].priorToSim:
                     genderAge += [(getattr(self, "_"+StaticRiskFactorsType.GENDER.value).value, outcome[0])]
         return genderAge
 
@@ -587,21 +580,6 @@ class Person:
             total += self._qalys[i]
         return total
 
-    def apply_bounds(self, varName, varValue):
-        """
-        Ensures that risk factor are within static prespecified bounds.
-
-        Other algorithms might be needed in the future to avoid pooling in the tails,
-        if there are many extreme risk factor results.
-        """
-        if varName in self._upperBounds:
-            upperBound = self._upperBounds[varName]
-            varValue = varValue if varValue < upperBound else upperBound
-        if varName in self._lowerBounds:
-            lowerBound = self._lowerBounds[varName]
-            varValue = varValue if varValue > lowerBound else lowerBound
-        return varValue
-
     def advance_year(
         self,
         risk_model_repository,
@@ -652,7 +630,7 @@ class Person:
 
     def has_outcome_during_simulation(self, outcomeType):
         if len(self._outcomes[outcomeType])>0:
-           return any([outcome.selfReported == False for _, outcome in self._outcomes[outcomeType]])
+           return any([outcome.priorToSim == False for _, outcome in self._outcomes[outcomeType]])
         else:
            return False
 

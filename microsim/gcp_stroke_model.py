@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from microsim.gcp_outcome import GCPOutcome
+from microsim.cognition_outcome import CognitionOutcome
 from microsim.smoking_status import SmokingStatus
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.education import Education
@@ -22,7 +22,7 @@ class GCPStrokeModel:
         fatal = False
         selfReported = False
         gcp = self.get_risk_for_person(person, person._rng)
-        return GCPOutcome(fatal, selfReported, gcp)
+        return CognitionOutcome(fatal, selfReported, gcp)
 
     def get_next_outcome(self, person):
         return self.generate_next_outcome(person)
@@ -165,7 +165,7 @@ class GCPStrokeModel:
         else:
             ageAtLastStroke=person.get_age_at_last_outcome(OutcomeType.STROKE)
             yearsSinceStroke=person._age[-1]-ageAtLastStroke
-            personGCP = list(map(lambda x: x[1].gcp, person._outcomes[OutcomeType.GLOBAL_COGNITIVE_PERFORMANCE]))
+            personGCP = list(map(lambda x: x[1].gcp, person._outcomes[OutcomeType.COGNITION]))
             waveAtLastStroke=person.get_wave_for_age(ageAtLastStroke)
             linPred = self.calc_linear_predictor_for_patient_characteristics(
                 ageAtLastStroke=ageAtLastStroke,

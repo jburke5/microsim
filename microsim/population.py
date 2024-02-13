@@ -21,7 +21,6 @@ from microsim.initialization_repository import InitializationRepository
 from microsim.nhanes_risk_model_repository import NHANESRiskModelRepository
 from microsim.outcome import Outcome, OutcomeType
 from microsim.outcome_model_repository import OutcomeModelRepository
-from microsim.outcome_model_type import OutcomeModelType
 from microsim.person import Person
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 from microsim.race_ethnicity import NHANESRaceEthnicity
@@ -36,6 +35,22 @@ from microsim.pvd_model import PVDPrevalenceModel
 from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType
 from microsim.population_model_repository import PopulationRepositoryType, PopulationModelRepository
 from microsim.standardized_population import StandardizedPopulation
+from microsim.risk_model_repository import RiskModelRepository
+
+microsimToNhanes = {DynamicRiskFactorsType.SBP.value: "meanSBP",
+                    DynamicRiskFactorsType.DBP.value: "meanDBP",
+                    DynamicRiskFactorsType.A1C.value: "a1c",
+                    DynamicRiskFactorsType.HDL.value: "hdl",
+                    DynamicRiskFactorsType.LDL.value: "ldl",
+                    DynamicRiskFactorsType.TRIG.value: "trig",
+                    DynamicRiskFactorsType.TOT_CHOL.value: "tot_chol",
+                    DynamicRiskFactorsType.BMI.value: "bmi",
+                    DynamicRiskFactorsType.WAIST.value: "waist",
+                    DynamicRiskFactorsType.AGE.value: "age",
+                    DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: 'anyPhysicalActivity',
+                    DynamicRiskFactorsType.CREATININE.value: "serumCreatinine",
+                    DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: "alcoholPerWeek"}
+
 
 class Population:
     """A Population-instance has three main parts:
@@ -983,28 +998,42 @@ def build_person(x, initializationModelRepository, rng=None):
                         StaticRiskFactorsType.GENDER.value: NHANESGender(int(x.gender)),
                         StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus(int(x.smokingStatus))}
     
+    #use this to get the bounds imposed on the risk factors in a bit
+    rfRepository = RiskModelRepository()
+
     #TO DO: find a way to include everything here, including the rfs that need initialization
     #the PVD model would be easy to implement, eg with an estimate_next_risk_for_patient_characteristics function
     #but the AFIB model would be more difficult because it relies on statsmodel_logistic_risk file
     #for now include None, in order to create the risk factor lists correctly at the Person instance
-    personDynamicRiskFactors = {
-                        DynamicRiskFactorsType.AGE.value: x.age,
-                        DynamicRiskFactorsType.SBP.value: x.meanSBP,
-                        DynamicRiskFactorsType.DBP.value: x.meanDBP,
-                        DynamicRiskFactorsType.A1C.value: x.a1c,
-                        DynamicRiskFactorsType.HDL.value: x.hdl,
-                        DynamicRiskFactorsType.LDL.value: x.ldl,
-                        DynamicRiskFactorsType.TRIG.value: x.trig,
-                        DynamicRiskFactorsType.TOT_CHOL.value: x.tot_chol,
-                        DynamicRiskFactorsType.BMI.value: x.bmi,
-                        DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: x.anyPhysicalActivity,
-                        DynamicRiskFactorsType.AFIB.value: None,
-                        DynamicRiskFactorsType.WAIST.value: x.waist,
-                        DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.get_category_for_consumption(x.alcoholPerWeek),
-                        DynamicRiskFactorsType.CREATININE.value: x.serumCreatinine,
-                        DynamicRiskFactorsType.PVD.value: None}
+    personDynamicRiskFactors = dict()
+    for rfd in DynamicRiskFactorsType:
+        if rfd==DynamicRiskFactorsType.ALCOHOL_PER_WEEK:
+            personDynamicRiskFactors[rfd.value] = AlcoholCategory.get_category_for_consumption(rfRepository.apply_bounds(rfd.value, x[microsimToNhanes[rfd.value]]))
+        else:
+            if (rfd!=DynamicRiskFactorsType.PVD) & (rfd!=DynamicRiskFactorsType.AFIB):
+                personDynamicRiskFactors[rfd.value] = rfRepository.apply_bounds(rfd.value, x[microsimToNhanes[rfd.value]])
+    personDynamicRiskFactors[DynamicRiskFactorsType.AFIB.value] = None
+    personDynamicRiskFactors[DynamicRiskFactorsType.PVD.value] = None       
+
+    #personDynamicRiskFactors = {
+    #                    DynamicRiskFactorsType.AGE.value: x.age,
+    #                    DynamicRiskFactorsType.SBP.value: x.meanSBP,
+    #                    DynamicRiskFactorsType.DBP.value: x.meanDBP,
+    #                    DynamicRiskFactorsType.A1C.value: x.a1c,
+    #                    DynamicRiskFactorsType.HDL.value: x.hdl,
+    #                    DynamicRiskFactorsType.LDL.value: x.ldl,
+    #                    DynamicRiskFactorsType.TRIG.value: x.trig,
+    #                    DynamicRiskFactorsType.TOT_CHOL.value: x.tot_chol,
+    #                    DynamicRiskFactorsType.BMI.value: x.bmi,
+    #                    DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: x.anyPhysicalActivity,
+    #                    DynamicRiskFactorsType.AFIB.value: None,
+    #                    DynamicRiskFactorsType.WAIST.value: x.waist,
+    #                    DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.get_category_for_consumption(x.alcoholPerWeek),
+    #                    DynamicRiskFactorsType.CREATININE.value: x.serumCreatinine,
+    #                    DynamicRiskFactorsType.PVD.value: None}
     
     #Q: do we need otherLipid treatment? I am not bringing it to the Person objects for now.
+    #A: it is ok to leave it out as we do not have a model to update this. It is also very rarely taking place in the population anyway.
     personDefaultTreatments = {
                         DefaultTreatmentsType.STATIN.value: round(x.statin),
                         #DefaultTreatmentsType.OTHER_LIPID_LOWERING_MEDICATION_COUNT.value: x.otherLipidLowering,
@@ -1020,13 +1049,12 @@ def build_person(x, initializationModelRepository, rng=None):
     #Q: we should not add the stroke outcome in case of "else"?
     if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
             selfReportStrokeAge = selfReportStrokeAge if selfReportStrokeAge <= x.age else x.age
-            #personOutcomes[OutcomeType.STROKE].append((-1, Outcome(OutcomeType.STROKE, False)))
-            personOutcomes[OutcomeType.STROKE].append((selfReportStrokeAge, StrokeOutcome(False, None, None, None, selfReported=True)))
+            personOutcomes[OutcomeType.STROKE].append((selfReportStrokeAge, StrokeOutcome(False, None, None, None, priorToSim=True)))
     #add pre-simulation mi outcomes
     selfReportMIAge=rng.integers(18, x.age) if x.selfReportMIAge == 99999 else x.selfReportMIAge
     if selfReportMIAge is not None and selfReportMIAge > 1:
             selfReportMIAge = selfReportMIAge if selfReportMIAge <= x.age else x.age
-            personOutcomes[OutcomeType.MI].append((selfReportMIAge, Outcome(OutcomeType.MI, False, selfReported=True)))
+            personOutcomes[OutcomeType.MI].append((selfReportMIAge, Outcome(OutcomeType.MI, False, priorToSim=True)))
 
     person = Person(name, 
                    personStaticRiskFactors,

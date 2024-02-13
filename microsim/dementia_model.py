@@ -23,7 +23,7 @@ class DementiaModel(StatsModelCoxModel):
         return Outcome(OutcomeType.DEMENTIA, fatal)
 
     def get_next_outcome(self, person):
-        return self.generate_next_outcome(person) if person._rng.uniform(size=1)<self.linear_predictor(person) else None
+        return self.generate_next_outcome(person) if person._rng.uniform(size=1)<self.get_risk_for_person(person, years=1) else None
 
     def linear_predictor(self, person):
         return self.linear_predictor_for_patient_characteristics(
