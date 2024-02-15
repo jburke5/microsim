@@ -243,11 +243,11 @@ class Person:
    
     @property
     def _selfReportStrokePriorToSim(self):
-        return False if len(self._outcomes[OutcomeType.STROKE])==0 else self._outcomes[OutcomeType.STROKE][0][0]==-1
+        return False if len(self._outcomes[OutcomeType.STROKE])==0 else self._outcomes[OutcomeType.STROKE][0][1].priorToSim
     
     @property
     def _selfReportMIPriorToSim(self):
-        return False if len(self._outcomes[OutcomeType.MI])==0 else self._outcomes[OutcomeType.MI][0][0]==-1
+        return False if len(self._outcomes[OutcomeType.MI])==0 else self._outcomes[OutcomeType.MI][0][1].priorToSim
     
     def get_next_treatment(self, treatment, treatmentRepository):
         model = treatmentRepository.get_model(treatment)
@@ -300,13 +300,6 @@ class Person:
         else:
             return self._age.index(ageTarget)
        
-    def get_age_at_start_of_wave(self, wave):
-        return self._age[wave]
-
-    def get_age_at_end_of_wave(self, wave):
-        return self._age[wave+1]
-
-
     # returns a version of the person that maintains all of their history up until 
     # a specified age threshold.
     def get_person_copy_at_age(self, age):
@@ -570,12 +563,6 @@ class Person:
     def has_incident_dementia(self):
         return self.has_incident_event(OutcomeType.DEMENTIA)
 
-    def dead_at_start_of_wave(self, year):
-        return (year > len(self._age)) or (self._alive[year-1] == False)
-
-    def dead_at_end_of_wave(self, year):
-        return (year > len(self._age)) or (self._alive[year] == False)
-
     @property
     def _black(self):
         return self._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK
@@ -602,39 +589,20 @@ class Person:
         return sorted(self._a1c)[-1] >= 6.5
 
     def years_in_simulation(self):
-        return len(self._age) - 1
+        return self.waveCompleted+1
 
     def get_next_risk_factor(self, riskFactor, risk_model_repository):
         model = risk_model_repository.get_model(riskFactor)
         return model.estimate_next_risk(self)
 
     def get_total_qalys(self):
-        return sum(self._qalys)
+        return sum(list(map(lambda x: x[1].qaly, self._outcomes[OutcomeType.QUALITYADJUSTED_LIFE_YEARS])))
 
     def get_qalys_from_wave(self, wave):
         total = 0
         for i in range(wave - 1, len(self._qalys)):
             total += self._qalys[i]
         return total
-
-    def advance_year(
-        self,
-        risk_model_repository,
-        outcome_model_repository,
-        qaly_assignment_strategy=QALYAssignmentStrategy(),
-        rng=None,
-    ):
-        logging.debug(f"advance_year on person, age: {self._age[0]} sbp : {self._sbp[0]}")
-        if self.is_dead():
-            raise RuntimeError("Person is dead. Can not advance year")
-
-        self.advance_risk_factors(risk_model_repository, rng=rng)
-        self.advance_treatment(risk_model_repository, rng=rng)
-        self.advance_outcomes(outcome_model_repository, rng=rng)
-        self.assign_qalys(qaly_assignment_strategy)
-        if not self.is_dead():
-            self._age.append(self._age[-1] + 1)
-            self._alive.append(True)
 
     def dead_at_start_of_wave(self, wave):
         return (wave > len(self._age)) or (self._alive[wave-1] == False)
@@ -663,7 +631,10 @@ class Person:
             return self._alive[start_wave_num - 1]
 
     def has_outcome_prior_to_simulation(self, outcomeType):
-        return any([ageAtEvent < 0 for ageAtEvent, _ in self._outcomes[outcomeType]])
+        if len(self._outcomes[outcomeType])>0:
+           return any([outcome.priorToSim for _, outcome in self._outcomes[outcomeType]])
+        else:
+           return False
 
     def has_outcome_during_simulation(self, outcomeType):
         if len(self._outcomes[outcomeType])>0:
@@ -672,14 +643,14 @@ class Person:
            return False
 
     def get_outcomes_during_simulation(self, outcomeType):
-        return list(filter(lambda x: x[0] > 0, self._outcomes[outcomeType]))
+        return list(filter(lambda x: not x[1].priorToSim, self._outcomes[outcomeType]))
 
     def has_outcome_during_simulation_prior_to_wave(self, outcomeType, wave):
         return any(
             [ageAtEvent >= self._age[0] + wave for ageAtEvent, _ in self._outcomes[outcomeType]]
         )
 
-    def has_outcome_at_any_time(self, outcomeType):
+    def has_outcome(self, outcomeType):
         return len(self._outcomes[outcomeType]) > 0
 
     def has_stroke_prior_to_simulation(self):
@@ -825,24 +796,6 @@ class Person:
     def has_mi_during_simulation(self):
         return self.has_outcome_during_simulation(OutcomeType.MI)
 
-    # should only occur immediately after an event is created — we can't roll back the subsequent implicaitons of an event.
-    def rollback_most_recent_event(self, outcomeType):
-        # get rid of the outcome event...
-        outcomes_for_type = list(self._outcomes[outcomeType])
-        outcome_rolled_back = self._outcomes[outcomeType].pop()
-        # if the patient died during the wave, then their age didn't advance and their event would be at their
-        # age at teh start of the wave.
-        rollbackAge = self._age[-1] - 1 if self._alive[-1] else self._age[-1]
-        if rollbackAge != outcome_rolled_back[0]:
-            raise Exception(
-                f"# of outcomes: {len(outcomes_for_type)} while trying to rollback event at age {outcome_rolled_back[0]}, but current age is {rollbackAge} - can not roll back if age has changed, for person: {self}"
-            )
-
-        # and, if it was fatal, reset the person to being alive.
-        if (outcome_rolled_back)[1].fatal:
-            self._alive[-1] = True
-            self._age.append(self._age[-1] + 1)
-
     def apply_linear_modifications(self, modifications):
         for key, value in modifications.items():
             attribute_value = getattr(self, key)
@@ -890,9 +843,6 @@ class Person:
             selfReportMIAge=50 if self._outcomes[OutcomeType.MI] is not None else None,
         )
 
-    def assign_qalys(self, qaly_assignment_strategy):
-        self._qalys.append(qaly_assignment_strategy.get_next_qaly(self))
-
     # Using this paper...glucose and a1c are highly related
     # Nathan, D. M., Kuenen, J., Borg, R., Zheng, H., Schoenfeld, D., Heine, R. J., for the A1c-Derived Average Glucose (ADAG) Study Group. (2008). Translating the A1C Assay Into Estimated Average Glucose Values. Diabetes Care, 31(8), 1473–1478.
     # so, will use their formula + a draw from residual distribution fo same moddel in NHANES (which has very simnilar coefficients)
@@ -916,31 +866,15 @@ class Person:
         return hash(self.__repr__())
 
     def __repr__(self):
-        return (
-            f"Person(age={self._age[-1]}, "
-            f"gender={self._gender}, "
-            f"race/eth={self._raceEthnicity}, "
-            f"sbp={self._sbp[-1]:.1f}, "
-            f"dbp={self._dbp[-1]:.1f}, "
-            f"a1c={self._a1c[-1]:.1f}, "
-            f"hdl={self._hdl[-1]:.1f}, "
-            f"totChol={self._totChol[-1]:.1f}, "
-            f"bmi={self._bmi[-1]:.1f}, "
-            f"ldl={self._ldl[-1]:.1f}, "
-            f"trig={self._trig[-1]:.1f}, "
-            f"smoking={SmokingStatus(self._smokingStatus)}, "
-            f"waist={self._waist[-1]}, "
-            f"anyPhysicalActivity={self._anyPhysicalActivity[-1]}, "
-            f"alcohol={AlcoholCategory(self._alcoholPerWeek[-1])}, "
-            f"education={Education(self._education)}, "
-            f"antiHypertensiveCount={self._antiHypertensiveCount[-1]}, "
-            f"otherLipid={self._otherLipidLoweringMedicationCount[-1]}, "
-            f"creatinine={self._creatinine[-1]}, "
-            f"statin={self._statin[-1]}, "
-            f"index={self._populationIndex if (hasattr(self, '_populationIndex') and self._populationIndex is not None) else None}, "
-            f"outcomes={self._outcomes}"
-            f")"
-        )
+        personRepr = f"Person(name = {self._name} index = {self._index} "
+        for attr in self._staticRiskFactors:
+            personRepr += f" {attr}={getattr(self,'_'+attr)}"
+        for attr in self._dynamicRiskFactors:
+            personRepr += f" {attr}={getattr(self,'_'+attr)[-1]:.1f}"
+        for attr in self._defaultTreatments:
+            personRepr += f" {attr}={getattr(self,'_'+attr)[-1]}"
+        personRepr += ")"
+        return personRepr
 
     def __ne__(self, obj):
         return not self == obj
