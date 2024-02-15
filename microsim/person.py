@@ -17,6 +17,7 @@ from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 from microsim.gfr_equation import GFREquation
 from microsim.pvd_model import PVDPrevalenceModel
 from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
+from microsim.treatment import TreatmentStrategiesType, TreatmentStrategyStatus
 
 # luciana-tag...lne thing that tripped me up was probable non clear communication regarding "waves"
 # so, i'm going to spell it out here and try to make the code consistent.
@@ -61,7 +62,7 @@ class Person:
                  staticRiskFactorsDict, 
                  dynamicRiskFactorsDict, 
                  defaultTreatmentsDict, 
-                 treatmentStrategiesDict, 
+                 treatmentStrategyStatusDict, 
                  outcomesDict) -> None:
 
         self._name = name
@@ -96,9 +97,10 @@ class Person:
             setattr(self, "_"+key, [value])
         self._defaultTreatments = list(defaultTreatmentsDict.keys())
 
-        for key, value in treatmentStrategiesDict.items():
-            setattr(self, "_"+key, [value])
-        self._treatmentStrategies = list(treatmentStrategiesDict.keys())
+        #for key, value in treatmentStrategiesDict.items():
+        #    setattr(self, "_"+key+"TreatmentStatus", value)
+        #self._treatmentStrategies = list(treatmentStrategiesDict.keys())
+        self._treatmentStrategyStatus = treatmentStrategyStatusDict
 
         self._outcomes = outcomesDict
 
@@ -144,19 +146,49 @@ class Person:
         for treatment in self._defaultTreatments:
             setattr(self, "_"+treatment, getattr(self,"_"+treatment)+[self.get_next_treatment(treatment, defaultTreatmentRepository)]) 
 
-    def advance_treatment_strategies_and_update_risk_factors(self, treatmentStrategies):      
-        #TO DO:
-        #choice of words: get_next implies that it returns the final/next wave quantity, update implies that it modifies
-        #that quantity in place
-        #the vectorized bp treatment strategies are modifying the rows in place whereas the changes/absolute values are 
-        #returned for person objects, the code is much more simple if the person is modified in place with treatment
-        #strategies so do that for person objects
-        #these two functions will need to be defined
-        if treatmentStrategies is not None:
-        #if treatmentStrategies[treatment] is not None:
-            treatmentStrategies[treatment].update_next_treatment(self)
-            #I want to make it explicit and more obvious that treatments update the risk factors
-            treatmentStrategies[treatment].update_next_risk_factors(self)
+    def advance_treatment_strategies_and_update_risk_factors(self, treatmentStrategies=None):      
+        #choice of words: get_next returns the final/next wave quantity, update modifies that quantity in place
+        for tsType in TreatmentStrategiesType:
+            ts = treatmentStrategies._repository[tsType.value] if treatmentStrategies is not None else None
+            #treatment status must be updated even when there is no treatment strategy for the year
+            self.update_treatment_strategy_status(ts, tsType)
+            #make it explicit that treatment strategies update the treatments and risk factors
+            if ts is not None:
+                self.update_treatments(ts)
+                self.update_risk_factors(ts)
+
+    def update_treatments(self, treatmentStrategy):
+        updatedTreatments = treatmentStrategy.get_updated_treatments(self)
+        for treatment in self._defaultTreatments:
+            if treatment in updatedTreatments.keys():
+                getattr(self, "_"+treatment)[-1] = updatedTreatments[treatment]
+
+    def update_risk_factors(self, treatmentStrategy):
+        updatedRiskFactors = treatmentStrategy.get_updated_risk_factors(self)
+        for rf in self._dynamicRiskFactors:
+            if rf in updatedRiskFactors.keys():
+                getattr(self, "_"+rf)[-1] = updatedRiskFactors[rf]
+
+    def update_treatment_strategy_status(self, treatmentStrategy, treatmentStrategyType):
+        if self._treatmentStrategyStatus[treatmentStrategyType.value] is None:
+            if treatmentStrategy is not None:
+                self._treatmentStrategyStatus[treatmentStrategyType.value] = TreatmentStrategyStatus.BEGIN
+        elif self._treatmentStrategyStatus[treatmentStrategyType.value] == TreatmentStrategyStatus.BEGIN:
+            if treatmentStrategy is not None:
+                self._treatmentStrategyStatus[treatmentStrategyType.value] = TreatmentStrategyStatus.MAINTAIN
+            else:
+                self._treatmentStrategyStatus[treatmentStrategyType.value] = TreatmentStrategyStatus.END
+        elif self._treatmentStrategyStatus[treatmentStrategyType.value] == TreatmentStrategyStatus.MAINTAIN:
+            if treatmentStrategy is None: 
+                self._treatmentStrategyStatus[treatmentStrategyType.value] = TreatmentStrategyStatus.END 
+        elif self._treatmentStrategyStatus[treatmentStrategyType.value] == TreatmentStrategyStatus.END:
+            if treatmentStrategy is None:
+                self._treatmentStrategyStatus[treatmentStrategyType.value] = None
+            else:
+                self._treatmentStrategyStatus[treatmentStrategyType.value] = TreatmentStrategyStatus.BEGIN 
+        else:
+            raise RuntimeError("Unrecognized person treatment strategy status.") 
+            #setattr(self,"_"+tsType.value+"TreatmentStatus", ts.status) 
 
     def advance_outcomes(self, outcomeModelRepository):
         for outcomeType in OutcomeType:
@@ -180,6 +212,11 @@ class Person:
         else:
             return False
     
+    @property
+    def is_in_bp_treatment(self):
+        return ( (self._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.BEGIN) |
+                 (self._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.MAINTAIN) )
+
     @property
     def _current_age(self):
         return self._age[-1]

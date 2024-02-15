@@ -1,5 +1,7 @@
 from microsim.outcome import OutcomeType
 from microsim.outcome_model_repository import OutcomeModelRepository
+from microsim.risk_factor import DynamicRiskFactorsType
+from microsim.treatment import TreatmentStrategyStatus, TreatmentStrategiesType
 
 from abc import ABC
 
@@ -16,9 +18,23 @@ class BaseTreatmentStrategy:
 class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
     sbpLowering = 5.5
     dbpLowering = 3.1
+    bpMedsAdded = 1
 
     def __init__(self):
         pass
+
+    def get_updated_treatments(self, person):
+        return dict()
+
+    def get_updated_risk_factors(self, person):
+        if person._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.BEGIN:
+            return {DynamicRiskFactorsType.SBP.value: getattr(person, "_"+DynamicRiskFactorsType.SBP.value)[-1] - self.sbpLowering,
+                    DynamicRiskFactorsType.DBP.value: getattr(person, "_"+DynamicRiskFactorsType.DBP.value)[-1] - self.dbpLowering}
+        elif person._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.END:
+            return {DynamicRiskFactorsType.SBP.value: getattr(person, "_"+DynamicRiskFactorsType.SBP.value)[-1] + self.sbpLowering,
+                    DynamicRiskFactorsType.DBP.value: getattr(person, "_"+DynamicRiskFactorsType.DBP.value)[-1] + self.dbpLowering}
+        else:
+            return dict()
 
     def get_changes_for_person(self, person):
         return (

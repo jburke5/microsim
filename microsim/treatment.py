@@ -11,4 +11,9 @@ class DefaultTreatmentsType(Enum):
     OTHER_LIPID_LOWERING_MEDICATION_COUNT = "otherLipidLoweringMedicationCount"
     
 class TreatmentStrategiesType(Enum):
-    BP = "bpMedsAdded"
+    BP = "bp"
+
+class TreatmentStrategyStatus(Enum):
+    BEGIN = "begin"
+    MAINTAIN = "maintain"
+    END = "end"
