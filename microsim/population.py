@@ -93,17 +93,9 @@ class Population:
         self._n = self._people.shape[0]
         self._rng = np.random.default_rng() 
         self._modelRepository = popModelRepository._repository
-        #for repositoryType in PopulationRepositoryType:
-        #    #set each repository as a Population-instance attribute
-        #    setattr(self, "_"+repositoryType.value+"Repository", getattr(popModelRepository, "_"+repositoryType.value+"Repository"))
-        #    #set the keys of each repository as a Population-instance attribute
-        #    setattr(self, "_"+repositoryType.value, list(getattr(popModelRepository, "_"+repositoryType.value+"Repository")._repository.keys()))
 
     def advance(self, years, treatmentStrategies=None):
         list(map(lambda x: x.advance(years, 
-                                     #getattr(self,"_"+PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value+"Repository"),
-                                     #getattr(self,"_"+PopulationRepositoryType.DEFAULT_TREATMENTS.value+"Repository"),     
-                                     #getattr(self,"_"+PopulationRepositoryType.OUTCOMES.value+"Repository"), 
                                      self._modelRepository[PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value],
                                      self._modelRepository[PopulationRepositoryType.DEFAULT_TREATMENTS.value],
                                      self._modelRepository[PopulationRepositoryType.OUTCOMES.value],
@@ -112,6 +104,35 @@ class Population:
         #note: need to remember that each Person-instance will have their own _waveCompleted attribute, which may be different than the
         #      Population-level _waveCompleted attribute
         self._waveCompleted += years
+
+    #Q: I think I need this for starmap
+    def worker_advance(self, subPopulation, years, treatmentStrategies):
+        subPopulation.advance(years, treatmentStrategies)
+        return subPopulation
+
+    def advance_parallel(self, years, treatmentStrategies=None, nWorkers=2):
+        with mp.Pool(nWorkers) as myPool:
+            #we do not need to divide the pop in nWorkers parts, could be a different number but
+            #the assumption is that all sub populations take about the same amount of time to advance
+            subPopulations = self.get_sub_populations(nWorkers)
+            subPopulations = myPool.starmap(self.worker_advance, [(sp, years, treatmentStrategies) for sp in subPopulations])
+        self._people = pd.concat([sp._people for sp in subPopulations])
+        self._waveCompleted += years
+
+    def get_sub_populations(self, nPieces):
+        """Divides the _people attribute of a single Population instance in nPieces and creates smaller Population instances
+        with the same population model repository. This is a strategy in order to avoid passing the entire _people 
+        to each worker when advance_parallel is used. Keep in mind that this method may be used by a Population subclass, 
+        eg NHANESDirectSamplePopulation. The fact that we are not dividing the NHANESDirectSamplePopulation in smaller
+        NHANESDirectSamplePopulation instances for now does not create a problem since we continue to use NHANES Person objects
+        and the same population model repositories. Returns a list of Population instances. """
+        peopleParts = np.array_split(self._people, nPieces)
+        modelRepositoryParts = [PopulationModelRepository(
+                                    self._modelRepository[PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value],
+                                    self._modelRepository[PopulationRepositoryType.DEFAULT_TREATMENTS.value],
+                                    self._modelRepository[PopulationRepositoryType.OUTCOMES.value],
+                                    self._modelRepository[PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value]) for x in range(nPieces)]
+        return [Population(people, modelRepository) for people, modelRepository in zip(peopleParts, modelRepositoryParts)]
 
     def get_age_counts(self, itemList):
         counts = dict()
