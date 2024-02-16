@@ -16,9 +16,14 @@ class PopulationModelRepository:
        These are reflected in the PopulationRepositoryType class as well."""
 
     def __init__(self, dynamicRiskFactorRepository, defaultTreatmentRepository, outcomeRepository, staticRiskFactorRepository):
-        setattr(self, "_"+PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value+"Repository", dynamicRiskFactorRepository)
-        setattr(self, "_"+PopulationRepositoryType.DEFAULT_TREATMENTS.value+"Repository", defaultTreatmentRepository)
-        setattr(self, "_"+PopulationRepositoryType.OUTCOMES.value+"Repository", outcomeRepository)
-        setattr(self, "_"+PopulationRepositoryType.STATIC_RISK_FACTORS.value+"Repository", staticRiskFactorRepository)
+        #setattr(self, "_"+PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value+"Repository", dynamicRiskFactorRepository)
+        #setattr(self, "_"+PopulationRepositoryType.DEFAULT_TREATMENTS.value+"Repository", defaultTreatmentRepository)
+        #setattr(self, "_"+PopulationRepositoryType.OUTCOMES.value+"Repository", outcomeRepository)
+        #setattr(self, "_"+PopulationRepositoryType.STATIC_RISK_FACTORS.value+"Repository", staticRiskFactorRepository)
+        self._repository = {
+            PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value: dynamicRiskFactorRepository,
+            PopulationRepositoryType.DEFAULT_TREATMENTS.value: defaultTreatmentRepository,
+            PopulationRepositoryType.OUTCOMES.value: outcomeRepository,
+            PopulationRepositoryType.STATIC_RISK_FACTORS.value: staticRiskFactorRepository}
         
         

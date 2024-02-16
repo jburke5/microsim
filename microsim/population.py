@@ -92,17 +92,21 @@ class Population:
         self._people = people
         self._n = self._people.shape[0]
         self._rng = np.random.default_rng() 
-        for repositoryType in PopulationRepositoryType:
-            #set each repository as a Population-instance attribute
-            setattr(self, "_"+repositoryType.value+"Repository", getattr(popModelRepository, "_"+repositoryType.value+"Repository"))
-            #set the keys of each repository as a Population-instance attribute
-            setattr(self, "_"+repositoryType.value, list(getattr(popModelRepository, "_"+repositoryType.value+"Repository")._repository.keys()))
+        self._modelRepository = popModelRepository._repository
+        #for repositoryType in PopulationRepositoryType:
+        #    #set each repository as a Population-instance attribute
+        #    setattr(self, "_"+repositoryType.value+"Repository", getattr(popModelRepository, "_"+repositoryType.value+"Repository"))
+        #    #set the keys of each repository as a Population-instance attribute
+        #    setattr(self, "_"+repositoryType.value, list(getattr(popModelRepository, "_"+repositoryType.value+"Repository")._repository.keys()))
 
     def advance(self, years, treatmentStrategies=None):
         list(map(lambda x: x.advance(years, 
-                                     getattr(self,"_"+PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value+"Repository"),
-                                     getattr(self,"_"+PopulationRepositoryType.DEFAULT_TREATMENTS.value+"Repository"),     
-                                     getattr(self,"_"+PopulationRepositoryType.OUTCOMES.value+"Repository"), 
+                                     #getattr(self,"_"+PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value+"Repository"),
+                                     #getattr(self,"_"+PopulationRepositoryType.DEFAULT_TREATMENTS.value+"Repository"),     
+                                     #getattr(self,"_"+PopulationRepositoryType.OUTCOMES.value+"Repository"), 
+                                     self._modelRepository[PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value],
+                                     self._modelRepository[PopulationRepositoryType.DEFAULT_TREATMENTS.value],
+                                     self._modelRepository[PopulationRepositoryType.OUTCOMES.value],
                                      treatmentStrategies),
                  self._people))
         #note: need to remember that each Person-instance will have their own _waveCompleted attribute, which may be different than the

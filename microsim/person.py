@@ -589,7 +589,7 @@ class Person:
         return sorted(self._a1c)[-1] >= 6.5
 
     def years_in_simulation(self):
-        return self.waveCompleted+1
+        return self._waveCompleted+1
 
     def get_next_risk_factor(self, riskFactor, risk_model_repository):
         model = risk_model_repository.get_model(riskFactor)
