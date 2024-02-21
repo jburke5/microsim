@@ -31,12 +31,6 @@ from microsim.treatment import TreatmentStrategiesType, TreatmentStrategyStatus
 # so, if a patient has an event during wave 1, their status would be Negatve at subscript[0] and
 # Positive at subscript[1]
 
-# lucianatag: for this and GCP, this approach is a bit inelegant. the idea is to have classees that can be swapped out
-# at the population level to change the behavior about how people change over time.
-# but, when we instantiate a person, we don't want to keep a refernce tot the population.
-# is the fix just to have the population create people (such that the repository/strategy/model classes can be assigned from within
-# the population)
-
 class Person:
     """Person is using risk factors and demographics based off NHANES.
        A Person-instance is essentially a data structure that holds all person-related data, the past and the present.
@@ -299,7 +293,13 @@ class Person:
             raise RuntimeError(f'Age:: {ageTarget} out of range {self._age[0]}-{self._age[-1]}')
         else:
             return self._age.index(ageTarget)
-       
+
+    def get_age_for_wave(self, wave):
+        if (wave<0) | (wave>self._waveCompleted):
+            raise RuntimeError(f'Wave: {wave} out of range 0-{self._waveCompleted}')
+        else:
+            return self._age[wave]
+
     # returns a version of the person that maintains all of their history up until 
     # a specified age threshold.
     def get_person_copy_at_age(self, age):
@@ -507,31 +507,21 @@ class Person:
             total += self._qalys[i]
         return total
 
-    def dead_at_start_of_wave(self, wave):
-        return (wave > len(self._age)) or (self._alive[wave-1] == False)
-
-    def dead_at_end_of_wave(self, wave):
-        return (wave > len(self._age)) or (self._alive[wave] == False)
-
-
-    # this method is trying to enable simple logic in the popuation.
-    # when the population asks, "who is alive at a given time point?" it can't merely check
-    # the index on person._alive, because people who died prior to that time will not have an index
-    # in alive at that time.
-
-    def alive_at_start_of_wave(self, start_wave_num):
-        if (self._alive[-1]) and (start_wave_num > (len(self._age))):
-            raise Exception(
-                f"Trying to find status for a wave: {start_wave_num}, beyond current wave: {len(self._age)}, index: {self._populationIndex}, person: {self}"
-            )
-
-        # we always know, regardless of what wave is being inquired about, that a person who was once dead
-        # is still dead
-        if (self.is_dead()) and (start_wave_num > len(self._alive) - 1):
-            return False
+    def get_death_age(self):
+        if len(self._outcomes[OutcomeType.DEATH])>0:
+            return self._outcomes[OutcomeType.DEATH][0][0]
         else:
-            # this returns whether one was alive at the start of a given wave (i.e. the end of theprior wave)
-            return self._alive[start_wave_num - 1]
+            return None
+
+    def dead_by_wave(self, wave):
+        if len(self._outcomes[OutcomeType.DEATH])>0:
+            ageAtWave = self.get_age_for_wave(wave)
+            return ageAtWave > self.get_death_age()
+        else:
+            return False
+
+    def alive_at_start_of_wave(self, wave):
+        return not self.dead_by_wave(wave)
 
     def has_outcome_prior_to_simulation(self, outcomeType):
         if len(self._outcomes[outcomeType])>0:
@@ -549,9 +539,12 @@ class Person:
         return list(filter(lambda x: not x[1].priorToSim, self._outcomes[outcomeType]))
 
     def has_outcome_during_simulation_prior_to_wave(self, outcomeType, wave):
-        return any(
-            [ageAtEvent >= self._age[0] + wave for ageAtEvent, _ in self._outcomes[outcomeType]]
-        )
+        if len(self._outcomes[outcomeType])>0:
+            ageAtWave = self.get_age_for_wave(wave)
+            outcomesInSim = self.get_outcomes_during_simulation(outcomeType)
+            return any( [ageAtOutcome<ageAtWave for ageAtOutcome, _ in outcomesInSim] )
+        else:
+            return False
 
     def has_outcome(self, outcomeType):
         return len(self._outcomes[outcomeType]) > 0
@@ -578,7 +571,7 @@ class Person:
         if not self.valid_outcome_wave(wave):
             return False
         else:
-            return len(self._outcomes[outcomeType]) != 0 and self.has_outcome_at_age(outcomeType, self._age[wave - 1])
+            return len(self._outcomes[outcomeType]) != 0 and self.has_outcome_at_age(outcomeType, self._age[wave])
 
     def has_outcome_during_or_prior_to_wave(self, wave, outcomeType):
         if not self.valid_outcome_wave(wave):
@@ -586,14 +579,14 @@ class Person:
         else:
             return len(self._outcomes[outcomeType]) != 0 and self.has_outcome_by_age(outcomeType, self._age[wave])
 
-    def has_outcome_at_age(self, type, age):
-        for outcome_tuple in self._outcomes[type]:
+    def has_outcome_at_age(self, outcomeType, age):
+        for outcome_tuple in self._outcomes[outcomeType]:
             if outcome_tuple[0] == age:
                 return True
         return False
     
-    def has_outcome_by_age(self, type, age):
-        for outcome_tuple in self._outcomes[type]:
+    def has_outcome_by_age(self, outcomeType, age):
+        for outcome_tuple in self._outcomes[outcomeType]:
             if outcome_tuple[0] <= age:
                 return True
         return False
@@ -604,23 +597,24 @@ class Person:
         else:
             return None
 
-    def get_age_at_last_outcome(self, type):
+    def get_age_at_last_outcome(self, outcomeType):
         #Q: should we move the age to the outcome class?
         #TO DO: need to include the selfReported argument to the MI phenotype as I did for the stroke outcome
-        return self._outcomes[type][-1][0] if (len(self._outcomes[type]) > 0) else None
+        return self._outcomes[outcomeType][-1][0] if (len(self._outcomes[outcomeType]) > 0) else None
 
-    def get_age_at_first_outcome_in_sim(self, type):
-        for outcome_tuple in self._outcomes[type]:
-            age = outcome_tuple[0]
-            if age > 0:
+    def get_age_at_first_outcome_in_sim(self, outcomeType):
+        for outcome_tuple in self._outcomes[outcomeType]:
+            if not outcome_tuple[1].priorToSim:
+                age = outcome_tuple[0]
                 return age
-
         return None
 
-    def get_age_at_last_outcome_in_sim(self, type):
-        age = self._outcomes[type][-1][0] if (len(self._outcomes[type]) > 0) else None
-        age = None if (age == -1) else age #if outcome was prior to sim, return None
-        return age
+    def get_age_at_last_outcome_in_sim(self, outcomeType):
+        if (len(self._outcomes[outcomeType]) > 0):
+            (age, priorToSim) = (self._outcomes[outcomeType][-1][0], self._outcomes[outcomeType[-1][1].priorToSim)
+            return None if priorToSim else age
+        else:
+            return None
 
     #def get_median_attr_prior_last_stroke(self, attr): #assuming that the attribute is a list of floats
     #    attrList = getattr(self, attr)
