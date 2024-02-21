@@ -879,60 +879,24 @@ class Person:
     def __ne__(self, obj):
         return not self == obj
 
-    # luciana tag...the nice part about this method is that its highly transparent
-    # the not so nice part is that if we add an attribute you have to add it here...
     def __eq__(self, other):
         if not isinstance(other, Person):
             return NotImplemented
-        if not other._age == self._age:
+        if (self._name!=other._name) | (self._index!=other._index) | (self._randomEffects!=other._randomEffects):
             return False
-        if not other._gender == self._gender:
+        for attr in self._staticRiskFactors:
+            if getattr(self, '_'+attr) != getattr(other, '_'+attr):
+                return False
+        for attr in self._dynamicRiskFactors:
+            if getattr(self, '_'+attr) != getattr(other, '_'+attr):
+                return False     
+        for attr in self._defaultTreatments:
+            if getattr(self, '_'+attr) != getattr(other, '_'+attr):
+                return False   
+        if self._outcomes != other._outcomes:
             return False
-        if not other._raceEthnicity == self._raceEthnicity:
-            return False
-        if not other._sbp == self._sbp:
-            return False
-        if not other._dbp == self._dbp:
-            return False
-        if not other._a1c == self._a1c:
-            return False
-        if not other._hdl == self._hdl:
-            return False
-        if not other._totChol == self._totChol:
-            return False
-        if not other._bmi == self._bmi:
-            return False
-        if not other._ldl == self._ldl:
-            return False
-        if not other._trig == self._trig:
-            return False
-        if not other._waist == self._waist:
-            return False
-        if not other._anyPhysicalActivity == self._anyPhysicalActivity:
-            return False
-        if not other._education == self._education:
-            return False
-        if not other._smokingStatus == self._smokingStatus:
-            return False
-        if not other._alcoholPerWeek == self._alcoholPerWeek:
-            return False
-        if not other._antiHypertensiveCount == self._antiHypertensiveCount:
-            return False
-        if not other._statin == self._statin:
-            return False
-        if not other._otherLipidLoweringMedicationCount == self._otherLipidLoweringMedicationCount:
-            return False
-        if not other._creatinine == self._creatinine:
-            return False
-        if not other._afib == self._afib:
-            return False
-        if not other._alive == self._alive:
-            return False
-        if not other._gcp == self._gcp:
-            return False
-        if not other._randomEffects == self._randomEffects:
-            return False
-        return other._outcomes == self._outcomes
+        else:
+            return True
 
     # luciana tag...there is almost definitely a better way to do this..
     def __deepcopy__(self, memo):
