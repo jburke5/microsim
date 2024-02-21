@@ -369,73 +369,21 @@ class Person:
                 filter(lambda outcome: outcome[0] < self.get_age_at_end_of_wave(wave), outcomes_for_type)
             )
         return personCopy
-    # this method and the following method are used by poulation to get person informaiton
+
     def get_current_state_as_dict(self):
-        return {
-            "age": self._age[-1],
-            "baseAge": self._age[0],
-            "gender": self._gender,
-            "raceEthnicity": self._raceEthnicity,
-            "black": self._raceEthnicity == 4,
-            "sbp": self._sbp[-1],
-            "dbp": self._dbp[-1],
-            "a1c": self._a1c[-1],
-            "current_diabetes": self._a1c[-1] > 6.5,
-            "gfr": self._gfr,
-            "hdl": self._hdl[-1],
-            "ldl": self._ldl[-1],
-            "trig": self._trig[-1],
-            "totChol": self._totChol[-1],
-            "pvd": self._pvd[-1],
-            "bmi": self._bmi[-1],
-            "anyPhysicalActivity": self._anyPhysicalActivity[-1],
-            "education": self._education.value,
-            "afib": self._afib[-1],
-            "alcoholPerWeek": self._alcoholPerWeek[-1],
-            "creatinine": self._creatinine[-1],
-            "antiHypertensiveCount": self._antiHypertensiveCount[-1],
-            # this variable is used in the risk model...
-            # this reflects whether patients have had medications assigned as a risk factor, but 
-            # not whether there has been a separate trematent effect, which is tracked in bpMedsAdded
-            "current_bp_treatment": self._antiHypertensiveCount[-1] > 0,
-            "statin": self._statin[-1],
-            "otherLipidLoweringMedicationCount": self._otherLipidLoweringMedicationCount[-1],
-            "waist": self._waist[-1],
-            "smokingStatus": self._smokingStatus,
-            "current_smoker": self._smokingStatus == 2,
-            "dead": self.is_dead(),
-            "gcpRandomEffect": self._randomEffects["gcp"],
-            "gcpStrokeRandomEffect": self._randomEffects["gcpStroke"],
-            "gcpStrokeSlopeRandomEffect": self._randomEffects["gcpStrokeSlope"],
-            "miPriorToSim": self._selfReportMIPriorToSim,
-            "mi": self._selfReportMIPriorToSim or self.has_mi_during_simulation(),
-            "stroke": self._selfReportStrokePriorToSim or self.has_stroke_during_simulation(),
-            "ageAtFirstStroke": self.get_age_at_first_outcome(OutcomeType.STROKE),
-            "ageAtFirstMI": self.get_age_at_first_outcome(OutcomeType.MI),
-            "ageAtFirstDementia": self.get_age_at_first_outcome(OutcomeType.DEMENTIA),
-            "ageAtLastStroke": self.get_age_at_last_outcome(OutcomeType.STROKE),
-            "miInSim": self.has_mi_during_simulation(),
-            "strokePriorToSim": self._selfReportStrokePriorToSim,
-            "strokeInSim": self.has_stroke_during_simulation(),
-            "dementia": self._dementia,
-            "gcp": self._gcp[-1],
-            "baseGcp": self._gcp[0],
-            "gcpSlope": self._gcp[-1] - self._gcp[-2] if len(self._gcp) >= 2 else 0,
-            "totalYearsInSim": self.years_in_simulation(),
-            "totalQalys": np.array(self._qalys).sum(),
-            "totalBPMedsAdded": np.array(self._bpMedsAdded).sum(),
-            "bpMedsAdded": self._bpMedsAdded[-1],
-            "meanBmiPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_bmi"),
-            "meanGcpPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_gcp"),
-            "meanSbpPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_sbp"),
-            "meanA1cPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_a1c"),
-            "meanLdlPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_ldl"),
-            "meanWaistPriorToLastStroke": self.get_mean_attr_prior_last_stroke("_waist"),
-            "waveAtLastStroke": self.get_wave_at_last_stroke(),
-            "meanSbpSinceLastStroke": self.get_mean_attr_since_last_stroke("_sbp"),
-            "meanLdlSinceLastStroke": self.get_mean_attr_since_last_stroke("_ldl"),
-            "meanA1cSinceLastStroke": self.get_mean_attr_since_last_stroke("_a1c")
-        }
+        """Returns the present, the last wave, state of the Person object (ie, no past information is included)."""
+        attributes = dict()
+        attributes["name"] = self._name
+        attributes["index"] = self._index
+        attributes["random_effects"] = self._randomEffects
+        for attr in self._staticRiskFactors:
+            attributes[attr] = getattr(self,'_'+attr)
+        for attr in self._dynamicRiskFactors:
+            attributes[attr] = getattr(self,'_'+attr)[-1]
+        for attr in self._defaultTreatments:
+            attributes[attr] = getattr(self,'_'+attr)[-1]
+        attributes["outcomes"] = self._outcomes
+        return attributes
 
     def get_tvc_state_as_dict(self, timeVaryingCovariates):
         tvcAttributes = {}
@@ -452,66 +400,21 @@ class Person:
             tvcAttributes[var] = attr
         return tvcAttributes
 
-    def get_final_wave_state_as_dict(self): #this method works only for populations where all people have died
-        tvc = ['sbp', 'dbp', 'a1c', 'hdl', 'ldl', 'a1c','trig', 'totChol','bmi', 
-                'anyPhysicalActivity', 'afib', 'alcoholPerWeek', 'creatinine', 'antiHypertensiveCount',
-                'statin',  'waist', 'alive', 'gcp',
-                'bpMedsAdded']
-        attributes = self.get_tvc_state_as_dict_long(tvc)
-        attributes = {i : j[1:] for i, j in attributes.items()}
-        # to get the final wave state, we are going to throw out the first observation for each risk factor, this is what was present at the 
-        # start of a wave...
-        updatedAgeList = copy.deepcopy(self._age)
-        # to get the state at the "end" of the last wave, we need an age value that doesn't exist, so we'll append -1
-        # we must do this, when a simulation person dies, they do have events that took place in the last wave, but their ._age array does not get another element
-        updatedAgeList.append(-1)
-        attributes['age'] = updatedAgeList[1:]
-        waveCount = len(self._age) #true for dead simulation people (when a simulation person is alive: waveCount = len(self._age) - 1)
-        
-        # build a list of ages that includes what a patient's age would have been at teh end of the last wave
-        ageThroughEndOfSim = copy.deepcopy(self._age)
-        ageThroughEndOfSim.append(ageThroughEndOfSim[-1]+1)
-
-        # on rare occasions a person can die from a CV and non-CV cause in the same year...
-        # in that case, they get assigned death twice...which throws the DF lengths off...
-        if len(self._alive) >= 2 and (self._alive[-1] == False) and (self._alive[-2] == False):
-            attributes['alive'] = attributes['alive'][:-1]
-        
-        attributes["baseAge"] =  [self._age[0]] * waveCount 
-        attributes["gender"] =  [self._gender] * waveCount
-        attributes["raceEthnicity"] =  [self._raceEthnicity] * waveCount
-        attributes["black"]= [self._raceEthnicity == 4] * waveCount
-        attributes["current_diabetes"] = [np.greater(self._a1c[i], 6.5) for i in range(1, waveCount+1)]
-        attributes["gfr"] = [GFREquation().get_gfr_for_person_attributes(self._gender, self._raceEthnicity,
-            self._creatinine[i], ageThroughEndOfSim[i]) for i in range(1, waveCount+1)]
-        attributes["education"] = [self._education.value] * waveCount
-        attributes["current_bp_treatment"] = [self._antiHypertensiveCount[i] > 0 for i in range(1, waveCount+1)]
-        attributes["smokingStatus"] =  [self._smokingStatus] * waveCount
-        attributes["current_smoker"] = [self._smokingStatus == 2] * waveCount
-        attributes["gcpRandomEffect"]= [self._randomEffects["gcp"]] * waveCount
-        attributes["miPriorToSim"] = [self._selfReportMIPriorToSim] * waveCount
-        attributes["strokePriorToSim"] = [self._selfReportStrokePriorToSim] * waveCount
-        attributes["mi"] = [self._selfReportMIPriorToSim or self.has_outcome_during_or_prior_to_wave(i, OutcomeType.MI) for i in range(1, waveCount+1)]
-        attributes["stroke"] = [self._selfReportStrokePriorToSim or self.has_outcome_during_or_prior_to_wave(i, OutcomeType.STROKE) for i in range(1, waveCount+1)]
-        #ageAtFirstX lists: if person never had the outcome all elements are None, if person had outcome at age Y array is [-1,-1,...-1, Y,Y...Y]
-        attributes["ageAtFirstStroke"] =  [None if self.get_age_at_first_outcome(OutcomeType.STROKE) is None else self.get_age_at_first_outcome(OutcomeType.STROKE) if self.get_age_at_first_outcome(OutcomeType.STROKE) < i else -1  for i in self._age]
-        attributes["ageAtFirstMI"] =  [None if self.get_age_at_first_outcome(OutcomeType.MI) is None else self.get_age_at_first_outcome(OutcomeType.MI) if self.get_age_at_first_outcome(OutcomeType.MI) < i else -1  for i in self._age]
-        attributes["ageAtFirstDementia"] =  [None if self.get_age_at_first_outcome(OutcomeType.DEMENTIA) is None else self.get_age_at_first_outcome(OutcomeType.DEMENTIA) if self.get_age_at_first_outcome(OutcomeType.DEMENTIA) < i else -1  for i in self._age]
-        attributes["miInSim"] = [self.has_mi_during_wave(i) for i in range(1, waveCount+1)]
-        attributes["strokeInSim"] = [self.has_stroke_during_wave(i) for i in range(1, waveCount+1)]
-        attributes["dementia"] = [self.has_outcome_during_or_prior_to_wave(i, OutcomeType.DEMENTIA) for i in range(1, waveCount+1)]
-        attributes["baseGcp"] = [self._gcp[0]] * waveCount
-        attributes["gcpSlope"] = [self._gcp[i-1] - self._gcp[i-2] if i >= 2 else 0 for i in range(1, waveCount+1)]
-        attributes["totalYearsInSim"] = np.arange(1, waveCount+1)
-        attributes["totalBPMedsAdded"] = [np.array(self._bpMedsAdded[:i]).sum() for i in range(1, waveCount+1)]
-        attributes["totalQalys"] = [QALYAssignmentStrategy().get_next_qaly(self, age) for age in self._age]
-        
-        #for key, val in attributes.items():
-        #    print(f"key: {key}, len(val): {len(val)}")
-
+    def get_full_state_as_dict(self): 
+        """Includes the complete state, past and present, of the Person object."""
+        attributes = dict()
+        attributes["name"] = self._name
+        attributes["index"] = self._index
+        attributes["random_effects"] = self._randomEffects
+        for attr in self._staticRiskFactors:
+            attributes[attr] = getattr(self,'_'+attr)
+        for attr in self._dynamicRiskFactors:
+            attributes[attr] = getattr(self,'_'+attr)
+        for attr in self._defaultTreatments:
+            attributes[attr] = getattr(self,'_'+attr)
+        attributes["outcomes"] = self._outcomes
         return attributes
 
-        
     @property
     def _current_smoker(self):
         return self._smokingStatus == SmokingStatus.CURRENT
