@@ -143,7 +143,7 @@ class GCPModel:
             )
         else:
             linPred = self.calc_linear_predictor_for_patient_characteristics(
-                yearsInSim=person.years_in_simulation(),
+                yearsInSim=person.get_years_in_simulation(),
                 raceEthnicity=person._raceEthnicity,
                 gender=person._gender,
                 baseAge=person._age[0],

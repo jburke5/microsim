@@ -15,6 +15,25 @@ class BaseTreatmentStrategy:
     def get_changes_vectorized(self, x):
         raise RuntimeError("Vectorized Treatment not implemented for this strategy")
 
+class AddNBPMedsTreatmentStrategy(BaseTreatmentStrategy):
+    def __init__(self, n):
+        self.n = n
+        self.sbpLowering = 5.5*self.n
+        self.dbpLowering = 3.1*self.n
+
+    def get_updated_treatments(self, person):
+        return dict()
+
+    def get_updated_risk_factors(self, person):
+        if person._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.BEGIN:
+            return {DynamicRiskFactorsType.SBP.value: getattr(person, "_"+DynamicRiskFactorsType.SBP.value)[-1] - self.sbpLowering,
+                    DynamicRiskFactorsType.DBP.value: getattr(person, "_"+DynamicRiskFactorsType.DBP.value)[-1] - self.dbpLowering}
+        elif person._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.END:
+            return {DynamicRiskFactorsType.SBP.value: getattr(person, "_"+DynamicRiskFactorsType.SBP.value)[-1] + self.sbpLowering,
+                    DynamicRiskFactorsType.DBP.value: getattr(person, "_"+DynamicRiskFactorsType.DBP.value)[-1] + self.dbpLowering}
+        else:
+            return dict()
+
 class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
     sbpLowering = 5.5
     dbpLowering = 3.1

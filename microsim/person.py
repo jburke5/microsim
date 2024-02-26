@@ -211,6 +211,11 @@ class Person:
         return ( (self._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.BEGIN) |
                  (self._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.MAINTAIN) )
 
+    #Q: the term bp seems inconsistent here, maybe change bp to hypertensive?
+    @property 
+    def _current_bp_treatment(self):
+        return self._antiHypertensiveCount[-1] > 0
+
     @property
     def _current_age(self):
         return self._age[-1]
@@ -420,10 +425,6 @@ class Person:
         return self._smokingStatus == SmokingStatus.CURRENT
 
     @property
-    def _current_bp_treatment(self):
-        return self._antiHypertensiveCount[-1] > 0
-
-    @property
     def _current_diabetes(self):
         return self.has_diabetes()
 
@@ -491,7 +492,7 @@ class Person:
     def has_diabetes(self):
         return sorted(self._a1c)[-1] >= 6.5
 
-    def years_in_simulation(self):
+    def get_years_in_simulation(self):
         return self._waveCompleted+1
 
     def get_next_risk_factor(self, riskFactor, risk_model_repository):
@@ -611,21 +612,10 @@ class Person:
 
     def get_age_at_last_outcome_in_sim(self, outcomeType):
         if (len(self._outcomes[outcomeType]) > 0):
-            (age, priorToSim) = (self._outcomes[outcomeType][-1][0], self._outcomes[outcomeType[-1][1].priorToSim)
+            (age, priorToSim) = (self._outcomes[outcomeType][-1][0], self._outcomes[outcomeType][-1][1].priorToSim)
             return None if priorToSim else age
         else:
             return None
-
-    #def get_median_attr_prior_last_stroke(self, attr): #assuming that the attribute is a list of floats
-    #    attrList = getattr(self, attr)
-    #    ageAtLastStroke = self.get_age_at_last_outcome(OutcomeType.STROKE)
-    #    if (ageAtLastStroke is None): #never had stroke outcome
-    #        return None
-    #    elif (ageAtLastStroke==-1): #had stroke outcome prior to sim and not in sim
-    #        return attrList[0] #return the baseline attr as our best estimate of the median prestroke attribute
-    #    else: #had stroke outcome in sim
-    #        waveAtLastStroke = self.get_wave_for_age(ageAtLastStroke)
-    #        return np.median(attrList[:waveAtLastStroke])
 
     def get_wave_at_last_stroke(self):
         ageAtLastStroke = self.get_age_at_last_outcome(OutcomeType.STROKE)
