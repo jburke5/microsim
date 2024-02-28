@@ -17,18 +17,21 @@ class BaseTreatmentStrategy:
 
 class AddNBPMedsTreatmentStrategy(BaseTreatmentStrategy):
     def __init__(self, n):
-        self.n = n
+        self.bpMedsAdded = n
         self.sbpLowering = 5.5*self.n
         self.dbpLowering = 3.1*self.n
+        self.status = TreatmentStrategyStatus.BEGIN
 
     def get_updated_treatments(self, person):
         return dict()
 
     def get_updated_risk_factors(self, person):
-        if person._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.BEGIN:
+        if person._treatmentStrategies[TreatmentStrategiesType.BP.value]["status"]==TreatmentStrategyStatus.BEGIN:
+            person._treatmentStrategies[TreatmentStrategiesType.BP.value]["bpMedsAdded"]=self.bpMedsAdded
             return {DynamicRiskFactorsType.SBP.value: getattr(person, "_"+DynamicRiskFactorsType.SBP.value)[-1] - self.sbpLowering,
                     DynamicRiskFactorsType.DBP.value: getattr(person, "_"+DynamicRiskFactorsType.DBP.value)[-1] - self.dbpLowering}
-        elif person._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.END:
+        elif person._treatmentStrategies[TreatmentStrategiesType.BP.value]["status"]==TreatmentStrategyStatus.END:
+            del person._treatmentStrategies[TreatmentStrategiesType.BP.value]["bpMedsAdded"]
             return {DynamicRiskFactorsType.SBP.value: getattr(person, "_"+DynamicRiskFactorsType.SBP.value)[-1] + self.sbpLowering,
                     DynamicRiskFactorsType.DBP.value: getattr(person, "_"+DynamicRiskFactorsType.DBP.value)[-1] + self.dbpLowering}
         else:
@@ -40,16 +43,18 @@ class AddASingleBPMedTreatmentStrategy(BaseTreatmentStrategy):
     bpMedsAdded = 1
 
     def __init__(self):
-        pass
+        self.status = TreatmentStrategyStatus.BEGIN
 
     def get_updated_treatments(self, person):
         return dict()
 
     def get_updated_risk_factors(self, person):
-        if person._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.BEGIN:
+        if person._treatmentStrategies[TreatmentStrategiesType.BP.value]["status"]==TreatmentStrategyStatus.BEGIN:
+            person._treatmentStrategies[TreatmentStrategiesType.BP.value]["bpMedsAdded"]=self.bpMedsAdded
             return {DynamicRiskFactorsType.SBP.value: getattr(person, "_"+DynamicRiskFactorsType.SBP.value)[-1] - self.sbpLowering,
                     DynamicRiskFactorsType.DBP.value: getattr(person, "_"+DynamicRiskFactorsType.DBP.value)[-1] - self.dbpLowering}
-        elif person._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.END:
+        elif person._treatmentStrategies[TreatmentStrategiesType.BP.value]["status"]==TreatmentStrategyStatus.END:
+            del person._treatmentStrategies[TreatmentStrategiesType.BP.value]["bpMedsAdded"]
             return {DynamicRiskFactorsType.SBP.value: getattr(person, "_"+DynamicRiskFactorsType.SBP.value)[-1] + self.sbpLowering,
                     DynamicRiskFactorsType.DBP.value: getattr(person, "_"+DynamicRiskFactorsType.DBP.value)[-1] + self.dbpLowering}
         else:

@@ -17,8 +17,10 @@ import scipy.special as scipySpecial
 class StrokePartitionModel(StatsModelLinearRiskFactorModel):
     """Fatal stroke probability estimated from our meta-analysis of BASIC, NoMAS, GCNKSS, REGARDS."""
 
-    def __init__(self):
+    def __init__(self, intercept=None):
         model_spec = load_model_spec("StrokeMIPartitionModel")
+        if intercept is not None:
+            model_spec["coefficients"]["Intercept"] = intercept
         super().__init__(RegressionModel(**model_spec))
         self._stroke_case_fatality = 0.15
         self._stroke_secondary_case_fatality = 0.15
@@ -56,3 +58,24 @@ class StrokePartitionModel(StatsModelLinearRiskFactorModel):
                 return strokeOutcome
             else: 
                 return None
+
+class StrokePartitionModelFor1bpMedsAdded(StrokePartitionModel):
+    def __init__(self):
+        intercept = -2.4001918
+        super().__init__(intercept=intercept)
+
+class StrokePartitionModelFor2bpMedsAdded(StrokePartitionModel):
+    def __init__(self):
+        intercept = -2.6159375
+        super().__init__(intercept=intercept)
+
+class StrokePartitionModelFor3bpMedsAdded(StrokePartitionModel):
+    def __init__(self):
+        intercept = -2.66499999
+        super().__init__(intercept=intercept)
+
+class StrokePartitionModelFor4bpMedsAdded(StrokePartitionModel):
+    def __init__(self):
+        intercept = -2.7462
+        super().__init__(intercept=intercept)
+

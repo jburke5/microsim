@@ -40,7 +40,7 @@ class CVModelBase(ASCVDOutcomeModel):
 
 class CVModelMale(CVModelBase):
     """CV model details for male gender."""
-    def __init__(self):
+    def __init__(self, intercept = -11.679980):
         maleCVCoefficients = {
             "lagAge": 0.064200,
             "black": 0.482835,
@@ -58,15 +58,32 @@ class CVModelMale(CVModelBase):
             "black#current_smoker": -0.226771,
             "lagSbp#black#current_bp_treatment": 0.004190,
             "lagAge#lagSbp#black": -0.000199,
-            "Intercept": -11.679980,
+            #"Intercept": -11.679980,
+            "Intercept": intercept,
         }
         tot_chol_hdl_ratio=0.193307
         black_race_x_tot_chol_hdl_ratio=-0.117749
         super().__init__(maleCVCoefficients, tot_chol_hdl_ratio, black_race_x_tot_chol_hdl_ratio)
 
+class CVModelMaleFor1bpMedsAdded(CVModelMale):
+    def __init__(self):
+        super().__init__(intercept = -11.7959175)
+
+class CVModelMaleFor2bpMedsAdded(CVModelMale):
+    def __init__(self):
+        super().__init__(intercept = -11.931250)
+
+class CVModelMaleFor3bpMedsAdded(CVModelMale):
+    def __init__(self):
+        super().__init__(intercept = -12.007714375)
+
+class CVModelMaleFor4bpMedsAdded(CVModelMale):
+    def __init__(self):
+        super().__init__(intercept = -12.085210)
+
 class CVModelFemale(CVModelBase):
     """CV model details for female gender."""
-    def __init__(self):
+    def __init__(self, intercept = -12.823110):
         femaleCVCoefficients = {
             "lagAge": 0.106501,
             "black": 0.432440,
@@ -84,8 +101,26 @@ class CVModelFemale(CVModelBase):
             "black#current_smoker": -0.092231,
             "lagSbp#black#current_bp_treatment": -0.000173,
             "lagAge#lagSbp#black": -0.000094,
-            "Intercept": -12.823110,
+            #"Intercept": -12.823110,
+            "Intercept": intercept,
         }
         tot_chol_hdl_ratio=0.151318
         black_race_x_tot_chol_hdl_ratio=0.070498
         super().__init__(femaleCVCoefficients, tot_chol_hdl_ratio, black_race_x_tot_chol_hdl_ratio)
+
+class CVModelFemaleFor1bpMedsAdded(CVModelFemale):
+    def __init__(self):
+        super().__init__(intercept = -12.93904750)
+
+class CVModelFemaleFor2bpMedsAdded(CVModelFemale):
+    def __init__(self):
+        super().__init__(intercept = -13.051250)
+
+class CVModelFemaleFor3bpMedsAdded(CVModelFemale):
+    def __init__(self):
+        super().__init__(intercept = -13.150500)
+
+class CVModelFemaleFor4bpMedsAdded(CVModelFemale):
+    def __init__(self):
+        super().__init__(intercept = -13.22800 )
+

@@ -56,7 +56,7 @@ class Person:
                  staticRiskFactorsDict, 
                  dynamicRiskFactorsDict, 
                  defaultTreatmentsDict, 
-                 treatmentStrategyStatusDict, 
+                 treatmentStrategiesDict, 
                  outcomesDict) -> None:
 
         self._name = name
@@ -94,7 +94,7 @@ class Person:
         #for key, value in treatmentStrategiesDict.items():
         #    setattr(self, "_"+key+"TreatmentStatus", value)
         #self._treatmentStrategies = list(treatmentStrategiesDict.keys())
-        self._treatmentStrategyStatus = treatmentStrategyStatusDict
+        self._treatmentStrategies = treatmentStrategiesDict
 
         self._outcomes = outcomesDict
 
@@ -164,25 +164,58 @@ class Person:
                 getattr(self, "_"+rf)[-1] = updatedRiskFactors[rf]
 
     def update_treatment_strategy_status(self, treatmentStrategy, treatmentStrategyType):
-        if self._treatmentStrategyStatus[treatmentStrategyType.value] is None:
-            if treatmentStrategy is not None:
-                self._treatmentStrategyStatus[treatmentStrategyType.value] = TreatmentStrategyStatus.BEGIN
-        elif self._treatmentStrategyStatus[treatmentStrategyType.value] == TreatmentStrategyStatus.BEGIN:
-            if treatmentStrategy is not None:
-                self._treatmentStrategyStatus[treatmentStrategyType.value] = TreatmentStrategyStatus.MAINTAIN
-            else:
-                self._treatmentStrategyStatus[treatmentStrategyType.value] = TreatmentStrategyStatus.END
-        elif self._treatmentStrategyStatus[treatmentStrategyType.value] == TreatmentStrategyStatus.MAINTAIN:
-            if treatmentStrategy is None: 
-                self._treatmentStrategyStatus[treatmentStrategyType.value] = TreatmentStrategyStatus.END 
-        elif self._treatmentStrategyStatus[treatmentStrategyType.value] == TreatmentStrategyStatus.END:
-            if treatmentStrategy is None:
-                self._treatmentStrategyStatus[treatmentStrategyType.value] = None
-            else:
-                self._treatmentStrategyStatus[treatmentStrategyType.value] = TreatmentStrategyStatus.BEGIN 
+        if treatmentStrategy is not None:
+            if self._treatmentStrategies[treatmentStrategyType.value]["status"] is None:
+                if treatmentStrategy.status==TreatmentStrategyStatus.BEGIN:
+                    self._treatmentStrategies[treatmentStrategyType.value]["status"] = TreatmentStrategyStatus.BEGIN
+                else:
+                    raise RuntimeError(f"{treatmentStrategyType}: Treatment strategy status None can only begin.") 
+            elif self._treatmentStrategies[treatmentStrategyType.value]["status"] == TreatmentStrategyStatus.BEGIN:
+                if treatmentStrategy.status==TreatmentStrategyStatus.MAINTAIN:
+                    self._treatmentStrategies[treatmentStrategyType.value]["status"] = TreatmentStrategyStatus.MAINTAIN
+                elif treatmentStrategy.status==TreatmentStrategyStatus.END:
+                    self._treatmentStrategies[treatmentStrategyType.value]["status"] = TreatmentStrategyStatus.END
+                else:
+                    raise RuntimeError(f"{treatmentStrategyType}: Treatment strategy status begin can either maintain or end.")
+            elif self._treatmentStrategies[treatmentStrategyType.value]["status"] == TreatmentStrategyStatus.MAINTAIN:
+                if treatmentStrategy.status==TreatmentStrategyStatus.MAINTAIN:
+                    pass
+                elif treatmentStrategy.status==TreatmentStrategyStatus.END:
+                    self._treatmentStrategies[treatmentStrategyType.value]["status"] = TreatmentStrategyStatus.END
+                else:
+                    raise RuntimeError(f"{treatmentStrategyType}: Treatment strategy status maintain can either maintain or end.")
+            elif self._treatmentStrategies[treatmentStrategyType.value]["status"] == TreatmentStrategyStatus.END:
+                if treatmentStrategy.status==TreatmentStrategyStatus.BEGIN:
+                    self._treatmentStrategies[treatmentStrategyType.value]["status"] = TreatmentStrategyStatus.BEGIN
+                else:
+                    raise RuntimeError(f"{treatmentStrategyType}: Treatment strategy status end can only begin.")
         else:
-            raise RuntimeError("Unrecognized person treatment strategy status.") 
-            #setattr(self,"_"+tsType.value+"TreatmentStatus", ts.status) 
+            if self._treatmentStrategies[treatmentStrategyType.value]["status"] is None:
+                pass
+            elif self._treatmentStrategies[treatmentStrategyType.value]["status"] == TreatmentStrategyStatus.END:
+                self._treatmentStrategies[treatmentStrategyType.value]["status"] = None
+            else:
+                raise RuntimeError(f"{treatmentStrategyType}: Treatment strategy status None or end are the only ones that can move to status None.")
+            
+        #if self._treatmentStrategies[treatmentStrategyType.value]["status"] is None:
+        #    if treatmentStrategy is not None:
+        #        self._treatmentStrategies[treatmentStrategyType.value]["status"] = TreatmentStrategyStatus.BEGIN
+        #elif self._treatmentStrategies[treatmentStrategyType.value]["status"] == TreatmentStrategyStatus.BEGIN:
+        #    if treatmentStrategy is not None:
+        #        self._treatmentStrategies[treatmentStrategyType.value]["status"] = TreatmentStrategyStatus.MAINTAIN
+        #    else:
+        #        self._treatmentStrategies[treatmentStrategyType.value]["status"] = TreatmentStrategyStatus.END
+        #elif self._treatmentStrategies[treatmentStrategyType.value]["status"] == TreatmentStrategyStatus.MAINTAIN:
+        #    if treatmentStrategy is None: 
+        #        self._treatmentStrategies[treatmentStrategyType.value]["status"] = TreatmentStrategyStatus.END 
+        #elif self._treatmentStrategies[treatmentStrategyType.value]["status"] == TreatmentStrategyStatus.END:
+        #    if treatmentStrategy is None:
+        #        self._treatmentStrategies[treatmentStrategyType.value]["status"] = None
+        #    else:
+        #        self._treatmentStrategies[treatmentStrategyType.value]["status"] = TreatmentStrategyStatus.BEGIN 
+        #else:
+        #    raise RuntimeError("Unrecognized person treatment strategy status.") 
+        #    #setattr(self,"_"+tsType.value+"TreatmentStatus", ts.status) 
 
     def advance_outcomes(self, outcomeModelRepository):
         for outcomeType in OutcomeType:
@@ -208,8 +241,8 @@ class Person:
     
     @property
     def is_in_bp_treatment(self):
-        return ( (self._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.BEGIN) |
-                 (self._treatmentStrategyStatus[TreatmentStrategiesType.BP.value]==TreatmentStrategyStatus.MAINTAIN) )
+        return ( (self._treatmentStrategies[TreatmentStrategiesType.BP.value]["status"]==TreatmentStrategyStatus.BEGIN) |
+                 (self._treatmentStrategies[TreatmentStrategiesType.BP.value]["status"]==TreatmentStrategyStatus.MAINTAIN) )
 
     #Q: the term bp seems inconsistent here, maybe change bp to hypertensive?
     @property 

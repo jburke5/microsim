@@ -1064,8 +1064,9 @@ def build_person(x, initializationModelRepository, rng=None):
                         #DefaultTreatmentsType.OTHER_LIPID_LOWERING_MEDICATION_COUNT.value: x.otherLipidLowering,
                         DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: x.antiHypertensive}
     
-    personTreatmentStrategyStatus = dict(zip([strategy.value for strategy in TreatmentStrategiesType],
-                                         [None for strategy in range(len(TreatmentStrategiesType))]))
+    personTreatmentStrategies = dict(zip([strategy.value for strategy in TreatmentStrategiesType],
+                                         #[None for strategy in range(len(TreatmentStrategiesType))]))
+                                         [{"status": None} for strategy in range(len(TreatmentStrategiesType))]))
     
     personOutcomes = dict(zip([outcome for outcome in OutcomeType],
                                   [list() for outcome in range(len(OutcomeType))]))
@@ -1085,7 +1086,7 @@ def build_person(x, initializationModelRepository, rng=None):
                    personStaticRiskFactors,
                    personDynamicRiskFactors, 
                    personDefaultTreatments,
-                   personTreatmentStrategyStatus,
+                   personTreatmentStrategies,
                    personOutcomes)    
     
     #TO DO: find a way to initialize these rfs above with everything else
