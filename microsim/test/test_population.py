@@ -24,7 +24,7 @@ class TestPopulation(unittest.TestCase):
 
     def test_people_from_population(self):
         test_population = NHANESDirectSamplePopulation(
-            n=self.test_n, year=2015, random_seed=self.pandas_seed, rng= np.random.default_rng()
+            n=self.test_n, year=2015, random_seed=self.pandas_seed
         )
         test_people = test_population._people
 
@@ -79,7 +79,7 @@ class TestPopulationAdvanceOutcomes(unittest.TestCase):
 
         # this should NOT raise an error if it is (correctly) not trying to
         #  advance on poor dead, joe
-        self.dummy_population.advance_vectorized(1, rng = np.random.default_rng())
+        self.dummy_population.advance(1)
 
         advanced_joe = self.dummy_population._people.iloc[0]
         self.assertEqual(expected_risk_factor_length, len(advanced_joe._sbp))

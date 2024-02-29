@@ -18,8 +18,8 @@ class BaseTreatmentStrategy:
 class AddNBPMedsTreatmentStrategy(BaseTreatmentStrategy):
     def __init__(self, n):
         self.bpMedsAdded = n
-        self.sbpLowering = 5.5*self.n
-        self.dbpLowering = 3.1*self.n
+        self.sbpLowering = 5.5*self.bpMedsAdded
+        self.dbpLowering = 3.1*self.bpMedsAdded
         self.status = TreatmentStrategyStatus.BEGIN
 
     def get_updated_treatments(self, person):

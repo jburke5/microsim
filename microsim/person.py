@@ -818,67 +818,22 @@ class Person:
         else:
             return True
 
-    # luciana tag...there is almost definitely a better way to do this..
-    def __deepcopy__(self, memo):
-        selfCopy = Person(
-            age=0,
-            gender=None,
-            raceEthnicity=None,
-            sbp=0,
-            dbp=0,
-            a1c=0,
-            hdl=0,
-            totChol=0,
-            bmi=0,
-            ldl=0,
-            trig=0,
-            waist=0,
-            anyPhysicalActivity=0,
-            education=None,
-            smokingStatus=None,
-            alcohol=None,
-            antiHypertensiveCount=0,
-            statin=0,
-            otherLipidLoweringMedicationCount=0,
-            creatinine=0,
-            initializeAfib=None,
-        )
-        selfCopy._lowerBounds = self._lowerBounds
-        selfCopy._upperBounds = self._upperBounds
-        selfCopy._gender = copy.deepcopy(self._gender)
-        selfCopy._raceEthnicity = copy.deepcopy(self._raceEthnicity)
-        selfCopy._alive = copy.deepcopy(self._alive)
-        selfCopy._age = copy.deepcopy(self._age)
-        selfCopy._sbp = copy.deepcopy(self._sbp)
-        selfCopy._dbp = copy.deepcopy(self._dbp)
-        selfCopy._a1c = copy.deepcopy(self._a1c)
-        selfCopy._hdl = copy.deepcopy(self._hdl)
-        selfCopy._ldl = copy.deepcopy(self._ldl)
-        selfCopy._trig = copy.deepcopy(self._trig)
-        selfCopy._totChol = copy.deepcopy(self._totChol)
-        selfCopy._waist = copy.deepcopy(self._waist)
-        selfCopy._bmi = copy.deepcopy(self._bmi)
-        selfCopy._anyPhysicalActivity = copy.deepcopy(self._anyPhysicalActivity)
-        selfCopy._education = copy.deepcopy(self._education)
-        selfCopy._smokingStatus = copy.deepcopy(self._smokingStatus)
-        selfCopy._alcoholPerWeek = copy.deepcopy(self._alcoholPerWeek)
-        selfCopy._antiHypertensiveCount = copy.deepcopy(self._antiHypertensiveCount)
-        selfCopy._statin = copy.deepcopy(self._statin)
-        selfCopy._creatinine = copy.deepcopy(self._creatinine)
-        selfCopy._otherLipidLoweringMedicationCount = copy.deepcopy(
-            self._otherLipidLoweringMedicationCount
-        )
-        selfCopy._outcomes = copy.deepcopy(self._outcomes)
-        selfCopy._selfReportStrokePriorToSim = copy.deepcopy(self._selfReportStrokePriorToSim)
-        selfCopy._selfReportMIPriorToSim = copy.deepcopy(self._selfReportMIPriorToSim)
-        selfCopy._selfReportMIAge = copy.deepcopy(self._selfReportMIAge) if hasattr(self, "_selfReportMIAge") else None  
-        selfCopy._selfReportStrokeAge = copy.deepcopy(self._selfReportStrokeAge) if hasattr(self, "_selfReportStrokeAge") else None 
-        selfCopy._afib = self._afib
-        selfCopy._bpTreatmentStrategy = self._bpTreatmentStrategy
-        selfCopy._afib = copy.deepcopy(self._afib)
-        selfCopy._gcp = copy.deepcopy(self._gcp)
+    def __deepcopy__(self):
+        staticRiskFactorsDict = dict()
+        for key in self._staticRiskFactors:
+            staticRiskFactorsDict[key] = getattr(self, "_"+key)
+        dynamicRiskFactorsDict = dict()
+        for key in self._dynamicRiskFactors:
+            dynamicRiskFactorsDict[key] = getattr(self, "_"+key)[0]
+        defaultTreatmentsDict = dict()
+        for key in self._defaultTreatments:
+            defaultTreatmentsDict[key] = getattr(self, "_"+key)[0]
+        treatmentStrategiesDict = copy.deepcopy(self._treatmentStrategies)
+        outcomesDict = copy.deepcopy(self._outcomes)
+        name = self._name
+        selfCopy = Person(name, staticRiskFactorsDict, dynamicRiskFactorsDict,
+                          defaultTreatmentsDict, treatmentStrategiesDict, outcomesDict)
+        selfCopy._index = self._index
+        selfCopy._waveCompleted = self._waveCompleted
         selfCopy._randomEffects = copy.deepcopy(self._randomEffects)
-        selfCopy._populationIndex =copy.deepcopy(self._populationIndex) if hasattr(self, "_populationIndex") else None 
-        selfCopy.dfIndex =copy.deepcopy(self.dfIndex) if hasattr(self, "dfIndex") else None 
-
         return selfCopy

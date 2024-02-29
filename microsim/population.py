@@ -1010,10 +1010,11 @@ def initializeAFib(person):
     return person._rng.uniform() < statsModel.estimate_next_risk(person)
 
 
-def build_person(x, initializationModelRepository, rng=None):
+def build_person(x, initializationModelRepository):
     """Takes all Person-instance-related data via x and initializationModelRepository and organizes it,
-       passes the organized data to the Person class and returns a Person instance.
-       A random number generator is needed."""
+       passes the organized data to the Person class and returns a Person instance."""
+
+    rng = np.random.default_rng()
 
     name = x.name
     
@@ -1095,9 +1096,8 @@ def build_person(x, initializationModelRepository, rng=None):
     return person
 
 
-def build_people_using_nhanes_for_sampling(nhanes, n, rng=None, filter=None, random_seed=None, weights=None):
-    """Creates a Pandas Series collection of Person instances.
-       A random number generator is required."""
+def build_people_using_nhanes_for_sampling(nhanes, n, filter=None, random_seed=None, weights=None):
+    """Creates a Pandas Series collection of Person instances."""
 
     if weights is None:
         weights = nhanes.WTINT2YR
@@ -1105,16 +1105,12 @@ def build_people_using_nhanes_for_sampling(nhanes, n, rng=None, filter=None, ran
     initializationModelRepository = {DynamicRiskFactorsType.AFIB: AFibPrevalenceModel(), 
                                      DynamicRiskFactorsType.PVD: PVDPrevalenceModel()}
     people = pd.DataFrame.apply(repeated_sample,
-                                build_person, initializationModelRepository=initializationModelRepository, rng=rng, axis="columns")
+                                build_person, initializationModelRepository=initializationModelRepository, axis="columns")
 
     #sets the unique identifier for each Person instance
     list(map(lambda person, i: setattr(person, "_index", i), people, range(n))) 
 
-    #Q: why are we not applying the filter on the nhanes df, before we create all the Person instances?
-    if filter is not None:
-        people = people.loc[people.apply(filter)]
     return people
-
 
 class NHANESDirectSamplePopulation(Population):
     """Simple base class to sample with replacement from 2015/2016 NHANES"""
@@ -1129,7 +1125,8 @@ class NHANESDirectSamplePopulation(Population):
         popModelRepository=None,
         filter=None,
         generate_new_people=True,
-        model_reposistory_type="cohort",
+        #Q: where is this used?
+        #model_reposistory_type="cohort",
         random_seed=None,
         weights=None,
     ):
@@ -1138,12 +1135,11 @@ class NHANESDirectSamplePopulation(Population):
         # we will later reject....
         nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         nhanes = nhanes.loc[nhanes.year == year]
-        self._rng = np.random.default_rng()
+        if filter is not None:
+            nhanes = nhanes.loc[nhanes.apply(filter)]
         people = build_people_using_nhanes_for_sampling(
             nhanes,
             n,
-            rng=self._rng,
-            filter=filter,
             random_seed=random_seed,
             weights=weights,
         )

@@ -152,9 +152,9 @@ class TestTreatmentRecalibration(unittest.TestCase):
     def testRecalibrationIncreasesStrokesWhenEffectSizeIsClincallySmallerButNumericallyLarger(
         self,
     ):
-        alwaysStrokePop = NHANESDirectSamplePopulation(self.popSize, 2001, rng = np.random.default_rng())
+        alwaysStrokePop = NHANESDirectSamplePopulation(self.popSize, 2001)
         alwaysStrokePop._outcome_model_repository = TestOftenStrokeModelRepository(0.5)
-        alwaysStrokePop.advance_vectorized(1, rng = np.random.default_rng())
+        alwaysStrokePop.advance(1)
         # about half of the people should have a stroke...at baseline
         numberOfStrokesInBasePopulation = pd.Series(
             [
@@ -164,12 +164,12 @@ class TestTreatmentRecalibration(unittest.TestCase):
         ).sum()
 
         # set a treatment strategy on teh population
-        alwaysStrokePop = NHANESDirectSamplePopulation(self.popSize, 2001, rng = np.random.default_rng())
+        alwaysStrokePop = NHANESDirectSamplePopulation(self.popSize, 2001)
         alwaysStrokePop._outcome_model_repository = TestOftenStrokeModelRepository(0.5)
         # on average, treatment will have an RR round 0.95 for the BP lowering effect applied
         # so, we're going to recalibrate to a RR of 1.5...that will lead to many MORE strokes
         alwaysStrokePop.set_bp_treatment_strategy(addABPMedStrokeHarm())
-        alwaysStrokePop.advance_vectorized(1, rng = np.random.default_rng())
+        alwaysStrokePop.advance(1)
         numberOfStrokesInRecalibratedPopulation = pd.Series(
             [
                 person.has_stroke_during_simulation()
@@ -181,9 +181,9 @@ class TestTreatmentRecalibration(unittest.TestCase):
     # if we specivy an effect size that is clinically larger (numerically smaller) than the target...
     # then the test should generate new stroke events so that we end up with more strokes
     def testRecalibrationReducesStrokesWhenEffectSizeIsClincallyLargerButNumericallySmaller(self):
-        alwaysStrokePop = NHANESDirectSamplePopulation(self.popSize, 2001, rng = np.random.default_rng())
+        alwaysStrokePop = NHANESDirectSamplePopulation(self.popSize, 2001)
         alwaysStrokePop._outcome_model_repository = TestOftenStrokeModelRepository(0.5)
-        alwaysStrokePop.advance_vectorized(1, rng = np.random.default_rng())
+        alwaysStrokePop.advance(1)
         # about half of people shoudl have strokes
         numberOfStrokesInBasePopulation = pd.Series(
             [
@@ -193,10 +193,10 @@ class TestTreatmentRecalibration(unittest.TestCase):
         ).sum()
 
         # set a treatment strategy on teh population
-        alwaysStrokePop = NHANESDirectSamplePopulation(self.popSize, 2001, rng = np.random.default_rng())
+        alwaysStrokePop = NHANESDirectSamplePopulation(self.popSize, 2001)
         alwaysStrokePop._outcome_model_repository = TestOftenStrokeModelRepository(0.5)
         alwaysStrokePop.set_bp_treatment_strategy(addABPMedStrokeLargeEffectSize())
-        alwaysStrokePop.advance_vectorized(1, rng = np.random.default_rng())
+        alwaysStrokePop.advance(1)
         numberOfStrokesInRecalibratedPopulation = pd.Series(
             [
                 person.has_stroke_during_simulation()
@@ -211,19 +211,19 @@ class TestTreatmentRecalibration(unittest.TestCase):
     # if we specify an effect size that is clincally smaller than the target...
     # then the test should rollback MIS so that we end up with fewer MIS...
     def testRecalibrationIncreasesSIsWhenEffectSizeIsClincallySmallerButNumericallyLarger(self):
-        alwaysMIPop = NHANESDirectSamplePopulation(self.popSize, 2001, rng = np.random.default_rng())
+        alwaysMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
         alwaysMIPop._outcome_model_repository = TestOftenMIModelRepository(0.5)
-        alwaysMIPop.advance_vectorized(1, rng = np.random.default_rng())
+        alwaysMIPop.advance(1)
         # about half of people have an MI at baseline
         numberOfMIsInBasePopulation = pd.Series(
             [person.has_mi_during_simulation() for i, person in alwaysMIPop._people.items()]
         ).sum()
 
         # set a treatment strategy on teh population
-        alwaysMIPop = NHANESDirectSamplePopulation(self.popSize, 2001, rng = np.random.default_rng())
+        alwaysMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
         alwaysMIPop._outcome_model_repository = TestOftenMIModelRepository(0.5)
         alwaysMIPop.set_bp_treatment_strategy(addABPMedMIHarm())
-        alwaysMIPop.advance_vectorized(1, rng = np.random.default_rng())
+        alwaysMIPop.advance(1)
         numberOfMIsInRecalibratedPopulation = pd.Series(
             [person.has_mi_during_simulation() for i, person in alwaysMIPop._people.items()]
         ).sum()
@@ -233,19 +233,19 @@ class TestTreatmentRecalibration(unittest.TestCase):
     # if we specify an effect size that is larger than the target...
     # then the test should generate new mi events so that we end up with more MIs
     def testRecalibrationReducesMIsWhenEffectSizeIsClincallyLargerButNumericallySmaller(self):
-        neverMIPop = NHANESDirectSamplePopulation(self.popSize, 2001, rng = np.random.default_rng())
+        neverMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
         neverMIPop._outcome_model_repository = TestOftenMIModelRepository(0.5)
-        neverMIPop.advance_vectorized(1, rng = np.random.default_rng())
+        neverMIPop.advance(1)
         # abou thalf of hte population has an MI at baseline
         numberOfMIsInBasePopulation = pd.Series(
             [person.has_mi_during_simulation() for i, person in neverMIPop._people.items()]
         ).sum()
 
         # set a treatment strategy on teh population
-        neverMIPop = NHANESDirectSamplePopulation(self.popSize, 2001, rng = np.random.default_rng())
+        neverMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
         neverMIPop._outcome_model_repository = TestOftenMIModelRepository(0.5)
         neverMIPop.set_bp_treatment_strategy(addABPMedMILargeEffectSize())
-        neverMIPop.advance_vectorized(1, rng = np.random.default_rng())
+        neverMIPop.advance(1)
         numberOfMIsInRecalibratedPopulation = pd.Series(
             [person.has_mi_during_simulation() for i, person in neverMIPop._people.items()]
         ).sum()
@@ -253,9 +253,9 @@ class TestTreatmentRecalibration(unittest.TestCase):
         self.assertGreater(numberOfMIsInBasePopulation, numberOfMIsInRecalibratedPopulation)
 
     def testRollbackFatalEventsRollsBackDeath(self):
-        neverMIPop = NHANESDirectSamplePopulation(self.popSize, 2001, rng = np.random.default_rng())
+        neverMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
         neverMIPop._outcome_model_repository = TestOftenMIModelRepository(1.0, 1.0)
-        neverMIPop.advance_vectorized(1, rng = np.random.default_rng())
+        neverMIPop.advance(1)
         # the whole popuulation should have MIs at baseline
         numberOfMIsInBasePopulation = pd.Series(
             [person.has_mi_during_simulation() for i, person in neverMIPop._people.items()]
@@ -269,11 +269,11 @@ class TestTreatmentRecalibration(unittest.TestCase):
         ).sum()
         self.assertEqual(self.popSize, numberOfFatalMIsInBasePopulation)
 
-        neverMIPop = NHANESDirectSamplePopulation(self.popSize, 2001, rng = np.random.default_rng())
+        neverMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
         neverMIPop._outcome_model_repository = TestOftenMIModelRepository(1.0, 1.0)
         # this requires that we rollback a lot of events.
         neverMIPop.set_bp_treatment_strategy(addABPMedMILargeEffectSize())
-        neverMIPop.advance_vectorized(1, rng = np.random.default_rng())
+        neverMIPop.advance(1)
 
         numberOfMIsAfterRecalibration = pd.Series(
             [person.has_mi_during_simulation() for i, person in neverMIPop._people.items()]
@@ -288,11 +288,11 @@ class TestTreatmentRecalibration(unittest.TestCase):
         self.assertGreater(numberOfFatalMIsInBasePopulation, numberOfFatalMIsAfterRecalibration)
 
     def testAdvanceAfterRollbackWorksOnWholePopulation(self):
-        oftenMIPop = NHANESDirectSamplePopulation(self.popSize, 2001, rng = np.random.default_rng())
+        oftenMIPop = NHANESDirectSamplePopulation(self.popSize, 2001)
         oftenMIPop._outcome_model_repository = TestOftenMIModelRepository(0.2, 0.2, 0.2)
         # this requires that we rollback a lot of events.
         oftenMIPop.set_bp_treatment_strategy(addABPMedMILargeEffectSize())
-        oftenMIPop.advance_vectorized(5, rng = np.random.default_rng())
+        oftenMIPop.advance(5)
 
         ageLength = pd.Series([len(person._age) for i, person in oftenMIPop._people.items()])
         dead = pd.Series([person.is_dead() for i, person in oftenMIPop._people.items()])
