@@ -94,7 +94,15 @@ class Population:
         self._rng = np.random.default_rng() 
         self._modelRepository = popModelRepository._repository
 
-    def advance(self, years, treatmentStrategies=None):
+    def advance(self, years, treatmentStrategies=None, nWorkers=1):
+        if nWorkers==1:
+            self.advance_serial(years, treatmentStrategies=treatmentStrategies)
+        elif nWorkers>1:
+            self.advance_parallel(years, treatmentStrategies=treatmentStrategies, nWorkers=nWorkers)
+        else:
+            print(f"Invalid nWorkers={nWorkers} argument provided.")
+
+    def advance_serial(self, years, treatmentStrategies=None):
         list(map(lambda x: x.advance(years, 
                                      self._modelRepository[PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value],
                                      self._modelRepository[PopulationRepositoryType.DEFAULT_TREATMENTS.value],
@@ -107,7 +115,7 @@ class Population:
 
     #Q: I think I need this for starmap
     def worker_advance(self, subPopulation, years, treatmentStrategies):
-        subPopulation.advance(years, treatmentStrategies)
+        subPopulation.advance_serial(years, treatmentStrategies)
         return subPopulation
 
     def advance_parallel(self, years, treatmentStrategies=None, nWorkers=2):
@@ -127,12 +135,25 @@ class Population:
         NHANESDirectSamplePopulation instances for now does not create a problem since we continue to use NHANES Person objects
         and the same population model repositories. Returns a list of Population instances. """
         peopleParts = np.array_split(self._people, nPieces)
-        modelRepositoryParts = [PopulationModelRepository(
+        modelRepositoryParts = [self.get_pop_model_repository_copy() for x in range(nPieces)]
+        return [Population(people, modelRepository) for people, modelRepository in zip(peopleParts, modelRepositoryParts)]
+
+    def copy(self):
+        people = self.get_people_copy()
+        popModelRepository = self.get_pop_model_repository_copy()
+        selfCopy = Population(people, popModelRepository)
+        return selfCopy 
+
+    def get_pop_model_repository_copy(self):
+        return PopulationModelRepository(
                                     self._modelRepository[PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value],
                                     self._modelRepository[PopulationRepositoryType.DEFAULT_TREATMENTS.value],
                                     self._modelRepository[PopulationRepositoryType.OUTCOMES.value],
-                                    self._modelRepository[PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value]) for x in range(nPieces)]
-        return [Population(people, modelRepository) for people, modelRepository in zip(peopleParts, modelRepositoryParts)]
+                                    self._modelRepository[PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value])
+
+    def get_people_copy(self):
+        """The Person __deepcopy__ function assumes that the Person object has not been advanced to the future at all."""
+        return pd.Series( list(map( lambda x: x.__deepcopy__(), self._people)) )
 
     def get_age_counts(self, itemList):
         counts = dict()
@@ -1136,7 +1157,9 @@ class NHANESDirectSamplePopulation(Population):
         nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         nhanes = nhanes.loc[nhanes.year == year]
         if filter is not None:
-            nhanes = nhanes.loc[nhanes.apply(filter)]
+            nhanes = nhanes.loc[nhanes.apply(filter, axis=1)]
+        #convert the integers to booleans because in the simulation we always use bool for this rf
+        nhanes["anyPhysicalActivity"] = nhanes["anyPhysicalActivity"].astype(bool)
         people = build_people_using_nhanes_for_sampling(
             nhanes,
             n,
@@ -1153,10 +1176,11 @@ class NHANESDirectSamplePopulation(Population):
         super().__init__(people, popModelRepository)
         self.year = year
 
-    def copy(self):
-        newPop = NHANESDirectSamplePopulation(self.n, self.year, False)
-        newPop._people = copy.deepcopy(self._people)
-        return newPop
+    #Q: for now I am commenting this out because I want to be able to use the Population copy function
+    #def copy(self):
+    #    newPop = NHANESDirectSamplePopulation(self.n, self.year, False)
+    #    newPop._people = copy.deepcopy(self._people)
+    #    return newPop
 
     def _initialize_risk_models(self, model_repository_type):
         if model_repository_type == "cohort":

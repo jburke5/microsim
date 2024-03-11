@@ -11,9 +11,6 @@ class StrokePartitionModelRepository:
                         "4bpMedsAdded": StrokePartitionModelFor4bpMedsAdded()}
     
     def select_outcome_model_for_person(self, person):
-        return self._model
-
-    def select_outcome_model_for_person(self, person):
         tst = TreatmentStrategiesType.BP.value
         if "bpMedsAdded" in person._treatmentStrategies[tst]:
             ts = f"{person._treatmentStrategies[tst]['bpMedsAdded']}bpMedsAdded"
