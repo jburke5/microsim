@@ -76,11 +76,14 @@ class CVModelMaleFor2bpMedsAdded(CVModelMale):
 
 class CVModelMaleFor3bpMedsAdded(CVModelMale):
     def __init__(self):
-        super().__init__(intercept = -12.007714375)
+        #super().__init__(intercept = -12.007714375)
+        #super().__init__(intercept = -11.991464375)
+        #super().__init__(intercept = -11.99021437499)
+        super().__init__(intercept = -11.99083937499)
 
 class CVModelMaleFor4bpMedsAdded(CVModelMale):
     def __init__(self):
-        super().__init__(intercept = -12.085210)
+        super().__init__(intercept = -12.089585)
 
 class CVModelFemale(CVModelBase):
     """CV model details for female gender."""
@@ -120,9 +123,12 @@ class CVModelFemaleFor2bpMedsAdded(CVModelFemale):
 
 class CVModelFemaleFor3bpMedsAdded(CVModelFemale):
     def __init__(self):
-        super().__init__(intercept = -13.150500)
+        #super().__init__(intercept = -13.150500)
+        #super().__init__(intercept = -13.134249999999998)
+        #super().__init__(intercept = -13.132999999)
+        super().__init__(intercept = -13.133624999999)
 
 class CVModelFemaleFor4bpMedsAdded(CVModelFemale):
     def __init__(self):
-        super().__init__(intercept = -13.22800 )
+        super().__init__(intercept = -13.232375 )
 

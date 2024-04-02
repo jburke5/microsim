@@ -72,11 +72,14 @@ class StrokePartitionModelFor2bpMedsAdded(StrokePartitionModel):
 
 class StrokePartitionModelFor3bpMedsAdded(StrokePartitionModel):
     def __init__(self):
-        intercept = -2.66499999
+        #intercept = -2.66499999
+        #intercept = -2.65374999
+        #intercept = -2.6524999
+        intercept = -2.65187499
         super().__init__(intercept=intercept)
 
 class StrokePartitionModelFor4bpMedsAdded(StrokePartitionModel):
     def __init__(self):
-        intercept = -2.7462
+        intercept = -2.75120
         super().__init__(intercept=intercept)
 

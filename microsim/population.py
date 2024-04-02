@@ -1062,27 +1062,11 @@ def build_person(x, initializationModelRepository):
     personDynamicRiskFactors[DynamicRiskFactorsType.AFIB.value] = None
     personDynamicRiskFactors[DynamicRiskFactorsType.PVD.value] = None       
 
-    #personDynamicRiskFactors = {
-    #                    DynamicRiskFactorsType.AGE.value: x.age,
-    #                    DynamicRiskFactorsType.SBP.value: x.meanSBP,
-    #                    DynamicRiskFactorsType.DBP.value: x.meanDBP,
-    #                    DynamicRiskFactorsType.A1C.value: x.a1c,
-    #                    DynamicRiskFactorsType.HDL.value: x.hdl,
-    #                    DynamicRiskFactorsType.LDL.value: x.ldl,
-    #                    DynamicRiskFactorsType.TRIG.value: x.trig,
-    #                    DynamicRiskFactorsType.TOT_CHOL.value: x.tot_chol,
-    #                    DynamicRiskFactorsType.BMI.value: x.bmi,
-    #                    DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: x.anyPhysicalActivity,
-    #                    DynamicRiskFactorsType.AFIB.value: None,
-    #                    DynamicRiskFactorsType.WAIST.value: x.waist,
-    #                    DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.get_category_for_consumption(x.alcoholPerWeek),
-    #                    DynamicRiskFactorsType.CREATININE.value: x.serumCreatinine,
-    #                    DynamicRiskFactorsType.PVD.value: None}
-    
     #Q: do we need otherLipid treatment? I am not bringing it to the Person objects for now.
     #A: it is ok to leave it out as we do not have a model to update this. It is also very rarely taking place in the population anyway.
+    #also: used to have round(x.statin) but NHANES includes statin=2...
     personDefaultTreatments = {
-                        DefaultTreatmentsType.STATIN.value: round(x.statin),
+                        DefaultTreatmentsType.STATIN.value: bool(x.statin),
                         #DefaultTreatmentsType.OTHER_LIPID_LOWERING_MEDICATION_COUNT.value: x.otherLipidLowering,
                         DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: x.antiHypertensive}
     

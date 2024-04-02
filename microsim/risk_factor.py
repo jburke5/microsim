@@ -10,7 +10,7 @@ class DynamicRiskFactorsType(Enum):
     TRIG = "trig"  # int
     TOT_CHOL = "totChol"   # int
     BMI = "bmi"   #float
-    ANY_PHYSICAL_ACTIVITY = "anyPhysicalActivity" # int
+    ANY_PHYSICAL_ACTIVITY = "anyPhysicalActivity" # boolean
     AFIB = "afib"  # boolean 
     WAIST = "waist"  # int, waist circumference in cm
     ALCOHOL_PER_WEEK = "alcoholPerWeek"  # AlcoholCategory
