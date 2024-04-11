@@ -1015,13 +1015,23 @@ class Population:
         data['deadAtEndOfSim'] = [x._alive[-1]==False for _, x in self._people.items()]
         return pd.DataFrame(data)
 
-    def use_pandarallel(self,flag): #must be able to change these attributes for instances that used pandarallel and will be passed to multiprocessing
-        if flag:
-            self.applyMethod = pd.DataFrame.parallel_apply
-            self.applyMethodSeries = pd.Series.parallel_apply
-        else:
-            self.applyMethod = pd.DataFrame.apply
-            self.applyMethodSeries = pd.Series.apply
+    def get_all_person_years_as_df(self):
+        """This function creates a dataframe where each row is a person-year from the simulation.
+           Thus a single person object will be represented in N rows in this dataframe where N is the 
+           number of years this person object lived in the simulation."""
+    
+        srfList = list(self._modelRepository["staticRiskFactors"]._repository.keys())
+        drfList = list(self._modelRepository["dynamicRiskFactors"]._repository.keys())
+        dtList = list(self._modelRepository["defaultTreatments"]._repository.keys())
+        columnNames = srfList + drfList + dtList
+        nestedList = list(map(lambda x: 
+                          list(zip(*[
+                              *[[getattr(x, "_"+attr)]*(x._waveCompleted+1) for attr in srfList],
+                              *[getattr(x,"_"+attr) for attr in drfList],
+                              *[getattr(x,"_"+attr) for attr in dtList]])), 
+                          self._people))
+        df = pd.concat([pd.DataFrame(nestedList[i], columns=columnNames) for i in range(len(nestedList))], ignore_index=True)
+        return df
 
 def initializeAFib(person):
     #the intercept of this model was modified in order to have agreement with the 2019 global burden of disease data
@@ -1100,6 +1110,26 @@ def build_person(x, initializationModelRepository):
     person._afib = [initializationModelRepository[DynamicRiskFactorsType.AFIB].estimate_next_risk(person)]
     return person
 
+def get_nhanes_people(year=None):
+    '''Returns a Pandas Series object with Person-Objects of all persons included in NHANES for year without sampling.'''
+    nhanesDf = pd.read_stata("microsim/data/fullyImputedDataset.dta")
+    if year is not None:
+        nhanesDf = nhanesDf.loc[nhanesDf.year == year]
+    initializationModelRepository = {DynamicRiskFactorsType.AFIB: AFibPrevalenceModel(), 
+                                     DynamicRiskFactorsType.PVD: PVDPrevalenceModel()}
+    people = pd.DataFrame.apply(nhanesDf,
+                                build_person, initializationModelRepository=initializationModelRepository, axis="columns")
+    list(map(lambda person, i: setattr(person, "_index", i), people, range(people.shape[0]))) 
+    return people
+    
+def get_nhanes_population(year=None):
+    '''Returns a Population-object with Person-objects being all NHANES persons without sampling.'''
+    people = get_nhanes_people(year)
+    popModelRepository = PopulationModelRepository(CohortDynamicRiskFactorModelRepository(),
+                                                           CohortDefaultTreatmentModelRepository(),
+                                                           OutcomeModelRepository(),
+                                                           CohortStaticRiskFactorModelRepository()) 
+    return Population(people, popModelRepository)
 
 def build_people_using_nhanes_for_sampling(nhanes, n, filter=None, random_seed=None, weights=None):
     """Creates a Pandas Series collection of Person instances."""
