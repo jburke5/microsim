@@ -5,6 +5,7 @@ import multiprocessing as mp
 import numpy as np
 import pandas as pd
 from pandarallel import pandarallel
+from collections import Counter
 
 from microsim.alcohol_category import AlcoholCategory
 from microsim.bp_treatment_strategies import *
@@ -1023,15 +1024,54 @@ class Population:
         srfList = list(self._modelRepository["staticRiskFactors"]._repository.keys())
         drfList = list(self._modelRepository["dynamicRiskFactors"]._repository.keys())
         dtList = list(self._modelRepository["defaultTreatments"]._repository.keys())
-        columnNames = srfList + drfList + dtList
+        columnNames = ["name"] + srfList + drfList + dtList
         nestedList = list(map(lambda x: 
                           list(zip(*[
+                              *[[getattr(x, "_"+"name")]*(x._waveCompleted+1)],
                               *[[getattr(x, "_"+attr)]*(x._waveCompleted+1) for attr in srfList],
                               *[getattr(x,"_"+attr) for attr in drfList],
                               *[getattr(x,"_"+attr) for attr in dtList]])), 
                           self._people))
         df = pd.concat([pd.DataFrame(nestedList[i], columns=columnNames) for i in range(len(nestedList))], ignore_index=True)
         return df
+
+    def get_baseline_attr(self, rf):
+        '''Returns a list of the baseline attributes of Person objects that were alive at baseline.'''
+        rfList = list(map( lambda x: getattr(x, "_"+rf.value)[0] if x.is_alive else None, self._people))
+        rfList = list(filter(lambda x: x is not None, rfList))
+        rfList = list(map(lambda x: int(x) if bool(x) else x, rfList))
+        return rfList
+
+    def print_baseline_summary(self):
+        """Prints a summary of both static and dynamic risk factors at baseline."""
+        for i,rf in enumerate(DynamicRiskFactorsType):
+            rfList = self.get_baseline_attr(rf)
+            print(f"{rf.value:>50} {np.mean(rfList):> 6.1f}")
+    
+        for i,rf in enumerate(StaticRiskFactorsType):
+            print(f"{rf:>50}")
+            rfList = list(map( lambda x: getattr(x, "_"+rf.value), self._people))
+            rfValueCounts = Counter(rfList)
+            for key in rfValueCounts.keys():
+                print(f"{key.value:>50} {rfValueCounts[key]/self._n: 6.2f}")
+
+    def print_baseline_summary_comparison(self, other):
+        '''Prints a summary of both static and dynamic risk factors at baseline for self and other.
+           other is also a Population object.'''
+        print(" "*50, "  self  other")
+        for i,rf in enumerate(DynamicRiskFactorsType):
+            rfList = self.get_baseline_attr(rf)
+            rfListOther = other.get_baseline_attr(rf)
+            print(f"{rf.value:>50} {np.mean(rfList):> 6.1f} {np.mean(rfListOther):> 6.1f}")
+
+        for i,rf in enumerate(StaticRiskFactorsType):
+            print(f"{rf:>50}")
+            rfList = list(map( lambda x: getattr(x, "_"+rf.value), self._people))
+            rfValueCounts = Counter(rfList)
+            rfListOther = list(map( lambda x: getattr(x, "_"+rf.value), other._people))
+            rfValueCountsOther = Counter(rfListOther)
+            for key in rfValueCounts.keys():
+                print(f"{key:>50} {rfValueCounts[key]/self._n: 6.2f} {rfValueCountsOther[key]/other._n: 6.2f}")
 
 def initializeAFib(person):
     #the intercept of this model was modified in order to have agreement with the 2019 global burden of disease data
