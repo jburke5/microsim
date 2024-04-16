@@ -181,7 +181,8 @@ class Population:
         ageCounts = self.get_age_counts(ages)
         outcomeIncidenceRate = dict()
         for age in ageCounts.keys():
-            if age in outcomeCounts.keys():
+            #second conditional avoids division by 0 
+            if (age in outcomeCounts.keys()) & (ageCounts[age]!=0):
                 outcomeIncidenceRate[age] = outcomeCounts[age]/ageCounts[age]
             else:
                 outcomeIncidenceRate[age] = 0
@@ -1036,16 +1037,28 @@ class Population:
         return df
 
     def get_baseline_attr(self, rf):
+        return get_attr_at_index(self, rf, 0)
+
+    def get_last_attr(self, rf):
+        return get_attr_at_index(self, rf, -1)
+
+    def get_attr_at_index(self, rf, index):
         '''Returns a list of the baseline attributes of Person objects that were alive at baseline.'''
-        rfList = list(map( lambda x: getattr(x, "_"+rf.value)[0] if x.is_alive else None, self._people))
+        rfList = list(map( lambda x: getattr(x, "_"+rf.value)[index] if x.is_alive else None, self._people))
         rfList = list(filter(lambda x: x is not None, rfList))
         rfList = list(map(lambda x: int(x) if bool(x) else x, rfList))
         return rfList
 
     def print_baseline_summary(self):
-        """Prints a summary of both static and dynamic risk factors at baseline."""
+        self.print_summary_at_index(0)
+
+    def print_lastyear_summary(self):
+        self.print_summary_at_index(-1) 
+
+    def print_summary_at_index(self, index):
+        """Prints a summary of both static and dynamic risk factors at index (baseline: index=0, last year: index=-1."""
         for i,rf in enumerate(DynamicRiskFactorsType):
-            rfList = self.get_baseline_attr(rf)
+            rfList = self.get_attr_at_index(rf, index)
             print(f"{rf.value:>50} {np.mean(rfList):> 6.1f}")
     
         for i,rf in enumerate(StaticRiskFactorsType):
@@ -1056,12 +1069,19 @@ class Population:
                 print(f"{key.value:>50} {rfValueCounts[key]/self._n: 6.2f}")
 
     def print_baseline_summary_comparison(self, other):
-        '''Prints a summary of both static and dynamic risk factors at baseline for self and other.
-           other is also a Population object.'''
+        self.print_summary_at_index_comparison(other, 0)
+
+    def print_lastyear_summary_comparison(self, other):
+        self.print_summary_at_index_comparison(other, -1)
+
+    def print_summary_at_index_comparison(self, other, index):
+        '''Prints a summary of both static and dynamic risk factors at index for self and other.
+           other is also a Population object.
+           baseline: index=0, last year: index=-1'''
         print(" "*50, "  self  other")
         for i,rf in enumerate(DynamicRiskFactorsType):
-            rfList = self.get_baseline_attr(rf)
-            rfListOther = other.get_baseline_attr(rf)
+            rfList = self.get_attr_at_index(rf, index)
+            rfListOther = other.get_attr_at_index(rf, index)
             print(f"{rf.value:>50} {np.mean(rfList):> 6.1f} {np.mean(rfListOther):> 6.1f}")
 
         for i,rf in enumerate(StaticRiskFactorsType):
@@ -1072,6 +1092,23 @@ class Population:
             rfValueCountsOther = Counter(rfListOther)
             for key in rfValueCounts.keys():
                 print(f"{key:>50} {rfValueCounts[key]/self._n: 6.2f} {rfValueCountsOther[key]/other._n: 6.2f}")
+
+    def print_cv_standardized_rates(self):
+        outcomes = [OutcomeType.MI, OutcomeType.STROKE, OutcomeType.DEATH,
+                    OutcomeType.CARDIOVASCULAR, OutcomeType.NONCARDIOVASCULAR, OutcomeType.DEMENTIA]
+        standardizedRates = list(map(lambda x: self.calculate_mean_age_sex_standardized_incidence(x, 2016), outcomes))
+        standardizedRatesBlack = list(map(
+                                  lambda x: self.calculate_mean_age_sex_standardized_incidence(x,2016, lambda y: y._black),
+                                  outcomes))
+        print("standardized rates (per 100,000)    all        black   ")
+        for i in range(len(outcomes)):
+            print(f"{outcomes[i].value:>30} {standardizedRates[i]:> 10.1f} {standardizedRatesBlack[i]:> 10.1f}")
+
+    def print_dementia_incidence(self):
+        dementiaIncidentRate = self.get_raw_incidence_by_age(OutcomeType.DEMENTIA)
+        for key in sorted(dementiaIncidentRate.keys()):
+            print(f"{key:>50} {dementiaIncidentRate[key]: 6.2f}")
+
 
 def initializeAFib(person):
     #the intercept of this model was modified in order to have agreement with the 2019 global burden of disease data
