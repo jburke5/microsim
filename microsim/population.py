@@ -1078,12 +1078,14 @@ class Population:
         '''Prints a summary of both static and dynamic risk factors at index for self and other.
            other is also a Population object.
            baseline: index=0, last year: index=-1'''
-        print(" "*50, "  self  other")
+        print(" "*50, "  self", " "*28,  "other")
+        print(" "*50, "  min ", "  0.25", " "*1, "med", " "*2, "0.75", " "*2, "max" , "  min ", "  0.25", " "*1, "med", " "*2, "0.75", " "*2, "max")
         for i,rf in enumerate(DynamicRiskFactorsType):
             rfList = self.get_attr_at_index(rf, index)
             rfListOther = other.get_attr_at_index(rf, index)
-            print(f"{rf.value:>50} {np.mean(rfList):> 6.1f} {np.mean(rfListOther):> 6.1f}")
-
+            print(f"{rf.value:>50} {np.min(rfList):> 6.1f} {np.quantile(rfList, 0.25):> 6.1f} {np.mean(rfList):> 6.1f} {np.quantile(rfList, 0.75):> 6.1f} {np.max(rfList):> 6.1f} {np.min(rfListOther):> 6.1f} {np.quantile(rfListOther, 0.25):> 6.1f} {np.mean(rfListOther):> 6.1f} {np.quantile(rfListOther, 0.75):> 6.1f} {np.max(rfListOther):> 6.1f}")
+        print(" "*50, "  self", "  other")
+        print(" "*50, "  proportions")
         for i,rf in enumerate(StaticRiskFactorsType):
             print(f"{rf:>50}")
             rfList = list(map( lambda x: getattr(x, "_"+rf.value), self._people))
