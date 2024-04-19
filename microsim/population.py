@@ -1046,7 +1046,7 @@ class Population:
         '''Returns a list of the baseline attributes of Person objects that were alive at baseline.'''
         rfList = list(map( lambda x: getattr(x, "_"+rf.value)[index] if x.is_alive else None, self._people))
         rfList = list(filter(lambda x: x is not None, rfList))
-        rfList = list(map(lambda x: int(x) if bool(x) else x, rfList))
+        rfList = list(map(lambda x: int(x) if (type(x)==bool)|(type(x)==np.bool_) else x, rfList))
         return rfList
 
     def print_baseline_summary(self):
