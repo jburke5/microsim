@@ -61,7 +61,6 @@ class StrokePartitionModel(StatsModelLinearRiskFactorModel):
 
 class StrokePartitionModelFor1bpMedsAdded(StrokePartitionModel):
     def __init__(self):
-        #intercept = -2.4001918
         intercept = -2.4295668
         super().__init__(intercept=intercept)
 
@@ -72,14 +71,11 @@ class StrokePartitionModelFor2bpMedsAdded(StrokePartitionModel):
 
 class StrokePartitionModelFor3bpMedsAdded(StrokePartitionModel):
     def __init__(self):
-        #intercept = -2.66499999
-        #intercept = -2.65374999
-        #intercept = -2.6524999
-        intercept = -2.65187499
+        intercept = -2.66499999
         super().__init__(intercept=intercept)
 
 class StrokePartitionModelFor4bpMedsAdded(StrokePartitionModel):
     def __init__(self):
-        intercept = -2.75120
+        intercept = -2.764950
         super().__init__(intercept=intercept)
 
