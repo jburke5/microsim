@@ -58,7 +58,6 @@ class CVModelMale(CVModelBase):
             "black#current_smoker": -0.226771,
             "lagSbp#black#current_bp_treatment": 0.004190,
             "lagAge#lagSbp#black": -0.000199,
-            #"Intercept": -11.679980,
             "Intercept": intercept,
         }
         tot_chol_hdl_ratio=0.193307
@@ -67,7 +66,6 @@ class CVModelMale(CVModelBase):
 
 class CVModelMaleFor1bpMedsAdded(CVModelMale):
     def __init__(self):
-        #super().__init__(intercept = -11.7959175)
         super().__init__(intercept = -11.7902925)
 
 class CVModelMaleFor2bpMedsAdded(CVModelMale):
@@ -76,14 +74,11 @@ class CVModelMaleFor2bpMedsAdded(CVModelMale):
 
 class CVModelMaleFor3bpMedsAdded(CVModelMale):
     def __init__(self):
-        #super().__init__(intercept = -12.007714375)
-        #super().__init__(intercept = -11.991464375)
-        #super().__init__(intercept = -11.99021437499)
-        super().__init__(intercept = -11.99083937499)
+        super().__init__(intercept = -12.007714375)
 
 class CVModelMaleFor4bpMedsAdded(CVModelMale):
     def __init__(self):
-        super().__init__(intercept = -12.089585)
+        super().__init__(intercept = -12.101460)
 
 class CVModelFemale(CVModelBase):
     """CV model details for female gender."""
@@ -105,7 +100,6 @@ class CVModelFemale(CVModelBase):
             "black#current_smoker": -0.092231,
             "lagSbp#black#current_bp_treatment": -0.000173,
             "lagAge#lagSbp#black": -0.000094,
-            #"Intercept": -12.823110,
             "Intercept": intercept,
         }
         tot_chol_hdl_ratio=0.151318
@@ -114,7 +108,6 @@ class CVModelFemale(CVModelBase):
 
 class CVModelFemaleFor1bpMedsAdded(CVModelFemale):
     def __init__(self):
-        #super().__init__(intercept = -12.93904750)
         super().__init__(intercept = -12.9334225)
 
 class CVModelFemaleFor2bpMedsAdded(CVModelFemale):
@@ -123,12 +116,9 @@ class CVModelFemaleFor2bpMedsAdded(CVModelFemale):
 
 class CVModelFemaleFor3bpMedsAdded(CVModelFemale):
     def __init__(self):
-        #super().__init__(intercept = -13.150500)
-        #super().__init__(intercept = -13.134249999999998)
-        #super().__init__(intercept = -13.132999999)
-        super().__init__(intercept = -13.133624999999)
+        super().__init__(intercept = -13.150500)
 
 class CVModelFemaleFor4bpMedsAdded(CVModelFemale):
     def __init__(self):
-        super().__init__(intercept = -13.232375 )
+        super().__init__(intercept = -13.244250 )
 
