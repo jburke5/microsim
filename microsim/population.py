@@ -1057,13 +1057,13 @@ class Population:
 
     def print_summary_at_index(self, index):
         """Prints a summary of both static and dynamic risk factors at index (baseline: index=0, last year: index=-1."""
-        print(" "*50, "  min ", "  0.25", " "*1, "med", " "*2, "0.75", " "*2, "max")
+        print(" "*50, "  min ", "  0.25", " "*1, "med", " "*2, "0.75", " "*2, "max", " "*1, "mean", " "*2, "sd")
         for i,rf in enumerate(DynamicRiskFactorsType):
             rfList = self.get_attr_at_index(rf, index)
-            print(f"{rf.value:>50} {np.min(rfList):> 6.1f} {np.quantile(rfList, 0.25):> 6.1f} {np.mean(rfList):> 6.1f} {np.quantile(rfList, 0.75):> 6.1f} {np.max(rfList):> 6.1f}")
+            print(f"{rf.value:>50} {np.min(rfList):> 6.1f} {np.quantile(rfList, 0.25):> 6.1f} {np.quantile(rfList, 0.5):> 6.1f} {np.quantile(rfList, 0.75):> 6.1f} {np.max(rfList):> 6.1f} {np.mean(rfList):> 6.1f} {np.std(rfList):> 6.1f}")
         print(" "*50, "  proportions") 
         for rf in StaticRiskFactorsType:
-            print(f"{rf:>50}")
+            print(f"{rf.value:>50}")
             rfList = list(map( lambda x: getattr(x, "_"+rf.value), self._people))
             rfValueCounts = Counter(rfList)
             for key in sorted(rfValueCounts.keys()):
@@ -1079,22 +1079,22 @@ class Population:
         '''Prints a summary of both static and dynamic risk factors at index for self and other.
            other is also a Population object.
            baseline: index=0, last year: index=-1'''
-        print(" "*50, "  self", " "*28,  "other")
-        print(" "*50, "  min ", "  0.25", " "*1, "med", " "*2, "0.75", " "*2, "max" , "  min ", "  0.25", " "*1, "med", " "*2, "0.75", " "*2, "max")
+        print(" "*30, "  self", " "*43,  "other")
+        print(" "*30, "  min ", "  0.25", " "*1, "med", " "*2, "0.75", " "*2, "max" , " "*1, "mean", " "*2, "sd", "   min ", "  0.25", " "*1, "med", " "*2, "0.75", " "*2, "max", " "*1, "mean", " "*2, "sd")
         for i,rf in enumerate(DynamicRiskFactorsType):
             rfList = self.get_attr_at_index(rf, index)
             rfListOther = other.get_attr_at_index(rf, index)
-            print(f"{rf.value:>50} {np.min(rfList):> 6.1f} {np.quantile(rfList, 0.25):> 6.1f} {np.mean(rfList):> 6.1f} {np.quantile(rfList, 0.75):> 6.1f} {np.max(rfList):> 6.1f} {np.min(rfListOther):> 6.1f} {np.quantile(rfListOther, 0.25):> 6.1f} {np.mean(rfListOther):> 6.1f} {np.quantile(rfListOther, 0.75):> 6.1f} {np.max(rfListOther):> 6.1f}")
-        print(" "*50, "  self", "  other")
-        print(" "*50, "  proportions")
+            print(f"{rf.value:>30} {np.min(rfList):> 6.1f} {np.quantile(rfList, 0.25):> 6.1f} {np.quantile(rfList, 0.5):> 6.1f} {np.quantile(rfList, 0.75):> 6.1f} {np.max(rfList):> 6.1f} {np.mean(rfList):> 6.1f} {np.std(rfList):> 6.1f} {np.min(rfListOther):> 6.1f} {np.quantile(rfListOther, 0.25):> 6.1f} {np.quantile(rfListOther, 0.5):> 6.1f} {np.quantile(rfListOther, 0.75):> 6.1f} {np.max(rfListOther):> 6.1f} {np.mean(rfListOther):> 6.1f} {np.std(rfListOther):> 6.1f}")
+        print(" "*30, "  self", "  other")
+        print(" "*30, "  proportions")
         for rf in StaticRiskFactorsType:
-            print(f"{rf:>50}")
+            print(f"{rf.value:>30}")
             rfList = list(map( lambda x: getattr(x, "_"+rf.value), self._people))
             rfValueCounts = Counter(rfList)
             rfListOther = list(map( lambda x: getattr(x, "_"+rf.value), other._people))
             rfValueCountsOther = Counter(rfListOther)
             for key in sorted(rfValueCounts.keys()):
-                print(f"{key:>50} {rfValueCounts[key]/self._n: 6.2f} {rfValueCountsOther[key]/other._n: 6.2f}")
+                print(f"{key:>30} {rfValueCounts[key]/self._n: 6.2f} {rfValueCountsOther[key]/other._n: 6.2f}")
 
     def print_cv_standardized_rates(self):
         outcomes = [OutcomeType.MI, OutcomeType.STROKE, OutcomeType.DEATH,
