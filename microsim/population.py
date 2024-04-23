@@ -542,9 +542,12 @@ class Population:
         standardizedRatesBlack = list(map(
                                   lambda x: self.calculate_mean_age_sex_standardized_incidence(x,2016, lambda y: y._black),
                                   outcomes))
-        print("standardized rates (per 100,000)    all        black   ")
+        standardizedRatesWhite = list(map(
+                                  lambda x: self.calculate_mean_age_sex_standardized_incidence(x,2016, lambda y: y._white),
+                                  outcomes))
+        print("standardized rates (per 100,000)    all        black      white")
         for i in range(len(outcomes)):
-            print(f"{outcomes[i].value:>30} {standardizedRates[i]:> 10.1f} {standardizedRatesBlack[i]:> 10.1f}")
+            print(f"{outcomes[i].value:>30} {standardizedRates[i]:> 10.1f} {standardizedRatesBlack[i]:> 10.1f} {standardizedRatesWhite[i]:> 10.1f}")
 
     def print_dementia_incidence(self):
         dementiaIncidentRate = self.get_raw_incidence_by_age(OutcomeType.DEMENTIA)
