@@ -504,6 +504,10 @@ class Person:
     def _black(self):
         return self._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK
 
+    @property
+    def _white(self):
+        return self._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_WHITE
+
     def get_median_age(self):
         medianYear = math.floor(len(self._age) / 2)
         return self._age[medianYear]
