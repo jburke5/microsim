@@ -548,101 +548,6 @@ def initializeAFib(person):
     statsModel = StatsModelLogisticRiskFactorModel(model)
     return person._rng.uniform() < statsModel.estimate_next_risk(person)
 
-
-def get_nhanes_people(year=None):
-    '''Returns a Pandas Series object with Person-Objects of all persons included in NHANES for year without sampling.'''
-    nhanesDf = pd.read_stata("microsim/data/fullyImputedDataset.dta")
-    if year is not None:
-        nhanesDf = nhanesDf.loc[nhanesDf.year == year]
-    initializationModelRepository = {DynamicRiskFactorsType.AFIB: AFibPrevalenceModel(), 
-                                     DynamicRiskFactorsType.PVD: PVDPrevalenceModel()}
-    people = pd.DataFrame.apply(nhanesDf,
-                                PersonFactory.get_nhanes_person, initializationModelRepository=initializationModelRepository, axis="columns")
-    list(map(lambda person, i: setattr(person, "_index", i), people, range(people.shape[0]))) 
-    return people
-    
-def get_nhanes_population(year=None):
-    '''Returns a Population-object with Person-objects being all NHANES persons without sampling.'''
-    people = get_nhanes_people(year)
-    popModelRepository = PopulationModelRepository(CohortDynamicRiskFactorModelRepository(),
-                                                           CohortDefaultTreatmentModelRepository(),
-                                                           OutcomeModelRepository(),
-                                                           CohortStaticRiskFactorModelRepository()) 
-    return Population(people, popModelRepository)
-
-def build_people_using_nhanes_for_sampling(nhanes, n, filter=None, random_seed=None, weights=None):
-    """Creates a Pandas Series collection of Person instances."""
-
-    if weights is None:
-        weights = nhanes.WTINT2YR
-    repeated_sample = nhanes.sample(n, weights=weights, random_state=random_seed, replace=True)
-    initializationModelRepository = {DynamicRiskFactorsType.AFIB: AFibPrevalenceModel(), 
-                                     DynamicRiskFactorsType.PVD: PVDPrevalenceModel()}
-    people = pd.DataFrame.apply(repeated_sample,
-                                PersonFactory.get_nhanes_person, initializationModelRepository=initializationModelRepository, axis="columns")
-
-    #sets the unique identifier for each Person instance
-    list(map(lambda person, i: setattr(person, "_index", i), people, range(n))) 
-
-    return people
-
-class NHANESDirectSamplePopulation(Population):
-    """Simple base class to sample with replacement from 2015/2016 NHANES"""
-
-    def __init__(
-        self,
-        #Q: there is an issue with making this n to be the population size
-        #   the population class must set the pop size depending on what is passed on to it
-        #   because this n may be modified by the filter later on, the way it is currently set up
-        n,
-        year,
-        popModelRepository=None,
-        filter=None,
-        generate_new_people=True,
-        #Q: where is this used?
-        #model_reposistory_type="cohort",
-        random_seed=None,
-        weights=None,
-    ):
-
-        #Q: why are we not applying the filter to the NHANES dataframe? Instead we spend all the time creating Person-instances
-        # we will later reject....
-        nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
-        nhanes = nhanes.loc[nhanes.year == year]
-        if filter is not None:
-            nhanes = nhanes.loc[nhanes.apply(filter, axis=1)]
-        #convert the integers to booleans because in the simulation we always use bool for this rf
-        nhanes["anyPhysicalActivity"] = nhanes["anyPhysicalActivity"].astype(bool)
-        people = build_people_using_nhanes_for_sampling(
-            nhanes,
-            n,
-            random_seed=random_seed,
-            weights=weights,
-        )
-        #This is the default, self-consistent set of models for advancing an NHANES Population
-        #Q: how to create one for the NHANESRiskModelRepository? Do we even need to do this? I have never used that....
-        if popModelRepository is None:
-            popModelRepository = PopulationModelRepository(CohortDynamicRiskFactorModelRepository(),
-                                                           CohortDefaultTreatmentModelRepository(),
-                                                           OutcomeModelRepository(),
-                                                           CohortStaticRiskFactorModelRepository()) 
-        super().__init__(people, popModelRepository)
-        self.year = year
-
-    #Q: for now I am commenting this out because I want to be able to use the Population copy function
-    #def copy(self):
-    #    newPop = NHANESDirectSamplePopulation(self.n, self.year, False)
-    #    newPop._people = copy.deepcopy(self._people)
-    #    return newPop
-
-    def _initialize_risk_models(self, model_repository_type):
-        if model_repository_type == "cohort":
-            self._risk_model_repository = CohortRiskModelRepository()
-        elif model_repository_type == "nhanes":
-            self._risk_model_repository = NHANESRiskModelRepository()
-        else:
-            raise Exception("unknwon risk model repository type" + model_repository_type)
-
 class PersonListPopulation(Population):
     def __init__(self, people):
 
@@ -659,7 +564,10 @@ class PersonListPopulation(Population):
         self._currentWave = len(people[0]._age)-1
 
 
-class NHANESAgeStandardPopulation(NHANESDirectSamplePopulation):
+#NOTE: this class used to be a subclass of NHANESDirectSamplePopulation which is no longer in use...
+#so we will need to update this class...and also see how it relates to the StandardizedPopulation class as well
+class NHANESAgeStandardPopulation:
+#class NHANESAgeStandardPopulation(NHANESDirectSamplePopulation):
     def __init__(self, n, year, rng=None):
         nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         weights = self.get_weights(year)
