@@ -55,7 +55,7 @@ class PersonFactory:
         personDynamicRiskFactors = dict()
         for rfd in DynamicRiskFactorsType:
             if rfd==DynamicRiskFactorsType.ALCOHOL_PER_WEEK:
-                personDynamicRiskFactors[rfd.value] = AlcoholCategory.get_category_for_consumption(rfRepository.apply_bounds(rfd.value, x[microsimToNhanes[rfd.value]]))
+                personDynamicRiskFactors[rfd.value] = AlcoholCategory(x[microsimToNhanes[rfd.value]])
             else:
                 if (rfd!=DynamicRiskFactorsType.PVD) & (rfd!=DynamicRiskFactorsType.AFIB):
                     personDynamicRiskFactors[rfd.value] = rfRepository.apply_bounds(rfd.value, x[microsimToNhanes[rfd.value]])
@@ -76,15 +76,19 @@ class PersonFactory:
 
         personOutcomes = dict(zip([outcome for outcome in OutcomeType],
                                   [list() for outcome in range(len(OutcomeType))]))
-        #add pre-simulation stroke outcomes
-        selfReportStrokeAge=x.selfReportStrokeAge
-        #Q: we should not add the stroke outcome in case of "else"?
-        if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
+
+        #If df originates from the NHANES df these columns will exist, but if drawing from the NHANES distributions, these will not be in the df
+        if "selfReportStrokeAge" in x.index:
+            #add pre-simulation stroke outcomes
+            selfReportStrokeAge=x.selfReportStrokeAge
+            #Q: we should not add the stroke outcome in case of "else"?
+            if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
                 selfReportStrokeAge = selfReportStrokeAge if selfReportStrokeAge <= x.age else x.age
                 personOutcomes[OutcomeType.STROKE].append((selfReportStrokeAge, StrokeOutcome(False, None, None, None, priorToSim=True)))
-        #add pre-simulation mi outcomes
-        selfReportMIAge=rng.integers(18, x.age) if x.selfReportMIAge == 99999 else x.selfReportMIAge
-        if selfReportMIAge is not None and selfReportMIAge > 1:
+        if "selfReportMIAge" in x.index:
+            #add pre-simulation mi outcomes
+            selfReportMIAge=rng.integers(18, x.age) if x.selfReportMIAge == 99999 else x.selfReportMIAge
+            if selfReportMIAge is not None and selfReportMIAge > 1:
                 selfReportMIAge = selfReportMIAge if selfReportMIAge <= x.age else x.age
                 personOutcomes[OutcomeType.MI].append((selfReportMIAge, Outcome(OutcomeType.MI, False, priorToSim=True)))
 
