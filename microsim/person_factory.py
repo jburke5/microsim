@@ -13,6 +13,8 @@ from microsim.smoking_status import SmokingStatus
 from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType
 from microsim.stroke_outcome import StrokeOutcome
 
+#useful to convert column names from the NHANES data to the names Microsim uses...
+#Q: this probably belongs somewhere else...
 microsimToNhanes = {DynamicRiskFactorsType.SBP.value: "meanSBP",
                     DynamicRiskFactorsType.DBP.value: "meanDBP",
                     DynamicRiskFactorsType.A1C.value: "a1c",
@@ -25,7 +27,8 @@ microsimToNhanes = {DynamicRiskFactorsType.SBP.value: "meanSBP",
                     DynamicRiskFactorsType.AGE.value: "age",
                     DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: 'anyPhysicalActivity',
                     DynamicRiskFactorsType.CREATININE.value: "serumCreatinine",
-                    DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: "alcoholPerWeek"}
+                    DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: "alcoholPerWeek",
+                    DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: "antiHypertensive"}
 
 class PersonFactory:
     """A class used to obtain Person-objects using data from a variety of sources."""
@@ -55,10 +58,10 @@ class PersonFactory:
         personDynamicRiskFactors = dict()
         for rfd in DynamicRiskFactorsType:
             if rfd==DynamicRiskFactorsType.ALCOHOL_PER_WEEK:
-                personDynamicRiskFactors[rfd.value] = AlcoholCategory(x[microsimToNhanes[rfd.value]])
+                personDynamicRiskFactors[rfd.value] = AlcoholCategory(x[rfd.value])
             else:
                 if (rfd!=DynamicRiskFactorsType.PVD) & (rfd!=DynamicRiskFactorsType.AFIB):
-                    personDynamicRiskFactors[rfd.value] = rfRepository.apply_bounds(rfd.value, x[microsimToNhanes[rfd.value]])
+                    personDynamicRiskFactors[rfd.value] = rfRepository.apply_bounds(rfd.value, x[rfd.value])
         personDynamicRiskFactors[DynamicRiskFactorsType.AFIB.value] = None
         personDynamicRiskFactors[DynamicRiskFactorsType.PVD.value] = None
 
@@ -68,7 +71,7 @@ class PersonFactory:
         personDefaultTreatments = {
                             DefaultTreatmentsType.STATIN.value: bool(x.statin),
                             #DefaultTreatmentsType.OTHER_LIPID_LOWERING_MEDICATION_COUNT.value: x.otherLipidLowering,
-                            DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: x.antiHypertensive}
+                            DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: x.antiHypertensiveCount}
 
         personTreatmentStrategies = dict(zip([strategy.value for strategy in TreatmentStrategiesType],
                                               #[None for strategy in range(len(TreatmentStrategiesType))]))
