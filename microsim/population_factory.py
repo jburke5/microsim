@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from itertools import product
 from scipy.stats import multivariate_normal
 
@@ -140,7 +141,7 @@ class PopulationFactory:
             if distributions["singular"][key]:
                 meanOfSingular = distributions["mean"][key]
                 for altKey in distributions["singular"].keys():
-                    if not distributions["singular"][key]:
+                    if not distributions["singular"][altKey]:
                        altProbability = multivariate_normal(distributions["mean"][altKey],
                                                             distributions["cov"][altKey], allow_singular=False).pdf(meanOfSingular)
                        altKeys += [altKey]
