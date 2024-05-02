@@ -31,7 +31,7 @@ from microsim.statsmodel_logistic_risk_factor_model import \
     StatsModelLogisticRiskFactorModel
 from microsim.sim_settings import simSettings
 from microsim.stroke_outcome import StrokeOutcome
-from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
+from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType, CategoricalRiskFactorsType, ContinuousRiskFactorsType
 from microsim.afib_model import AFibPrevalenceModel
 from microsim.pvd_model import PVDPrevalenceModel
 from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType
@@ -126,7 +126,8 @@ class Population:
         return [Population(people, modelRepository) for people, modelRepository in zip(peopleParts, modelRepositoryParts)]
 
     def copy(self):
-        people = self.get_people_copy()
+        #people = self.get_people_copy()
+        people = Population.get_people_copy(self._people)
         popModelRepository = self.get_pop_model_repository_copy()
         selfCopy = Population(people, popModelRepository)
         return selfCopy 
@@ -138,9 +139,39 @@ class Population:
                                     self._modelRepository[PopulationRepositoryType.OUTCOMES.value],
                                     self._modelRepository[PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value])
 
-    def get_people_copy(self):
+    @staticmethod
+    def get_people_copy(people):
         """The Person __deepcopy__ function assumes that the Person object has not been advanced to the future at all."""
-        return pd.Series( list(map( lambda x: x.__deepcopy__(), self._people)) )
+        return pd.Series( list(map( lambda x: x.__deepcopy__(), people)) )
+
+    @staticmethod
+    def get_people_blocks(people, blockFactor, nBlocks=10):
+        if blockFactor in [x.value for x in CategoricalRiskFactorsType]:
+            return Population.get_people_blocks_categorical(people, blockFactor)
+        elif blockFactor in [x.value for x in ContinuousRiskFactorsType]:
+            return Population.get_people_blocks_continuous(people, blockFactor, nBlocks=nBlocks)
+        else:
+            raise RuntimeError("Unrecognized block factor type in Population get_people_blocks function.")
+
+    @staticmethod
+    def get_people_blocks_categorical(people, blockFactor):
+        categories = set(list(map(lambda x: getattr(x, "_"+blockFactor), people)))
+        blocks = dict()
+        for cat in categories:
+            blocks[cat] = pd.Series(list(filter(lambda x: getattr(x, "_"+blockFactor)==cat, people)))
+        return blocks
+
+    @staticmethod
+    def get_people_blocks_continuous(people, blockFactor, nBlocks=10):
+        categories = list(range(nBlocks)) 
+        blockFactorMin, blockFactorMax = list(map(lambda x: (min(x), max(x)), 
+                                                           [list(map(lambda x: getattr(x, "_"+blockFactor)[-1], people))]))[0]
+        blockBounds = np.linspace(blockFactorMin, blockFactorMax, nBlocks+1)
+        blocks = dict()
+        for cat in categories:
+            blocks[cat] = pd.Series(list(filter(lambda x: (getattr(x,"_"+blockFactor)[-1]>blockBounds[cat]) &
+                                                              (getattr(x,"_"+blockFactor)[-1]<=blockBounds[cat+1]), people)))
+        return blocks
 
     def get_age_counts(self, itemList):
         counts = dict()
@@ -246,6 +277,9 @@ class Population:
             expectedOutcomes += sum([x*y for x,y in zip(outcomeRates[gender.value],
                                                         standardizedPop.populationPercents[gender.value])])
         return expectedOutcomes
+
+    def get_outcome_risk(self, outcomeType):
+        return sum(list(map(lambda x: x.has_outcome_during_simulation(outcomeType), self._people)))/self._n
 
     def reset_to_baseline(self):
         self._totalWavesAdvanced = 0
@@ -504,22 +538,25 @@ class Population:
         '''Prints a summary of both static and dynamic risk factors at index for self and other.
            other is also a Population object.
            baseline: index=0, last year: index=-1'''
-        print(" "*30, "  self", " "*43,  "other")
-        print(" "*30, "  min ", "  0.25", " "*1, "med", " "*2, "0.75", " "*2, "max" , " "*1, "mean", " "*2, "sd", "   min ", "  0.25", " "*1, "med", " "*2, "0.75", " "*2, "max", " "*1, "mean", " "*2, "sd")
+        print(" "*25, "self", " "*50,  "other")
+        print(" "*25, "-"*53, " ", "-"*53)
+        print(" "*25, "min", " "*4, "0.25", " "*2, "med", " "*3, "0.75", " "*3, "max" , " "*2, "mean", " "*3, "sd", "    min ", "   0.25", " "*2, "med", " "*3, "0.75", " "*3, "max", " "*2, "mean", " "*3, "sd")
+        print(" "*25, "-"*53, " ", "-"*53)
         for i,rf in enumerate(DynamicRiskFactorsType):
             rfList = self.get_attr_at_index(rf, index)
             rfListOther = other.get_attr_at_index(rf, index)
-            print(f"{rf.value:>30} {np.min(rfList):> 6.1f} {np.quantile(rfList, 0.25):> 6.1f} {np.quantile(rfList, 0.5):> 6.1f} {np.quantile(rfList, 0.75):> 6.1f} {np.max(rfList):> 6.1f} {np.mean(rfList):> 6.1f} {np.std(rfList):> 6.1f} {np.min(rfListOther):> 6.1f} {np.quantile(rfListOther, 0.25):> 6.1f} {np.quantile(rfListOther, 0.5):> 6.1f} {np.quantile(rfListOther, 0.75):> 6.1f} {np.max(rfListOther):> 6.1f} {np.mean(rfListOther):> 6.1f} {np.std(rfListOther):> 6.1f}")
-        print(" "*30, "  self", "  other")
-        print(" "*30, "  proportions")
+            print(f"{rf.value:>23} {np.min(rfList):> 7.1f} {np.quantile(rfList, 0.25):> 7.1f} {np.quantile(rfList, 0.5):> 7.1f} {np.quantile(rfList, 0.75):> 7.1f} {np.max(rfList):> 7.1f} {np.mean(rfList):> 7.1f} {np.std(rfList):> 7.1f} {np.min(rfListOther):> 7.1f} {np.quantile(rfListOther, 0.25):> 7.1f} {np.quantile(rfListOther, 0.5):> 7.1f} {np.quantile(rfListOther, 0.75):> 7.1f} {np.max(rfListOther):> 7.1f} {np.mean(rfListOther):> 7.1f} {np.std(rfListOther):> 7.1f}")
+        print(" "*25, "self", "  other")
+        print(" "*25, "proportions")
+        print(" "*25, "-"*11)
         for rf in StaticRiskFactorsType:
-            print(f"{rf.value:>30}")
+            print(f"{rf.value:>23}")
             rfList = list(map( lambda x: getattr(x, "_"+rf.value), self._people))
             rfValueCounts = Counter(rfList)
             rfListOther = list(map( lambda x: getattr(x, "_"+rf.value), other._people))
             rfValueCountsOther = Counter(rfListOther)
             for key in sorted(rfValueCounts.keys()):
-                print(f"{key:>30} {rfValueCounts[key]/self._n: 6.2f} {rfValueCountsOther[key]/other._n: 6.2f}")
+                print(f"{key:>23} {rfValueCounts[key]/self._n: 6.2f} {rfValueCountsOther[key]/other._n: 6.2f}")
 
     def print_cv_standardized_rates(self):
         outcomes = [OutcomeType.MI, OutcomeType.STROKE, OutcomeType.DEATH,
@@ -539,6 +576,7 @@ class Population:
         dementiaIncidentRate = self.get_raw_incidence_by_age(OutcomeType.DEMENTIA)
         for key in sorted(dementiaIncidentRate.keys()):
             print(f"{key:>50} {dementiaIncidentRate[key]: 6.3f}")
+ 
 
 
 def initializeAFib(person):

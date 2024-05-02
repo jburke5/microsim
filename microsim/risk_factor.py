@@ -1,5 +1,7 @@
 from enum import Enum
 
+#Important: any risk factor must be listed as Static/Dynamic AND Categorical/Continuous
+
 class DynamicRiskFactorsType(Enum):
     AGE = "age"   # int
     SBP = "sbp"   # int
@@ -22,4 +24,27 @@ class StaticRiskFactorsType(Enum):
     EDUCATION = "education"          # Education
     GENDER = "gender"                # NHANESGender
     SMOKING_STATUS = "smokingStatus" # SmokingStatus, TODO : change smoking status into a factor that changes over time
+
+class CategoricalRiskFactorsType(Enum):
+    RACE_ETHNICITY = "raceEthnicity" 
+    EDUCATION = "education"          
+    GENDER = "gender"                
+    SMOKING_STATUS = "smokingStatus" 
+    PVD = "pvd"
+    ALCOHOL_PER_WEEK = "alcoholPerWeek"
+    AFIB = "afib"
+    ANY_PHYSICAL_ACTIVITY = "anyPhysicalActivity" 
+    
+class ContinuousRiskFactorsType(Enum):
+    AGE = "age"   # int
+    SBP = "sbp"   # int
+    DBP = "dbp"   # int
+    A1C = "a1c"   # float
+    HDL = "hdl"   # int
+    LDL = "ldl"   # int
+    TRIG = "trig"  # int
+    TOT_CHOL = "totChol"   # int
+    BMI = "bmi"   #float
+    WAIST = "waist"  # int, waist circumference in cm
+    CREATININE = "creatinine" # float
 

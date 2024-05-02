@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from itertools import product
 from scipy.stats import multivariate_normal
+from enum import Enum
 
 from microsim.person_factory import PersonFactory, microsimToNhanes
 from microsim.population import Population
@@ -48,7 +49,39 @@ nhanesContinuousVariables = [DynamicRiskFactorsType.AGE.value,
                              DynamicRiskFactorsType.SBP.value, 
                              DynamicRiskFactorsType.DBP.value]
 
+class PopulationType(Enum):
+    NHANES = "nhanes"
+    KAISER = "kaiser"
+
 class PopulationFactory:
+
+    @staticmethod
+    def get_population(popType, **kwargs):
+        if popType == PopulationType.NHANES:
+            return PopulationFactory.get_nhanes_population(**kwargs)
+        elif popType == PopulationType.KAISER:
+            raise RuntimeError("Kaiser popType not implemented yet in PopulationFactory.get_population function.")
+        else:
+            raise RuntimeError("Unknown popType in PopulationFactory.get_population function.")
+
+    @staticmethod
+    def get_people(popType, **kwargs):
+        if popType == PopulationType.NHANES:
+            return PopulationFactory.get_nhanes_people(**kwargs)
+        elif popType == PopulationType.KAISER:
+            raise RuntimeError("Kaiser popType not implemented yet in PopulationFactory.get_people function.")
+        else:
+            raise RuntimeError("Unknown popType in PopulationFactory.get_people function.")
+
+    @staticmethod
+    def get_population_model_repo(popType):
+        if popType == PopulationType.NHANES:
+            return PopulationFactory.get_nhanes_population_model_repo()
+        elif popType == PopulationType.KAISER:
+            raise RuntimeError("Kaiser popType not implemented yet in PopulationFactory.get_population_model_repo function.")
+        else:
+            raise RuntimeError("Unknown popType in PopulationFactory.get_population_model_repo function.")
+
 
     @staticmethod
     def get_nhanes_person_initialization_model_repo():
@@ -59,10 +92,10 @@ class PopulationFactory:
                 DynamicRiskFactorsType.PVD: PVDPrevalenceModel()}
 
     @staticmethod
-    def set_index_in_people(people):
+    def set_index_in_people(people, start=0):
         """Once people are created, its Person-objects do not have a unique index.
            This function assigns a unique index to every Person-object in people."""
-        list(map(lambda person, i: setattr(person, "_index", i), people, range(people.shape[0])))
+        list(map(lambda person, i: setattr(person, "_index", i+start), people, range(people.shape[0])))
 
     @staticmethod
     def get_nhanesDf():
