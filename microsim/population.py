@@ -173,6 +173,13 @@ class Population:
                                                               (getattr(x,"_"+blockFactor)[-1]<=blockBounds[cat+1]), people)))
         return blocks
 
+    @staticmethod
+    def get_unique_people_count(people):
+        return len(set(list(map(lambda x: x._name, people))))
+
+    def get_attr(self, attr):
+        return list(map(lambda x: getattr(x, "_"+attr), self._people))
+
     def get_age_counts(self, itemList):
         counts = dict()
         for item in range(int(min(itemList)),int(max(itemList)+1)):
@@ -280,6 +287,21 @@ class Population:
 
     def get_outcome_risk(self, outcomeType):
         return sum(list(map(lambda x: x.has_outcome_during_simulation(outcomeType), self._people)))/self._n
+
+    def has_outcome(self, outcomeType):
+        return list(map(lambda x: x.has_outcome(outcomeType), self._people))
+
+    def has_any_outcome(self, outcomeTypeList):
+        return list(map(lambda x: x.has_any_outcome(outcomeTypeList), self._people))
+
+    def has_all_outcomes(self, outcomeTypeList):
+        return list(map(lambda x: x.has_all_outcomes(outcomeTypeList), self._people))
+
+    def has_cognitive_impairment(self):
+        return list(map(lambda x: x.has_cognitive_impairment(), self._people))
+
+    def has_ci(self):
+        return self.has_cognitive_impairment()
 
     def reset_to_baseline(self):
         self._totalWavesAdvanced = 0
@@ -503,7 +525,12 @@ class Population:
 
     def get_attr_at_index(self, rf, index):
         '''Returns a list of the baseline attributes of Person objects that were alive at baseline.'''
-        rfList = list(map( lambda x: getattr(x, "_"+rf.value)[index] if x.is_alive else None, self._people))
+        return Population.get_people_attr_at_index(self._people, rf, index)
+
+    @staticmethod
+    def get_people_attr_at_index(people, rf, index):
+        #rfList = list(map( lambda x: getattr(x, "_"+rf.value)[index] if x.is_alive else None, self._people))
+        rfList = list(map( lambda x: getattr(x, "_"+rf.value)[index] if x.is_alive else None, people))
         rfList = list(filter(lambda x: x is not None, rfList))
         rfList = list(map(lambda x: int(x) if (type(x)==bool)|(type(x)==np.bool_) else x, rfList))
         return rfList
@@ -538,25 +565,36 @@ class Population:
         '''Prints a summary of both static and dynamic risk factors at index for self and other.
            other is also a Population object.
            baseline: index=0, last year: index=-1'''
+        Population.print_people_summary_at_index_comparison(self._people, other._people, index)
+
+    @staticmethod
+    def print_people_summary_at_index_comparison(people, other, index):
+        '''Prints a summary of both static and dynamic risk factors at index for self and other.
+           people and other are both Pandas Series with Person objects.
+           baseline: index=0, last year: index=-1'''
         print(" "*25, "self", " "*50,  "other")
         print(" "*25, "-"*53, " ", "-"*53)
         print(" "*25, "min", " "*4, "0.25", " "*2, "med", " "*3, "0.75", " "*3, "max" , " "*2, "mean", " "*3, "sd", "    min ", "   0.25", " "*2, "med", " "*3, "0.75", " "*3, "max", " "*2, "mean", " "*3, "sd")
         print(" "*25, "-"*53, " ", "-"*53)
         for i,rf in enumerate(DynamicRiskFactorsType):
-            rfList = self.get_attr_at_index(rf, index)
-            rfListOther = other.get_attr_at_index(rf, index)
+            #rfList = self.get_attr_at_index(rf, index)
+            rfList = Population.get_people_attr_at_index(people, rf, index)
+            #rfListOther = other.get_attr_at_index(rf, index)
+            rfListOther = Population.get_people_attr_at_index(other, rf, index)
             print(f"{rf.value:>23} {np.min(rfList):> 7.1f} {np.quantile(rfList, 0.25):> 7.1f} {np.quantile(rfList, 0.5):> 7.1f} {np.quantile(rfList, 0.75):> 7.1f} {np.max(rfList):> 7.1f} {np.mean(rfList):> 7.1f} {np.std(rfList):> 7.1f} {np.min(rfListOther):> 7.1f} {np.quantile(rfListOther, 0.25):> 7.1f} {np.quantile(rfListOther, 0.5):> 7.1f} {np.quantile(rfListOther, 0.75):> 7.1f} {np.max(rfListOther):> 7.1f} {np.mean(rfListOther):> 7.1f} {np.std(rfListOther):> 7.1f}")
         print(" "*25, "self", "  other")
         print(" "*25, "proportions")
         print(" "*25, "-"*11)
         for rf in StaticRiskFactorsType:
             print(f"{rf.value:>23}")
-            rfList = list(map( lambda x: getattr(x, "_"+rf.value), self._people))
+            #rfList = list(map( lambda x: getattr(x, "_"+rf.value), self._people))
+            rfList = list(map( lambda x: getattr(x, "_"+rf.value), people))
             rfValueCounts = Counter(rfList)
-            rfListOther = list(map( lambda x: getattr(x, "_"+rf.value), other._people))
+            #rfListOther = list(map( lambda x: getattr(x, "_"+rf.value), other._people))
+            rfListOther = list(map( lambda x: getattr(x, "_"+rf.value), other))
             rfValueCountsOther = Counter(rfListOther)
             for key in sorted(rfValueCounts.keys()):
-                print(f"{key:>23} {rfValueCounts[key]/self._n: 6.2f} {rfValueCountsOther[key]/other._n: 6.2f}")
+                print(f"{key:>23} {rfValueCounts[key]/people.shape[0]: 6.2f} {rfValueCountsOther[key]/other.shape[0]: 6.2f}")
 
     def print_cv_standardized_rates(self):
         outcomes = [OutcomeType.MI, OutcomeType.STROKE, OutcomeType.DEATH,
@@ -577,31 +615,6 @@ class Population:
         for key in sorted(dementiaIncidentRate.keys()):
             print(f"{key:>50} {dementiaIncidentRate[key]: 6.3f}")
  
-
-
-def initializeAFib(person):
-    #the intercept of this model was modified in order to have agreement with the 2019 global burden of disease data
-    #optimization of the intercept was performed on the afibModelRecalibrations notebook
-    model = load_regression_model("BaselineAFibModel")
-    statsModel = StatsModelLogisticRiskFactorModel(model)
-    return person._rng.uniform() < statsModel.estimate_next_risk(person)
-
-class PersonListPopulation(Population):
-    def __init__(self, people):
-
-        super().__init__(pd.Series(people))
-        self.n = len(people)
-        self._qaly_assignment_strategy = QALYAssignmentStrategy()
-        self._outcome_model_repository = OutcomeModelRepository()
-        self._risk_model_repository = CohortRiskModelRepository()
-        # population index is used for efficiency in the population, need to set it on 
-        # each person when a new population is setup
-        for i, person in self._people.items():
-            person._populationIndex = i
-        # if the people have already been advanced, have the population start at that point
-        self._currentWave = len(people[0]._age)-1
-
-
 #NOTE: this class used to be a subclass of NHANESDirectSamplePopulation which is no longer in use...
 #so we will need to update this class...and also see how it relates to the StandardizedPopulation class as well
 class NHANESAgeStandardPopulation:
