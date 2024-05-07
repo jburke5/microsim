@@ -596,22 +596,29 @@ class Person:
     def has_cognitive_impairment(self):
         """Assesses if GCP change was less than half SD of population GCP.
         SD was obtained from 300,000 NHANES population (not advanced).""" 
-        return self._outcomes[OutcomeType.COGNITION][-1][1].gcp - self._outcomes[OutcomeType.COGNITION][0][1].gcp < (-0.5*10.3099)
+        #return self._outcomes[OutcomeType.COGNITION][-1][1].gcp - self._outcomes[OutcomeType.COGNITION][0][1].gcp < (-0.5*10.3099)
+        return self.get_outcome_phenotypeItem_overall_change(OutcomeType.COGNITION, "gcp") < (-0.5*10.3099)
 
     def has_ci(self):
         return self.has_cognitive_impairement()
 
-    def get_outcome_item(self, outcomeType, phenotypeItem):
+    def get_outcome_phenotypeItem(self, outcomeType, phenotypeItem):
         return list(map(lambda x: getattr(x[1], phenotypeItem), self._outcomes[outcomeType]))
 
-    def get_outcome_item_last(self, outcomeType, phenotypeItem):
-        return self.get_outcome_item(outcomeType, phenotypeItem)[-1]
+    def get_outcome_phenotypeItem_last(self, outcomeType, phenotypeItem):
+        return self.get_outcome_phenotypeItem(outcomeType, phenotypeItem)[-1]
 
-    def get_outcome_item_sum(self, outcomeType, phenotypeItem):
-        return sum(self.get_outcome_item(outcomeType, phenotypeItem))
+    def get_outcome_phenotypeItem_first(self, outcomeType, phenotypeItem):
+        return self.get_outcome_phenotypeItem(outcomeType, phenotypeItem)[0]
 
-    def get_outcome_item_mean(self, outcomeType, phenotypeItem):
-        return np.mean(self.get_outcome_item(outcomeType, phenotypeItem))
+    def get_outcome_phenotypeItem_sum(self, outcomeType, phenotypeItem):
+        return sum(self.get_outcome_phenotypeItem(outcomeType, phenotypeItem))
+
+    def get_outcome_phenotypeItem_mean(self, outcomeType, phenotypeItem):
+        return np.mean(self.get_outcome_phenotypeItem(outcomeType, phenotypeItem))
+
+    def get_outcome_phenotypeItem_overall_change(self, outcomeType, phenotypeItem):
+        return self.get_outcome_phenotypeItem_last(outcomeType, phenotypeItem) - self.get_outcome_phenotypeItem_first(outcomeType, phenotypeItem)
 
     def has_stroke_prior_to_simulation(self):
         return self.has_outcome_prior_to_simulation(OutcomeType.STROKE)
