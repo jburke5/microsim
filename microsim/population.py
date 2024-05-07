@@ -303,69 +303,84 @@ class Population:
     def has_ci(self):
         return self.has_cognitive_impairment()
 
-    def reset_to_baseline(self):
-        self._totalWavesAdvanced = 0
-        self._currentWave = 0
-        self._bpTreatmentStrategy = None
-        for person in self._people:
-            person.reset_to_baseline()
+    def get_outcome_item_last(self, outcomeType, phenotypeItem):
+        return list(map(lambda x: x.get_outcome_item_last(outcomeType, phenotypeItem)))
+
+    def get_outcome_item_first(self, outcomeType, phenotypeItem):
+        return list(map(lambda x: x.get_outcome_item_first(outcomeType, phenotypeItem)))
+
+    def get_outcome_item_sum(self, outcomeType, phenotypeItem):
+        return list(map(lambda x: x.get_outcome_item_sum(outcomeType, phenotypeItem)))
+
+    def get_outcome_item_mean(self, outcomeType, phenotypeItem):
+        return list(map(lambda x: x.get_outcome_item_mean(outcomeType, phenotypeItem)))
+ 
+    def get_outcome_item_overall_change(self, outcomeType, phenotypeItem):
+        return list(map(lambda x: x.get_outcome_item_overall_change(outcomeType, phenotypeItem)))
+
+    #def reset_to_baseline(self):
+    #    self._totalWavesAdvanced = 0
+    #    self._currentWave = 0
+    #    self._bpTreatmentStrategy = None
+    #    for person in self._people:
+    #        person.reset_to_baseline()
 
     def set_bp_treatment_strategy(self, bpTreatmentStrategy):
         self._bpTreatmentStrategy = bpTreatmentStrategy
         for person in self._people:
             person._bpTreatmentStrategy = bpTreatmentStrategy
 
-    def get_people_alive_at_the_start_of_the_current_wave(self):
-        return self.get_people_alive_at_the_start_of_wave(self._currentWave)
+    #def get_people_alive_at_the_start_of_the_current_wave(self):
+    #    return self.get_people_alive_at_the_start_of_wave(self._currentWave)
 
-    def get_people_alive_at_the_start_of_wave(self, wave):
-        peopleAlive = []
-        for person in self._people:
-            if person.alive_at_start_of_wave(wave):
-                peopleAlive.append(person)
-        return pd.Series(peopleAlive)
+    #def get_people_alive_at_the_start_of_wave(self, wave):
+    #    peopleAlive = []
+    #    for person in self._people:
+    #        if person.alive_at_start_of_wave(wave):
+    #            peopleAlive.append(person)
+    #    return pd.Series(peopleAlive)
 
-    def get_people_that_are_currently_alive(self):
-        return pd.Series([not person.is_dead() for _, person in self._people.items()])
+    #def get_people_that_are_currently_alive(self):
+    #    return pd.Series([not person.is_dead() for _, person in self._people.items()])
 
-    def get_number_of_patients_currently_alive(self):
-        self.get_people_that_are_currently_alive().sum()
+    #def get_number_of_patients_currently_alive(self):
+    #    self.get_people_that_are_currently_alive().sum()
 
-    def get_events_in_most_recent_wave(self, eventType):
-        peopleWithEvents = []
-        for _, person in self._people.items():
-            if person.has_outcome_at_age(eventType, person._age[-1]):
-                peopleWithEvents.append(person)
-        return peopleWithEvents
+    #def get_events_in_most_recent_wave(self, eventType):
+    #    peopleWithEvents = []
+    #    for _, person in self._people.items():
+    #        if person.has_outcome_at_age(eventType, person._age[-1]):
+    #            peopleWithEvents.append(person)
+    #    return peopleWithEvents
 
-    def generate_starting_mean_patient(self):
-        df = self.get_people_initial_state_as_dataframe()
-        return Person(
-            age=int(round(df.age.mean())),
-            gender=NHANESGender(df.gender.mode()),
-            raceEthnicity=NHANESRaceEthnicity(df.raceEthnicity.mode()),
-            sbp=df.sbp.mean(),
-            dbp=df.dbp.mean(),
-            a1c=df.a1c.mean(),
-            hdl=df.hdl.mean(),
-            totChol=df.totChol.mean(),
-            bmi=df.bmi.mean(),
-            ldl=df.ldl.mean(),
-            trig=df.trig.mean(),
-            waist=df.waist.mean(),
-            anyPhysicalActivity=df.anyPhysicalActivity.mode(),
-            education=Education(df.education.mode()),
-            smokingStatus=SmokingStatus(df.smokingStatus.mode()),
-            antiHypertensiveCount=int(round(df.antiHypetensiveCount().mean())),
-            statin=df.statin.mode(),
-            otherLipidLoweringMedicationCount=int(
-                round(df.otherLipidLoweringMedicationCount.mean())
-            ),
-            initializeAfib=(lambda _: False),
-            selfReportStrokeAge=None,
-            selfReportMIAge=None,
-            randomEffects=self._outcome_model_repository.get_random_effects(),
-        )
+    #def generate_starting_mean_patient(self):
+    #    df = self.get_people_initial_state_as_dataframe()
+    #    return Person(
+    #        age=int(round(df.age.mean())),
+    #        gender=NHANESGender(df.gender.mode()),
+    #        raceEthnicity=NHANESRaceEthnicity(df.raceEthnicity.mode()),
+    #        sbp=df.sbp.mean(),
+    #        dbp=df.dbp.mean(),
+    #        a1c=df.a1c.mean(),
+    #        hdl=df.hdl.mean(),
+    #        totChol=df.totChol.mean(),
+    #        bmi=df.bmi.mean(),
+    #        ldl=df.ldl.mean(),
+    #        trig=df.trig.mean(),
+    #        waist=df.waist.mean(),
+    #        anyPhysicalActivity=df.anyPhysicalActivity.mode(),
+    #        education=Education(df.education.mode()),
+    #        smokingStatus=SmokingStatus(df.smokingStatus.mode()),
+    #        antiHypertensiveCount=int(round(df.antiHypetensiveCount().mean())),
+    #        statin=df.statin.mode(),
+    #        otherLipidLoweringMedicationCount=int(
+    #            round(df.otherLipidLoweringMedicationCount.mean())
+    #        ),
+    #        initializeAfib=(lambda _: False),
+    #        selfReportStrokeAge=None,
+    #        selfReportMIAge=None,
+    #        randomEffects=self._outcome_model_repository.get_random_effects(),
+    #    )
 
     def get_event_rate_in_simulation(self, eventType, duration):
         events = [

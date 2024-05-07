@@ -296,35 +296,35 @@ class Person:
     def get_gender_age_of_all_years_in_sim(self):
         return [(getattr(self, "_"+StaticRiskFactorsType.GENDER.value).value, age) for age in getattr(self, "_"+DynamicRiskFactorsType.AGE.value)] 
 
-    def reset_to_baseline(self):
-        self._alive = [True]
-        self._age = [self._age[0]]
-        self._sbp = [self._sbp[0]]
-        self._dbp = [self._dbp[0]]
-        self._a1c = [self._a1c[0]]
-        self._hdl = [self._hdl[0]]
-        self._ldl = [self._ldl[0]]
-        self._trig = [self._trig[0]]
-        self._totChol = [self._totChol[0]]
-        self._bmi = [self._bmi[0]]
-        self._waist = [self._waist[0]]
-        self._anyPhysicalActivity = [self._anyPhysicalActivity[0]]
-        self._antiHypertensiveCount = [self._antiHypertensiveCount[0]]
-        self._alcoholPerWeek = [self._alcoholPerWeek[0]]
-        self._statin = [self._statin[0]]
-        self._otherLipidLoweringMedicationCount = [self._otherLipidLoweringMedicationCount[0]]
-        self._bpTreatmentStrategy = None
-        self._gcp = [self._gcp[0]]
-        self._qalys = [self._qalys[0]]
-        self._afib = [self._afib[0]]
-        self._bpMedsAdded = [self._bpMedsAdded[0]]
-        self._creatinine = [self._creatinine[0]]
+    #def reset_to_baseline(self):
+    #    self._alive = [True]
+    #    self._age = [self._age[0]]
+    #    self._sbp = [self._sbp[0]]
+    #    self._dbp = [self._dbp[0]]
+    #    self._a1c = [self._a1c[0]]
+    #    self._hdl = [self._hdl[0]]
+    #    self._ldl = [self._ldl[0]]
+    #    self._trig = [self._trig[0]]
+    #    self._totChol = [self._totChol[0]]
+    #    self._bmi = [self._bmi[0]]
+    #    self._waist = [self._waist[0]]
+    #    self._anyPhysicalActivity = [self._anyPhysicalActivity[0]]
+    #    self._antiHypertensiveCount = [self._antiHypertensiveCount[0]]
+    #    self._alcoholPerWeek = [self._alcoholPerWeek[0]]
+    #    self._statin = [self._statin[0]]
+    #    self._otherLipidLoweringMedicationCount = [self._otherLipidLoweringMedicationCount[0]]
+    #    self._bpTreatmentStrategy = None
+    #    self._gcp = [self._gcp[0]]
+    #    self._qalys = [self._qalys[0]]
+    #    self._afib = [self._afib[0]]
+    #    self._bpMedsAdded = [self._bpMedsAdded[0]]
+    #    self._creatinine = [self._creatinine[0]]
 
         # iterate through outcomes and remove those that occured after the simulation started
-        for type, outcomes_for_type in self._outcomes.items():
-            self._outcomes[type] = list(
-                filter(lambda outcome: outcome[0] < self._age[0], outcomes_for_type)
-            )
+    #    for type, outcomes_for_type in self._outcomes.items():
+    #        self._outcomes[type] = list(
+    #            filter(lambda outcome: outcome[0] < self._age[0], outcomes_for_type)
+    #        )
 
     def get_wave_for_age(self, ageTarget):
         if ageTarget < self._age[0] or ageTarget > self._age[-1]:
@@ -340,73 +340,73 @@ class Person:
 
     # returns a version of the person that maintains all of their history up until 
     # a specified age threshold.
-    def get_person_copy_at_age(self, age):
-        personCopy = copy.deepcopy(self)
-        waveForAge = personCopy.get_wave_for_age(age)
-        personCopy._age = personCopy._age[:waveForAge]
-        personCopy._alive = personCopy._alive[:waveForAge]
-        personCopy._sbp = personCopy._sbp[:waveForAge]
-        personCopy._dbp = personCopy._dbp[:waveForAge]
-        personCopy._a1c = personCopy._a1c[:waveForAge]
-        personCopy._hdl = personCopy._hdl[:waveForAge]
-        personCopy._ldl = personCopy._ldl[:waveForAge]
-        personCopy._trig = personCopy._trig[:waveForAge]
-        personCopy._totChol = personCopy._totChol[:waveForAge]
-        personCopy._bmi = personCopy._bmi[:waveForAge]
-        personCopy._waist = personCopy._waist[:waveForAge]
-        personCopy._anyPhysicalActivity = personCopy._anyPhysicalActivity[:waveForAge]
-        personCopy._antiHypertensiveCount = personCopy._antiHypertensiveCount[:waveForAge]
-        personCopy._alcoholPerWeek = personCopy._alcoholPerWeek[:waveForAge]
-        personCopy._statin = personCopy._statin[:waveForAge]
-        personCopy._otherLipidLoweringMedicationCount = personCopy._otherLipidLoweringMedicationCount[:waveForAge]
-        personCopy._gcp = personCopy._gcp[:waveForAge]
-        personCopy._qalys = personCopy._qalys[:waveForAge]
-        personCopy._afib = personCopy._afib[:waveForAge]
-        personCopy._bpMedsAdded = personCopy._bpMedsAdded[:waveForAge]
-        personCopy._creatinine = personCopy._creatinine[:waveForAge]
-        personCopy._populationIndex = self._populationIndex
+    #def get_person_copy_at_age(self, age):
+    #    personCopy = copy.deepcopy(self)
+    #    waveForAge = personCopy.get_wave_for_age(age)
+    #    personCopy._age = personCopy._age[:waveForAge]
+    #    personCopy._alive = personCopy._alive[:waveForAge]
+    #    personCopy._sbp = personCopy._sbp[:waveForAge]
+    #    personCopy._dbp = personCopy._dbp[:waveForAge]
+    #    personCopy._a1c = personCopy._a1c[:waveForAge]
+    #    personCopy._hdl = personCopy._hdl[:waveForAge]
+    #    personCopy._ldl = personCopy._ldl[:waveForAge]
+    #    personCopy._trig = personCopy._trig[:waveForAge]
+    #    personCopy._totChol = personCopy._totChol[:waveForAge]
+    #    personCopy._bmi = personCopy._bmi[:waveForAge]
+    #    personCopy._waist = personCopy._waist[:waveForAge]
+    #    personCopy._anyPhysicalActivity = personCopy._anyPhysicalActivity[:waveForAge]
+    #    personCopy._antiHypertensiveCount = personCopy._antiHypertensiveCount[:waveForAge]
+    #    personCopy._alcoholPerWeek = personCopy._alcoholPerWeek[:waveForAge]
+    #    personCopy._statin = personCopy._statin[:waveForAge]
+    #    personCopy._otherLipidLoweringMedicationCount = personCopy._otherLipidLoweringMedicationCount[:waveForAge]
+    #    personCopy._gcp = personCopy._gcp[:waveForAge]
+    #    personCopy._qalys = personCopy._qalys[:waveForAge]
+    #    personCopy._afib = personCopy._afib[:waveForAge]
+    #    personCopy._bpMedsAdded = personCopy._bpMedsAdded[:waveForAge]
+    #    personCopy._creatinine = personCopy._creatinine[:waveForAge]
+    #    personCopy._populationIndex = self._populationIndex
 
         # iterate through outcomes and remove those that occured after the simulation started
-        for type, outcomes_for_type in personCopy._outcomes.items():
-            personCopy._outcomes[type] = list(
-                filter(lambda outcome: outcome[0] < age, outcomes_for_type)
-            )
-        return personCopy
+    #    for type, outcomes_for_type in personCopy._outcomes.items():
+    #        personCopy._outcomes[type] = list(
+    #            filter(lambda outcome: outcome[0] < age, outcomes_for_type)
+    #        )
+    #    return personCopy
 
-    def get_person_copy_starting_at_wave(self, wave):
-        personCopy = copy.deepcopy(self)
-        personCopy._age = personCopy._age[wave:]
-        personCopy._alive = personCopy._alive[wave:]
-        personCopy._sbp = personCopy._sbp[wave:]
-        personCopy._dbp = personCopy._dbp[wave:]
-        personCopy._a1c = personCopy._a1c[wave:]
-        personCopy._hdl = personCopy._hdl[wave:]
-        personCopy._ldl = personCopy._ldl[wave:]
-        personCopy._trig = personCopy._trig[wave:]
-        personCopy._totChol = personCopy._totChol[wave:]
-        personCopy._bmi = personCopy._bmi[wave:]
-        personCopy._waist = personCopy._waist[wave:]
-        personCopy._anyPhysicalActivity = personCopy._anyPhysicalActivity[wave:]
-        personCopy._antiHypertensiveCount = personCopy._antiHypertensiveCount[wave:]
-        personCopy._alcoholPerWeek = personCopy._alcoholPerWeek[wave:]
-        personCopy._statin = personCopy._statin[wave:]
-        personCopy._otherLipidLoweringMedicationCount = personCopy._otherLipidLoweringMedicationCount[wave:]
-        personCopy._gcp = personCopy._gcp[wave:]
-        personCopy._qalys = personCopy._qalys[wave:]
-        personCopy._afib = personCopy._afib[wave:]
-        personCopy._bpMedsAdded = personCopy._bpMedsAdded[wave:]
-        personCopy._creatinine = personCopy._creatinine[wave:]
-        personCopy._populationIndex = self._populationIndex
+    #def get_person_copy_starting_at_wave(self, wave):
+    #    personCopy = copy.deepcopy(self)
+    #    personCopy._age = personCopy._age[wave:]
+    #    personCopy._alive = personCopy._alive[wave:]
+    #    personCopy._sbp = personCopy._sbp[wave:]
+    #    personCopy._dbp = personCopy._dbp[wave:]
+    #    personCopy._a1c = personCopy._a1c[wave:]
+    #    personCopy._hdl = personCopy._hdl[wave:]
+    #    personCopy._ldl = personCopy._ldl[wave:]
+    #    personCopy._trig = personCopy._trig[wave:]
+    #    personCopy._totChol = personCopy._totChol[wave:]
+    #    personCopy._bmi = personCopy._bmi[wave:]
+    #    personCopy._waist = personCopy._waist[wave:]
+    #    personCopy._anyPhysicalActivity = personCopy._anyPhysicalActivity[wave:]
+    #    personCopy._antiHypertensiveCount = personCopy._antiHypertensiveCount[wave:]
+    #    personCopy._alcoholPerWeek = personCopy._alcoholPerWeek[wave:]
+    #    personCopy._statin = personCopy._statin[wave:]
+    #    personCopy._otherLipidLoweringMedicationCount = personCopy._otherLipidLoweringMedicationCount[wave:]
+    #    personCopy._gcp = personCopy._gcp[wave:]
+    #    personCopy._qalys = personCopy._qalys[wave:]
+    #    personCopy._afib = personCopy._afib[wave:]
+    #    personCopy._bpMedsAdded = personCopy._bpMedsAdded[wave:]
+    #    personCopy._creatinine = personCopy._creatinine[wave:]
+    #    personCopy._populationIndex = self._populationIndex
 
         ### UNFINISHED TAG — have to figure out what to do here...what do we do with outcomes that happen
         ### prior to this wave..
         
         # iterate through outcomes and remove those that occured after the simulation started
-        for type, outcomes_for_type in personCopy._outcomes.items():
-            personCopy._outcomes[type] = list(
-                filter(lambda outcome: outcome[0] < self.get_age_at_end_of_wave(wave), outcomes_for_type)
-            )
-        return personCopy
+    #    for type, outcomes_for_type in personCopy._outcomes.items():
+    #        personCopy._outcomes[type] = list(
+    #            filter(lambda outcome: outcome[0] < self.get_age_at_end_of_wave(wave), outcomes_for_type)
+    #        )
+    #    return personCopy
 
     def get_current_state_as_dict(self):
         """Returns the present, the last wave, state of the Person object (ie, no past information is included)."""
@@ -423,20 +423,20 @@ class Person:
         attributes["outcomes"] = self._outcomes
         return attributes
 
-    def get_tvc_state_as_dict(self, timeVaryingCovariates):
-        tvcAttributes = {}
-        for var in timeVaryingCovariates:
-            attr = getattr(self, "_" + var)
-            for wave in range(0, len(attr)):
-                tvcAttributes[var + str(wave)] = attr[wave]
-        return tvcAttributes
+    #def get_tvc_state_as_dict(self, timeVaryingCovariates):
+    #    tvcAttributes = {}
+    #    for var in timeVaryingCovariates:
+    #        attr = getattr(self, "_" + var)
+    #        for wave in range(0, len(attr)):
+    #            tvcAttributes[var + str(wave)] = attr[wave]
+    #    return tvcAttributes
 
-    def get_tvc_state_as_dict_long(self, timeVaryingCovariates):
-        tvcAttributes = {}
-        for var in timeVaryingCovariates:
-            attr = getattr(self, "_" + var)
-            tvcAttributes[var] = attr
-        return tvcAttributes
+    #def get_tvc_state_as_dict_long(self, timeVaryingCovariates):
+    #    tvcAttributes = {}
+    #    for var in timeVaryingCovariates:
+    #        attr = getattr(self, "_" + var)
+    #        tvcAttributes[var] = attr
+    #    return tvcAttributes
 
     def get_full_state_as_dict(self): 
         """Includes the complete state, past and present, of the Person object."""
@@ -597,28 +597,28 @@ class Person:
         """Assesses if GCP change was less than half SD of population GCP.
         SD was obtained from 300,000 NHANES population (not advanced).""" 
         #return self._outcomes[OutcomeType.COGNITION][-1][1].gcp - self._outcomes[OutcomeType.COGNITION][0][1].gcp < (-0.5*10.3099)
-        return self.get_outcome_phenotypeItem_overall_change(OutcomeType.COGNITION, "gcp") < (-0.5*10.3099)
+        return self.get_outcome_item_overall_change(OutcomeType.COGNITION, "gcp") < (-0.5*10.3099)
 
     def has_ci(self):
         return self.has_cognitive_impairement()
 
-    def get_outcome_phenotypeItem(self, outcomeType, phenotypeItem):
+    def get_outcome_item(self, outcomeType, phenotypeItem):
         return list(map(lambda x: getattr(x[1], phenotypeItem), self._outcomes[outcomeType]))
 
-    def get_outcome_phenotypeItem_last(self, outcomeType, phenotypeItem):
-        return self.get_outcome_phenotypeItem(outcomeType, phenotypeItem)[-1]
+    def get_outcome_item_last(self, outcomeType, phenotypeItem):
+        return self.get_outcome_item(outcomeType, phenotypeItem)[-1]
 
-    def get_outcome_phenotypeItem_first(self, outcomeType, phenotypeItem):
-        return self.get_outcome_phenotypeItem(outcomeType, phenotypeItem)[0]
+    def get_outcome_item_first(self, outcomeType, phenotypeItem):
+        return self.get_outcome_item(outcomeType, phenotypeItem)[0]
 
-    def get_outcome_phenotypeItem_sum(self, outcomeType, phenotypeItem):
-        return sum(self.get_outcome_phenotypeItem(outcomeType, phenotypeItem))
+    def get_outcome_item_sum(self, outcomeType, phenotypeItem):
+        return sum(self.get_outcome_item(outcomeType, phenotypeItem))
 
-    def get_outcome_phenotypeItem_mean(self, outcomeType, phenotypeItem):
-        return np.mean(self.get_outcome_phenotypeItem(outcomeType, phenotypeItem))
+    def get_outcome_item_mean(self, outcomeType, phenotypeItem):
+        return np.mean(self.get_outcome_item(outcomeType, phenotypeItem))
 
-    def get_outcome_phenotypeItem_overall_change(self, outcomeType, phenotypeItem):
-        return self.get_outcome_phenotypeItem_last(outcomeType, phenotypeItem) - self.get_outcome_phenotypeItem_first(outcomeType, phenotypeItem)
+    def get_outcome_item_overall_change(self, outcomeType, phenotypeItem):
+        return self.get_outcome_item_last(outcomeType, phenotypeItem) - self.get_outcome_item_first(outcomeType, phenotypeItem)
 
     def has_stroke_prior_to_simulation(self):
         return self.has_outcome_prior_to_simulation(OutcomeType.STROKE)
@@ -753,52 +753,52 @@ class Person:
     def has_mi_during_simulation(self):
         return self.has_outcome_during_simulation(OutcomeType.MI)
 
-    def apply_linear_modifications(self, modifications):
-        for key, value in modifications.items():
-            attribute_value = getattr(self, key)
-            attribute_value[-1] = attribute_value[-1] + value
+    #def apply_linear_modifications(self, modifications):
+    #    for key, value in modifications.items():
+    #        attribute_value = getattr(self, key)
+    #        attribute_value[-1] = attribute_value[-1] + value
 
-    def apply_static_modifications(self, modifications):
-        for key, value in modifications.items():
-            attribute_value = getattr(self, key)
-            attribute_value.append(value)
+    #def apply_static_modifications(self, modifications):
+    #    for key, value in modifications.items():
+    #        attribute_value = getattr(self, key)
+    #        attribute_value.append(value)
 
     # redraw from models to pick new risk factors for person
 
-    def slightly_randomly_modify_baseline_risk_factors(self, risk_model_repository, rng=None):
-        #rng = np.random.default_rng(rng)
-        if len(self._age) > 1:
-            raise RuntimeError("Can not reset risk factors after advancing person in time")
+    #def slightly_randomly_modify_baseline_risk_factors(self, risk_model_repository, rng=None):
+    #    #rng = np.random.default_rng(rng)
+    #    if len(self._age) > 1:
+    #        raise RuntimeError("Can not reset risk factors after advancing person in time")
 
-        return Person(
-            age=self._age[0] + rng.integers(-2, 2), #replaces np.random.randint with endpoint=False
-            gender=self._gender,
-            raceEthnicity=self._raceEthnicity,
-            sbp=self.get_next_risk_factor("sbp", risk_model_repository),
-            dbp=self.get_next_risk_factor("dbp", risk_model_repository),
-            a1c=self.get_next_risk_factor("a1c", risk_model_repository),
-            hdl=self.get_next_risk_factor("hdl", risk_model_repository),
-            totChol=self.get_next_risk_factor("totChol", risk_model_repository),
-            bmi=self.get_next_risk_factor("bmi", risk_model_repository),
-            ldl=self.get_next_risk_factor("ldl", risk_model_repository),
-            trig=self.get_next_risk_factor("trig", risk_model_repository),
-            waist=self.get_next_risk_factor("waist", risk_model_repository),
-            anyPhysicalActivity=self.get_next_risk_factor(
-                "anyPhysicalActivity", risk_model_repository
-            ),
-            education=self._education,
-            smokingStatus=self._smokingStatus,
-            alcohol=self._alcoholPerWeek[0],
-            antiHypertensiveCount=self.get_next_risk_factor(
-                "antiHypertensiveCount", risk_model_repository
-            ),
-            statin=self.get_next_risk_factor("statin", risk_model_repository),
-            otherLipidLoweringMedicationCount=self._otherLipidLoweringMedicationCount,
-            creatinine=self.get_next_risk_factor("creatinine", risk_model_repository),
-            initializeAfib=(lambda _: False),
-            selfReportStrokeAge=50 if self._outcomes[OutcomeType.STROKE] is not None else None,
-            selfReportMIAge=50 if self._outcomes[OutcomeType.MI] is not None else None,
-        )
+    #    return Person(
+    #        age=self._age[0] + rng.integers(-2, 2), #replaces np.random.randint with endpoint=False
+    #        gender=self._gender,
+    #        raceEthnicity=self._raceEthnicity,
+    #        sbp=self.get_next_risk_factor("sbp", risk_model_repository),
+    #        dbp=self.get_next_risk_factor("dbp", risk_model_repository),
+    #        a1c=self.get_next_risk_factor("a1c", risk_model_repository),
+    #        hdl=self.get_next_risk_factor("hdl", risk_model_repository),
+    #        totChol=self.get_next_risk_factor("totChol", risk_model_repository),
+    #        bmi=self.get_next_risk_factor("bmi", risk_model_repository),
+    #        ldl=self.get_next_risk_factor("ldl", risk_model_repository),
+    #        trig=self.get_next_risk_factor("trig", risk_model_repository),
+    #        waist=self.get_next_risk_factor("waist", risk_model_repository),
+    #        anyPhysicalActivity=self.get_next_risk_factor(
+    #            "anyPhysicalActivity", risk_model_repository
+    #        ),
+    #        education=self._education,
+    #        smokingStatus=self._smokingStatus,
+    #        alcohol=self._alcoholPerWeek[0],
+    #        antiHypertensiveCount=self.get_next_risk_factor(
+    #            "antiHypertensiveCount", risk_model_repository
+    #        ),
+    #        statin=self.get_next_risk_factor("statin", risk_model_repository),
+    #        otherLipidLoweringMedicationCount=self._otherLipidLoweringMedicationCount,
+    #        creatinine=self.get_next_risk_factor("creatinine", risk_model_repository),
+    #        initializeAfib=(lambda _: False),
+    #        selfReportStrokeAge=50 if self._outcomes[OutcomeType.STROKE] is not None else None,
+    #        selfReportMIAge=50 if self._outcomes[OutcomeType.MI] is not None else None,
+    #    )
 
     # Using this paper...glucose and a1c are highly related
     # Nathan, D. M., Kuenen, J., Borg, R., Zheng, H., Schoenfeld, D., Heine, R. J., for the A1c-Derived Average Glucose (ADAG) Study Group. (2008). Translating the A1C Assay Into Estimated Average Glucose Values. Diabetes Care, 31(8), 1473–1478.
