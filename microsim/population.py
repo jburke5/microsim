@@ -304,19 +304,19 @@ class Population:
         return self.has_cognitive_impairment()
 
     def get_outcome_item_last(self, outcomeType, phenotypeItem):
-        return list(map(lambda x: x.get_outcome_item_last(outcomeType, phenotypeItem)))
+        return list(map(lambda x: x.get_outcome_item_last(outcomeType, phenotypeItem), self._people))
 
     def get_outcome_item_first(self, outcomeType, phenotypeItem):
-        return list(map(lambda x: x.get_outcome_item_first(outcomeType, phenotypeItem)))
+        return list(map(lambda x: x.get_outcome_item_first(outcomeType, phenotypeItem), self._people))
 
     def get_outcome_item_sum(self, outcomeType, phenotypeItem):
-        return list(map(lambda x: x.get_outcome_item_sum(outcomeType, phenotypeItem)))
+        return list(map(lambda x: x.get_outcome_item_sum(outcomeType, phenotypeItem), self._people))
 
     def get_outcome_item_mean(self, outcomeType, phenotypeItem):
-        return list(map(lambda x: x.get_outcome_item_mean(outcomeType, phenotypeItem)))
+        return list(map(lambda x: x.get_outcome_item_mean(outcomeType, phenotypeItem), self._people))
  
     def get_outcome_item_overall_change(self, outcomeType, phenotypeItem):
-        return list(map(lambda x: x.get_outcome_item_overall_change(outcomeType, phenotypeItem)))
+        return list(map(lambda x: x.get_outcome_item_overall_change(outcomeType, phenotypeItem), self._people))
 
     #def reset_to_baseline(self):
     #    self._totalWavesAdvanced = 0

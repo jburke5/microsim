@@ -7,6 +7,7 @@ from microsim.stroke_partition_model_repository import StrokePartitionModelRepos
 from microsim.mi_partition_model_repository import MIPartitionModelRepository
 from microsim.non_cv_model_repository import NonCVModelRepository
 from microsim.death_model_repository import DeathModelRepository
+from microsim.ci_model_repository import CIModelRepository
 
 class OutcomeModelRepository:
     """Holds the rules for all outcomes.
@@ -20,6 +21,7 @@ class OutcomeModelRepository:
     def __init__(self):
         self._repository = {OutcomeType.DEMENTIA: DementiaModelRepository(),
                           OutcomeType.COGNITION: CognitionModelRepository(),
+                          OutcomeType.CI: CIModelRepository(),
                           OutcomeType.QUALITYADJUSTED_LIFE_YEARS: QALYModelRepository(),
                           OutcomeType.CARDIOVASCULAR: CVModelRepository(),
                           OutcomeType.MI: MIPartitionModelRepository(),
