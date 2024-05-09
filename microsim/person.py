@@ -576,6 +576,9 @@ class Person:
     def get_outcomes_during_simulation(self, outcomeType):
         return list(filter(lambda x: not x[1].priorToSim, self._outcomes[outcomeType]))
 
+    def get_outcomes(self, outcomeType, inSim=True):
+        return self.get_outcomes_during_simulation(outcomeType) if inSim else self._outcomes[outcomeType]
+
     def has_outcome_during_simulation_prior_to_wave(self, outcomeType, wave):
         if len(self._outcomes[outcomeType])>0:
             ageAtWave = self.get_age_for_wave(wave)
@@ -584,14 +587,14 @@ class Person:
         else:
             return False
 
-    def has_outcome(self, outcomeType):
-        return len(self._outcomes[outcomeType]) > 0
+    def has_outcome(self, outcomeType, inSim=True):
+        return len(self.get_outcomes_during_simulation(outcomeType))>0 if inSim else len(self._outcomes[outcomeType])>0
 
-    def has_any_outcome(self, outcomeTypeList):
-        return any( [self.has_outcome(outcomeType) for outcomeType in outcomeTypeList] )
+    def has_any_outcome(self, outcomeTypeList, inSim=True):
+        return any( [self.has_outcome(outcomeType, inSim=inSim) for outcomeType in outcomeTypeList] )
 
-    def has_all_outcomes(self, outcomeTypeList):
-        return all( [self.has_outcome(outcomeType) for outcomeType in outcomeTypeList] )
+    def has_all_outcomes(self, outcomeTypeList, inSim=True):
+        return all( [self.has_outcome(outcomeType, inSim=inSim) for outcomeType in outcomeTypeList] )
 
     def has_cognitive_impairment(self):
         """Assesses if GCP change was less than half SD of population GCP.
@@ -602,23 +605,23 @@ class Person:
     def has_ci(self):
         return self.has_cognitive_impairement()
 
-    def get_outcome_item(self, outcomeType, phenotypeItem):
-        return list(map(lambda x: getattr(x[1], phenotypeItem), self._outcomes[outcomeType]))
+    def get_outcome_item(self, outcomeType, phenotypeItem, inSim=True):
+        return list(map(lambda x: getattr(x[1], phenotypeItem), self.get_outcomes(outcomeType, inSim=inSim)))
 
-    def get_outcome_item_last(self, outcomeType, phenotypeItem):
-        return self.get_outcome_item(outcomeType, phenotypeItem)[-1]
+    def get_outcome_item_last(self, outcomeType, phenotypeItem, inSim=True):
+        return self.get_outcome_item(outcomeType, phenotypeItem, inSim=inSim)[-1]
 
-    def get_outcome_item_first(self, outcomeType, phenotypeItem):
-        return self.get_outcome_item(outcomeType, phenotypeItem)[0]
+    def get_outcome_item_first(self, outcomeType, phenotypeItem, inSim=True):
+        return self.get_outcome_item(outcomeType, phenotypeItem, inSim=inSim)[0]
 
-    def get_outcome_item_sum(self, outcomeType, phenotypeItem):
-        return sum(self.get_outcome_item(outcomeType, phenotypeItem))
+    def get_outcome_item_sum(self, outcomeType, phenotypeItem, inSim=True):
+        return sum(self.get_outcome_item(outcomeType, phenotypeItem, inSim=inSim))
 
-    def get_outcome_item_mean(self, outcomeType, phenotypeItem):
-        return np.mean(self.get_outcome_item(outcomeType, phenotypeItem))
+    def get_outcome_item_mean(self, outcomeType, phenotypeItem, inSim=True):
+        return np.mean(self.get_outcome_item(outcomeType, phenotypeItem, inSim=inSim))
 
-    def get_outcome_item_overall_change(self, outcomeType, phenotypeItem):
-        return self.get_outcome_item_last(outcomeType, phenotypeItem) - self.get_outcome_item_first(outcomeType, phenotypeItem)
+    def get_outcome_item_overall_change(self, outcomeType, phenotypeItem, inSim=True):
+        return self.get_outcome_item_last(outcomeType, phenotypeItem, inSim=inSim) - self.get_outcome_item_first(outcomeType, phenotypeItem, inSim=inSim)
 
     def has_stroke_prior_to_simulation(self):
         return self.has_outcome_prior_to_simulation(OutcomeType.STROKE)
@@ -662,23 +665,35 @@ class Person:
                 return True
         return False
 
-    def get_age_at_first_outcome(self, outcomeType):
-        if len(self._outcomes[outcomeType])>0:
-            return self._outcomes[outcomeType][0][0]
+    def get_age_at_first_outcome(self, outcomeType, inSim=True):
+        if len(self.get_outcomes(outcomeType, inSim=inSim))>0:
+            return self.get_outcomes(outcomeType, inSim=inSim)[0][0]
         else:
             return None
+
+    def get_min_age_of_first_outcomes(self, outcomeTypeList, inSim=True):
+        firstAgeList = list(map(lambda x: self.get_age_at_first_outcome(x, inSim=inSim), outcomeTypeList))
+        firstAgeList = list(filter(lambda x: x is not None, firstAgeList))
+        return min(firstAgeList) if len(firstAgeList)>0 else None
+
+    def get_min_age_of_first_outcomes_or_last_age(self, outcomeTypeList, inSim=True):
+        minAgeOfFirstOutcomes = self.get_min_age_of_first_outcomes(outcomeTypeList, inSim=inSim) 
+        return minAgeOfFirstOutcomes if minAgeOfFirstOutcomes is not None else getattr(self, "_"+DynamicRiskFactorsType.AGE.value)[-1]
+
+    def get_min_wave_of_first_outcomes_or_last_wave(self, outcomeTypeList, inSim=True):
+        return self.get_wave_for_age(self.get_min_age_of_first_outcomes_or_last_age(outcomeTypeList, inSim=inSim))
 
     def get_age_at_last_outcome(self, outcomeType):
         #Q: should we move the age to the outcome class?
         #TO DO: need to include the selfReported argument to the MI phenotype as I did for the stroke outcome
         return self._outcomes[outcomeType][-1][0] if (len(self._outcomes[outcomeType]) > 0) else None
 
-    def get_age_at_first_outcome_in_sim(self, outcomeType):
-        for outcome_tuple in self._outcomes[outcomeType]:
-            if not outcome_tuple[1].priorToSim:
-                age = outcome_tuple[0]
-                return age
-        return None
+    #def get_age_at_first_outcome_in_sim(self, outcomeType):
+    #    for outcome_tuple in self._outcomes[outcomeType]:
+    #        if not outcome_tuple[1].priorToSim:
+    #            age = outcome_tuple[0]
+    #            return age
+    #    return None
 
     def get_age_at_last_outcome_in_sim(self, outcomeType):
         if (len(self._outcomes[outcomeType]) > 0):

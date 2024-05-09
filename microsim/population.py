@@ -186,12 +186,21 @@ class Population:
             counts[item] = len(list(filter(lambda x: x==item, itemList)))
         return counts
 
-    def get_age_at_first_outcome(self, outcomeType):
+    def get_age_at_first_outcome(self, outcomeType, inSim=True):
         #we get None from Person objects that had no outcome
-        ages = list(map(lambda x: x.get_age_at_first_outcome(outcomeType), self._people))
+        ages = list(map(lambda x: x.get_age_at_first_outcome(outcomeType, inSim=inSim), self._people))
         #remove Nones 
         ages = list(filter(lambda x: x is not None,ages))
         return ages
+
+    def get_min_age_of_first_outcomes(self, outcomeTypeList, inSim=True):
+        return list(map(lambda x: x.get_min_age_of_first_outcomes(outcomeTypeList, inSim=inSim), self._people))
+
+    def get_min_age_of_first_outcomes_or_last_age(self, outcomeTypeList, inSim=True):
+        return list(map(lambda x: x.get_min_age_of_first_outcomes_or_last_age(outcomeTypeList, inSim=inSim), self._people))
+
+    def get_min_wave_of_first_outcomes_or_last_wave(self, outcomeTypeList, inSim=True):
+        return list(map(lambda x: x.get_min_wave_of_first_outcomes_or_last_wave(outcomeTypeList, inSim=inSim), self._people))
 
     def get_age_of_all_years_in_sim(self):
         ages = list(map(lambda x: getattr(x, "_"+DynamicRiskFactorsType.AGE.value), self._people))
@@ -288,14 +297,14 @@ class Population:
     def get_outcome_risk(self, outcomeType):
         return sum(list(map(lambda x: x.has_outcome_during_simulation(outcomeType), self._people)))/self._n
 
-    def has_outcome(self, outcomeType):
-        return list(map(lambda x: x.has_outcome(outcomeType), self._people))
+    def has_outcome(self, outcomeType, inSim=True):
+        return list(map(lambda x: x.has_outcome(outcomeType, inSim=inSim), self._people))
 
-    def has_any_outcome(self, outcomeTypeList):
-        return list(map(lambda x: x.has_any_outcome(outcomeTypeList), self._people))
+    def has_any_outcome(self, outcomeTypeList, inSim=True):
+        return list(map(lambda x: x.has_any_outcome(outcomeTypeList, inSim=inSim), self._people))
 
-    def has_all_outcomes(self, outcomeTypeList):
-        return list(map(lambda x: x.has_all_outcomes(outcomeTypeList), self._people))
+    def has_all_outcomes(self, outcomeTypeList, inSim=True):
+        return list(map(lambda x: x.has_all_outcomes(outcomeTypeList, inSim=inSim), self._people))
 
     def has_cognitive_impairment(self):
         return list(map(lambda x: x.has_cognitive_impairment(), self._people))
@@ -303,20 +312,20 @@ class Population:
     def has_ci(self):
         return self.has_cognitive_impairment()
 
-    def get_outcome_item_last(self, outcomeType, phenotypeItem):
-        return list(map(lambda x: x.get_outcome_item_last(outcomeType, phenotypeItem), self._people))
+    def get_outcome_item_last(self, outcomeType, phenotypeItem, inSim=True):
+        return list(map(lambda x: x.get_outcome_item_last(outcomeType, phenotypeItem, inSim=inSim), self._people))
 
-    def get_outcome_item_first(self, outcomeType, phenotypeItem):
-        return list(map(lambda x: x.get_outcome_item_first(outcomeType, phenotypeItem), self._people))
+    def get_outcome_item_first(self, outcomeType, phenotypeItem, inSim=True):
+        return list(map(lambda x: x.get_outcome_item_first(outcomeType, phenotypeItem, inSim=inSim), self._people))
 
-    def get_outcome_item_sum(self, outcomeType, phenotypeItem):
-        return list(map(lambda x: x.get_outcome_item_sum(outcomeType, phenotypeItem), self._people))
+    def get_outcome_item_sum(self, outcomeType, phenotypeItem, inSim=True):
+        return list(map(lambda x: x.get_outcome_item_sum(outcomeType, phenotypeItem, inSim=inSim), self._people))
 
-    def get_outcome_item_mean(self, outcomeType, phenotypeItem):
-        return list(map(lambda x: x.get_outcome_item_mean(outcomeType, phenotypeItem), self._people))
+    def get_outcome_item_mean(self, outcomeType, phenotypeItem, inSim=True):
+        return list(map(lambda x: x.get_outcome_item_mean(outcomeType, phenotypeItem, inSim=inSim), self._people))
  
-    def get_outcome_item_overall_change(self, outcomeType, phenotypeItem):
-        return list(map(lambda x: x.get_outcome_item_overall_change(outcomeType, phenotypeItem), self._people))
+    def get_outcome_item_overall_change(self, outcomeType, phenotypeItem, inSim=True):
+        return list(map(lambda x: x.get_outcome_item_overall_change(outcomeType, phenotypeItem, inSim=inSim), self._people))
 
     #def reset_to_baseline(self):
     #    self._totalWavesAdvanced = 0
