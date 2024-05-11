@@ -128,7 +128,8 @@ class PopulationFactory:
         if year is not None:
             nhanesDf = nhanesDf.loc[nhanesDf.year == year]
         if dfFilter is not None:
-            nhanesDf = nhanesDf.loc[nhanesDf.apply(dfFilter, axis=1)] 
+            for dfFilterFunction in dfFilter.filters["df"].values():
+                nhanesDf = nhanesDf.loc[nhanesDf.apply(dfFilterFunction, axis=1)] 
  
         #if we want to draw from the NHANES distributions, then we fit the NHANES data first, draw, convert the draws to 
         #a Pandas dataframe, bring in the NHANES weights (because I do not keep those when I do the fits)
@@ -150,10 +151,27 @@ class PopulationFactory:
                                     to occur the sampling size is needed.""")
             else:
                 weights = nhanesDf.WTINT2YR
-                nhanesDf = nhanesDf.sample(n, weights=weights, replace=True)
-           
-        people = pd.DataFrame.apply(nhanesDf,
+                nhanesDfForPeople = nhanesDf.sample(n, weights=weights, replace=True)
+        else:
+            nhanesDfForPeople = nhanesDf
+
+        people = pd.DataFrame.apply(nhanesDfForPeople,
                                     PersonFactory.get_nhanes_person, initializationModelRepository=initializationModelRepository, axis="columns")
+
+        for filterFunction in dfFilter.filters["person"].values():
+            people = pd.Series(list(filter(filterFunction, people)), dtype=object)
+
+        if nhanesWeights:
+            nRemaining = n - people.shape[0]
+            while nRemaining>0:
+                nhanesDfForPeople = nhanesDf.sample(nRemaining, weights=weights, replace=True)
+                peopleRemaining = pd.DataFrame.apply(nhanesDfForPeople,
+                                    PersonFactory.get_nhanes_person, initializationModelRepository=initializationModelRepository, axis="columns")
+                for filterFunction in dfFilter.filters["person"].values():
+                    peopleRemaining = pd.Series(list(filter(filterFunction, peopleRemaining)), dtype=object)
+                people = pd.concat([people, peopleRemaining])
+                nRemaining = n - people.shape[0]
+            
         PopulationFactory.set_index_in_people(people)
         return people
 

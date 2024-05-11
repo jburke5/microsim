@@ -98,7 +98,7 @@ class TrialDescription:
         rep += f"\tDuration: {self.duration}\n"
         rep += f"\tTreatment strategies: {self.treatmentStrategies}\n"
         rep += f"\tNumber of workers: {self.nWorkers}\n"
-        rep += f"\tInclusion filters: {self.inclusionFilters}"
+        rep += f"\tInclusion filters: \n\t {self.inclusionFilters}"
         return rep
 
     def __repr__(self):
