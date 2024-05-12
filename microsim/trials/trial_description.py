@@ -7,6 +7,17 @@ from microsim.treatment import TreatmentStrategiesType
 from microsim.bp_treatment_strategies import AddNBPMedsTreatmentStrategy
 
 class TrialDescription:
+    '''This instance will hold information about the setup of the trial.
+    However, a user should not initialize this class directly because this class does not
+    correspond to a specific population type. 
+    This class holds information generic to trials of all population types.
+    The user should initialize TrialDescription classes that are specific for the population they intend to use.
+    If a user does attempt to use an instance of this class with a trial they will get an error as self.popType is set to None.
+    With the function get_treatment_strategy, this class attempts to lower the usage barrier of the treatment strategies
+    by providing a link between a string, eg "1bpMedsAdded", and the setup of that treatment strategy so that the user 
+    does not need to manually do all that.
+    If a user does need to manually control in a detailed way the trial treatment strategy then they can do it
+    and provide the treatment strategy in the initialization of this class.'''
     def __init__(self, 
                  trialType=TrialType.COMPLETELY_RANDOMIZED, 
                  blockFactors=list(),
@@ -117,6 +128,10 @@ class TrialDescription:
         return self.__str__()
 
 class NhanesTrialDescription(TrialDescription):
+    '''This is a class that can be used to hold information for a trial using the NHANES population type.
+    It holds the information needed for all trials, those are provided to the initialization of the
+    superclass TrialDescription, and in addition it holds all information related to the NHANES population.
+    An instance of this class can be used to initialize a trial.'''
     def __init__(self, 
                  trialType=TrialType.COMPLETELY_RANDOMIZED, 
                  blockFactors=list(),
