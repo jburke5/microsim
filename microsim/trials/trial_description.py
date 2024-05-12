@@ -34,6 +34,18 @@ class TrialDescription:
                 ts = TreatmentStrategyRepository()
                 ts._repository[TreatmentStrategiesType.BP.value] = AddNBPMedsTreatmentStrategy(1)
                 return ts
+            elif treatmentStrategies=="2bpMedsAdded":
+                ts = TreatmentStrategyRepository()
+                ts._repository[TreatmentStrategiesType.BP.value] = AddNBPMedsTreatmentStrategy(2)
+                return ts
+            elif treatmentStrategies=="3bpMedsAdded":
+                ts = TreatmentStrategyRepository()
+                ts._repository[TreatmentStrategiesType.BP.value] = AddNBPMedsTreatmentStrategy(3)
+                return ts
+            elif treatmentStrategies=="4bpMedsAdded":
+                ts = TreatmentStrategyRepository()
+                ts._repository[TreatmentStrategiesType.BP.value] = AddNBPMedsTreatmentStrategy(4)
+                return ts
             else:
                 raise RuntimeError("Unrecognized treatmentStrategies argument in TrialDescription initialization.")
         elif type(treatmentStrategies)==TreatmentStrategyRepository:
