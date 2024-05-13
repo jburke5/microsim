@@ -166,7 +166,7 @@ class NhanesTrialDescription(TrialDescription):
         self.distributions=distributions
         self.popArgs = {"n":self.sampleSize,
                         "year":self.year,
-                        "dfFilter":self.inclusionFilters,
+                        "dfFilter":self.personFilters,
                         "nhanesWeights":self.nhanesWeights,
                         "distributions":self.distributions}
         self.popType = PopulationType.NHANES

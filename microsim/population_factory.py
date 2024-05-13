@@ -116,7 +116,7 @@ class PopulationFactory:
         return nhanesDf
 
     @staticmethod
-    def get_nhanes_people(n=None, year=None, dfFilter=None, nhanesWeights=False, distributions=False):
+    def get_nhanes_people(n=None, year=None, personFilter=None, nhanesWeights=False, distributions=False):
         '''Returns a Pandas Series object with Person-Objects of all persons included in NHANES for year 
            with or without sampling. Filters are applied prior to sampling in order to maximize efficiency and minimize
            memory utilization. This does not affect the distribution of the relative percentages of groups 
@@ -127,9 +127,9 @@ class PopulationFactory:
 
         if year is not None:
             nhanesDf = nhanesDf.loc[nhanesDf.year == year]
-        if dfFilter is not None:
-            for dfFilterFunction in dfFilter.filters["df"].values():
-                nhanesDf = nhanesDf.loc[nhanesDf.apply(dfFilterFunction, axis=1)] 
+        if personFilter is not None:
+            for personFilterFunction in personFilter.filters["df"].values():
+                nhanesDf = nhanesDf.loc[nhanesDf.apply(personFilterFunction, axis=1)] 
  
         #if we want to draw from the NHANES distributions, then we fit the NHANES data first, draw, convert the draws to 
         #a Pandas dataframe, bring in the NHANES weights (because I do not keep those when I do the fits)
@@ -158,7 +158,7 @@ class PopulationFactory:
         people = pd.DataFrame.apply(nhanesDfForPeople,
                                     PersonFactory.get_nhanes_person, initializationModelRepository=initializationModelRepository, axis="columns")
 
-        for filterFunction in dfFilter.filters["person"].values():
+        for filterFunction in personFilter.filters["person"].values():
             people = pd.Series(list(filter(filterFunction, people)), dtype=object)
 
         if nhanesWeights:
@@ -167,7 +167,7 @@ class PopulationFactory:
                 nhanesDfForPeople = nhanesDf.sample(nRemaining, weights=weights, replace=True)
                 peopleRemaining = pd.DataFrame.apply(nhanesDfForPeople,
                                     PersonFactory.get_nhanes_person, initializationModelRepository=initializationModelRepository, axis="columns")
-                for filterFunction in dfFilter.filters["person"].values():
+                for filterFunction in personFilter.filters["person"].values():
                     peopleRemaining = pd.Series(list(filter(filterFunction, peopleRemaining)), dtype=object)
                 people = pd.concat([people, peopleRemaining])
                 nRemaining = n - people.shape[0]
@@ -184,10 +184,10 @@ class PopulationFactory:
                                          CohortStaticRiskFactorModelRepository())
 
     @staticmethod    
-    def get_nhanes_population(n=None, year=None, dfFilter=None, nhanesWeights=False, distributions=False):
+    def get_nhanes_population(n=None, year=None, peronFilter=None, nhanesWeights=False, distributions=False):
         '''Returns a Population-object with Person-objects being all NHANES persons with or without sampling.
            Person attributes can originate either from the NHANES dataset directly or from distributions fit to the NHANES dataset.'''
-        people = PopulationFactory.get_nhanes_people(n=n, year=year, dfFilter=dfFilter, nhanesWeights=nhanesWeights, distributions=distributions)
+        people = PopulationFactory.get_nhanes_people(n=n, year=year, personFilter=personFilter, nhanesWeights=nhanesWeights, distributions=distributions)
         popModelRepository = PopulationFactory.get_nhanes_population_model_repo()
         return Population(people, popModelRepository)
 
@@ -196,7 +196,7 @@ class PopulationFactory:
         """Partitions a NHANES df in all possible combinations of categorical variables that actually exist in NHANES.
            Group is defined as a specific combination of the categorical variables.
            Returns a dictionary: keys are the groups, values are dataframes with the NHANES rows for that particular group."""
-        pop = PopulationFactory.get_nhanes_population(n=None, year=year, dfFilter=None, nhanesWeights=False)
+        pop = PopulationFactory.get_nhanes_population(n=None, year=year, personFilter=None, nhanesWeights=False)
         pop.advance(1)
         df = pop.get_all_person_years_as_df()
         dfForGroups = dict()
