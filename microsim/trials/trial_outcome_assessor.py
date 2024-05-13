@@ -93,6 +93,9 @@ class TrialOutcomeAssessor:
         self.add_outcome_assessment("strokeRR",
                                     {"outcome": lambda x: x.get_outcome_risk(OutcomeType.STROKE)},
                                     "relRisk")
+        self.add_outcome_assessment("miRR",
+                                    {"outcome": lambda x: x.get_outcome_risk(OutcomeType.MI)},
+                                    "relRisk")
       
     def __str__(self):
         rep = f"Trial Outcome Assessor\n\tAssessments:\n"
