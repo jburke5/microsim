@@ -27,11 +27,17 @@ class Trial:
         self.results = dict()
     
     def get_trial_populations(self):
+        '''A Population needs two things: People, PopulationModelRepository.
+        The People will be obtained according to the TrialType, the PopulationModelRepository is determined 
+        based on the PopulationType (eg for NHANES there is only one self-consistent PopulationModelRepository).'''
         treatedPeople, controlPeople = self.get_trial_people()
         return (Population(treatedPeople, PopulationFactory.get_population_model_repo(self.trialDescription.popType)),
                 Population(controlPeople, PopulationFactory.get_population_model_repo(self.trialDescription.popType)))
             
     def get_trial_people(self):
+        '''Returns treatedPeople and controlPeople based on TrialType.
+        The Person index in treatedPeople and controlPeople is unique for the entire set of treated and control.
+        In other words, in the treated+control set of Person objects, there should be a single Person object with index 0.'''
         if self.trialDescription.trialType == TrialType.POTENTIAL_OUTCOMES:
             return self.get_trial_people_identical()
         else: 
@@ -48,18 +54,28 @@ class Trial:
                 raise RuntimeError("Unknown TrialType in Trial.get_trial_people function.")
     
     def get_trial_people_non_randomized(self):
+        '''Returns People without performing any kind of process on them.
+        Sets a unique index on all Person objects of the trial.'''
         treatedPeople = PopulationFactory.get_people(self.trialDescription.popType, **self.trialDescription.popArgs)
         controlPeople = PopulationFactory.get_people(self.trialDescription.popType, **self.trialDescription.popArgs)
         PopulationFactory.set_index_in_people(controlPeople, start=treatedPeople.shape[0])
         return treatedPeople, controlPeople
     
     def get_trial_people_identical(self):
+        '''treated and control people are identical.
+        Sets a unique index on all Person objects of the trial.'''
         controlPeople = PopulationFactory.get_people(self.trialDescription.popType, **self.trialDescription.popArgs)
         treatedPeople = Population.get_people_copy(controlPeople)
         PopulationFactory.set_index_in_people(controlPeople, start=treatedPeople.shape[0])
         return treatedPeople, controlPeople
             
     def randomize_trial_people(self, people):
+        '''Randomizes people in two groups, treated, control.
+        Bernoulli randomization draws from a uniform distribution for each person in the trial, thus the 
+        number of treated and control people can and will fluctuate.
+        Complete randomization has a fixed number in treated and control people and then randomly assigns 
+        groups to the people of the trial.
+        Complete randomization has less fluctuations than Bernoulli randomization.'''
         nDraws = people.shape[0]
         if self.trialDescription.is_bernoulli_randomized():
             draws = self.trialDescription._rng.uniform(size=nDraws) 
@@ -73,6 +89,10 @@ class Trial:
         return treatedPeople, controlPeople
     
     def randomize_trial_people_in_blocks(self, people):
+        '''Creates blocks and randomizes people within blocks.
+        Because the number of treated and control people can vary within each block,
+        eg when the total number of people in a block is odd,
+        there may be larger total deviations in the number of Person objects in treated and control people.'''
         blockFactor = self.trialDescription.blockFactors[0]
         blocks = Population.get_people_blocks(people, blockFactor, nBlocks=10)
         categories = blocks.keys()
@@ -88,20 +108,21 @@ class Trial:
         if self.completed:
             print("Cannot run a trial that has already been completed.")
         else:
+            #advance control population
             self.controlPop.advance(self.trialDescription.duration, 
                                     treatmentStrategies=None, 
                                     nWorkers=self.trialDescription.nWorkers)
+            #advance treated population
             self.treatedPop.advance(1, 
                                     treatmentStrategies = self.trialDescription.treatmentStrategies,
                                     nWorkers=self.trialDescription.nWorkers)
-        
             for key in TreatmentStrategiesType:
                 if self.trialDescription.treatmentStrategies._repository[key.value] is not None:
                     self.trialDescription.treatmentStrategies._repository[key.value].status = TreatmentStrategyStatus.MAINTAIN
-
             self.treatedPop.advance(self.trialDescription.duration-1, 
                                     treatmentStrategies = self.trialDescription.treatmentStrategies,
                                     nWorkers=self.trialDescription.nWorkers)
+
             self.completed = True
             print("Trial is completed.")
             
@@ -164,6 +185,7 @@ class Trial:
                         rep += " "*15
                 rep += "\n"
         return rep
+
     def __repr__(self):
         return self.__string__()
 
