@@ -244,6 +244,13 @@ class Person:
         return ( (self._treatmentStrategies[TreatmentStrategiesType.BP.value]["status"]==TreatmentStrategyStatus.BEGIN) |
                  (self._treatmentStrategies[TreatmentStrategiesType.BP.value]["status"]==TreatmentStrategyStatus.MAINTAIN) )
 
+    def _antiHypertensiveCountPlusBPMedsAdded(self):
+        antiHypertensiveCount = getattr(self, "_"+DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value)[-1]
+        if self.is_in_bp_treatment:
+            return antiHypertensiveCount + self._treatmentStrategies[TreatmentStrategiesType.BP.value]["bpMedsAdded"]
+        else:
+            return antiHypertensiveCount
+
     #Q: the term bp seems inconsistent here, maybe change bp to hypertensive?
     @property 
     def _current_bp_treatment(self):
