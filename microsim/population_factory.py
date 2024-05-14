@@ -158,8 +158,9 @@ class PopulationFactory:
         people = pd.DataFrame.apply(nhanesDfForPeople,
                                     PersonFactory.get_nhanes_person, initializationModelRepository=initializationModelRepository, axis="columns")
 
-        for filterFunction in personFilters.filters["person"].values():
-            people = pd.Series(list(filter(filterFunction, people)), dtype=object)
+        if personFilters is not None:
+            for filterFunction in personFilters.filters["person"].values():
+                people = pd.Series(list(filter(filterFunction, people)), dtype=object)
 
         if nhanesWeights:
             nRemaining = n - people.shape[0]

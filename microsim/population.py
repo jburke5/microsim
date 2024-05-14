@@ -334,10 +334,10 @@ class Population:
     #    for person in self._people:
     #        person.reset_to_baseline()
 
-    def set_bp_treatment_strategy(self, bpTreatmentStrategy):
-        self._bpTreatmentStrategy = bpTreatmentStrategy
-        for person in self._people:
-            person._bpTreatmentStrategy = bpTreatmentStrategy
+    #def set_bp_treatment_strategy(self, bpTreatmentStrategy):
+    #    self._bpTreatmentStrategy = bpTreatmentStrategy
+    #    for person in self._people:
+    #        person._bpTreatmentStrategy = bpTreatmentStrategy
 
     #def get_people_alive_at_the_start_of_the_current_wave(self):
     #    return self.get_people_alive_at_the_start_of_wave(self._currentWave)
