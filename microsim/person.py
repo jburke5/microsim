@@ -17,7 +17,7 @@ from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 from microsim.gfr_equation import GFREquation
 from microsim.pvd_model import PVDPrevalenceModel
 from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
-from microsim.treatment import TreatmentStrategiesType, TreatmentStrategyStatus
+from microsim.treatment import TreatmentStrategiesType, TreatmentStrategyStatus, DefaultTreatmentsType
 
 # luciana-tag...lne thing that tripped me up was probable non clear communication regarding "waves"
 # so, i'm going to spell it out here and try to make the code consistent.
@@ -247,7 +247,12 @@ class Person:
     def _antiHypertensiveCountPlusBPMedsAdded(self):
         antiHypertensiveCount = getattr(self, "_"+DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value)[-1]
         if self.is_in_bp_treatment:
-            return antiHypertensiveCount + self._treatmentStrategies[TreatmentStrategiesType.BP.value]["bpMedsAdded"]
+            #this means that bpMedsAdded have already been added to the person
+            #if "bpMedsAdded" in self._treatmentStrategies[TreatmentStrategiesType.BP.value].keys():
+            if self._treatmentStrategies[TreatmentStrategiesType.BP.value]["status"]!=TreatmentStrategyStatus.BEGIN:
+                return antiHypertensiveCount + self._treatmentStrategies[TreatmentStrategiesType.BP.value]["bpMedsAdded"]
+            else:
+                return antiHypertensiveCount
         else:
             return antiHypertensiveCount
 

@@ -1,5 +1,6 @@
 from microsim.outcome import OutcomeType
 from microsim.outcome_model_repository import OutcomeModelRepository
+from microsim.cv_model_repository import CVModelRepository
 from microsim.risk_factor import DynamicRiskFactorsType
 from microsim.treatment import TreatmentStrategyStatus, TreatmentStrategiesType
 
@@ -124,7 +125,7 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
         dbpMedCount = int((getattr(person, "_"+DynamicRiskFactorsType.DBP.value)[-1] - goal["dbp"]) 
                           / AddBPTreatmentMedsToGoal120.dbpLowering)
         medCount = dbpMedCount if dbpMedCount < sbpMedCount else sbpMedCount
-        return 0 if medCount < 0 else medCount
+        return 0 if medCount < 0 else int(medCount)
 
     #def get_changes_for_person(self, person):        
     #    medsForGoal = self.get_meds_needed_for_goal(
@@ -220,14 +221,15 @@ class jnc8Treatment(AddBPTreatmentMedsToGoal120):
         cappedMeds = BaseTreatmentStrategy.MAX_BP_MEDS if meds > BaseTreatmentStrategy.MAX_BP_MEDS else meds
         medsToReturn = BaseTreatmentStrategy.MAX_BP_MEDS - currentMeds  if cappedMeds + currentMeds > BaseTreatmentStrategy.MAX_BP_MEDS else cappedMeds
         #print(f"meds: {meds} sbp: {sbp} dbp: {dbp} goal: {goal} currentMeds: {currentMeds}, cappedMeds: {cappedMeds}, medsToReturn: {medsToReturn}")
-        return medsToReturn if medsToReturn > 0 else 0
+        return int(medsToReturn) if medsToReturn > 0 else 0
 
 class jnc8ForHighRisk(jnc8Treatment):
     def __init__(self, targetRisk):
         self.targetRisk = targetRisk
+        self.cvModelRepository = CVModelRepository()
     
     def low_target(self, person):
-        risk = CVModelRepository().select_outcome_model_for_person(person).get_risk_for_person(person, 10)
+        risk = self.cvModelRepository.select_outcome_model_for_person(person).get_risk_for_person(person, years=10)
         return risk >  self.targetRisk
     
     #def lowTargetVectorized(self, x):
@@ -239,13 +241,14 @@ class jnc8ForHighRiskLowBpTarget(jnc8ForHighRisk):
         super().__init__(targetRisk)
         self.targetBP = targetBP
         
-    def getGoal(self, person):
+    def get_goal(self, person):
         return self.targetBP 
     
-    def get_goal_vectorized(self, x):
-        return self.targetBP
+    #def get_goal_vectorized(self, x):
+    #    return self.targetBP
 
 # simplified class to represent SPRINT.
 class SprintTreatment(jnc8ForHighRiskLowBpTarget):
     def __init__(self):
         super().__init__(0.075, {'sbp' : 126, 'dbp': 85})
+        self.status = TreatmentStrategyStatus.BEGIN

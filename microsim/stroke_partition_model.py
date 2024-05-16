@@ -16,9 +16,11 @@ import scipy.special as scipySpecial
 
 class StrokePartitionModel(StatsModelLinearRiskFactorModel):
     """Fatal stroke probability estimated from our meta-analysis of BASIC, NoMAS, GCNKSS, REGARDS."""
+    interceptChangeFor1bpMedsAdded = -0.1134942
 
     def __init__(self, intercept=None):
         model_spec = load_model_spec("StrokeMIPartitionModel")
+        #the assumption for the subclasses of this class is that the intercept with 0 bpMedsAdded is -2.3109730587083006
         if intercept is not None:
             model_spec["coefficients"]["Intercept"] = intercept
         super().__init__(RegressionModel(**model_spec))
@@ -61,21 +63,56 @@ class StrokePartitionModel(StatsModelLinearRiskFactorModel):
 
 class StrokePartitionModelFor1bpMedsAdded(StrokePartitionModel):
     def __init__(self):
-        intercept = -2.4295668
+        #intercept = -2.4295668
+        intercept = -2.31097305 + 1*self.interceptChangeFor1bpMedsAdded
         super().__init__(intercept=intercept)
 
 class StrokePartitionModelFor2bpMedsAdded(StrokePartitionModel):
     def __init__(self):
-        intercept = -2.5334375
+        #intercept = -2.5334375
+        intercept = -2.31097305 + 2*self.interceptChangeFor1bpMedsAdded
         super().__init__(intercept=intercept)
 
 class StrokePartitionModelFor3bpMedsAdded(StrokePartitionModel):
     def __init__(self):
-        intercept = -2.66499999
+        #intercept = -2.66499999
+        intercept = -2.31097305 + 3*self.interceptChangeFor1bpMedsAdded
         super().__init__(intercept=intercept)
 
 class StrokePartitionModelFor4bpMedsAdded(StrokePartitionModel):
     def __init__(self):
-        intercept = -2.764950
+        #intercept = -2.764950
+        intercept = -2.31097305 + 4*self.interceptChangeFor1bpMedsAdded
         super().__init__(intercept=intercept)
+
+class StrokePartitionModelFor5bpMedsAdded(StrokePartitionModel):
+    def __init__(self):
+        intercept = -2.31097305 + 5*self.interceptChangeFor1bpMedsAdded
+        super().__init__(intercept=intercept)
+
+class StrokePartitionModelFor6bpMedsAdded(StrokePartitionModel):
+    def __init__(self):
+        intercept = -2.31097305 + 6*self.interceptChangeFor1bpMedsAdded
+        super().__init__(intercept=intercept)
+
+class StrokePartitionModelFor7bpMedsAdded(StrokePartitionModel):
+    def __init__(self):
+        intercept = -2.31097305 + 7*self.interceptChangeFor1bpMedsAdded
+        super().__init__(intercept=intercept)
+
+class StrokePartitionModelFor8bpMedsAdded(StrokePartitionModel):
+    def __init__(self):
+        intercept = -2.31097305 + 8*self.interceptChangeFor1bpMedsAdded
+        super().__init__(intercept=intercept)
+
+class StrokePartitionModelFor9bpMedsAdded(StrokePartitionModel):
+    def __init__(self):
+        intercept = -2.31097305 + 9*self.interceptChangeFor1bpMedsAdded
+        super().__init__(intercept=intercept)
+
+class StrokePartitionModelFor10bpMedsAdded(StrokePartitionModel):
+    def __init__(self):
+        intercept = -2.31097305 + 10*self.interceptChangeFor1bpMedsAdded
+        super().__init__(intercept=intercept)
+
 

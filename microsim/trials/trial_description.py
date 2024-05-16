@@ -4,7 +4,7 @@ from microsim.population_factory import PopulationType
 from microsim.trials.trial_type import TrialType
 from microsim.treatment_strategy_repository import TreatmentStrategyRepository
 from microsim.treatment import TreatmentStrategiesType
-from microsim.bp_treatment_strategies import AddNBPMedsTreatmentStrategy, AddBPTreatmentMedsToGoal120, NoBPTreatment
+from microsim.bp_treatment_strategies import AddNBPMedsTreatmentStrategy, AddBPTreatmentMedsToGoal120, NoBPTreatment, SprintTreatment
 
 class TrialDescription:
     '''This instance will hold information about the setup of a Trial instance, information that is common to all Trials.
@@ -80,6 +80,10 @@ class TrialDescription:
             elif treatmentStrategies=="noTreatment":
                 ts = TreatmentStrategyRepository()
                 ts._repository[TreatmentStrategiesType.BP.value] = NoBPTreatment()
+                return ts
+            elif treatmentStrategies=="sprint":
+                ts = TreatmentStrategyRepository()
+                ts._repository[TreatmentStrategiesType.BP.value] = SprintTreatment()
                 return ts
             else:
                 raise RuntimeError("Unrecognized treatmentStrategies argument in TrialDescription initialization.")
