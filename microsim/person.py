@@ -265,9 +265,21 @@ class Person:
     def _current_age(self):
         return self._age[-1]
     
+    def is_alive_at_index(self, index):
+        #need to convert a -1 index to a positive number for correct comparison later on...
+        index = self._waveCompleted if index==-1 else index
+        deathAge = self.get_age_at_last_outcome(OutcomeType.DEATH)
+        if deathAge is None:
+            return True
+        else:
+           deathIndex = self.get_wave_for_age(deathAge)
+           return True if deathIndex > index else False
+
     @property
     def is_alive(self):
-        return len(self._outcomes[OutcomeType.DEATH])==0
+        #return len(self._outcomes[OutcomeType.DEATH])==0
+        return self.is_alive_at_index(-1)
+
     @property
     def is_dead(self):
         return not self.is_alive

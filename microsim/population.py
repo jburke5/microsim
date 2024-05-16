@@ -554,7 +554,7 @@ class Population:
     @staticmethod
     def get_people_attr_at_index(people, rf, index):
         #rfList = list(map( lambda x: getattr(x, "_"+rf.value)[index] if x.is_alive else None, self._people))
-        rfList = list(map( lambda x: getattr(x, "_"+rf.value)[index] if x.is_alive else None, people))
+        rfList = list(map( lambda x: getattr(x, "_"+rf.value)[index] if x.is_alive_at_index(index) else None, people))
         rfList = list(filter(lambda x: x is not None, rfList))
         rfList = list(map(lambda x: int(x) if (type(x)==bool)|(type(x)==np.bool_) else x, rfList))
         return rfList
