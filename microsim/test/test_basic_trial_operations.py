@@ -88,7 +88,7 @@ class TestBasicTrialOperations(unittest.TestCase):
         # true cv risk for patient is 0.005321896646249357
         # true dementia risk for patient is 0.00013823232976419768
         for filterFunction in self.riskPf.filters["person"].values():    
-            self.assertTrue(map(filterFunction, [self.oldJoe]))
+            self.assertTrue(list(map(filterFunction, [self.oldJoe]))[0])
 
     # design a simple trial to only include patients over 40
     def test_simple_trial_inclusion(self):
