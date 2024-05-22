@@ -34,9 +34,8 @@ class PersonFactory:
     """A class used to obtain Person-objects using data from a variety of sources."""
 
     @staticmethod
-    def get_nhanes_person(x, initializationModelRepository):
-        """Takes all Person-instance-related data via x and initializationModelRepository and organizes it,
-           passes the organized data to the Person class and returns a Person instance."""
+    def get_nhanes_person_init_information(x):
+        """Takes all Person-instance-related data via x and and organizes it."""
 
         rng = np.random.default_rng()
 
@@ -94,6 +93,20 @@ class PersonFactory:
             if selfReportMIAge is not None and selfReportMIAge > 1:
                 selfReportMIAge = selfReportMIAge if selfReportMIAge <= x.age else x.age
                 personOutcomes[OutcomeType.MI].append((selfReportMIAge, Outcome(OutcomeType.MI, False, priorToSim=True)))
+
+        return (name, personStaticRiskFactors, personDynamicRiskFactors, personDefaultTreatments, personTreatmentStrategies, personOutcomes)
+
+    @staticmethod
+    def get_nhanes_person(x, initializationModelRepository):
+        """Takes all Person-instance-related data via x and initializationModelRepository and organizes it,
+           passes the organized data to the Person class and returns a Person instance."""
+
+        (name, 
+         personStaticRiskFactors, 
+         personDynamicRiskFactors, 
+         personDefaultTreatments, 
+         personTreatmentStrategies, 
+         personOutcomes) = PersonFactory.get_nhanes_person_init_information(x)
 
         person = Person(name,
                         personStaticRiskFactors,

@@ -11,6 +11,11 @@ from microsim.alcohol_category import AlcoholCategory
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.outcome import Outcome, OutcomeType
 from microsim.gcp_stroke_model import GCPStrokeModel
+from microsim.population_factory import PopulationFactory
+from microsim.risk_factor import StaticRiskFactorsType, DynamicRiskFactorsType
+from microsim.treatment import DefaultTreatmentsType
+from microsim.person_factory import PersonFactory
+from microsim.cognition_outcome import CognitionOutcome
 
 #main idea: construct persons that at some point in their simulation history had a stroke outcome
 #we want to test the GCP stroke model with persons that resemble simulation persons as much as possible
@@ -27,13 +32,15 @@ from microsim.gcp_stroke_model import GCPStrokeModel
 #term our implementation includes and add the correct one
 #tried to include test cases with diverse histories so that we can test as many model components as possible (I think no test case had afib though)
 
+initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
+
 #row 2 in excel file 
 class TestCaseOne(Person):
 
     def __init__(self):
 
         #make the lists that will be used to define the person's path in the simulation
-        ageAtStroke = 65 + 0.389117043*10 
+        ageAtStroke = 65 + 0.389117043*10                        
         indexStroke = 2
         ageList = [ageAtStroke + 3.17 + x for x in range(-5,1)]
         ageList.insert(indexStroke, ageAtStroke)
@@ -62,35 +69,52 @@ class TestCaseOne(Person):
         meanGcpPrestroke = 6.104780222+50.
         gcpList = [meanGcpPrestroke]*7
     
+        x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: ageList[0],    #agemed10
+                               StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,  #female0
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,  #black
+                               DynamicRiskFactorsType.SBP.value: sbpList[0],   #bs_sbpstkcog
+                               DynamicRiskFactorsType.DBP.value: dbpList[0],   #same as TestGCPModel
+                               DynamicRiskFactorsType.A1C.value: a1cList[0],   #bs_glucosefmed10
+                               DynamicRiskFactorsType.HDL.value: hdlList[0],   #same as TestGCPModel
+                               DynamicRiskFactorsType.TOT_CHOL.value: totCholList[0],  #?? hdl+ldl+0.2*trig
+                               DynamicRiskFactorsType.BMI.value: bmiList[0],    #bs_bmimed
+                               DynamicRiskFactorsType.LDL.value: ldlList[0],    #bs_cholldlmed10
+                               DynamicRiskFactorsType.TRIG.value: trigList[0],   #same as TestGCPModel
+                               DynamicRiskFactorsType.WAIST.value: waistList[0],  #bs_waistcmmed10
+                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: anyPhysicalActivityList[0],  #physact
+                               StaticRiskFactorsType.EDUCATION.value: Education.SOMEHIGHSCHOOL.value,   #educ2,educ3,educ4
+                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,   #currsmoker
+                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,  #alcperwk
+                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: antiHypertensiveCountList[0],  #htntx
+                               DefaultTreatmentsType.STATIN.value: statinList[0],  #choltx
+                               DynamicRiskFactorsType.CREATININE.value: creatinineList[0], #same as TestGCPModel
+                               "name": "one"}, index=[0])
+        (name,
+         personStaticRiskFactors,
+         personDynamicRiskFactors,
+         personDefaultTreatments,
+         personTreatmentStrategies,
+         personOutcomes) =  PersonFactory.get_nhanes_person_init_information(x.iloc[0])
+
         #create the person
-        super().__init__(
-            age= ageList[0],                                          #agemed10
-            gender=NHANESGender.FEMALE,                               #female0
-            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,     #black
-            sbp= sbpList[0],                                          #bs_sbpstkcog
-            dbp= dbpList[0],                                          #same as TestGCPModel      
-            a1c=a1cList[0],                                           #bs_glucosefmed10
-            hdl= hdlList[0],                                          #same as TestGCPModel
-            totChol=totCholList[0],                                   #?? hdl+ldl+0.2*trig
-            ldl= ldlList[0],                                          #bs_cholldlmed10
-            trig=trigList[0],                                         #same as TestGCPModel
-            bmi= bmiList[0],                                          #bs_bmimed
-            waist= waistList[0],                                      #bs_waistcmmed10
-            anyPhysicalActivity=anyPhysicalActivityList[0],           #physact
-            education=Education.SOMEHIGHSCHOOL,                       #educ2,educ3,educ4
-            smokingStatus=SmokingStatus.NEVER,                        #currsmoker
-            alcohol=AlcoholCategory.NONE,                             #alcperwk
-            antiHypertensiveCount=antiHypertensiveCountList[0],       #htntx
-            statin=statinList[0],                                     #choltx
-            otherLipidLoweringMedicationCount=otherLipidLoweringMedicationCountList[0],#same as TestGCPModel
-            creatinine=creatinineList[0],                             #same as TestGCPModel
-            initializeAfib=None,                                      #hxafib
-           )
+        super().__init__(name,
+         personStaticRiskFactors,
+         personDynamicRiskFactors,
+         personDefaultTreatments,
+         personTreatmentStrategies,
+         personOutcomes)
+        self._afib = [False]
         
         #assign history to person
-        self._age = ageList[0:indexStroke+1]                          #when age reaches ageAtStroke, then 
-        self.add_outcome_event(Outcome(OutcomeType.STROKE, False))    #add the stroke outcome
-        self._age = ageList
+        self.add_outcome(CognitionOutcome(False, False, gcpList[0]))
+        for i,age in enumerate(ageList[1:indexStroke+1]):
+            self._age.append(ageList[i+1])
+            self.add_outcome(CognitionOutcome(False, False, gcpList[i+1]))
+        #when age reaches ageAtStroke, then add the stroke outcome
+        self.add_outcome(Outcome(OutcomeType.STROKE, False))    
+        for ii, age in enumerate(ageList[indexStroke+1:]):
+            self._age.append(ageList[i+ii+2])
+            self.add_outcome(CognitionOutcome(False, False, gcpList[i+ii+2]))
         self._sbp = sbpList
         self._dbp = dbpList
         self._a1c = a1cList
@@ -103,9 +127,7 @@ class TestCaseOne(Person):
         self._anyPhysicalActivity = anyPhysicalActivityList
         self._antiHypertensiveCount = antiHypertensiveCountList
         self._statin = statinList
-        self._otherLipidLoweringMedicationCount = otherLipidLoweringMedicationCountList
         self._creatinine = creatinineList
-        self._gcp = gcpList
         self._randomEffects={"gcp": 0,
                              "gcpStroke": 1.989499,
                              "gcpStrokeSlope": 0.0925494}
@@ -162,35 +184,52 @@ class TestCaseTwo(Person):
         meanGcpPrestroke = 50. + 5.40984283
         gcpList = [meanGcpPrestroke]*9
 
+        x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: ageList[0],    #agemed10
+                               StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,  #female0
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,  #black
+                               DynamicRiskFactorsType.SBP.value: sbpList[0],   #bs_sbpstkcog
+                               DynamicRiskFactorsType.DBP.value: dbpList[0],   #same as TestGCPModel
+                               DynamicRiskFactorsType.A1C.value: a1cList[0],   #bs_glucosefmed10
+                               DynamicRiskFactorsType.HDL.value: hdlList[0],   #same as TestGCPModel
+                               DynamicRiskFactorsType.TOT_CHOL.value: totCholList[0],  #?? hdl+ldl+0.2*trig
+                               DynamicRiskFactorsType.BMI.value: bmiList[0],    #bs_bmimed
+                               DynamicRiskFactorsType.LDL.value: ldlList[0],    #bs_cholldlmed10
+                               DynamicRiskFactorsType.TRIG.value: trigList[0],   #same as TestGCPModel
+                               DynamicRiskFactorsType.WAIST.value: waistList[0],  #bs_waistcmmed10
+                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: anyPhysicalActivityList[0],  #physact
+                               StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,   #educ2,educ3,educ4
+                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,   #currsmoker
+                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.ONETOSIX.value,  #alcperwk
+                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: antiHypertensiveCountList[0],  #htntx
+                               DefaultTreatmentsType.STATIN.value: statinList[0],  #choltx
+                               DynamicRiskFactorsType.CREATININE.value: creatinineList[0], #same as TestGCPModel
+                               "name": "two"}, index=[0])
+        (name,
+         personStaticRiskFactors,
+         personDynamicRiskFactors,
+         personDefaultTreatments,
+         personTreatmentStrategies,
+         personOutcomes) =  PersonFactory.get_nhanes_person_init_information(x.iloc[0])
+
         #create the person
-        super().__init__(
-            age= ageList[0],                                          #agemed10
-            gender=NHANESGender.MALE,                                 #female0
-            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_BLACK,     #black
-            sbp= sbpList[0],                                          #bs_sbpstkcog
-            dbp= dbpList[0],                                          #same as TestGCPModel      
-            a1c=a1cList[0],                                           #bs_glucosefmed10
-            hdl= hdlList[0],                                          #same as TestGCPModel
-            totChol=totCholList[0],                                   #?? hdl+ldl+0.2*trig
-            ldl= ldlList[0],                                          #bs_cholldlmed10
-            trig=trigList[0],                                         #same as TestGCPModel
-            bmi= bmiList[0],                                          #bs_bmimed
-            waist= waistList[0],                                      #bs_waistcmmed10
-            anyPhysicalActivity=anyPhysicalActivityList[0],           #physact
-            education=Education.COLLEGEGRADUATE,                       #educ2,educ3,educ4
-            smokingStatus=SmokingStatus.NEVER,                        #currsmoker
-            alcohol=AlcoholCategory.ONETOSIX,                             #alcperwk
-            antiHypertensiveCount=antiHypertensiveCountList[0],       #htntx
-            statin=statinList[0],                                     #choltx
-            otherLipidLoweringMedicationCount=otherLipidLoweringMedicationCountList[0],#same as TestGCPModel
-            creatinine=creatinineList[0],                             #same as TestGCPModel
-            initializeAfib=None,                                      #hxafib
-           )
+        super().__init__(name,
+         personStaticRiskFactors,
+         personDynamicRiskFactors,
+         personDefaultTreatments,
+         personTreatmentStrategies,
+         personOutcomes)
+        self._afib = [False]
 
         #assign history to person
-        self._age = ageList[0:indexStroke+1]                          #when age reaches ageAtStroke, then 
-        self.add_outcome_event(Outcome(OutcomeType.STROKE, False))    #add the stroke outcome
-        self._age = ageList                                           
+        self.add_outcome(CognitionOutcome(False, False, gcpList[0]))
+        for i,age in enumerate(ageList[1:indexStroke+1]):
+            self._age.append(ageList[i+1])
+            self.add_outcome(CognitionOutcome(False, False, gcpList[i+1]))
+        #when age reaches ageAtStroke, then add the stroke outcome
+        self.add_outcome(Outcome(OutcomeType.STROKE, False))    
+        for ii, age in enumerate(ageList[indexStroke+1:]):
+            self._age.append(ageList[i+ii+2])
+            self.add_outcome(CognitionOutcome(False, False, gcpList[i+ii+2])) 
         self._sbp = sbpList
         self._dbp = dbpList
         self._a1c = a1cList
@@ -203,9 +242,7 @@ class TestCaseTwo(Person):
         self._anyPhysicalActivity = anyPhysicalActivityList               
         self._antiHypertensiveCount = antiHypertensiveCountList       
         self._statin = statinList                                     
-        self._otherLipidLoweringMedicationCount = otherLipidLoweringMedicationCountList
         self._creatinine = creatinineList                             
-        self._gcp = gcpList
         self._randomEffects={"gcp": 0,
                              "gcpStroke": 2.216342,
                              "gcpStrokeSlope": 0.0920485}         
@@ -263,34 +300,53 @@ class TestCaseThree(Person):
         gcpList = [meanGcpPrestroke]*7
 
         #create the person
-        super().__init__(
-            age= ageList[0],                                          #agemed10
-            gender=NHANESGender.FEMALE,                                 #female0
-            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,     #black
-            sbp= sbpList[0],                                          #bs_sbpstkcog
-            dbp= dbpList[0],                                          #same as TestGCPModel      
-            a1c=a1cList[0],                                           #bs_glucosefmed10
-            hdl= hdlList[0],                                          #same as TestGCPModel
-            totChol=totCholList[0],                                   #?? hdl+ldl+0.2*trig
-            ldl= ldlList[0],                                          #bs_cholldlmed10
-            trig=trigList[0],                                         #same as TestGCPModel
-            bmi= bmiList[0],                                          #bs_bmimed
-            waist= waistList[0],                                      #bs_waistcmmed10
-            anyPhysicalActivity=anyPhysicalActivityList[0],           #physact
-            education=Education.SOMECOLLEGE,                          #educ2,educ3,educ4
-            smokingStatus=SmokingStatus.CURRENT,                        #currsmoker
-            alcohol=AlcoholCategory.FOURTEENORMORE,                             #alcperwk
-            antiHypertensiveCount=antiHypertensiveCountList[0],       #htntx
-            statin=statinList[0],                                     #choltx
-            otherLipidLoweringMedicationCount=otherLipidLoweringMedicationCountList[0],#same as TestGCPModel
-            creatinine=creatinineList[0],                             #same as TestGCPModel
-            initializeAfib=None,                                      #hxafib
-           )
+        x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: ageList[0],    #agemed10
+                               StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,  #female0
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,  #black
+                               DynamicRiskFactorsType.SBP.value: sbpList[0],   #bs_sbpstkcog
+                               DynamicRiskFactorsType.DBP.value: dbpList[0],   #same as TestGCPModel
+                               DynamicRiskFactorsType.A1C.value: a1cList[0],   #bs_glucosefmed10
+                               DynamicRiskFactorsType.HDL.value: hdlList[0],   #same as TestGCPModel
+                               DynamicRiskFactorsType.TOT_CHOL.value: totCholList[0],  #?? hdl+ldl+0.2*trig
+                               DynamicRiskFactorsType.BMI.value: bmiList[0],    #bs_bmimed
+                               DynamicRiskFactorsType.LDL.value: ldlList[0],    #bs_cholldlmed10
+                               DynamicRiskFactorsType.TRIG.value: trigList[0],   #same as TestGCPModel
+                               DynamicRiskFactorsType.WAIST.value: waistList[0],  #bs_waistcmmed10
+                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: anyPhysicalActivityList[0],  #physact
+                               StaticRiskFactorsType.EDUCATION.value: Education.SOMECOLLEGE.value,   #educ2,educ3,educ4
+                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.CURRENT.value,   #currsmoker
+                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.FOURTEENORMORE.value,  #alcperwk
+                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: antiHypertensiveCountList[0],  #htntx
+                               DefaultTreatmentsType.STATIN.value: statinList[0],  #choltx
+                               DynamicRiskFactorsType.CREATININE.value: creatinineList[0], #same as TestGCPModel
+                               "name": "three"}, index=[0])
+
+        (name,
+         personStaticRiskFactors,
+         personDynamicRiskFactors,
+         personDefaultTreatments,
+         personTreatmentStrategies,
+         personOutcomes) =  PersonFactory.get_nhanes_person_init_information(x.iloc[0])
+
+        #create the person
+        super().__init__(name,
+         personStaticRiskFactors,
+         personDynamicRiskFactors,
+         personDefaultTreatments,
+         personTreatmentStrategies,
+         personOutcomes)
+        self._afib = [False]
 
         #assign history to person
-        self._age = ageList[0:indexStroke+1]                          #when age reaches ageAtStroke, then 
-        self.add_outcome_event(Outcome(OutcomeType.STROKE, False))    #add the stroke outcome
-        self._age = ageList                                           
+        self.add_outcome(CognitionOutcome(False, False, gcpList[0]))
+        for i,age in enumerate(ageList[1:indexStroke+1]):
+            self._age.append(ageList[i+1])
+            self.add_outcome(CognitionOutcome(False, False, gcpList[i+1]))
+        #when age reaches ageAtStroke, then add the stroke outcome
+        self.add_outcome(Outcome(OutcomeType.STROKE, False))
+        for ii, age in enumerate(ageList[indexStroke+1:]):
+            self._age.append(ageList[i+ii+2])
+            self.add_outcome(CognitionOutcome(False, False, gcpList[i+ii+2]))
         self._sbp = sbpList
         self._dbp = dbpList
         self._a1c = a1cList
@@ -303,9 +359,7 @@ class TestCaseThree(Person):
         self._anyPhysicalActivity = anyPhysicalActivityList               
         self._antiHypertensiveCount = antiHypertensiveCountList       
         self._statin = statinList                                     
-        self._otherLipidLoweringMedicationCount = otherLipidLoweringMedicationCountList
         self._creatinine = creatinineList                             
-        self._gcp = gcpList
         self._randomEffects={"gcp": 0,
                              "gcpStroke": 0.5671927,                   
                              "gcpStrokeSlope": 0.1222775}   
@@ -363,35 +417,52 @@ class TestCaseFour(Person):
         gcpList = [meanGcpPrestroke]*12
 
         #create the person
-        super().__init__(
-            age= ageList[0],                                          #agemed10
-            gender=NHANESGender.MALE,                                 #female0
-            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,     #black
-            sbp= sbpList[0],                                          #bs_sbpstkcog
-            dbp= dbpList[0],                                          #same as TestGCPModel      
-            a1c=a1cList[0],                                           #bs_glucosefmed10
-            hdl= hdlList[0],                                          #same as TestGCPModel
-            totChol=totCholList[0],                                   #?? hdl+ldl+0.2*trig
-            ldl= ldlList[0],                                          #bs_cholldlmed10
-            trig=trigList[0],                                         #same as TestGCPModel
-            bmi= bmiList[0],                                          #bs_bmimed
-            waist= waistList[0],                                      #bs_waistcmmed10
-            anyPhysicalActivity=anyPhysicalActivityList[0],           #physact
-            education=Education.HIGHSCHOOLGRADUATE,                   #educ2,educ3,educ4
-            smokingStatus=SmokingStatus.NEVER,                        #currsmoker
-            alcohol=AlcoholCategory.NONE,                             #alcperwk
-            antiHypertensiveCount=antiHypertensiveCountList[0],       #htntx
-            statin=statinList[0],                                     #choltx
-            otherLipidLoweringMedicationCount=otherLipidLoweringMedicationCountList[0],#same as TestGCPModel
-            creatinine=creatinineList[0],                             #same as TestGCPModel
-            initializeAfib=None,                                      #hxafib
-           )
-
-        #assign history to person                                     
-        self.add_outcome_event(Outcome(OutcomeType.MI, False))    #add the mi outcome
-        self._age = ageList[0:indexStroke+1]                          #when age reaches ageAtStroke, then 
-        self.add_outcome_event(Outcome(OutcomeType.STROKE, False))    #add the stroke outcome
-        self._age = ageList                                           
+        x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: ageList[0],    #agemed10
+                               StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,  #female0
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,  #black
+                               DynamicRiskFactorsType.SBP.value: sbpList[0],   #bs_sbpstkcog
+                               DynamicRiskFactorsType.DBP.value: dbpList[0],   #same as TestGCPModel
+                               DynamicRiskFactorsType.A1C.value: a1cList[0],   #bs_glucosefmed10
+                               DynamicRiskFactorsType.HDL.value: hdlList[0],   #same as TestGCPModel
+                               DynamicRiskFactorsType.TOT_CHOL.value: totCholList[0],  #?? hdl+ldl+0.2*trig
+                               DynamicRiskFactorsType.BMI.value: bmiList[0],    #bs_bmimed
+                               DynamicRiskFactorsType.LDL.value: ldlList[0],    #bs_cholldlmed10
+                               DynamicRiskFactorsType.TRIG.value: trigList[0],   #same as TestGCPModel
+                               DynamicRiskFactorsType.WAIST.value: waistList[0],  #bs_waistcmmed10
+                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: anyPhysicalActivityList[0],  #physact
+                               StaticRiskFactorsType.EDUCATION.value: Education.HIGHSCHOOLGRADUATE.value,   #educ2,educ3,educ4
+                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,   #currsmoker
+                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,  #alcperwk
+                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: antiHypertensiveCountList[0],  #htntx
+                               DefaultTreatmentsType.STATIN.value: statinList[0],  #choltx
+                               DynamicRiskFactorsType.CREATININE.value: creatinineList[0], #same as TestGCPModel
+                               "name": "four"}, index=[0])
+        (name,
+         personStaticRiskFactors,
+         personDynamicRiskFactors,
+         personDefaultTreatments,
+         personTreatmentStrategies,
+         personOutcomes) =  PersonFactory.get_nhanes_person_init_information(x.iloc[0])
+        
+        #create the person 
+        super().__init__(name,
+         personStaticRiskFactors, 
+         personDynamicRiskFactors,
+         personDefaultTreatments, 
+         personTreatmentStrategies,
+         personOutcomes)
+        self._afib = [False]
+        
+        #assign history to person
+        self.add_outcome(CognitionOutcome(False, False, gcpList[0]))
+        for i,age in enumerate(ageList[1:indexStroke+1]):
+            self._age.append(ageList[i+1])
+            self.add_outcome(CognitionOutcome(False, False, gcpList[i+1])) 
+        #when age reaches ageAtStroke, then add the stroke outcome 
+        self.add_outcome(Outcome(OutcomeType.STROKE, False))
+        for ii, age in enumerate(ageList[indexStroke+1:]):
+            self._age.append(ageList[i+ii+2])
+            self.add_outcome(CognitionOutcome(False, False, gcpList[i+ii+2]))  
         self._sbp = sbpList
         self._dbp = dbpList                                           
         self._a1c = a1cList
@@ -404,9 +475,7 @@ class TestCaseFour(Person):
         self._anyPhysicalActivity = anyPhysicalActivityList               
         self._antiHypertensiveCount = antiHypertensiveCountList         
         self._statin = statinList                                               
-        self._otherLipidLoweringMedicationCount = otherLipidLoweringMedicationCountList
         self._creatinine = creatinineList                             
-        self._gcp = gcpList
         self._randomEffects={"gcp": 0,
                              "gcpStroke": 1.410774,
                              "gcpStrokeSlope": 0.0976629}
@@ -437,19 +506,7 @@ class TestGCPStrokeModel(unittest.TestCase):
         self._test_case_three = TestCaseThree()
         self._test_case_four = TestCaseFour()
 
-        self._test_case_one_pop = Population(pd.Series(self._test_case_one))
-        self._test_case_one_df = self._test_case_one_pop.get_people_current_state_and_summary_as_dataframe()
-
-        self._test_case_two_pop = Population(pd.Series(self._test_case_two))
-        self._test_case_two_df = self._test_case_two_pop.get_people_current_state_and_summary_as_dataframe()
-
-        self._test_case_three_pop = Population(pd.Series(self._test_case_three))
-        self._test_case_three_df = self._test_case_three_pop.get_people_current_state_and_summary_as_dataframe()
-
-        self._test_case_four_pop = Population(pd.Series(self._test_case_four))
-        self._test_case_four_df = self._test_case_four_pop.get_people_current_state_and_summary_as_dataframe()
-
-    def test_expected_linear_predictor_nonvectorized(self):
+    def test_expected_linear_predictor(self):
 
         self.assertAlmostEqual(
             GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=None, years=1, vectorized=False, test=True),
@@ -467,50 +524,28 @@ class TestGCPStrokeModel(unittest.TestCase):
             places=2)
 
         self.assertAlmostEqual(
-            GCPStrokeModel().get_risk_for_person(self._test_case_four, rng=None, years=1, vectorized=False, test=True),
+            GCPStrokeModel().get_risk_for_person(self._test_case_four, rng=self._test_case_four._rng, years=1, vectorized=False, test=True),
             self._test_case_four._expectedLinearPredictor,
             places=2)
 
-    def test_expected_linear_predictor_vectorized(self):
-
-         self.assertAlmostEqual(
-            GCPStrokeModel().get_risk_for_person(self._test_case_one_df.iloc[0], rng=None, years=1, vectorized=True, test=True),
-            self._test_case_one._expectedLinearPredictor,
-            places=2)
-
-         self.assertAlmostEqual(
-            GCPStrokeModel().get_risk_for_person(self._test_case_two_df.iloc[0], rng=None, years=1, vectorized=True, test=True),
-            self._test_case_two._expectedLinearPredictor,
-            places=2)
-
-         self.assertAlmostEqual(
-            GCPStrokeModel().get_risk_for_person(self._test_case_three_df.iloc[0], rng=None, years=1, vectorized=True, test=True),
-            self._test_case_three._expectedLinearPredictor,
-            places=2)
-
-         self.assertAlmostEqual(
-            GCPStrokeModel().get_risk_for_person(self._test_case_four_df.iloc[0], rng=None, years=1, vectorized=True, test=True),
-            self._test_case_four._expectedLinearPredictor,
-            places=2)
- 
     #with the random effects now part of get_risk_for_person method I think this test is no longer possible
-    def test_random_effect_nonvectorized(self):
+    def test_random_effect(self):
     
          self._test_case_one._randomEffects["gcpStroke"] = self._test_case_one._randomEffects["gcpStroke"] + 5
          self.assertAlmostEqual(
-            GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=None, years=1, vectorized=False, test=True),
+            GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=self._test_case_one._rng, years=1, vectorized=False, test=True),
             self._test_case_one._expectedLinearPredictor+5,
             places=2)
 
-    def test_randomness_vectorized_independent_per_draw(self):
+    #def test_randomness_vectorized_independent_per_draw(self):
 
-         seedSequence = np.random.SeedSequence()
-         rngStream = np.random.default_rng(seed=seedSequence)  
+    #     seedSequence = np.random.SeedSequence()
+    #     rngStream = np.random.default_rng(seed=seedSequence)  
 
-         #should include both residual and random effect
-         draw1 = GCPStrokeModel().get_risk_for_person(self._test_case_one_df.iloc[0], rng=rngStream, years=1, vectorized=True, test=False)
-         draw2 = GCPStrokeModel().get_risk_for_person(self._test_case_one_df.iloc[0], rng=rngStream, years=1, vectorized=True, test=False)
-         self.assertNotEqual(draw1, draw2)   
+    #     #should include both residual and random effect
+    #     draw1 = GCPStrokeModel().get_risk_for_person(self._test_case_one_df.iloc[0], rng=rngStream, years=1, vectorized=True, test=False)
+    #     draw2 = GCPStrokeModel().get_risk_for_person(self._test_case_one_df.iloc[0], rng=rngStream, years=1, vectorized=True, test=False)
+    #     self.assertNotEqual(draw1, draw2)   
 
 if __name__ == "__main__":
     unittest.main()         
