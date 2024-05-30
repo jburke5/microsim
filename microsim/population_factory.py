@@ -20,6 +20,7 @@ from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.treatment import DefaultTreatmentsType
 from microsim.alcohol_category import AlcoholCategory
+from microsim.standardized_population import StandardizedPopulation
 
 #these are used below to define groups ( = specific combinations of all NHANES categorical variables)
 # and to define which columns from the NHANES dataframe to model as Gaussians ( = all continuous variables present
@@ -116,7 +117,7 @@ class PopulationFactory:
         return nhanesDf
 
     @staticmethod
-    def get_nhanes_people(n=None, year=None, personFilters=None, nhanesWeights=False, distributions=False):
+    def get_nhanes_people(n=None, year=None, personFilters=None, nhanesWeights=False, distributions=False, customWeights=None):
         '''Returns a Pandas Series object with Person-Objects of all persons included in NHANES for year 
            with or without sampling. Filters are applied prior to sampling in order to maximize efficiency and minimize
            memory utilization. This does not affect the distribution of the relative percentages of groups 
@@ -144,6 +145,9 @@ class PopulationFactory:
 
         initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
 
+        if nhanesWeights & (customWeights is not None):
+            raise RuntimeError("Cannot use both nhanesWeights (nhanesWeights=True) and custom weights (customWeights is not None).")
+
         if nhanesWeights:
             if (year is None) | (n is None):
                 raise RuntimeError("""Cannot set nhanesWeights True without specifying a year and n.
@@ -152,6 +156,8 @@ class PopulationFactory:
             else:
                 weights = nhanesDf.WTINT2YR
                 nhanesDfForPeople = nhanesDf.sample(n, weights=weights, replace=True)
+        elif customWeights is not None:
+            nhanesDfForPeople = nhanesDf.sample(n, weights=customWeights, replace=True)
         else:
             nhanesDfForPeople = nhanesDf
 
@@ -185,10 +191,10 @@ class PopulationFactory:
                                          CohortStaticRiskFactorModelRepository())
 
     @staticmethod    
-    def get_nhanes_population(n=None, year=None, personFilters=None, nhanesWeights=False, distributions=False):
+    def get_nhanes_population(n=None, year=None, personFilters=None, nhanesWeights=False, distributions=False, customWeights=None):
         '''Returns a Population-object with Person-objects being all NHANES persons with or without sampling.
            Person attributes can originate either from the NHANES dataset directly or from distributions fit to the NHANES dataset.'''
-        people = PopulationFactory.get_nhanes_people(n=n, year=year, personFilters=personFilters, nhanesWeights=nhanesWeights, distributions=distributions)
+        people = PopulationFactory.get_nhanes_people(n=n, year=year, personFilters=personFilters, nhanesWeights=nhanesWeights, distributions=distributions,customWeights=customWeights)
         popModelRepository = PopulationFactory.get_nhanes_population_model_repo()
         return Population(people, popModelRepository)
 
@@ -340,6 +346,18 @@ class PopulationFactory:
             df = pd.concat([df,dfForGroup])
         df[DynamicRiskFactorsType.AGE.value] = round(df[DynamicRiskFactorsType.AGE.value]).astype('int')
         return df
+
+    @staticmethod
+    def get_nhanes_age_standardized_population(n, year):
+        #nhanesDf is needed just for the index
+        #nhanesDf = pd.read_stata("microsim/data/fullyImputedDataset.dta")
+        nhanesDf = PopulationFactory.get_nhanesDf() 
+        standardizedPop = StandardizedPopulation(year=year)
+        weights = standardizedPop.populationWeightedStandard
+        #it is ok weights are merged with the entire nhanesDf, because pandas sampling takes into account the index of the series
+        weights = pd.merge(nhanesDf, weights, how="left", on=["age", "gender"]).popWeight
+        pop = PopulationFactory.get_nhanes_population(n=n, year=year, personFilters=None, nhanesWeights=False, distributions=False, customWeights=weights)
+        return pop
 
 
 

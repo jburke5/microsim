@@ -297,6 +297,9 @@ class Population:
     def get_outcome_risk(self, outcomeType):
         return sum(list(map(lambda x: x.has_outcome_during_simulation(outcomeType), self._people)))/self._n
 
+    def get_outcome_count(self, outcomeType):
+        return sum(self.has_outcome(outcomeType))
+
     def has_outcome(self, outcomeType, inSim=True):
         return list(map(lambda x: x.has_outcome(outcomeType, inSim=inSim), self._people))
 

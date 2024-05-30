@@ -20,6 +20,26 @@ class StandardizedPopulation:
         self.ageStandard = self.build_age_standard()
         self.ageGroups = self.get_age_groups()
         self.populationPercents = self.get_population_percents()
+        self.populationWeightedStandard = self.get_population_weighted_standard()
+
+    def get_population_weighted_standard(self):
+        rows = []
+        for age in range(1, 151):
+            for gender in range(1, 3):
+                dfRow = self.ageStandard.loc[
+                    (age >= self.ageStandard.lowerAgeBound)
+                    & (age <= self.ageStandard.upperAgeBound)
+                    & (self.ageStandard.gender == gender)
+                ]
+                upperAge = dfRow["upperAgeBound"].values[0]
+                lowerAge = dfRow["lowerAgeBound"].values[0]
+                totalPop = dfRow["standardPopulation"].values[0]
+                rows.append(
+                    {"age": age, "gender": gender, "pop": totalPop / (upperAge - lowerAge + 1)}
+                )
+        df = pd.DataFrame(rows)
+        df["popWeight"] = df["pop"] / df["pop"].sum()
+        return df
 
     def build_age_standard(self):
 

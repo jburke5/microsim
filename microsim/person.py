@@ -660,7 +660,7 @@ class Person:
         return self.has_outcome_during_wave(wave, OutcomeType.MI)
 
     def valid_outcome_wave(self, wave):
-        if (wave<0) | (wave>self._waveCompleted):
+        if (wave<0) | (wave>self._waveCompleted+1):
             return False
         else:
             return True
@@ -673,7 +673,8 @@ class Person:
 
     def has_outcome_during_or_prior_to_wave(self, wave, outcomeType):
         if not self.valid_outcome_wave(wave):
-            return False
+            #return False
+            raise RuntimeError(f"Invalid wave {wave} in person.has_outcome_during_or_prior_to_wave function for person with wave completed {self._waveCompleted}.")
         else:
             return len(self._outcomes[outcomeType]) != 0 and self.has_outcome_by_age(outcomeType, self._age[wave])
 
@@ -683,9 +684,9 @@ class Person:
                 return True
         return False
     
-    def has_outcome_by_age(self, outcomeType, age):
+    def has_outcome_by_age(self, outcomeType, age, inSim=True):
         for outcome_tuple in self._outcomes[outcomeType]:
-            if outcome_tuple[0] <= age:
+            if (outcome_tuple[0]<=age) & (not outcome_tuple[1].priorToSim):
                 return True
         return False
 
