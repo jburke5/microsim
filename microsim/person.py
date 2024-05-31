@@ -266,6 +266,8 @@ class Person:
         return self._age[-1]
     
     def is_alive_at_index(self, index):
+        """This function will need to be re-examined as I have doubts that it is working correctly,
+        particularly for the qaly assignment model because it needs to know during the last wave, if a person died or not."""
         #need to convert a -1 index to a positive number for correct comparison later on...
         index = self._waveCompleted if index==-1 else index
         deathAge = self.get_age_at_last_outcome(OutcomeType.DEATH)
@@ -277,8 +279,9 @@ class Person:
 
     @property
     def is_alive(self):
-        #return len(self._outcomes[OutcomeType.DEATH])==0
-        return self.is_alive_at_index(-1)
+        """This function needs to return True if a person had died during the current wave updates."""
+        return len(self._outcomes[OutcomeType.DEATH])==0
+        #return self.is_alive_at_index(-1)
 
     @property
     def is_dead(self):
@@ -357,8 +360,8 @@ class Person:
             return self._age.index(ageTarget)
 
     def get_age_for_wave(self, wave):
-        if (wave<0) | (wave>self._waveCompleted):
-            raise RuntimeError(f'Wave: {wave} out of range 0-{self._waveCompleted}')
+        if not self.valid_wave(wave):
+            raise RuntimeError(f'Invalid wave {wave} for person with index {self._index} in get_age_for_wave function.')
         else:
             return self._age[wave]
 
@@ -576,11 +579,14 @@ class Person:
             return None
 
     def dead_by_wave(self, wave):
-        if len(self._outcomes[OutcomeType.DEATH])>0:
-            ageAtWave = self.get_age_for_wave(wave)
-            return ageAtWave > self.get_death_age()
+        if self.valid_wave(wave):
+            if len(self._outcomes[OutcomeType.DEATH])>0:
+                ageAtWave = self.get_age_for_wave(wave)
+                return ageAtWave > self.get_death_age()
+            else:
+                return False
         else:
-            return False
+            raise RuntimeError(f"Invalid wave for person index {self._index} in dead_by_wave function.")
 
     def alive_at_start_of_wave(self, wave):
         return not self.dead_by_wave(wave)
@@ -659,20 +665,22 @@ class Person:
     def has_mi_during_wave(self, wave):
         return self.has_outcome_during_wave(wave, OutcomeType.MI)
 
-    def valid_outcome_wave(self, wave):
-        if (wave<0) | (wave>self._waveCompleted+1):
+    def valid_wave(self, wave):
+        if (wave<0) | (wave>self._waveCompleted):
             return False
         else:
             return True
  
     def has_outcome_during_wave(self, wave, outcomeType):
-        if not self.valid_outcome_wave(wave):
-            return False
+        if not self.valid_wave(wave):
+            raise RuntimeError(f"Invalid wave {wave} in has_outcome_during_wave function for person with index {self._index}") 
         else:
             return len(self._outcomes[outcomeType]) != 0 and self.has_outcome_at_age(outcomeType, self._age[wave])
 
     def has_outcome_during_or_prior_to_wave(self, wave, outcomeType):
-        if not self.valid_outcome_wave(wave):
+        #because this function is looking at the current wave, which is, self._waveCompleted+1, I will check
+        #for validity in wave-1 only
+        if (wave!=0) & (not self.valid_wave(wave-1)):
             #return False
             raise RuntimeError(f"Invalid wave {wave} in person.has_outcome_during_or_prior_to_wave function for person with wave completed {self._waveCompleted}.")
         else:

@@ -8,9 +8,9 @@ class QALYAssignmentStrategy:
         # the first element in the list is the QALY for the first year after the event, the next qaly for the next year...
         # if the patient is more than the length of hte list out from the last index, the last index is repeated
         self._qalysForOutcome = {}
-        self._qalysForOutcome[OutcomeType.STROKE] = [1.0, 0.67, 0.90]
-        self._qalysForOutcome[OutcomeType.MI] = [1.0, 0.88, 0.90]
-        self._qalysForOutcome[OutcomeType.DEMENTIA] = [1.0] + list(np.arange(0.80, 0, -0.01))
+        self._qalysForOutcome[OutcomeType.STROKE] = [0.67, 0.90]
+        self._qalysForOutcome[OutcomeType.MI] = [0.88, 0.90]
+        self._qalysForOutcome[OutcomeType.DEMENTIA] = list(np.arange(0.80, 0, -0.01))
 
     def generate_next_outcome(self, person):
         qaly = self.get_next_qaly(person)
@@ -82,7 +82,6 @@ class QALYAssignmentStrategy:
                 else None
             )
             if qalyListForOutcome is not None and hasOutcome:
-                print("problem ",age, ageAtEvent)
                 if np.isnan(age) or np.isnan(ageAtEvent):
                     print(
                         f"ABOUT TO BREAK...current age: {age}, age at event: {ageAtEvent}, outcomeTYpe: {outcomeType}, outcomeTuple: {outcomeTuple}"

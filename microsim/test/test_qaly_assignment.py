@@ -25,7 +25,7 @@ from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.treatment import DefaultTreatmentsType
-from microsim.test.outcome_models_repositories import AlwaysNonFatalStroke, AlwaysFatalStroke, AlwaysNonFatalMI, AlwaysDementia
+from microsim.test.outcome_models_repositories import AlwaysNonFatalStroke, AlwaysFatalStroke, AlwaysNonFatalMI, AlwaysDementia, NoOutcome
 
 initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
 
@@ -68,16 +68,16 @@ class TestQALYAssignment(unittest.TestCase):
         self._age90 = self.getPerson(90)
 
     def testAgeQALYsOnly(self):
-        self._hasNoConditions.advance(1, None, None, OutcomeModelRepository(), None)
+        self._hasNoConditions.advance(1, None, None, NoOutcome(), None)
         qalys = self._hasNoConditions.get_outcome_item(OutcomeType.QUALITYADJUSTED_LIFE_YEARS, "qaly")
         self.assertEqual(1, qalys[-1])
  
-        self._age90.advance(1, None, None, OutcomeModelRepository(), None)
+        self._age90.advance(1, None, None, NoOutcome(), None)
         qalys = self._age90.get_outcome_item(OutcomeType.QUALITYADJUSTED_LIFE_YEARS, "qaly")
         self.assertEqual(0.8, qalys[-1])
 
     def testStrokeQALYS(self):
-        self._hasStroke.advance(1, None, None, OutcomeModelRepository(), None)
+        self._hasStroke.advance(1, None, None, NoOutcome(), None)
         qalys = self._hasStroke.get_outcome_item(OutcomeType.QUALITYADJUSTED_LIFE_YEARS, "qaly")
         self.assertEqual(1, qalys[0])
         self._hasStroke.advance(3, StaticRiskFactorOverTimeRepository(), 
@@ -85,14 +85,13 @@ class TestQALYAssignment(unittest.TestCase):
                                    AlwaysNonFatalStroke(),
                                    None)
         qalys = self._hasStroke.get_outcome_item(OutcomeType.QUALITYADJUSTED_LIFE_YEARS, "qaly")
-        print("stroke ", qalys)
         self.assertEqual(1, qalys[0])
         self.assertEqual(0.67, qalys[1])
         self.assertEqual(0.9, qalys[2])
         self.assertEqual(0.9, qalys[3])
 
     def testMIQALYS(self):
-        self._hasMI.advance(1, None, None, OutcomeModelRepository(), None)
+        self._hasMI.advance(1, None, None, NoOutcome(), None)
         qalys = self._hasMI.get_outcome_item(OutcomeType.QUALITYADJUSTED_LIFE_YEARS, "qaly")
         self.assertEqual(1, qalys[0])
         self._hasMI.advance(3, StaticRiskFactorOverTimeRepository(), 
@@ -100,14 +99,13 @@ class TestQALYAssignment(unittest.TestCase):
                                    AlwaysNonFatalMI(),
                                    None)
         qalys = self._hasMI.get_outcome_item(OutcomeType.QUALITYADJUSTED_LIFE_YEARS, "qaly")
-        print("mi ", qalys)
         self.assertEqual(1, qalys[0])
         self.assertEqual(0.88, qalys[1])
         self.assertEqual(0.9, qalys[2])
         self.assertEqual(0.9, qalys[3])
 
     def testDementiaQALYS(self):
-        self._hasDementia.advance(1, None, None, OutcomeModelRepository(), None)
+        self._hasDementia.advance(1, None, None, NoOutcome(), None)
         qalys = self._hasDementia.get_outcome_item(OutcomeType.QUALITYADJUSTED_LIFE_YEARS, "qaly")
         self.assertEqual(1, qalys[0])
         self._hasDementia.advance(3, StaticRiskFactorOverTimeRepository(),    
@@ -115,14 +113,13 @@ class TestQALYAssignment(unittest.TestCase):
                                    AlwaysDementia(),
                                    None)
         qalys = self._hasDementia.get_outcome_item(OutcomeType.QUALITYADJUSTED_LIFE_YEARS, "qaly")
-        print("dementia ", qalys)
         self.assertEqual(1, qalys[0])
         self.assertEqual(0.80, qalys[1])
         self.assertEqual(0.79, qalys[2])
         self.assertEqual(0.78, qalys[3])
 
     def testQALYSWithMultipleConditions(self):
-        self._hasMI.advance(1, None, None, OutcomeModelRepository(), None)
+        self._hasMI.advance(1, None, None, NoOutcome(), None)
         qalys = self._hasMI.get_outcome_item(OutcomeType.QUALITYADJUSTED_LIFE_YEARS, "qaly")
         self.assertEqual(1, qalys[0])
         self._hasMI.advance(1, StaticRiskFactorOverTimeRepository(),    
@@ -138,7 +135,6 @@ class TestQALYAssignment(unittest.TestCase):
                                    AlwaysNonFatalMI(),
                                    None)
         qalys = self._hasMI.get_outcome_item(OutcomeType.QUALITYADJUSTED_LIFE_YEARS, "qaly")
-        print("mult ", qalys)
         self.assertEqual(1, qalys[0])
         self.assertEqual(0.88, qalys[1])
         # 0.9 * 0.678
@@ -147,7 +143,7 @@ class TestQALYAssignment(unittest.TestCase):
         self.assertEqual(0.81, qalys[3])
 
     def testQALYsWithDeath(self):
-        self._hasFatalStroke.advance(1, None, None, OutcomeModelRepository(), None)
+        self._hasFatalStroke.advance(1, None, None, NoOutcome(), None)
         qalys = self._hasFatalStroke.get_outcome_item(OutcomeType.QUALITYADJUSTED_LIFE_YEARS, "qaly")
         self.assertEqual(1, qalys[0])
         self._hasFatalStroke.advance(1, StaticRiskFactorOverTimeRepository(), 
