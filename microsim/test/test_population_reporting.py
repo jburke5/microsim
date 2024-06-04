@@ -21,6 +21,8 @@ class TestPopulationReporting(unittest.TestCase):
         self.pop1.advance(1)
 
         self.assertEqual(self.popSize, self.pop1.get_outcome_count(OutcomeType.MI))
+        self.assertEqual(0, self.pop1.get_outcome_count(OutcomeType.STROKE))
+        self.assertEqual(0, self.pop1.get_outcome_count(OutcomeType.DEATH))
 
         # events per 100000 = 100000
         #self.assertAlmostEqual(

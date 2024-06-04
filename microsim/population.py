@@ -245,8 +245,12 @@ class Population:
         counts = dict()
         for gender in NHANESGender:
             ages[gender.value] = list(map(lambda x: int(x[1]), list(filter(lambda y: y[0]==gender.value, genderAgeList))))
-            minAge[gender.value] = min(ages[gender.value])
-            maxAge[gender.value] = max(ages[gender.value])
+            if len(ages[gender.value])>0:
+                minAge[gender.value] = min(ages[gender.value])
+                maxAge[gender.value] = max(ages[gender.value])
+            else:
+                minAge[gender.value] = 18
+                maxAge[gender.value] = 18
             #initialize the dictionary with 0 for all counts
             counts[gender.value] = dict(zip([i for i in range(minAge[gender.value],maxAge[gender.value])],
                                             [0 for i in range(minAge[gender.value],maxAge[gender.value])]))
