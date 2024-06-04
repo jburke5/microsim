@@ -30,7 +30,7 @@ class StrokePartitionModel(StatsModelLinearRiskFactorModel):
     def will_have_fatal_stroke(self, person):
         fatalStrokeProb = self._stroke_case_fatality
         fatalProb = self._stroke_secondary_case_fatality if person._stroke else fatalStrokeProb
-        return person._rng.uniform(size=1) < fatalProb
+        return person._rng.uniform() < fatalProb
 
     def get_next_stroke_probability(self, person):
         #Q: I am not sure why it was set to 0 at the beginning

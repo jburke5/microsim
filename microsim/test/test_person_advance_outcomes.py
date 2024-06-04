@@ -11,33 +11,25 @@ from microsim.smoking_status import SmokingStatus
 from microsim.test.helper.init_vectorized_population_dataframe import (
     init_vectorized_population_dataframe,
 )
+from microsim.cohort_risk_model_repository import (CohortDynamicRiskFactorModelRepository, 
+                                                   CohortStaticRiskFactorModelRepository,
+                                                   CohortDefaultTreatmentModelRepository)
+from microsim.outcome_model_repository import OutcomeModelRepository
+from microsim.test.outcome_models_repositories import *
+from microsim.treatment import DefaultTreatmentsType
+from microsim.risk_factor import StaticRiskFactorsType, DynamicRiskFactorsType
+from microsim.person_factory import PersonFactory
+from microsim.initialization_repository import InitializationRepository
+from microsim.population_factory import PopulationFactory
+
 import unittest
 import copy
 import numpy as np
-
-def initializeAFib(person):
-    return 0 #modified to 0 from None, because afib was utilized as part of a model
-
-class AlwaysPositiveOutcomeRepository(OutcomeModelRepository):
-    def __init__(self):
-        super(AlwaysPositiveOutcomeRepository, self).__init__()
-
-    # override super to alays return a probability of each outcom eas 1
-    def get_risk_for_person(self, person, outcome, years=1, vectorized=False, rng=None):
-        return 1
-
-
-class AlwaysNegativeOutcomeRepository(OutcomeModelRepository):
-    def __init__(self):
-        super(AlwaysNegativeOutcomeRepository, self).__init__()
-
-    # override super to alays return a probability of each outcome as 0
-    def get_risk_for_person(self, person, outcome, years=1, vectorized=False, rng=None):
-        return 0
-
+import pandas as pd
 
 class TestPersonAdvanceOutcomes(unittest.TestCase):
     def setUp(self):
+        initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
         xJoe = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 42.,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
                                StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
@@ -61,14 +53,14 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self.joe = PersonFactory.get_nhanes_person(xJoe.iloc[0], initializationModelRepository)
         self.joe._afib = [False]
 
-        self.joe_with_cv = copy.deepcopy(self.joe)
+        self.joe_with_cv = self.joe.__deepcopy__()
         self.joe_with_cv._outcomes[OutcomeType.CARDIOVASCULAR] = [(self.joe_with_cv._age[-1], Outcome(OutcomeType.CARDIOVASCULAR, False))]
 
-        self.joe_with_mi = copy.deepcopy(self.joe)
+        self.joe_with_mi = self.joe.__deepcopy__()
         self.joe_with_mi._outcomes[OutcomeType.MI] = [(self.joe_with_mi._age[-1], Outcome(OutcomeType.MI, False))]
         self.joe_with_mi._outcomes[OutcomeType.CARDIOVASCULAR] = [(self.joe_with_mi._age[-1], Outcome(OutcomeType.CARDIOVASCULAR, False))]
 
-        self.joe_with_stroke = copy.deepcopy(self.joe)
+        self.joe_with_stroke = self.joe.__deepcopy__()
         self.joe_with_stroke._outcomes[OutcomeType.STROKE] = [(self.joe_with_stroke._age[-1], Outcome(OutcomeType.STROKE, False))]
         self.joe_with_stroke._outcomes[OutcomeType.CARDIOVASCULAR] = [(self.joe_with_stroke._age[-1], Outcome(OutcomeType.CARDIOVASCULAR, False))]
 
@@ -122,7 +114,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         strokePartitionModel._stroke_case_fatality = 0.0
         strokePartitionModel._stroke_secondary_case_fatality = 1.0
         will_have_fatal_first_stroke = strokePartitionModel.will_have_fatal_stroke(self.joe)
-        will_have_fatal_second_stroke = strokePartitionModel.will_have_fatal_stroke(self.joe_with_data)
+        will_have_fatal_second_stroke = strokePartitionModel.will_have_fatal_stroke(self.joe_with_stroke)
 
         self.assertFalse(will_have_fatal_first_stroke)
         # even though the passed fatality rate is zero, it shoudl be overriden by the
@@ -151,40 +143,50 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self.assertTrue(has_mi_with_cv_outcome_and_stroke is None)
 
     def test_advance_outcomes_fatal_mi(self):
-        self._always_positive_repository.stroke_case_fatality = 1.0
-        self._always_positive_repository.mi_case_fatality = 1.0
-        self._always_positive_repository.manualStrokeMIProbability = 1.0
 
-        self.joe.advance_outcomes(self._always_positive_repository, rng = np.random.default_rng())
+        self.joe.advance(1, CohortDynamicRiskFactorModelRepository(), 
+                                 CohortDefaultTreatmentModelRepository(), 
+                                   AlwaysFatalMIThroughRate(),
+                                   None)         
+
         self.assertTrue(self.joe.has_mi_during_simulation())
         self.assertFalse(self.joe.has_stroke_during_simulation())
-        self.assertTrue(self.joe.is_dead())
+        self.assertTrue(self.joe.is_dead)
 
     def test_advance_outcomes_fatal_stroke(self):
-        self._always_positive_repository.stroke_case_fatality = 1.0
-        self._always_positive_repository.mi_case_fatality = 1.0
-        self._always_positive_repository.manualStrokeMIProbability = 0.0
 
-        self.joe.advance_outcomes(self._always_positive_repository, rng = np.random.default_rng())
+        self.joe.advance(1, CohortDynamicRiskFactorModelRepository(),     
+                                 CohortDefaultTreatmentModelRepository(),
+                                   AlwaysFatalStrokeThroughRate(),
+                                   None)
+
         self.assertFalse(self.joe.has_mi_during_simulation())
         self.assertTrue(self.joe.has_stroke_during_simulation())
-        self.assertTrue(self.joe.is_dead())
+        self.assertTrue(self.joe.is_dead)
 
     def test_advance_outcomes_nonfatal_mi(self):
-        self.assertEqual(0, self.joe.is_dead())
-        self._always_positive_repository.stroke_case_fatality = 0.0
-        self._always_positive_repository.mi_case_fatality = 0.0
-        self._always_positive_repository.manualStrokeMIProbability = 1.0
 
-        self.joe.advance_outcomes(self._always_positive_repository, rng = np.random.default_rng())
+        self.joe.advance(1, CohortDynamicRiskFactorModelRepository(),     
+                                 CohortDefaultTreatmentModelRepository(),
+                                   AlwaysNonFatalMIThroughRate(),
+                                   None)
+
         self.assertTrue(self.joe.has_mi_during_simulation())
         self.assertFalse(self.joe.has_stroke_during_simulation())
 
     def test_advance_outcomes_nonfatal_stroke(self):
-        self._always_positive_repository.stroke_case_fatality = 0.0
-        self._always_positive_repository.mi_case_fatality = 0.0
-        self._always_positive_repository.manualStrokeMIProbability = 0.0
 
-        self.joe.advance_outcomes(self._always_positive_repository, rng = np.random.default_rng())
+        self.joe.advance(1, CohortDynamicRiskFactorModelRepository(), 
+                                 CohortDefaultTreatmentModelRepository(),
+                                   AlwaysNonFatalStrokeThroughRate(),
+                                   None)
+
         self.assertFalse(self.joe.has_mi_during_simulation())
         self.assertTrue(self.joe.has_stroke_during_simulation())
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+

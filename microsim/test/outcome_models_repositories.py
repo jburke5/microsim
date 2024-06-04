@@ -1,5 +1,7 @@
 from microsim.outcome import OutcomeType, Outcome
 from microsim.outcome_model_repository import OutcomeModelRepository
+from microsim.stroke_partition_model import StrokePartitionModel
+from microsim.mi_partition_model import MIPartitionModel
 
 class NonCVModelNever:
     def __init__(self):
@@ -100,6 +102,58 @@ class StrokePartitionModelAlwaysFatal:
     def get_next_outcome(self, person):
         return Outcome(OutcomeType.STROKE, True)
 
+class StrokePartitionModelAlwaysFatalThroughRateRepository:
+    def __init__(self):
+        self._model = StrokePartitionModelAlwaysFatalThroughRate()
+    def select_outcome_model_for_person(self, person):
+        return self._model
+class StrokePartitionModelAlwaysFatalThroughRate(StrokePartitionModel):
+    def __init__(self):
+        super().__init__()
+        self._stroke_case_fatality = 1.0
+    def get_next_outcome(self, person):
+        fatal = self.will_have_fatal_stroke(person)
+        return Outcome(OutcomeType.STROKE, fatal)
+
+class StrokePartitionModelAlwaysNonFatalThroughRateRepository:
+    def __init__(self):
+        self._model = StrokePartitionModelAlwaysNonFatalThroughRate()
+    def select_outcome_model_for_person(self, person):
+        return self._model
+class StrokePartitionModelAlwaysNonFatalThroughRate(StrokePartitionModel):
+    def __init__(self):
+        super().__init__()
+        self._stroke_case_fatality = 0.0
+    def get_next_outcome(self, person):
+        fatal = self.will_have_fatal_stroke(person)
+        return Outcome(OutcomeType.STROKE, fatal)
+
+class MIPartitionModelAlwaysNonFatalThroughRateRepository:
+    def __init__(self):
+        self._model = MIPartitionModelAlwaysNonFatalThroughRate()
+    def select_outcome_model_for_person(self, person):
+        return self._model
+class MIPartitionModelAlwaysNonFatalThroughRate(MIPartitionModel):
+    def __init__(self):
+        super().__init__()
+        self._mi_case_fatality = 0.0
+    def get_next_outcome(self, person):
+        fatal = self.will_have_fatal_mi(person)
+        return Outcome(OutcomeType.MI, fatal)
+
+class MIPartitionModelAlwaysFatalThroughRateRepository:
+    def __init__(self):
+        self._model = MIPartitionModelAlwaysFatalThroughRate()
+    def select_outcome_model_for_person(self, person):
+        return self._model
+class MIPartitionModelAlwaysFatalThroughRate(MIPartitionModel):
+    def __init__(self):
+        super().__init__()
+        self._mi_case_fatality = 1.0
+    def get_next_outcome(self, person):
+        fatal = self.will_have_fatal_mi(person)
+        return Outcome(OutcomeType.MI, fatal)
+
 class StrokePartitionModelAlwaysFatalOver50Repository:
     def __init__(self):
         self._model = StrokePartitionModelAlwaysFatalOver50()
@@ -175,11 +229,29 @@ class AlwaysNonFatalStroke(OutcomeModelRepository):
         self._repository[OutcomeType.NONCARDIOVASCULAR] = NonCVModelNeverRepository()
         self._repository[OutcomeType.DEMENTIA] = DementiaNeverModelRepository()
 
+class AlwaysNonFatalStrokeThroughRate(OutcomeModelRepository):
+    def __init__(self):
+        super().__init__()
+        self._repository[OutcomeType.CARDIOVASCULAR] = CVModelRepositoryAlwaysNonFatal()
+        self._repository[OutcomeType.STROKE] = StrokePartitionModelAlwaysNonFatalThroughRateRepository()
+        self._repository[OutcomeType.MI] = MIPartitionModelNeverRepository()
+        self._repository[OutcomeType.NONCARDIOVASCULAR] = NonCVModelNeverRepository()
+        self._repository[OutcomeType.DEMENTIA] = DementiaNeverModelRepository()
+
 class AlwaysFatalStroke(OutcomeModelRepository):
     def __init__(self):
         super().__init__()
         self._repository[OutcomeType.CARDIOVASCULAR] = CVModelRepositoryAlwaysNonFatal()
         self._repository[OutcomeType.STROKE] = StrokePartitionModelAlwaysFatalRepository()
+        self._repository[OutcomeType.MI] = MIPartitionModelNeverRepository()
+        self._repository[OutcomeType.NONCARDIOVASCULAR] = NonCVModelNeverRepository()
+        self._repository[OutcomeType.DEMENTIA] = DementiaNeverModelRepository()
+
+class AlwaysFatalStrokeThroughRate(OutcomeModelRepository):
+    def __init__(self):
+        super().__init__()
+        self._repository[OutcomeType.CARDIOVASCULAR] = CVModelRepositoryAlwaysNonFatal()
+        self._repository[OutcomeType.STROKE] = StrokePartitionModelAlwaysFatalThroughRateRepository()
         self._repository[OutcomeType.MI] = MIPartitionModelNeverRepository()
         self._repository[OutcomeType.NONCARDIOVASCULAR] = NonCVModelNeverRepository()
         self._repository[OutcomeType.DEMENTIA] = DementiaNeverModelRepository()
@@ -190,6 +262,24 @@ class AlwaysNonFatalMI(OutcomeModelRepository):
         self._repository[OutcomeType.CARDIOVASCULAR] = CVModelRepositoryAlwaysNonFatal()
         self._repository[OutcomeType.STROKE] = StrokePartitionModelNeverRepository()
         self._repository[OutcomeType.MI] = MIPartitionModelAlwaysNonFatalRepository()
+        self._repository[OutcomeType.NONCARDIOVASCULAR] = NonCVModelNeverRepository()
+        self._repository[OutcomeType.DEMENTIA] = DementiaNeverModelRepository()
+
+class AlwaysNonFatalMIThroughRate(OutcomeModelRepository):
+    def __init__(self):
+        super().__init__()
+        self._repository[OutcomeType.CARDIOVASCULAR] = CVModelRepositoryAlwaysNonFatal()
+        self._repository[OutcomeType.STROKE] = StrokePartitionModelNeverRepository()
+        self._repository[OutcomeType.MI] = MIPartitionModelAlwaysNonFatalThroughRateRepository()
+        self._repository[OutcomeType.NONCARDIOVASCULAR] = NonCVModelNeverRepository()
+        self._repository[OutcomeType.DEMENTIA] = DementiaNeverModelRepository()
+
+class AlwaysFatalMIThroughRate(OutcomeModelRepository):
+    def __init__(self):
+        super().__init__()
+        self._repository[OutcomeType.CARDIOVASCULAR] = CVModelRepositoryAlwaysFatal()
+        self._repository[OutcomeType.STROKE] = StrokePartitionModelNeverRepository()
+        self._repository[OutcomeType.MI] = MIPartitionModelAlwaysFatalThroughRateRepository()
         self._repository[OutcomeType.NONCARDIOVASCULAR] = NonCVModelNeverRepository()
         self._repository[OutcomeType.DEMENTIA] = DementiaNeverModelRepository()
 

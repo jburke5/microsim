@@ -16,7 +16,7 @@ class MIPartitionModel:
     def will_have_fatal_mi(self, person):
         fatalMIProb = self._mi_case_fatality
         fatalProb = self._mi_secondary_case_fatality if person._mi else fatalMIProb
-        return person._rng.uniform(size=1) < fatalProb
+        return person._rng.uniform() < fatalProb
     
     def generate_next_outcome(self, person):
         fatal = self.will_have_fatal_mi(person)
