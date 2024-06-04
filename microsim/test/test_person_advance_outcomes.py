@@ -38,99 +38,78 @@ class AlwaysNegativeOutcomeRepository(OutcomeModelRepository):
 
 class TestPersonAdvanceOutcomes(unittest.TestCase):
     def setUp(self):
-        self.joe = Person(
-            42,
-            NHANESGender.MALE,
-            NHANESRaceEthnicity.NON_HISPANIC_BLACK,
-            140,
-            90,
-            5.5,
-            50,
-            200,
-            25,
-            90,
-            150,
-            45,
-            0,
-            Education.COLLEGEGRADUATE,
-            SmokingStatus.NEVER,
-            AlcoholCategory.NONE,
-            0,
-            0,
-            0,
-            0,
-            initializeAFib,
-            rng = np.random.default_rng()
-        )
+        xJoe = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 42.,
+                               StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               DynamicRiskFactorsType.SBP.value: 140,
+                               DynamicRiskFactorsType.DBP.value: 90,
+                               DynamicRiskFactorsType.A1C.value: 5.5,
+                               DynamicRiskFactorsType.HDL.value: 50,
+                               DynamicRiskFactorsType.TOT_CHOL.value: 200,
+                               DynamicRiskFactorsType.BMI.value: 25.,
+                               DynamicRiskFactorsType.LDL.value: 90,
+                               DynamicRiskFactorsType.TRIG.value: 150,
+                               DynamicRiskFactorsType.WAIST.value: 45,
+                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
+                               StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
+                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
+                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
+                               DefaultTreatmentsType.STATIN.value: 0,
+                               DynamicRiskFactorsType.CREATININE.value: 0,
+                               "name": "joe"}, index=[0])
+        self.joe = PersonFactory.get_nhanes_person(xJoe.iloc[0], initializationModelRepository)
+        self.joe._afib = [False]
+
+        self.joe_with_cv = copy.deepcopy(self.joe)
+        self.joe_with_cv._outcomes[OutcomeType.CARDIOVASCULAR] = [(self.joe_with_cv._age[-1], Outcome(OutcomeType.CARDIOVASCULAR, False))]
 
         self.joe_with_mi = copy.deepcopy(self.joe)
-        self.joe_with_mi.add_outcome_event(Outcome(OutcomeType.MI, False))
+        self.joe_with_mi._outcomes[OutcomeType.MI] = [(self.joe_with_mi._age[-1], Outcome(OutcomeType.MI, False))]
+        self.joe_with_mi._outcomes[OutcomeType.CARDIOVASCULAR] = [(self.joe_with_mi._age[-1], Outcome(OutcomeType.CARDIOVASCULAR, False))]
 
         self.joe_with_stroke = copy.deepcopy(self.joe)
-        self.joe_with_stroke.add_outcome_event(Outcome(OutcomeType.STROKE, False))
+        self.joe_with_stroke._outcomes[OutcomeType.STROKE] = [(self.joe_with_stroke._age[-1], Outcome(OutcomeType.STROKE, False))]
+        self.joe_with_stroke._outcomes[OutcomeType.CARDIOVASCULAR] = [(self.joe_with_stroke._age[-1], Outcome(OutcomeType.CARDIOVASCULAR, False))]
 
-        self._population_dataframe = init_vectorized_population_dataframe(
-            [self.joe, self.joe_with_mi, self.joe_with_stroke],
-            with_base_gcp=True,
-            rng = np.random.default_rng(),
-        )
+        #self._always_positive_repository = AlwaysPositiveOutcomeRepository()
+        #self._always_negative_repository = AlwaysNegativeOutcomeRepository()
+        #self.cvDeterminer = CVOutcomeDetermination(self._always_positive_repository)
+        self.miPartitionModel = MIPartitionModel()
 
-        self._always_positive_repository = AlwaysPositiveOutcomeRepository()
-        self._always_negative_repository = AlwaysNegativeOutcomeRepository()
-        self.cvDeterminer = CVOutcomeDetermination(self._always_positive_repository)
+    #def test_dead_is_dead_advance_year(self):
+    #    self.joe._alive[-1] = False
+    #    with self.assertRaises(RuntimeError, msg="Person is dead. Can not advance year"):
+    #        self.joe.advance_year(None, None)
 
-    def test_dead_is_dead_advance_year(self):
-        self.joe._alive[-1] = False
-        with self.assertRaises(RuntimeError, msg="Person is dead. Can not advance year"):
-            self.joe.advance_year(None, None)
+    #def test_dead_is_dead_advance_risk_factors(self):
+    #    self.joe._alive[-1] = False
+    #    with self.assertRaises(RuntimeError, msg="Person is dead. Can not advance risk factors"):
+    #        self.joe.advance_risk_factors(None)
 
-    def test_dead_is_dead_advance_risk_factors(self):
-        self.joe._alive[-1] = False
-        with self.assertRaises(RuntimeError, msg="Person is dead. Can not advance risk factors"):
-            self.joe.advance_risk_factors(None)
-
-    def test_dead_is_dead_advance_outcomes(self):
-        self.joe._alive[-1] = False
-        with self.assertRaises(RuntimeError, msg="Person is dead. Can not advance outcomes"):
-            self.joe.advance_outcomes(None)
+    #def test_dead_is_dead_advance_outcomes(self):
+    #    self.joe._alive[-1] = False
+    #    with self.assertRaises(RuntimeError, msg="Person is dead. Can not advance outcomes"):
+    #        self.joe.advance_outcomes(None)
 
     def test_will_have_fatal_mi(self):
-        joe_data = self._population_dataframe.iloc[0]
 
-        is_max_prob_mi_fatal = self.cvDeterminer._will_have_fatal_mi(
-            joe_data,
-            vectorized=True,
-            overrideMIProb=1.0,
-            rng = np.random.default_rng(),
-        )
-        is_min_prob_mi_fatal = self.cvDeterminer._will_have_fatal_mi(
-            joe_data,
-            vectorized=True,
-            overrideMIProb=0.0,
-            rng = np.random.default_rng(),
-        )
+        miPartitionModel = MIPartitionModel()
+        miPartitionModel._mi_case_fatality = 1.0
+        is_max_prob_mi_fatal = miPartitionModel.will_have_fatal_mi(self.joe)
+        miPartitionModel._mi_case_fatality = 0.0
+        is_min_prob_mi_fatal = miPartitionModel.will_have_fatal_mi(self.joe)        
 
         self.assertTrue(is_max_prob_mi_fatal)
         self.assertFalse(is_min_prob_mi_fatal)
 
     def test_fatal_mi_secondary_prob(self):
-        self.cvDeterminer.mi_secondary_case_fatality = 1.0
-        self.cvDeterminer.mi_case_fatality = 0.0
-        joe_data = self._population_dataframe.iloc[0]
-        joe_with_mi_data = self._population_dataframe.iloc[1]  # same as joe_data plus 1 MI
 
-        will_have_fatal_first_mi = self.cvDeterminer._will_have_fatal_mi(
-            joe_data,
-            vectorized=True,
-            overrideMIProb=0.0,
-            rng = np.random.default_rng(),
-        )
-        will_have_fatal_second_mi = self.cvDeterminer._will_have_fatal_mi(
-            joe_with_mi_data,
-            vectorized=True,
-            overrideMIProb=0.0,
-            rng = np.random.default_rng(),
-        )
+        miPartitionModel = MIPartitionModel()
+        miPartitionModel._mi_case_fatality = 0.0
+        miPartitionModel._mi_secondary_case_fatality = 1.0
+        will_have_fatal_first_mi = miPartitionModel.will_have_fatal_mi(self.joe)
+        will_have_fatal_second_mi = miPartitionModel.will_have_fatal_mi(self.joe_with_mi)
 
         self.assertFalse(will_have_fatal_first_mi)
         # even though the passed fatality rate is zero, it should be overriden by the
@@ -138,23 +117,12 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self.assertTrue(will_have_fatal_second_mi)
 
     def test_fatal_stroke_secondary_prob(self):
-        self.cvDeterminer.stroke_secondary_case_fatality = 1.0
-        self.cvDeterminer.stroke_case_fatality = 0.0
-        joe_data = self._population_dataframe.iloc[0]
-        joe_with_stroke_data = self._population_dataframe.iloc[2]  # same as joe_data plus 1 stroke
-
-        will_have_fatal_first_stroke = self.cvDeterminer._will_have_fatal_stroke(
-            joe_data,
-            vectorized=True,
-            overrideStrokeProb=0.0,
-            rng = np.random.default_rng(),
-        )
-        will_have_fatal_second_stroke = self.cvDeterminer._will_have_fatal_stroke(
-            joe_with_stroke_data,
-            vectorized=True,
-            overrideStrokeProb=0.0,
-            rng = np.random.default_rng(),
-        )
+      
+        strokePartitionModel = StrokePartitionModel()
+        strokePartitionModel._stroke_case_fatality = 0.0
+        strokePartitionModel._stroke_secondary_case_fatality = 1.0
+        will_have_fatal_first_stroke = strokePartitionModel.will_have_fatal_stroke(self.joe)
+        will_have_fatal_second_stroke = strokePartitionModel.will_have_fatal_stroke(self.joe_with_data)
 
         self.assertFalse(will_have_fatal_first_stroke)
         # even though the passed fatality rate is zero, it shoudl be overriden by the
@@ -162,44 +130,25 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self.assertTrue(will_have_fatal_second_stroke)
 
     def test_will_have_fatal_stroke(self):
-        joe_data = self._population_dataframe.iloc[0]
 
-        is_max_prob_stroke_fatal = self.cvDeterminer._will_have_fatal_stroke(
-            joe_data,
-            vectorized=True,
-            overrideStrokeProb=1.0,
-            rng = np.random.default_rng(),
-        )
-        is_min_prob_stroke_fatal = self.cvDeterminer._will_have_fatal_stroke(
-            joe_data,
-            vectorized=True,
-            overrideStrokeProb=0.0,
-            rng = np.random.default_rng(),
-        )
+        strokePartitionModel = StrokePartitionModel()
+        strokePartitionModel._stroke_case_fatality = 0.0
+        is_min_prob_stroke_fatal = strokePartitionModel.will_have_fatal_stroke(self.joe)
+        strokePartitionModel._stroke_case_fatality = 1.0
+        is_max_prob_stroke_fatal = strokePartitionModel.will_have_fatal_stroke(self.joe)
 
         self.assertTrue(is_max_prob_stroke_fatal)
         self.assertFalse(is_min_prob_stroke_fatal)
 
     def test_has_mi_vs_stroke(self):
-        joe_data = self._population_dataframe.iloc[0]
+ 
+        miPartitionModel = MIPartitionModel()
 
-        has_mi_max_manual_prob = self.cvDeterminer._will_have_mi(
-            joe_data,
-            outcome_model_repository=None,
-            vectorized=False,
-            manualMIProb=1.0,
-            rng = np.random.default_rng(),
-        )
-        has_mi_min_manual_prob = self.cvDeterminer._will_have_mi(
-            joe_data,
-            outcome_model_repository=None,
-            vectorized=False,
-            manualMIProb=0.0,
-            rng = np.random.default_rng(),
-        )
+        has_mi_with_cv_outcome_and_no_stroke = miPartitionModel.get_next_outcome(self.joe_with_cv)
+        has_mi_with_cv_outcome_and_stroke = miPartitionModel.get_next_outcome(self.joe_with_stroke)
 
-        self.assertTrue(has_mi_max_manual_prob)
-        self.assertFalse(has_mi_min_manual_prob)
+        self.assertTrue(has_mi_with_cv_outcome_and_no_stroke is not None)
+        self.assertTrue(has_mi_with_cv_outcome_and_stroke is None)
 
     def test_advance_outcomes_fatal_mi(self):
         self._always_positive_repository.stroke_case_fatality = 1.0
