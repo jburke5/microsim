@@ -274,7 +274,7 @@ class Population:
         """Calculates the gender and age standardized # of events pers 100,000 person years. """
 
         #standardized population age groups and percentages
-        standardizedPop = StandardizedPopulation(year=2016)
+        standardizedPop = StandardizedPopulation(year=year)
         
         #get [ (gender, age), (gender, age),...] from simulation for all outcomes and do the counting
         outcomeGenderAge = self.get_gender_age_of_all_outcomes_in_sim(outcomeType, personFilter)
