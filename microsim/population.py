@@ -270,12 +270,31 @@ class Population:
                         countsGrouped[gender.value][i] += counts[gender.value][age]
         return countsGrouped
 
-    def calculate_mean_age_sex_standardized_incidence(self, outcomeType, year=2016, personFilter=None):
+    def calculate_mean_age_sex_standardized_incidence(self, outcomeType, year=2016, personFilter=None, adultsOnly=True):
         """Calculates the gender and age standardized # of events pers 100,000 person years. """
 
         #standardized population age groups and percentages
         standardizedPop = StandardizedPopulation(year=year)
-        
+        if adultsOnly: 
+            #a standardized population includes people age 0 and older, but in the simulation we have people 18 and older
+            #so I get the standardized rate in the adult population...
+            ageGroups = dict()
+            populationPercents = dict()
+            popPercentSum = 0
+            for gender in NHANESGender:     
+                #keep age groups with age 18 and older
+                ageGroups[gender.value] = list(filter(lambda x: any(map(lambda age: age>=18, x)), standardizedPop.ageGroups[gender.value]))
+                #keep the corresponding population percents
+                populationPercents[gender.value] = standardizedPop.populationPercents[gender.value][-len(ageGroups[gender.value]):]
+                #rescale the population percents
+                popPercentSum += sum(populationPercents[gender.value])
+            #rescale the population percents
+            for gender in NHANESGender:
+                populationPercents[gender.value] = [x/popPercentSum for x in populationPercents[gender.value]] 
+        else:
+            ageGroups = standardizedPop.ageGroups
+            populationPercents = standardizedPop.populationPercents
+
         #get [ (gender, age), (gender, age),...] from simulation for all outcomes and do the counting
         outcomeGenderAge = self.get_gender_age_of_all_outcomes_in_sim(outcomeType, personFilter)
         outcomeCounts = self.get_gender_age_counts(outcomeGenderAge)
@@ -285,8 +304,8 @@ class Population:
         personYearCounts = self.get_gender_age_counts(personGenderAge)
 
         #the standardized population was in groups, so I need to group my simulation counts too....
-        outcomeCountsGrouped = self.get_gender_age_counts_grouped(outcomeCounts,  standardizedPop.ageGroups)
-        personYearCountsGrouped = self.get_gender_age_counts_grouped(personYearCounts, standardizedPop.ageGroups)
+        outcomeCountsGrouped = self.get_gender_age_counts_grouped(outcomeCounts,  ageGroups)
+        personYearCountsGrouped = self.get_gender_age_counts_grouped(personYearCounts, ageGroups)
 
         #do the calculation
         outcomeRates = dict()
@@ -295,7 +314,7 @@ class Population:
             outcomeRates[gender.value] = [(10**5)*x/y if y!=0 else 0 for x,y in zip(outcomeCountsGrouped[gender.value],
                                                                                     personYearCountsGrouped[gender.value])]
             expectedOutcomes += sum([x*y for x,y in zip(outcomeRates[gender.value],
-                                                        standardizedPop.populationPercents[gender.value])])
+                                                        populationPercents[gender.value])])
         return expectedOutcomes
 
     def get_outcome_risk(self, outcomeType):
