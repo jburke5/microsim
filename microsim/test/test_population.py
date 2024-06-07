@@ -19,7 +19,7 @@ class TestPopulation(unittest.TestCase):
         full_nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
         test_nhanes = full_nhanes.loc[full_nhanes.year == 2015]
         ageMeanList = list()
-        for i in range(10):
+        for i in range(100):
             test_sample = test_nhanes.sample( self.test_n, weights=test_nhanes.WTINT2YR, replace=True )
             ageMeanList += [test_sample.age.mean()]
         self.mean = np.mean(ageMeanList)
