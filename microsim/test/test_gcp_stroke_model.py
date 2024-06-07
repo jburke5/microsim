@@ -454,6 +454,7 @@ class TestCaseFour(Person):
         self._afib = [False]
         
         #assign history to person
+        self.add_outcome(Outcome(OutcomeType.MI, False))
         self.add_outcome(CognitionOutcome(False, False, gcpList[0]))
         for i,age in enumerate(ageList[1:indexStroke+1]):
             self._age.append(ageList[i+1])
