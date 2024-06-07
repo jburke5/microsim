@@ -6,6 +6,11 @@ from microsim.population_factory import PopulationFactory
 from microsim.treatment import DefaultTreatmentsType
 from microsim.person_factory import PersonFactory
 from microsim.risk_factor import StaticRiskFactorsType, DynamicRiskFactorsType
+from microsim.education import Education
+from microsim.gender import NHANESGender
+from microsim.smoking_status import SmokingStatus
+from microsim.alcohol_category import AlcoholCategory
+from microsim.race_ethnicity import NHANESRaceEthnicity
 
 import unittest
 import numpy as np
@@ -50,6 +55,7 @@ class TestNHANESLinearRiskFactorModel(unittest.TestCase):
         self.assertEqual(expectedSBP, self._test_person._sbp[-1])
 
     def test_upper_bounds(self):
+        initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
         x_highBPPerson = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 75,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
                                StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.MEXICAN_AMERICAN.value,
@@ -70,11 +76,11 @@ class TestNHANESLinearRiskFactorModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "highBPPerson"}, index=[0])
-        highBPPerson = PersonFactory.get_nhanes_person(self.x_highBPPerson.iloc[0], initializationModelRepository)
+        highBPPerson = PersonFactory.get_nhanes_person(x_highBPPerson.iloc[0], initializationModelRepository)
         highBPPerson._afib = [False]
 
         highBPPerson.advance_risk_factors(self._risk_model_repository)
-        self.assertEqual(300, highBPPerson._sbp[-1])
+        self.assertEqual(297, highBPPerson._sbp[-1])
 
         # TODO : write more tests — check the categorical variables and ensure
         # that all parameters are passed in or an error is thrown

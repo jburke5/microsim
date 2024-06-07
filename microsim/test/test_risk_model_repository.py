@@ -54,6 +54,9 @@ class TestRiskModelRepository(RiskModelRepository):
                 self.set_null_model_for_name(name)
             else:
                 self.set_default_model_for_name(name)
+        for name in ["age", "pvd"]:
+            self.set_null_model_for_name(name) 
+
 
     def set_default_model_for_name(self, name):
         self._repository[name] = NHANESLinearRiskFactorModel(name, params=TestRiskModelRepository.params, ses=TestRiskModelRepository.ses, resids = pd.Series(np.zeros(10)))
