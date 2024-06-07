@@ -25,11 +25,12 @@ class TestPopulationReporting(unittest.TestCase):
         self.assertEqual(0, self.pop1.get_outcome_count(OutcomeType.DEATH))
 
         # events per 100000 = 100000
-        #self.assertAlmostEqual(
-        #    100000,
-        #    self.pop1.calculate_mean_age_sex_standardized_incidence(OutcomeType.MI),
-        #    delta=0.01,
-        #)
+        # by default, this will be the standardized incidence in the adult population
+        self.assertAlmostEqual(
+            100000,
+            self.pop1.calculate_mean_age_sex_standardized_incidence(OutcomeType.MI),
+            delta=0.01,
+        )
         self.assertAlmostEqual(
             0,
             self.pop1.calculate_mean_age_sex_standardized_incidence(OutcomeType.STROKE),
