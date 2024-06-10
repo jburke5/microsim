@@ -18,10 +18,6 @@ import unittest
 import numpy as np
 import pandas as pd
 
-def initializeAfib(person):
-    return None
-
-
 class TestOutcomeRepository(unittest.TestCase):
     def setUp(self):
         initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
