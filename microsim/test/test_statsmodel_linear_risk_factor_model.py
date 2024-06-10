@@ -21,10 +21,6 @@ import statsmodels.formula.api as statsmodel
 
 initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
 
-def initializeAfib(person):
-    return None
-
-
 class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
     def setUp(self):
         popSize = 100

@@ -29,8 +29,6 @@ from microsim.population_model_repository import PopulationRepositoryType
 from microsim.treatment import TreatmentStrategyStatus
 
 class TestTreatmentStrategy(unittest.TestCase):
-    #def initializeAfib(person):
-    #    return 0 #modified to 0 from None, because afib was utilized as part of a model
 
     def getPerson(self, baselineSBP=140, baselineDBP=80):
         initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
@@ -96,8 +94,8 @@ class TestTreatmentStrategy(unittest.TestCase):
         self.assertEqual(
             self.baselineDBP - self.singleMedStrategy._repository["bp"].dbpLowering, self._test_person._dbp[2]
         )
-        #Q why is this supposed to change from 0 to 1?
-        #self.assertEqual(1, self._test_person._antiHypertensiveCount[2])
+        self.assertEqual(0, self._test_person._antiHypertensiveCount[2])
+        self.assertEqual(1, self._test_person._treatmentStrategies["bp"]["bpMedsAdded"])
 
     def testTreatTo12080Strategy(self):
         dbpAtGoal = self.getPerson(190, 65)
@@ -155,18 +153,11 @@ class TestTreatmentStrategy(unittest.TestCase):
         tsr._repository["bp"].status = TreatmentStrategyStatus.MAINTAIN
         pop.advance(1, treatmentStrategies = tsr)
 
-        #Q: I am not sure what this is testing
-        # should add 4 bp meds for everybody
-        #self.assertEqual(4, alive.totalBPMedsAdded.max())
-        #self.assertEqual(4, alive.totalBPMedsAdded.min())
-
         for j in range(0,100): #our population consists of 100 persons, check all of them
             # checking that anti hypertensives weren't accidentally added
             self.assertEqual(0, pop._people.iloc[j]._antiHypertensiveCount[-1])
             # should add 4 bp meds for everybody
             self.assertEqual(4, pop._people.iloc[j]._treatmentStrategies["bp"]["bpMedsAdded"])
-            #Q: I am not sure what this is testing
-            #self.assertEqual(4, np.array(pop._people.iloc[j]._bpMedsAdded).sum())
             # BP should be lowered by 4*BP lowering effect
             self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, pop._people.iloc[j]._sbp[-1])
 

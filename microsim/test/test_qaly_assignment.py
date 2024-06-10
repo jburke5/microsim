@@ -30,9 +30,6 @@ from microsim.test.outcome_models_repositories import AlwaysNonFatalStroke, Alwa
 initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
 
 class TestQALYAssignment(unittest.TestCase):
-    def initializeAfib(person):
-        return None
-
     def getPerson(self, age=65):
 
         x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: age,
