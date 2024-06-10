@@ -173,7 +173,8 @@ class Trial:
         rep += f"\tTrial completed: {self.completed}\n"
         if self.completed:
             rep += f"Trial results:\n"
-            rep += "\t" +" "*25 + " "*8 + "Z/relRisk" + " "*6 + "Intercept" + " "*11 + "Z SE" + " "*9 + "pValue\n"
+            rep += "\t" +" "*25 + " "*16 + "Z" + " "*6 + "Intercept" + " "*11 + "Z SE" + " "*9 + "pValue\n"
+            rep += "\t" +" "*25 + " "*10 + "relRisk" + " "*4 + "treatedRisk" + " "*4 + "controlRisk" + " "*9 + "|diff|\n"
             for key in self.results.keys():
                 rep += f"\t{key:>25}: "
                 for result in self.results[key]:
