@@ -92,16 +92,10 @@ class TestBasicTrialOperations(unittest.TestCase):
 
     # design a simple trial to only include patients over 40
     def test_simple_trial_inclusion(self):
-        #testTrial = Trial(self.trialDescription, self.targetPopulation, rng = np.random.default_rng())
         tr = Trial(self.trialDescription) 
       
-        #self.assertEqual(self.popSize, len(testTrial.trialPopulation._people))
-        # given that the populations involve ranodmization, we can't come up with a definite value
-        # so, the approximate 99% CI on 50/100 has a LCI of 35...
-        #self.assertGreaterEqual(65, len(testTrial.treatedPop._people))
-        #self.assertLessEqual(35, len(testTrial.treatedPop._people))
-        #self.assertGreaterEqual(65, len(testTrial.untreatePop._people))
-        #self.assertLessEqual(35, len(testTrial.untreatePop._people))
+        self.assertEqual(self.popSize, len(tr.treatedPop._people))
+        self.assertEqual(self.popSize, len(tr.controlPop._people))
 
         for person in tr.treatedPop._people:
             self.assertGreaterEqual(person._age[0],  self.ageThreshold)
