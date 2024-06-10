@@ -359,6 +359,10 @@ class PopulationFactory:
         pop = PopulationFactory.get_nhanes_population(n=n, year=year, personFilters=None, nhanesWeights=False, distributions=False, customWeights=weights)
         return pop
 
+    @staticmethod
+    def get_cloned_people(person, n):
+        return pd.Series([person.__deepcopy__() for i in range(n)])
+
 
 
 

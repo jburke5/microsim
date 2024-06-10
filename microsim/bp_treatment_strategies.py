@@ -240,7 +240,8 @@ class jnc8ForHighRiskLowBpTarget(jnc8ForHighRisk):
     def __init__(self, targetRisk, targetBP):
         super().__init__(targetRisk)
         self.targetBP = targetBP
-        
+        self.status = TreatmentStrategyStatus.BEGIN
+    
     def get_goal(self, person):
         return self.targetBP 
     

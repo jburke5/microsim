@@ -667,37 +667,37 @@ class Population:
  
 #NOTE: this class used to be a subclass of NHANESDirectSamplePopulation which is no longer in use...
 #so we will need to update this class...and also see how it relates to the StandardizedPopulation class as well
-class NHANESAgeStandardPopulation:
+#class NHANESAgeStandardPopulation:
 #class NHANESAgeStandardPopulation(NHANESDirectSamplePopulation):
-    def __init__(self, n, year, rng=None):
-        nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
-        weights = self.get_weights(year)
-        weights["gender"] = weights["female"] + 1
-        weights = pd.merge(nhanes, weights, how="left", on=["age", "gender"]).popWeight
-        super().__init__(n=n, year=year, weights=weights, rng=rng)
+#    def __init__(self, n, year, rng=None):
+#        nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
+#        weights = self.get_weights(year)
+#        weights["gender"] = weights["female"] + 1
+#        weights = pd.merge(nhanes, weights, how="left", on=["age", "gender"]).popWeight
+#        super().__init__(n=n, year=year, weights=weights, rng=rng)
 
-    def get_weights(self, year):
-        standard = self.build_age_standard(year)
-        return self.get_population_weighted_standard(standard)
+#    def get_weights(self, year):
+#        standard = self.build_age_standard(year)
+#        return self.get_population_weighted_standard(standard)
 
-    def get_population_weighted_standard(self, standard):
-        rows = []
-        for age in range(1, 151):
-            for female in range(0, 2):
-                dfRow = standard.loc[
-                    (age >= standard.lowerAgeBound)
-                    & (age <= standard.upperAgeBound)
-                    & (standard.female == female)
-                ]
-                upperAge = dfRow["upperAgeBound"].values[0]
-                lowerAge = dfRow["lowerAgeBound"].values[0]
-                totalPop = dfRow["standardPopulation"].values[0]
-                rows.append(
-                    {"age": age, "female": female, "pop": totalPop / (upperAge - lowerAge + 1)}
-                )
-        df = pd.DataFrame(rows)
-        df["popWeight"] = df["pop"] / df["pop"].sum()
-        return df
+#    def get_population_weighted_standard(self, standard):
+#        rows = []
+#        for age in range(1, 151):
+#            for female in range(0, 2):
+#                dfRow = standard.loc[
+#                    (age >= standard.lowerAgeBound)
+#                    & (age <= standard.upperAgeBound)
+#                    & (standard.female == female)
+#                ]
+#                upperAge = dfRow["upperAgeBound"].values[0]
+#                lowerAge = dfRow["lowerAgeBound"].values[0]
+#                totalPop = dfRow["standardPopulation"].values[0]
+#                rows.append(
+#                    {"age": age, "female": female, "pop": totalPop / (upperAge - lowerAge + 1)}
+#                )
+#        df = pd.DataFrame(rows)
+#        df["popWeight"] = df["pop"] / df["pop"].sum()
+#        return df
 
 
 class ClonePopulation(Population):
