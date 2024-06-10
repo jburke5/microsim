@@ -31,7 +31,6 @@ from microsim.outcome import OutcomeType
 class TestDementiaModel(unittest.TestCase):
 
     def setUp(self):
-        #popModelRepository = PopulationFactory.get_nhanes_population_model_repo()._repository
         initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
 
         # 2740200061fos
