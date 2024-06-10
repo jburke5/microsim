@@ -538,15 +538,10 @@ class TestGCPStrokeModel(unittest.TestCase):
             self._test_case_one._expectedLinearPredictor+5,
             places=2)
 
-    #def test_randomness_vectorized_independent_per_draw(self):
-
-    #     seedSequence = np.random.SeedSequence()
-    #     rngStream = np.random.default_rng(seed=seedSequence)  
-
-    #     #should include both residual and random effect
-    #     draw1 = GCPStrokeModel().get_risk_for_person(self._test_case_one_df.iloc[0], rng=rngStream, years=1, vectorized=True, test=False)
-    #     draw2 = GCPStrokeModel().get_risk_for_person(self._test_case_one_df.iloc[0], rng=rngStream, years=1, vectorized=True, test=False)
-    #     self.assertNotEqual(draw1, draw2)   
+    def test_randomness_independent_per_draw(self):
+         draw1 = GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=self._test_case_one._rng, years=1, vectorized=False, test=False)
+         draw2 = GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=self._test_case_one._rng, years=1, vectorized=False, test=False)
+         self.assertNotEqual(draw1, draw2) 
 
 if __name__ == "__main__":
     unittest.main()         
