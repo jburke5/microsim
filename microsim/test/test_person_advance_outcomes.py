@@ -64,10 +64,13 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self.joe_with_stroke._outcomes[OutcomeType.STROKE] = [(self.joe_with_stroke._age[-1], Outcome(OutcomeType.STROKE, False))]
         self.joe_with_stroke._outcomes[OutcomeType.CARDIOVASCULAR] = [(self.joe_with_stroke._age[-1], Outcome(OutcomeType.CARDIOVASCULAR, False))]
 
-        #self._always_positive_repository = AlwaysPositiveOutcomeRepository()
-        #self._always_negative_repository = AlwaysNegativeOutcomeRepository()
-        #self.cvDeterminer = CVOutcomeDetermination(self._always_positive_repository)
         self.miPartitionModel = MIPartitionModel()
+
+    #Q: the person advance method does not predict a future if person.is_dead
+    #I do not see a usefulness for raise an error, you should be able to attempt to advance a dead person
+    #but it should not do anything
+    #Q: also, the user should not advance just risk factors or treatments, the code is designed for use
+    #with the advance method
 
     #def test_dead_is_dead_advance_year(self):
     #    self.joe._alive[-1] = False
