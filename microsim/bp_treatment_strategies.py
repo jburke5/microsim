@@ -10,6 +10,9 @@ from abc import ABC
 # BP treamtent classees modify, only, the number of BP medications added
 # the total number of BP medications are the number added at baseline (antiHypertensiveCount)
 # combined with the number added, additionalliy, via treatment algorithms
+
+#bpMedsAdded is the total number of bp medications that have been added so far over all completed waves
+
 class BaseTreatmentStrategy:
     MAX_BP_MEDS = 4
     SBP_MULTIPLIER = 5.5

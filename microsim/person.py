@@ -258,7 +258,7 @@ class Person:
 
     #Q: the term bp seems inconsistent here, maybe change bp to hypertensive?
     @property 
-    def _current_bp_treatment(self):
+    def _any_antiHypertensive(self):
         return self._antiHypertensiveCount[-1] > 0
 
     @property
