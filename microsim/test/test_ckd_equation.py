@@ -112,9 +112,6 @@ class TestCKDEquation(unittest.TestCase):
         self._white_male_low_cr = PersonFactory.get_nhanes_person(self.x_white_male_low_cr.iloc[0], initializationModelRepository)
         self._white_male_low_cr._afib = [False]
 
-    def initializeAfib(person):
-        return None
-
     def testGFRs(self):
         blackFemaleHighCr = (
             166
