@@ -83,7 +83,7 @@ class PersonFactory:
         if "selfReportStrokeAge" in x.index:
             #add pre-simulation stroke outcomes
             selfReportStrokeAge=x.selfReportStrokeAge
-            #Q: we should not add the stroke outcome in case of "else"?
+            #Q: we should not add the stroke outcome in case of "else"? A: No, this is the way it should be
             if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
                 selfReportStrokeAge = selfReportStrokeAge if selfReportStrokeAge <= x.age else x.age
                 personOutcomes[OutcomeType.STROKE].append((selfReportStrokeAge, StrokeOutcome(False, None, None, None, priorToSim=True)))

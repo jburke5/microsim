@@ -11,7 +11,11 @@ from abc import ABC
 # the total number of BP medications are the number added at baseline (antiHypertensiveCount)
 # combined with the number added, additionalliy, via treatment algorithms
 
-#bpMedsAdded is the total number of bp medications that have been added so far over all completed waves
+# bpMedsAdded is the total number of bp medications that have been added so far over all completed waves
+
+# some of these treatment strategies are purely theoretical due to their assumptions 
+# for example the assumption that the 10th bpMed will lower SBP by the same amount as the 1st bpMed
+# even though all of these classes may be used in a simulation, some are more practical, some are more theoretical
 
 class BaseTreatmentStrategy:
     MAX_BP_MEDS = 4

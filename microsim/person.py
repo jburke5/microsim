@@ -716,7 +716,6 @@ class Person:
         return self.get_wave_for_age(self.get_min_age_of_first_outcomes_or_last_age(outcomeTypeList, inSim=inSim))
 
     def get_age_at_last_outcome(self, outcomeType):
-        #Q: should we move the age to the outcome class?
         #TO DO: need to include the selfReported argument to the MI phenotype as I did for the stroke outcome
         return self._outcomes[outcomeType][-1][0] if (len(self._outcomes[outcomeType]) > 0) else None
 
