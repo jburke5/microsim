@@ -11,7 +11,7 @@ from microsim.test.outcome_models_repositories import AlwaysNonFatalStroke, Alwa
 
 class TestPopulationReporting(unittest.TestCase):
     def setUp(self):
-        self.popSize = 10000
+        self.popSize = 100000
         self.pop1 = PopulationFactory.get_nhanes_age_standardized_population(self.popSize, 1999)
 
     def testAllCasesHaveEvent(self):
