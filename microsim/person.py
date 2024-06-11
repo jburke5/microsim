@@ -256,7 +256,6 @@ class Person:
         else:
             return antiHypertensiveCount
 
-    #Q: the term bp seems inconsistent here, maybe change bp to hypertensive?
     @property 
     def _any_antiHypertensive(self):
         return self._antiHypertensiveCount[-1] > 0

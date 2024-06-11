@@ -20,7 +20,7 @@ class StrokeNihssModel(StatsModelLinearRiskFactorModel):
             "smokingStatus[T.2]":  -0.1257199 ,  #currsmoker_sim
             "anyPhysicalActivity": -0.3476088,   #physact_sim
             "afib":                 1.794008,    #hxafib_sim     
-            "current_bp_treatment": 0.6804093,   #htntx_sim
+            "any_antiHypertensive": 0.6804093,   #htntx_sim
             "statin":              -0.1660485,   #choltx_sim
             "sbp":                  0.0131255 ,  #sbpstkcog_sim
             "dbp":                 -0.0144218,   #dbpstkcog_sim 
@@ -85,7 +85,7 @@ class StrokeSubtypeCEModel(StatsModelRelRiskFactorModel):
            "smokingStatus[T.2]":  0.0464248,   #currsmoker_sim
            "anyPhysicalActivity": 0.171529,    #physact_sim
            "afib":                1.858444,    #hxafib_sim     
-           "current_bp_treatment":0.1267211,   #htntx_sim
+           "any_antiHypertensive":0.1267211,   #htntx_sim
            "statin":              0.0405856,   #choltx_sim
            "sbp":                 0.0044229,   #sbpstkcog_sim
            "dbp":                -0.0211307,   #dbpstkcog_sim 
@@ -123,7 +123,7 @@ class StrokeSubtypeLVModel(StatsModelRelRiskFactorModel):
             "smokingStatus[T.2]": -0.4087069,   #currsmoker_sim
             "anyPhysicalActivity": 0.3283082,   #physact_sim
             "afib":                0.7040827,   #hxafib_sim     
-            "current_bp_treatment":0.1878509,   #htntx_sim
+            "any_antiHypertensive":0.1878509,   #htntx_sim
             "statin":              0.1681594,   #choltx_sim
             "sbp":                 0.0105225,   #sbpstkcog_sim
             "dbp":                -0.0154197,   #dbpstkcog_sim 
@@ -161,7 +161,7 @@ class StrokeSubtypeSVModel(StatsModelRelRiskFactorModel):
             "smokingStatus[T.2]":   0.0207556,   #currsmoker_sim
             "anyPhysicalActivity":  0.1915707,   #physact_sim
             "afib":                -0.0698982,   #hxafib_sim     
-            "current_bp_treatment":-0.0168805,   #htntx_sim
+            "any_antiHypertensive":-0.0168805,   #htntx_sim
             "statin":              -0.4778607,   #choltx_sim
             "sbp":                  0.0101797,   #sbpstkcog_sim
             "dbp":                 -0.0110669,   #dbpstkcog_sim 
