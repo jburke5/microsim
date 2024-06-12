@@ -5,6 +5,7 @@ from scipy.stats import multivariate_normal
 from enum import Enum
 
 from microsim.person_factory import PersonFactory, microsimToNhanes
+from microsim.person_filter_factory import PersonFilterFactory
 from microsim.population import Population
 from microsim.afib_model import AFibPrevalenceModel
 from microsim.pvd_model import PVDPrevalenceModel
@@ -362,7 +363,6 @@ class PopulationFactory:
     @staticmethod
     def get_cloned_people(person, n):
         return pd.Series([person.__deepcopy__() for i in range(n)])
-
 
 
 

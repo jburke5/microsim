@@ -1,7 +1,7 @@
 import copy
 import logging
 import multiprocessing as mp
-
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from pandarallel import pandarallel
@@ -526,8 +526,59 @@ class Population:
         for i in range(len(outcomes)):
             print(f"{outcomes[i].value:>30} {standardizedRates[i]:> 10.1f} {standardizedRatesBlack[i]:> 10.1f} {standardizedRatesWhite[i]:> 10.1f}")
 
-    def print_dementia_incidence(self):
+    def print_dementia_incidence(self, path=None):
+        '''Produces the dementia incidence rate by age.'''
         dementiaIncidentRate = self.get_raw_incidence_by_age(OutcomeType.DEMENTIA)
-        for key in sorted(dementiaIncidentRate.keys()):
-            print(f"{key:>50} {dementiaIncidentRate[key]: 6.3f}")
+        plt.scatter(dementiaIncidentRate.keys(), dementiaIncidentRate.values())
+        plt.xlabel("age")
+        plt.ylabel("dementia incidence rate")
+        if path is None:
+            plt.show()
+        else:
+            plt.savefig(path+"/dementia-incidence-rate.png")
+            plt.clf()
+        ageDementia = list(map(lambda y: (y._age[-1], len(y._outcomes[OutcomeType.DEMENTIA])>0),
+                               list(filter(lambda x: x.is_alive, self._people))))
+        nAlive = len(ageDementia)
+        ageDementia = list(filter(lambda x: x[1]==True, ageDementia))
+        ageDementia = [int(x[0]) for x in ageDementia]
+        plt.hist(ageDementia)
+        plt.xlabel("age")
+        plt.title(f"dementia cases at end of simulation ({nAlive} Person objects alive)")
+        if path is None:
+            plt.show()
+        else:
+            plt.savefig(path+"/dementia-cases-at-end.png")
+            plt.clf()
  
+    def print_vascular_rfs_over_time(self, other, path=None):
+        '''This function takes a population and analyzes the distribution of its risk factors.
+           These distributions are then compared to the same distributions from other. 
+           other: a Population instance.
+           tmpDir: a complete path, if the user wants to save the plots instead of displaying them.'''
+        nRows = round(len(DynamicRiskFactorsType)/2)
+        fig, ax = plt.subplots(nRows, 2, figsize=(17,15))
+        row=-1
+        for i,rf in enumerate(DynamicRiskFactorsType):
+            rfList = self.get_attr_at_index(rf, -1)
+            if i%2==0:
+                row += 1
+                col = 0
+            else:
+                col = 1
+            if rf.value in microsimToNhanes.keys():
+                rfListNhanes = other.get_attr_at_index(rf, -1)
+                ax[row,col].hist([rfList, rfListNhanes], bins=20, density=True)
+            else:
+                ax[row,col].hist(rfList, bins=20, density=True)
+            ax[row,col].set_xlabel(rf.value)
+            #ax[row,col].set_ylabel("probability density")
+        plt.suptitle("probability densities for all dynamic risk factors")
+        #plt.subplots_adjust(wspace=0.5, hspace=0.7)
+        plt.tight_layout()
+        if path is None:
+            plt.show()
+        else:
+            plt.savefig(path+"/probabilities-for-all-rf.png")
+            plt.clf()
+        self.print_lastyear_summary_comparison(other)
