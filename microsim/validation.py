@@ -1,3 +1,5 @@
+import numpy as np
+
 from microsim.population_factory import PopulationFactory
 from microsim.person_filter_factory import PersonFilterFactory
 from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
