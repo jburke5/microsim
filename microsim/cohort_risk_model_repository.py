@@ -17,7 +17,6 @@ class CohortStaticRiskFactorModelRepository:
 
 class CohortDynamicRiskFactorModelRepository(RiskModelRepository):
     def __init__(self):
-        #Q do we need the 2 arguments in super()? I deleted them...
         super().__init__()
         self._repository[DynamicRiskFactorsType.AFIB.value] = AFibIncidenceModel()
         self._repository[DynamicRiskFactorsType.PVD.value] = PVDIncidenceModel()
@@ -41,7 +40,6 @@ class CohortDynamicRiskFactorModelRepository(RiskModelRepository):
 
 class CohortDefaultTreatmentModelRepository(RiskModelRepository):
     def __init__(self):
-        #Q: do we need the two arguments in super()?
         super().__init__()
         self._initialize_linear_probability_risk_model(DefaultTreatmentsType.STATIN.value, "statinCohortModel")
         self._initialize_int_rounded_linear_risk_model(DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value, "antiHypertensiveCountCohortModel")

@@ -93,12 +93,6 @@ class NHANESLinearRiskFactorModel:
             dbp=person._dbp[-1], a1c=person._a1c[-1], hdl=person._hdl[-1], totChol=person._totChol[-1], bmi=person._bmi[-1], 
             raceEthnicity=person._raceEthnicity, smokingStatus=person._smokingStatus, rng=person._rng)
 
-    def estimate_next_risk_vectorized(self, x, rng=None):
-        #rng = np.random.default_rng(rng)
-        #print(list(x.index))
-        return self.estimate_risk_for_params(age=x.age, gender=x.gender, sbp=x.sbp,
-            dbp=x.dbp, a1c=x.a1c, hdl=x.hdl, totChol=x.totChol, bmi=x.bmi, 
-            raceEthnicity=x.raceEthnicity, smokingStatus=x.smokingStatus, rng=rng)
     
     """A stub method so that sub-classes can override to transform the risks """
 

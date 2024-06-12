@@ -510,22 +510,22 @@ class TestGCPStrokeModel(unittest.TestCase):
     def test_expected_linear_predictor(self):
 
         self.assertAlmostEqual(
-            GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=None, years=1, vectorized=False, test=True),
+            GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=None, years=1, test=True),
             self._test_case_one._expectedLinearPredictor,
             places=2)
             
         self.assertAlmostEqual(
-            GCPStrokeModel().get_risk_for_person(self._test_case_two, rng=None, years=1, vectorized=False, test=True),
+            GCPStrokeModel().get_risk_for_person(self._test_case_two, rng=None, years=1, test=True),
             self._test_case_two._expectedLinearPredictor,
             places=2)
 
         self.assertAlmostEqual(
-            GCPStrokeModel().get_risk_for_person(self._test_case_three, rng=None, years=1, vectorized=False, test=True),
+            GCPStrokeModel().get_risk_for_person(self._test_case_three, rng=None, years=1, test=True),
             self._test_case_three._expectedLinearPredictor,
             places=2)
 
         self.assertAlmostEqual(
-            GCPStrokeModel().get_risk_for_person(self._test_case_four, rng=self._test_case_four._rng, years=1, vectorized=False, test=True),
+            GCPStrokeModel().get_risk_for_person(self._test_case_four, rng=self._test_case_four._rng, years=1, test=True),
             self._test_case_four._expectedLinearPredictor,
             places=2)
 
@@ -534,13 +534,13 @@ class TestGCPStrokeModel(unittest.TestCase):
     
          self._test_case_one._randomEffects["gcpStroke"] = self._test_case_one._randomEffects["gcpStroke"] + 5
          self.assertAlmostEqual(
-            GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=self._test_case_one._rng, years=1, vectorized=False, test=True),
+            GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=self._test_case_one._rng, years=1, test=True),
             self._test_case_one._expectedLinearPredictor+5,
             places=2)
 
     def test_randomness_independent_per_draw(self):
-         draw1 = GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=self._test_case_one._rng, years=1, vectorized=False, test=False)
-         draw2 = GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=self._test_case_one._rng, years=1, vectorized=False, test=False)
+         draw1 = GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=self._test_case_one._rng, years=1, test=False)
+         draw2 = GCPStrokeModel().get_risk_for_person(self._test_case_one, rng=self._test_case_one._rng, years=1, test=False)
          self.assertNotEqual(draw1, draw2) 
 
 if __name__ == "__main__":

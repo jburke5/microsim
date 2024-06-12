@@ -2,6 +2,7 @@ from microsim.ascvd_outcome_model import ASCVDOutcomeModel
 from microsim.regression_model import RegressionModel
 from microsim.data_loader import load_model_spec
 from microsim.outcome import Outcome, OutcomeType
+from microsim.treatment import TreatmentStrategiesType
 
 class CVModelBase(ASCVDOutcomeModel):
     """CV is an outcome type that we need to use with some outcome type model implementations (stroke and mi).
@@ -12,6 +13,9 @@ class CVModelBase(ASCVDOutcomeModel):
         self._secondary_mi_case_fatality = 0.13
         self._stroke_case_fatality = 0.15
         self._secondary_stroke_case_fatality = 0.15
+        #This is the average change of the intercept, see the models for male and female below for more details of
+        #the optimized intercepts I found from simulations (and then obtained this average I use here)
+        self.interceptChangeFor1bpMedsAdded = -0.1103125
         super().__init__(RegressionModel(
                             coefficients=coefficients,
                             coefficient_standard_errors={key: 0 for key in coefficients},
@@ -19,9 +23,11 @@ class CVModelBase(ASCVDOutcomeModel):
                             residual_standard_deviation=0,),
                          tot_chol_hdl_ratio=tot_chol_hdl_ratio,
                          black_race_x_tot_chol_hdl_ratio=black_race_x_tot_chol_hdl_ratio,)
-        
+
     def get_risk_for_person(self, person, years=1):
-        cvRisk = super().get_risk_for_person(person, person._rng, years=years)
+        #risk without any adjustment for bp meds
+        cvRisk = super().get_risk_for_person(person, person._rng, years=years, interceptChangeFor1bpMedsAdded=self.interceptChangeFor1bpMedsAdded)
+
         if (person._mi) | (person._stroke):
             cvRisk = cvRisk * self._secondary_prevention_multiplier
         return cvRisk
@@ -40,8 +46,13 @@ class CVModelBase(ASCVDOutcomeModel):
 
 class CVModelMale(CVModelBase):
     """CV model details for male gender."""
-    interceptChangeFor1bpMedsAdded = -0.1103125
-    #interceptChangeFor1bpMedsAdded = -0.10537 #mean
+    #Some information about intercepts and bpMedsAdded...
+    #interceptChangeFor1bpMedsAdded = -0.10537 #this is the mean from all bpMedsAdded 1,2,3,4
+    #the optimal intercepts follow...these were found independently from each other from simulations...
+    #intercept = -11.7902925  #1bpMedsAdded
+    #intercept = -11.91125    #2
+    #intercept = -12.00771437 #3
+    #intercept = -12.101460   #4
 
     def __init__(self, intercept = -11.679980):
         maleCVCoefficients = {
@@ -67,58 +78,15 @@ class CVModelMale(CVModelBase):
         black_race_x_tot_chol_hdl_ratio=-0.117749
         super().__init__(maleCVCoefficients, tot_chol_hdl_ratio, black_race_x_tot_chol_hdl_ratio)
 
-class CVModelMaleFor1bpMedsAdded(CVModelMale):
-    def __init__(self):
-        #super().__init__(intercept = -11.7902925)
-        super().__init__(intercept = -11.679980 + 1*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelMaleFor2bpMedsAdded(CVModelMale):
-    def __init__(self):
-        #super().__init__(intercept = -11.91125)
-        super().__init__(intercept = -11.679980 + 2*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelMaleFor3bpMedsAdded(CVModelMale):
-    def __init__(self):
-        #super().__init__(intercept = -12.007714375)
-        super().__init__(intercept = -11.679980 + 3*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelMaleFor4bpMedsAdded(CVModelMale):
-    def __init__(self):
-        #super().__init__(intercept = -12.101460)
-        super().__init__(intercept = -11.679980 + 4*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelMaleFor5bpMedsAdded(CVModelMale):
-    def __init__(self):
-        super().__init__(intercept = -11.679980 + 5*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelMaleFor6bpMedsAdded(CVModelMale):
-    def __init__(self):
-        super().__init__(intercept = -11.679980 + 6*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelMaleFor7bpMedsAdded(CVModelMale):
-    def __init__(self):
-        super().__init__(intercept = -11.679980 + 7*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelMaleFor8bpMedsAdded(CVModelMale):
-    def __init__(self):
-        super().__init__(intercept = -11.679980 + 8*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelMaleFor9bpMedsAdded(CVModelMale):
-    def __init__(self):
-        super().__init__(intercept = -11.679980 + 9*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelMaleFor10bpMedsAdded(CVModelMale):
-    def __init__(self):
-        super().__init__(intercept = -11.679980 + 10*self.interceptChangeFor1bpMedsAdded )
-
-#class CVModelMaleForNbpMedsAdded(CVModelMale):
-#    def __init__(self):
-#        super().__init__(intercept =  -11.679980) 
-
 class CVModelFemale(CVModelBase):
     """CV model details for female gender."""
     interceptChangeFor1bpMedsAdded = -0.1103125
     #interceptChangeFor1bpMedsAdded = -0.10537 #mean
+    #Some information about the optimal intercepts for 1,2,3,4 bpMedsAdded
+    #intercept = -12.9334225 #for 1 bpMedsAdded
+    #intercept = -13.03125   #2
+    #intercept = -13.150500  #3
+    #intercept = -13.244250  #4
 
     def __init__(self, intercept = -12.823110):
         femaleCVCoefficients = {
@@ -144,51 +112,4 @@ class CVModelFemale(CVModelBase):
         black_race_x_tot_chol_hdl_ratio=0.070498
         super().__init__(femaleCVCoefficients, tot_chol_hdl_ratio, black_race_x_tot_chol_hdl_ratio)
 
-class CVModelFemaleFor1bpMedsAdded(CVModelFemale):
-    def __init__(self):
-        #super().__init__(intercept = -12.9334225)
-        super().__init__(intercept = -12.823110 + 1*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelFemaleFor2bpMedsAdded(CVModelFemale):
-    def __init__(self):
-        #super().__init__(intercept = -13.03125)
-        super().__init__(intercept = -12.823110 + 2*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelFemaleFor3bpMedsAdded(CVModelFemale):
-    def __init__(self):
-        #super().__init__(intercept = -13.150500)
-        super().__init__(intercept = -12.823110 + 3*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelFemaleFor4bpMedsAdded(CVModelFemale):
-    def __init__(self):
-        #super().__init__(intercept = -13.244250 )
-        super().__init__(intercept = -12.823110 + 4*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelFemaleFor5bpMedsAdded(CVModelFemale):
-    def __init__(self):
-        super().__init__(intercept = -12.823110 + 5*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelFemaleFor6bpMedsAdded(CVModelFemale):
-    def __init__(self):
-        super().__init__(intercept = -12.823110 + 6*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelFemaleFor7bpMedsAdded(CVModelFemale):
-    def __init__(self):
-        super().__init__(intercept = -12.823110 + 7*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelFemaleFor8bpMedsAdded(CVModelFemale):
-    def __init__(self):
-        super().__init__(intercept = -12.823110 + 8*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelFemaleFor9bpMedsAdded(CVModelFemale):
-    def __init__(self):
-        super().__init__(intercept = -12.823110 + 9*self.interceptChangeFor1bpMedsAdded )
-
-class CVModelFemaleFor10bpMedsAdded(CVModelFemale):
-    def __init__(self):
-        super().__init__(intercept = -12.823110 + 10*self.interceptChangeFor1bpMedsAdded )
-
-#class CVModelFemaleForNbpMedsAdded(CVModelFemale):
-#    def __init__(self):
-#        super().__init__(intercept =  -12.823110)
 

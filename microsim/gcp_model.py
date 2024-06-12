@@ -116,33 +116,14 @@ class GCPModel:
         #    self._outcome_model_repository.report_result('gcp', reportingDict)
         return xb
 
-    def get_risk_for_person(self, person, rng=None, years=1, vectorized=False, test=False):
+    def get_risk_for_person(self, person, rng=None, years=1, test=False):
         if "gcp" not in list(person._randomEffects.keys()):
             person._randomEffects["gcp"] = person._rng.normal(0, 4.84)
-        random_effect = person.gcpRandomEffect if vectorized else person._randomEffects["gcp"] 
+        random_effect = person._randomEffects["gcp"] 
         residual = 0 if test else rng.normal(0.38, 6.99)
 
         linPred = 0
-        if vectorized:
-            linPred = self.calc_linear_predictor_for_patient_characteristics(
-                yearsInSim=person.totalYearsInSim,
-                raceEthnicity=person.raceEthnicity,
-                gender=person.gender,
-                baseAge=person.baseAge,
-                education=person.education,
-                alcohol=person.alcoholPerWeek,
-                smokingStatus=person.smokingStatus,
-                bmi=person.bmi,
-                waist=person.waist,
-                totChol=person.totChol,
-                meanSBP=person.meanSbp,
-                anyAntiHpertensive=((person.antiHypertensiveCount + person.totalBPMedsAdded)> 0),
-                fastingGlucose=Person.convert_a1c_to_fasting_glucose(person.a1c),
-                physicalActivity=person.anyPhysicalActivity,
-                afib=person.afib,
-            )
-        else:
-            linPred = self.calc_linear_predictor_for_patient_characteristics(
+        linPred = self.calc_linear_predictor_for_patient_characteristics(
                 yearsInSim=person.get_years_in_simulation(),
                 raceEthnicity=person._raceEthnicity,
                 gender=person._gender,

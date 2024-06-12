@@ -66,22 +66,6 @@ class PVDPrevalenceModel:
 
         return person._rng.uniform()<risk if boolean else risk
 
-    def estimate_next_risk_vectorized(self, x, rng=None, boolean=True):
-
-        lp = self.calc_linear_predictor_for_patient_characteristics(
-                 x.age,
-                 x.sbp,
-                 x.dbp,
-                 x.totChol,
-                 x.hdl,
-                 x.gender,
-                 x.smokingStatus,
-                 x.raceEthnicity)
-  
-        risk = np.exp(lp)/(1+np.exp(lp)) #this is a logistic model
-
-        return rng.uniform()<risk if boolean else risk
-
 # developed using the PVD prevalence model above, see pvdModelDevelopment notebooks for details
 class PVDIncidenceModel:
     def  __init__(self):
@@ -149,22 +133,6 @@ class PVDIncidenceModel:
 
         return person._rng.uniform()<risk
 
-    def estimate_next_risk_vectorized(self, x, rng=None):
-
-        lp = self.calc_linear_predictor_for_patient_characteristics(
-                 x.age,
-                 x.sbp,
-                 x.dbp,
-                 x.totChol,
-                 x.hdl,
-                 x.gender,
-                 x.smokingStatus,
-                 x.raceEthnicity,
-                 x.pvd)
-
-        risk = np.exp(lp)/(1+np.exp(lp)) #this is a logistic model
-
-        return rng.uniform()<risk
 
 
 

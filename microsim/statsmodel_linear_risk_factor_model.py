@@ -27,7 +27,7 @@ class StatsModelLinearRiskFactorModel:
 
     # method to be overriden by models that want to, in addition to the risks estimated by
     # the regression coefficients loaded from a model, also be able to apply some manual parameters.
-    def get_manual_parameters(self, vectorized):
+    def get_manual_parameters(self):
         return {}
 
     def get_keys_for_transforms(self):
@@ -95,7 +95,7 @@ class StatsModelLinearRiskFactorModel:
 
             linearPredictor += coeff_val * model_argument
 
-        for coeff_name, manual_tuple in self.get_manual_parameters(False).items():
+        for coeff_name, manual_tuple in self.get_manual_parameters().items():
             # the tuple gives one item as the regression coefficent and the second item as a method
             # to get the values from a person
             linearPredictor += manual_tuple[0] * manual_tuple[1](person)

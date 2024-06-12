@@ -161,7 +161,7 @@ class TestOutcomeRepository(unittest.TestCase):
     def test_calculate_actual_ten_year_risk_for_person(self):
         p1_model = self._outcome_model_repository._repository[OutcomeType.CARDIOVASCULAR].select_outcome_model_for_person(self._black_female)
         p1_ten_year_risk = p1_model.transform_to_ten_year_risk(
-            p1_model.get_one_year_linear_predictor(self._black_female, vectorized=False)
+            p1_model.get_one_year_linear_predictor(self._black_female)
         )
         self.assertAlmostEqual(0.017654, p1_ten_year_risk, delta=0.00001)
 
@@ -170,25 +170,25 @@ class TestOutcomeRepository(unittest.TestCase):
         # the race interaction term
         p2_model = self._outcome_model_repository._repository[OutcomeType.CARDIOVASCULAR].select_outcome_model_for_person(self._black_male)
         p2_ten_year_risk = p2_model.transform_to_ten_year_risk(
-            p2_model.get_one_year_linear_predictor(self._black_male, vectorized=False)
+            p2_model.get_one_year_linear_predictor(self._black_male)
         )
         self.assertAlmostEqual(0.03476, p2_ten_year_risk, delta=0.00001)
 
     def test_approximate_one_year_risk_for_person(self):
 
         p1_model = self._outcome_model_repository._repository[OutcomeType.CARDIOVASCULAR].select_outcome_model_for_person(self._black_female)
-        p1_one_year_risk = p1_model.get_risk_for_person(self._black_female, years=1, vectorized=False)
+        p1_one_year_risk = p1_model.get_risk_for_person(self._black_female, years=1)
         self.assertAlmostEqual(0.017654 / 10, p1_one_year_risk, delta=0.03)
 
         p2_model = self._outcome_model_repository._repository[OutcomeType.CARDIOVASCULAR].select_outcome_model_for_person(self._black_male)
-        p2_one_year_risk = p2_model.get_risk_for_person(self._black_male, years=1, vectorized=False)
+        p2_one_year_risk = p2_model.get_risk_for_person(self._black_male, years=1)
         self.assertAlmostEqual(0.03476 / 10, p2_one_year_risk, delta=0.03)
 
     # details of risk worked out in example_treated_ascvd_scenario.xlsx
     def test_calculate_actual_ten_year_risk_for_treated_person(self):
         model = self._outcome_model_repository._repository[OutcomeType.CARDIOVASCULAR].select_outcome_model_for_person(self._treated_black_male)
         actual_ten_year_risk = model.transform_to_ten_year_risk(
-           model.get_one_year_linear_predictor(self._treated_black_male, vectorized=False)
+           model.get_one_year_linear_predictor(self._treated_black_male)
         )
         self.assertAlmostEqual(0.069810753, actual_ten_year_risk, delta=0.00001)
 

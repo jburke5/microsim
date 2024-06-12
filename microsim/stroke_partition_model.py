@@ -4,6 +4,7 @@ from microsim.data_loader import load_model_spec
 from microsim.outcome import OutcomeType, Outcome
 from microsim.outcome_details.stroke_details import StrokeSubtypeModelRepository, StrokeNihssModel, StrokeTypeModel
 from microsim.stroke_outcome import StrokeOutcome, StrokeSubtype, StrokeType, Localization
+from microsim.treatment import TreatmentStrategiesType
 
 import scipy.special as scipySpecial
 
@@ -16,7 +17,6 @@ import scipy.special as scipySpecial
 
 class StrokePartitionModel(StatsModelLinearRiskFactorModel):
     """Fatal stroke probability estimated from our meta-analysis of BASIC, NoMAS, GCNKSS, REGARDS."""
-    interceptChangeFor1bpMedsAdded = -0.1134942
 
     def __init__(self, intercept=None):
         model_spec = load_model_spec("StrokeMIPartitionModel")
@@ -26,16 +26,34 @@ class StrokePartitionModel(StatsModelLinearRiskFactorModel):
         super().__init__(RegressionModel(**model_spec))
         self._stroke_case_fatality = 0.15
         self._stroke_secondary_case_fatality = 0.15
+        #this is the mean change of the intercept for each bpMedAdded
+        #Simulations were performed to obtain the optimized intercept for each bpMedAdded (1,2,3,4)
+        #Then from those 4 intercepts and the baseline intercept, I obtained the average change of the intercept for each bpMedAdded
+        #The optimized intercepts for each bpMedAdded are as follows:
+        #intercept = -2.4295668  #1bpMedAdded
+        #intercept = -2.5334375  #2
+        #intercept = -2.66499999 #3
+        #intercept = -2.764950   #4
+        self.interceptChangeFor1bpMedsAdded = -0.1134942
    
     def will_have_fatal_stroke(self, person):
         fatalStrokeProb = self._stroke_case_fatality
         fatalProb = self._stroke_secondary_case_fatality if person._stroke else fatalStrokeProb
         return person._rng.uniform() < fatalProb
 
+    def get_intercept_change(self, person):
+        tst = TreatmentStrategiesType.BP.value
+        if "bpMedsAdded" in person._treatmentStrategies[tst]:
+            bpMedsAdded = person._treatmentStrategies[tst]['bpMedsAdded']
+            interceptChange = bpMedsAdded * self.interceptChangeFor1bpMedsAdded
+        else:
+            interceptChange = 0
+        return interceptChange
+
     def get_next_stroke_probability(self, person):
         #Q: I am not sure why it was set to 0 at the beginning
         strokeProbability = 0
-        strokeProbability = scipySpecial.expit( super().estimate_next_risk(person) )
+        strokeProbability = scipySpecial.expit( super().estimate_next_risk(person) + self.get_intercept_change(person) )
         return strokeProbability
     
     def generate_next_outcome(self, person):
@@ -61,58 +79,6 @@ class StrokePartitionModel(StatsModelLinearRiskFactorModel):
             else: 
                 return None
 
-class StrokePartitionModelFor1bpMedsAdded(StrokePartitionModel):
-    def __init__(self):
-        #intercept = -2.4295668
-        intercept = -2.31097305 + 1*self.interceptChangeFor1bpMedsAdded
-        super().__init__(intercept=intercept)
 
-class StrokePartitionModelFor2bpMedsAdded(StrokePartitionModel):
-    def __init__(self):
-        #intercept = -2.5334375
-        intercept = -2.31097305 + 2*self.interceptChangeFor1bpMedsAdded
-        super().__init__(intercept=intercept)
-
-class StrokePartitionModelFor3bpMedsAdded(StrokePartitionModel):
-    def __init__(self):
-        #intercept = -2.66499999
-        intercept = -2.31097305 + 3*self.interceptChangeFor1bpMedsAdded
-        super().__init__(intercept=intercept)
-
-class StrokePartitionModelFor4bpMedsAdded(StrokePartitionModel):
-    def __init__(self):
-        #intercept = -2.764950
-        intercept = -2.31097305 + 4*self.interceptChangeFor1bpMedsAdded
-        super().__init__(intercept=intercept)
-
-class StrokePartitionModelFor5bpMedsAdded(StrokePartitionModel):
-    def __init__(self):
-        intercept = -2.31097305 + 5*self.interceptChangeFor1bpMedsAdded
-        super().__init__(intercept=intercept)
-
-class StrokePartitionModelFor6bpMedsAdded(StrokePartitionModel):
-    def __init__(self):
-        intercept = -2.31097305 + 6*self.interceptChangeFor1bpMedsAdded
-        super().__init__(intercept=intercept)
-
-class StrokePartitionModelFor7bpMedsAdded(StrokePartitionModel):
-    def __init__(self):
-        intercept = -2.31097305 + 7*self.interceptChangeFor1bpMedsAdded
-        super().__init__(intercept=intercept)
-
-class StrokePartitionModelFor8bpMedsAdded(StrokePartitionModel):
-    def __init__(self):
-        intercept = -2.31097305 + 8*self.interceptChangeFor1bpMedsAdded
-        super().__init__(intercept=intercept)
-
-class StrokePartitionModelFor9bpMedsAdded(StrokePartitionModel):
-    def __init__(self):
-        intercept = -2.31097305 + 9*self.interceptChangeFor1bpMedsAdded
-        super().__init__(intercept=intercept)
-
-class StrokePartitionModelFor10bpMedsAdded(StrokePartitionModel):
-    def __init__(self):
-        intercept = -2.31097305 + 10*self.interceptChangeFor1bpMedsAdded
-        super().__init__(intercept=intercept)
 
 

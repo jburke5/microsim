@@ -2,7 +2,6 @@ from microsim.person import Person
 from microsim.gender import NHANESGender
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.outcome_model_repository import OutcomeModelRepository
-from microsim.cv_outcome_determination import CVOutcomeDetermination
 from microsim.outcome import Outcome
 from microsim.outcome import OutcomeType
 from microsim.education import Education

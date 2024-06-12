@@ -122,52 +122,23 @@ class GCPStrokeModel:
        xb += (238.*(-5.2897)+332.*(-3.7359)+101.*(-2.8168)) / (238.+332.+101.+311.)           
        return xb       
                                                                   
-    def get_risk_for_person(self, person, rng=None, years=1, vectorized=False, test=False):
+    def get_risk_for_person(self, person, rng=None, years=1, test=False):
 
         if "gcpStroke" not in list(person._randomEffects.keys()):
             person._randomEffects["gcpStroke"] = person._rng.normal(0., 3.90)
-        random_effect = person.gcpStrokeRandomEffect if vectorized else person._randomEffects["gcpStroke"]
+        random_effect = person._randomEffects["gcpStroke"]
 
         if "gcpStrokeSlope" not in list(person._randomEffects.keys()):
             person._randomEffects["gcpStrokeSlope"] = person._rng.normal(0., 0.264)
-        random_effect_slope = person.gcpStrokeSlopeRandomEffect if vectorized else person._randomEffects["gcpStrokeSlope"]
+        random_effect_slope = person._randomEffects["gcpStrokeSlope"]
         residual = 0 if test else rng.normal(0, 6.08)
 
         linPred = 0
-        if vectorized:
-            ageAtLastStroke=person.ageAtLastStroke
-            yearsSinceStroke=person.age-ageAtLastStroke
-            linPred = self.calc_linear_predictor_for_patient_characteristics(
-                ageAtLastStroke=ageAtLastStroke,
-                yearsSinceStroke=yearsSinceStroke,
-                gender=person.gender,
-                raceEthnicity=person.raceEthnicity,
-                education=person.education,
-                smokingStatus=person.smokingStatus,
-                #diabetes=person.current_diabetestx,
-                physicalActivity=person.anyPhysicalActivity,
-                alcoholPerWeek=person.alcoholPerWeek,
-                meanBmiPrestroke=person.meanBmiPriorToLastStroke,
-                meanSBP=person.meanSbpSinceLastStroke,
-                meanSBPPrestroke=person.meanSbpPriorToLastStroke,
-                meanLdlPrestroke=person.meanLdlPriorToLastStroke,
-                meanLdl=person.meanLdlSinceLastStroke,
-                gfr=person.gfr,
-                meanWaistPrestroke=person.meanWaistPriorToLastStroke,
-                meanFastingGlucose=Person.convert_a1c_to_fasting_glucose(person.meanA1cSinceLastStroke),
-                meanFastingGlucosePrestroke=Person.convert_a1c_to_fasting_glucose(person.meanA1cPriorToLastStroke),
-                anyAntiHypertensive= ((person.antiHypertensiveCount + person.totalBPMedsAdded)> 0),
-                anyLipidLowering= (person.statin | (person.otherLipidLoweringMedicationCount>0.)),
-                afib=person.afib,
-                mi=person.mi,
-                meanGCPPrestroke=person.meanGcpPriorToLastStroke)
-            random_effect_slope_term = random_effect_slope * yearsSinceStroke
-        else:
-            ageAtLastStroke=person.get_age_at_last_outcome(OutcomeType.STROKE)
-            yearsSinceStroke=person._age[-1]-ageAtLastStroke
-            personGCP = list(map(lambda x: x[1].gcp, person._outcomes[OutcomeType.COGNITION]))
-            waveAtLastStroke=person.get_wave_for_age(ageAtLastStroke)
-            linPred = self.calc_linear_predictor_for_patient_characteristics(
+        ageAtLastStroke=person.get_age_at_last_outcome(OutcomeType.STROKE)
+        yearsSinceStroke=person._age[-1]-ageAtLastStroke
+        personGCP = list(map(lambda x: x[1].gcp, person._outcomes[OutcomeType.COGNITION]))
+        waveAtLastStroke=person.get_wave_for_age(ageAtLastStroke)
+        linPred = self.calc_linear_predictor_for_patient_characteristics(
                 ageAtLastStroke=ageAtLastStroke,
                 yearsSinceStroke=yearsSinceStroke,
                 gender=person._gender,
@@ -195,6 +166,6 @@ class GCPStrokeModel:
                 afib=person._afib[-1],
                 mi=person._mi,
                 meanGCPPrestroke=np.mean(np.array(personGCP[:waveAtLastStroke+1]))) 
-            random_effect_slope_term = random_effect_slope * yearsSinceStroke   
+        random_effect_slope_term = random_effect_slope * yearsSinceStroke   
 
         return linPred + random_effect + random_effect_slope_term + residual      

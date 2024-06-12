@@ -5,7 +5,6 @@ import pandas as pd
 
 from microsim.person import Person
 from microsim.education import Education
-from microsim.population import ClonePopulation
 from microsim.test.test_risk_model_repository import TestRiskModelRepository
 from microsim.bp_treatment_strategies import (
     AddBPTreatmentMedsToGoal120,

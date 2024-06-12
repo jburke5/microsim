@@ -61,13 +61,3 @@ class DementiaModel(StatsModelCoxModel):
             xb += 0.1937563
         return xb
 
-    # need to override for specific subclasses that implement it.
-    def linear_predictor_vectorized(self, x):
-        return self.linear_predictor_for_patient_characteristics(
-            currentAge=x.age,
-            baselineGcp=x.baseGcp,
-            gcpSlope=x.gcpSlope,
-            gender=x.gender,
-            education=x.education,
-            raceEthnicity=x.raceEthnicity,
-        )

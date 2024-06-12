@@ -12,7 +12,6 @@ from microsim.bp_treatment_strategies import *
 from microsim.cohort_risk_model_repository import (CohortDynamicRiskFactorModelRepository, 
                                                    CohortStaticRiskFactorModelRepository,
                                                    CohortDefaultTreatmentModelRepository)
-from microsim.cv_outcome_determination import CVOutcomeDetermination
 from microsim.data_loader import (get_absolute_datafile_path,
                                   load_regression_model)
 from microsim.education import Education
@@ -29,7 +28,6 @@ from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.statsmodel_logistic_risk_factor_model import \
     StatsModelLogisticRiskFactorModel
-from microsim.sim_settings import simSettings
 from microsim.stroke_outcome import StrokeOutcome
 from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType, CategoricalRiskFactorsType, ContinuousRiskFactorsType
 from microsim.afib_model import AFibPrevalenceModel
@@ -353,70 +351,6 @@ class Population:
     def get_outcome_item_overall_change(self, outcomeType, phenotypeItem, inSim=True):
         return list(map(lambda x: x.get_outcome_item_overall_change(outcomeType, phenotypeItem, inSim=inSim), self._people))
 
-    #def reset_to_baseline(self):
-    #    self._totalWavesAdvanced = 0
-    #    self._currentWave = 0
-    #    self._bpTreatmentStrategy = None
-    #    for person in self._people:
-    #        person.reset_to_baseline()
-
-    #def set_bp_treatment_strategy(self, bpTreatmentStrategy):
-    #    self._bpTreatmentStrategy = bpTreatmentStrategy
-    #    for person in self._people:
-    #        person._bpTreatmentStrategy = bpTreatmentStrategy
-
-    #def get_people_alive_at_the_start_of_the_current_wave(self):
-    #    return self.get_people_alive_at_the_start_of_wave(self._currentWave)
-
-    #def get_people_alive_at_the_start_of_wave(self, wave):
-    #    peopleAlive = []
-    #    for person in self._people:
-    #        if person.alive_at_start_of_wave(wave):
-    #            peopleAlive.append(person)
-    #    return pd.Series(peopleAlive)
-
-    #def get_people_that_are_currently_alive(self):
-    #    return pd.Series([not person.is_dead() for _, person in self._people.items()])
-
-    #def get_number_of_patients_currently_alive(self):
-    #    self.get_people_that_are_currently_alive().sum()
-
-    #def get_events_in_most_recent_wave(self, eventType):
-    #    peopleWithEvents = []
-    #    for _, person in self._people.items():
-    #        if person.has_outcome_at_age(eventType, person._age[-1]):
-    #            peopleWithEvents.append(person)
-    #    return peopleWithEvents
-
-    #def generate_starting_mean_patient(self):
-    #    df = self.get_people_initial_state_as_dataframe()
-    #    return Person(
-    #        age=int(round(df.age.mean())),
-    #        gender=NHANESGender(df.gender.mode()),
-    #        raceEthnicity=NHANESRaceEthnicity(df.raceEthnicity.mode()),
-    #        sbp=df.sbp.mean(),
-    #        dbp=df.dbp.mean(),
-    #        a1c=df.a1c.mean(),
-    #        hdl=df.hdl.mean(),
-    #        totChol=df.totChol.mean(),
-    #        bmi=df.bmi.mean(),
-    #        ldl=df.ldl.mean(),
-    #        trig=df.trig.mean(),
-    #        waist=df.waist.mean(),
-    #        anyPhysicalActivity=df.anyPhysicalActivity.mode(),
-    #        education=Education(df.education.mode()),
-    #        smokingStatus=SmokingStatus(df.smokingStatus.mode()),
-    #        antiHypertensiveCount=int(round(df.antiHypetensiveCount().mean())),
-    #        statin=df.statin.mode(),
-    #        otherLipidLoweringMedicationCount=int(
-    #            round(df.otherLipidLoweringMedicationCount.mean())
-    #        ),
-    #        initializeAfib=(lambda _: False),
-    #        selfReportStrokeAge=None,
-    #        selfReportMIAge=None,
-    #        randomEffects=self._outcome_model_repository.get_random_effects(),
-    #    )
-
     def get_event_rate_in_simulation(self, eventType, duration):
         events = [
             person.has_outcome_during_simulation_prior_to_wave(eventType, duration)
@@ -479,74 +413,6 @@ class Population:
         #    ]   
         #df = pd.concat([df, pd.DataFrame(varMedians)], axis=1)
         return df
-
-    def get_people_initial_state_as_dataframe(self):
-        return pd.DataFrame(
-            {
-                "age": [person._age[0] for person in self._people],
-                "gender": [person._gender for person in self._people],
-                "raceEthnicity": [person._raceEthnicity for person in self._people],
-                "sbp": [person._sbp[0] for person in self._people],
-                "dbp": [person._dbp[0] for person in self._people],
-                "a1c": [person._a1c[0] for person in self._people],
-                "hdl": [person._hdl[0] for person in self._people],
-                "ldl": [person._ldl[0] for person in self._people],
-                "trig": [person._trig[0] for person in self._people],
-                "totChol": [person._totChol[0] for person in self._people],
-                "creatinine": [person._creatinine[0] for person in self._people],
-                "bmi": [person._bmi[0] for person in self._people],
-                "anyPhysicalActivity": [person._anyPhysicalActivity[0] for person in self._people],
-                "education": [person._education.value for person in self._people],
-                "afib": [person._afib[0] for person in self._people],
-                "antiHypertensiveCount": [
-                    person._antiHypertensiveCount[0] for person in self._people
-                ],
-                "statin": [person._statin[0] for person in self._people],
-                "otherLipidLoweringMedicationCount": [
-                    person._otherLipidLoweringMedicationCount[0] for person in self._people
-                ],
-                "waist": [person._waist[0] for person in self._people],
-                "smokingStatus": [person._smokingStatus for person in self._people],
-                "miPriorToSim": [person._selfReportMIPriorToSim for person in self._people],
-                "strokePriorToSim": [
-                    person._selfReportStrokePriorToSim for person in self._people
-                ],
-                "totalQalys": [np.array(person._qalys).sum() for person in self._people],
-                "totalBPMedsAdded" : [np.zeros(len(self._people))],
-                "bpMedsAdded" : [np.zeros(len(self._people))]
-            }
-        )
-
-    def get_summary_df(self):
-        data = {}
-        for year in range(1,self._currentWave+1):
-            data[f'mi{year}'] = [x.has_mi_during_wave(year) for _, x in self._people.items()]
-            data[f'stroke{year}'] = [x.has_stroke_during_wave(year) for _, x in self._people.items()]
-            data[f'dead{year}'] = [x.dead_at_end_of_wave(year) for _, x in self._people.items()]
-            data[f'dementia{year}'] = [x.has_outcome_during_wave(year, OutcomeType.DEMENTIA) for _, x in self._people.items()]
-            data[f'gcp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._gcp[year-1] for _, x in self._people.items()]
-            data[f'sbp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._sbp[year-1] for _, x in self._people.items()]
-            data[f'dbp{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._dbp[year-1] for _, x in self._people.items()]  
-            data[f'bpMeds{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._antiHypertensiveCount[year-1] for _, x in self._people.items()]
-            data[f'bpMedsAdded{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._bpMedsAdded[year-1] for _, x in self._people.items()]
-            data[f'totalBPMeds{year}'] = [np.nan if x.dead_at_start_of_wave(year) else x._bpMedsAdded[year-1]+x._antiHypertensiveCount[year-1] for _, x in self._people.items()]
-            data[f'totalBPMedsAdded{year}'] = [np.array(x._bpMedsAdded).sum() for _, x in self._people.items()]
-
-        data['baseAge'] = [x._age[0] for _, x in self._people.items()]
-        data['id'] = [x._populationIndex  for _, x in self._people.items()] 
-        data['nhanesIndex'] = [x.dfIndex  for _, x in self._people.items()] 
-        data['finalAge'] = [x._age[-1]  for _, x in self._people.items()]
-        data['education'] = [x._education  for _, x in self._people.items()]
-        data['gender'] = [x._gender  for _, x in self._people.items()]
-        data['raceEthnicity'] = [x._raceEthnicity  for _, x in self._people.items()]
-        data['smokingStatus'] = [x._smokingStatus  for _, x in self._people.items()]
-
-        data['baselineSBP'] = [x._sbp[0] for _, x in self._people.items()]
-        data['baselineDBP'] = [x._dbp[0] for _, x in self._people.items()]
-        data['black'] = [x._raceEthnicity==4 for _, x in self._people.items()]
-        data['dementiaFreeYears'] = [x.get_age_at_first_outcome(OutcomeType.DEMENTIA) - x._age[0] if x._dementia else x._age[-1] - x._age[0]  for _, x in self._people.items()]
-        data['deadAtEndOfSim'] = [x._alive[-1]==False for _, x in self._people.items()]
-        return pd.DataFrame(data)
 
     def get_all_person_years_as_df(self):
         """This function creates a dataframe where each row is a person-year from the simulation.
@@ -665,93 +531,3 @@ class Population:
         for key in sorted(dementiaIncidentRate.keys()):
             print(f"{key:>50} {dementiaIncidentRate[key]: 6.3f}")
  
-#NOTE: this class used to be a subclass of NHANESDirectSamplePopulation which is no longer in use...
-#so we will need to update this class...and also see how it relates to the StandardizedPopulation class as well
-#class NHANESAgeStandardPopulation:
-#class NHANESAgeStandardPopulation(NHANESDirectSamplePopulation):
-#    def __init__(self, n, year, rng=None):
-#        nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
-#        weights = self.get_weights(year)
-#        weights["gender"] = weights["female"] + 1
-#        weights = pd.merge(nhanes, weights, how="left", on=["age", "gender"]).popWeight
-#        super().__init__(n=n, year=year, weights=weights, rng=rng)
-
-#    def get_weights(self, year):
-#        standard = self.build_age_standard(year)
-#        return self.get_population_weighted_standard(standard)
-
-#    def get_population_weighted_standard(self, standard):
-#        rows = []
-#        for age in range(1, 151):
-#            for female in range(0, 2):
-#                dfRow = standard.loc[
-#                    (age >= standard.lowerAgeBound)
-#                    & (age <= standard.upperAgeBound)
-#                    & (standard.female == female)
-#                ]
-#                upperAge = dfRow["upperAgeBound"].values[0]
-#                lowerAge = dfRow["lowerAgeBound"].values[0]
-#                totalPop = dfRow["standardPopulation"].values[0]
-#                rows.append(
-#                    {"age": age, "female": female, "pop": totalPop / (upperAge - lowerAge + 1)}
-#                )
-#        df = pd.DataFrame(rows)
-#        df["popWeight"] = df["pop"] / df["pop"].sum()
-#        return df
-
-
-class ClonePopulation(Population):
-    """Simple class to build a "Population" seeded by mulitple copies of the same person"""
-
-    def __init__(self, person, n):
-        self._outcome_model_repository = OutcomeModelRepository()
-        self._qaly_assignment_strategy = QALYAssignmentStrategy()
-        self._risk_model_repository = CohortRiskModelRepository()
-        self._initialization_repository = InitializationRepository()
-        self.n = n
-
-        # trying to make sure that cloned peopel are setup the same way as people are
-        # when sampled from NHANES
-        clonePerson = build_person(pd.Series({'age' : person._age[0],
-                                            'gender': int(person._gender),
-                                            'raceEthnicity':int(person._raceEthnicity),
-                                            'meanSBP' :person._sbp[0],
-                                            'meanDBP' :person._dbp[0],
-                                            'a1c':person._a1c[0],
-                                            'hdl':person._hdl[0],
-                                            'ldl':person._ldl[0],
-                                            'trig':person._trig[0],
-                                            'tot_chol':person._totChol[0],
-                                            'bmi':person._bmi[0],
-                                            'waist':person._waist[0],
-                                            'anyPhysicalActivity':person._anyPhysicalActivity[0],
-                                            'smokingStatus': int(person._smokingStatus),
-                                            'alcoholPerWeek': person._alcoholPerWeek[0],
-                                            'education' : int(person._education),
-                                            'antiHypertensive': person._antiHypertensiveCount[0],
-                                            'statin': person._statin[0],
-                                            'otherLipidLowering' : person._otherLipidLoweringMedicationCount[0],
-                                            'serumCreatinine' : person._creatinine[0],
-                                            'selfReportStrokeAge' : -1, 
-                                            'selfReportMIAge' : -1,
-                                            'diedBy2015' : 0}), 
-                                            self._outcome_model_repository, 
-                                            randomEffects=person._randomEffects,
-                                            rng=person._rng)
-
-        # for factors that were initialized on the first person, we have to set them the same way on teh clones
-        clonePerson._afib[0] = person._afib[0]
-        initializers = self._initialization_repository.get_initializers()
-        for initializerName, _ in initializers.items():
-            fromAttr = getattr(person, initializerName)
-            toAttr = getattr(clonePerson, initializerName)
-            toAttr.clear()
-            toAttr.extend(fromAttr)
-
-        
-        people = pd.Series([copy.deepcopy(clonePerson) for i in range(0, n)])
-
-        #pandarallel.initialize(verbose=1)
-        for i in range(0, len(people)):
-            people.iloc[i]._populationIndex = i
-        super().__init__(people)
