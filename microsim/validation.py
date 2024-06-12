@@ -48,7 +48,7 @@ class Validation:
         print("\nVALIDATION OF CV EVENT INCIDENCE AND MORTALITY")
         pop.print_cv_standardized_rates()
         print("\nVALIDATION OF DEMENTIA INCIDENCE")
-        pop.print_dementia_incidence()
+        pop.print_dementia_incidence(path=path)
 
     @staticmethod
     def nhanes_treatment_effects(sampleSize=2000000, nWorkers=5):
