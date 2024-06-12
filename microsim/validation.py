@@ -81,8 +81,8 @@ class Validation:
                 miRRList += [miRR]
                 strokeRRList += [strokeRR]
                 print(f"\t\tsimulation={i}, strokeRR= {strokeRR:<8.2f}, miRR= {miRR:<8.2f}")
-            print(f"average of {nSimulations} simulations: strokeRR= {np.mean(strokeRRList):<12.2f}, miRR= {np.mean(miRRList):8.2f}")
-            print(f"sd of {nSimulations} simulations: strokeRR= {np.std(strokeRRList):<21.2f}, miRR= {np.std(miRRList):<8.2f}")    
+            print(f"    average of {nSimulations} simulations: strokeRR= {np.mean(strokeRRList):<8.2f}, miRR= {np.mean(miRRList):<8.2f}")
+            print(f"         sd of {nSimulations} simulations: strokeRR= {np.std(strokeRRList):<8.2f}, miRR= {np.std(miRRList):<8.2f}")    
 
     @staticmethod
     def nhanes(sampleSize=2000000, nWorkers=5, path=None):
