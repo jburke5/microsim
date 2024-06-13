@@ -24,6 +24,7 @@ class Trial:
             self.trialDescription = trialDescription
         self.treatedPop, self.controlPop = self.get_trial_populations()
         self.completed = False
+        self.analyzed = False
         self.results = dict()
     
     def get_trial_populations(self):
@@ -129,6 +130,7 @@ class Trial:
     def analyze(self, trialOutcomeAssessor):
         '''Trial outcomes need to be defined in an instance of the TrialOutcomeAssessor class and provided in this function
         in order for the Trial to be able to analyze its populations.'''
+        self.analyzed = True
         for assessmentName in trialOutcomeAssessor._assessments.keys():
             assessmentAnalysis = trialOutcomeAssessor._assessments[assessmentName]["assessmentAnalysis"]
             assessmentAnalysisFunction = trialOutcomeAssessor._analysis[assessmentAnalysis]
@@ -171,7 +173,7 @@ class Trial:
         rep = self.trialDescription.__str__()
         rep += f"\nTrial\n"
         rep += f"\tTrial completed: {self.completed}\n"
-        if self.completed:
+        if self.analyzed:
             rep += f"Trial results:\n"
             rep += "\t" +" "*25 + " "*16 + "Z" + " "*6 + "Intercept" + " "*11 + "Z SE" + " "*9 + "pValue\n"
             rep += "\t" +" "*25 + " "*10 + "relRisk" + " "*4 + "treatedRisk" + " "*4 + "controlRisk" + " "*9 + "|diff|\n"
