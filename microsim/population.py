@@ -537,6 +537,7 @@ class Population:
         else:
             plt.savefig(path+"/dementia-incidence-rate.png")
             plt.clf()
+            print("exported results as PNG figures")
         ageDementia = list(map(lambda y: (y._age[-1], len(y._outcomes[OutcomeType.DEMENTIA])>0),
                                list(filter(lambda x: x.is_alive, self._people))))
         nAlive = len(ageDementia)
@@ -550,6 +551,7 @@ class Population:
         else:
             plt.savefig(path+"/dementia-cases-at-end.png")
             plt.clf()
+            print("exported results as PNG figures")
  
     def print_vascular_rfs_over_time(self, other, path=None):
         '''This function takes a population and analyzes the distribution of its risk factors.
@@ -581,4 +583,5 @@ class Population:
         else:
             plt.savefig(path+"/probabilities-for-all-rf.png")
             plt.clf()
+            print("exported results as PNG figures")
         self.print_lastyear_summary_comparison(other)
