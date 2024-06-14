@@ -33,7 +33,7 @@ class StatsModelCoxModel(StatsModelLinearRiskFactorModel):
     def get_cumulative_hazard_for_years_in_sim(self, yearsInSim):
         return self.get_cumulative_hazard_for_interval(yearsInSim - 1, yearsInSim)
 
-    def get_risk_for_person(self, person, rng, years, vectorized=False):
+    def get_risk_for_person(self, person, years, vectorized=False):
         linear_predictor = (
             self.linear_predictor_vectorized(person)
             if vectorized

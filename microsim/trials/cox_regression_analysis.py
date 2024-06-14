@@ -5,17 +5,15 @@ import numpy as np
 from microsim.trials.regression_analysis import RegressionAnalysis
 
 class CoxRegressionAnalysis(RegressionAnalysis):
-    def __init__(self, outcomeAssessor, nameStem='coxRegression-'):
-        super().__init__(outcomeAssessor, nameStem)
-
-    def analyze(self, treatedPop, untreatedPop):
-        data=self.get_dataframe(treatedPop,untreatedPop,includeTime=True)
-        cph = CoxPHFitter()
+    def __init__(self):
+        self.cph = CoxPHFitter()
+    
+    def analyze(self, trial, assessmentFunctionDict, assessmentAnalysis):
+        df = self.get_trial_outcome_df(trial, assessmentFunctionDict, assessmentAnalysis)
+        blockFactors = trial.trialDescription.blockFactors
         try:
-            cph.fit(data, duration_col='time', event_col='outcome')
-
-            return cph.params_['treatment'], None, cph.standard_errors_['treatment'], cph.summary.loc['treatment', 'p'], self.get_means(data)
+            self.cph.fit(df.loc[:,["outcome", "outcomeTime", "treatment", *blockFactors]], duration_col=f"outcomeTime", event_col="outcome")
+            return self.cph.params_['treatment'], None, self.cph.standard_errors_['treatment'], self.cph.summary.loc['treatment', 'p']
         except (LinAlgError, ConvergenceError):
-            return np.nan, np.nan, np.nan, np.nan, (np.nan, np.nan)
-
+            return np.nan, np.nan, np.nan, np.nan
 

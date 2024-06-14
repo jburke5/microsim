@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from microsim.cognition_outcome import CognitionOutcome
 from microsim.smoking_status import SmokingStatus
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.education import Education
@@ -10,9 +11,20 @@ from collections import OrderedDict
 
 class GCPModel:
     def __init__(self, outcomeModelRepository=None):
+        #Q why are we doing this? I am not sure how/if this was used in the past
         self._outcome_model_repository = outcomeModelRepository
         pass
 
+    def generate_next_outcome(self, person):
+        fatal = False
+        gcp = self.get_risk_for_person(person, person._rng)
+        selfReported = False
+        return CognitionOutcome(fatal, selfReported, gcp)
+
+    def get_next_outcome(self, person):
+        return self.generate_next_outcome(person)
+
+    #Q: I am not sure what the issue is here...
     # TODO — what do we need to do with the random intercept? shouls we take a draw per person and assign it?
     # if we don't do that there is going to be mroe change in cognitive trajectory per person that we'd expect...
     def calc_linear_predictor_for_patient_characteristics(
@@ -104,33 +116,15 @@ class GCPModel:
         #    self._outcome_model_repository.report_result('gcp', reportingDict)
         return xb
 
-    def get_risk_for_person(self, person, rng=None, years=1, vectorized=False, test=False):
-        #rng = np.random.default_rng(rng)
-        random_effect = person.gcpRandomEffect if vectorized else person._randomEffects["gcp"] 
+    def get_risk_for_person(self, person, rng=None, years=1, test=False):
+        if "gcp" not in list(person._randomEffects.keys()):
+            person._randomEffects["gcp"] = person._rng.normal(0, 4.84)
+        random_effect = person._randomEffects["gcp"] 
         residual = 0 if test else rng.normal(0.38, 6.99)
 
         linPred = 0
-        if vectorized:
-            linPred = self.calc_linear_predictor_for_patient_characteristics(
-                yearsInSim=person.totalYearsInSim,
-                raceEthnicity=person.raceEthnicity,
-                gender=person.gender,
-                baseAge=person.baseAge,
-                education=person.education,
-                alcohol=person.alcoholPerWeek,
-                smokingStatus=person.smokingStatus,
-                bmi=person.bmi,
-                waist=person.waist,
-                totChol=person.totChol,
-                meanSBP=person.meanSbp,
-                anyAntiHpertensive=((person.antiHypertensiveCount + person.totalBPMedsAdded)> 0),
-                fastingGlucose=Person.convert_a1c_to_fasting_glucose(person.a1c),
-                physicalActivity=person.anyPhysicalActivity,
-                afib=person.afib,
-            )
-        else:
-            linPred = self.calc_linear_predictor_for_patient_characteristics(
-                yearsInSim=person.years_in_simulation(),
+        linPred = self.calc_linear_predictor_for_patient_characteristics(
+                yearsInSim=person.get_years_in_simulation(),
                 raceEthnicity=person._raceEthnicity,
                 gender=person._gender,
                 baseAge=person._age[0],
@@ -141,7 +135,7 @@ class GCPModel:
                 waist=person._waist[-1],
                 totChol=person._totChol[-1],
                 meanSBP=np.array(person._sbp).mean(),
-                anyAntiHpertensive=((person._antiHypertensiveCount[-1] + np.array(person._bpMedsAdded).sum()) > 0),
+                anyAntiHpertensive=((person._antiHypertensiveCount[-1]>0) | person.is_in_bp_treatment),
                 fastingGlucose=person.get_fasting_glucose(not test, rng),
                 physicalActivity=person._anyPhysicalActivity[-1],
                 afib=person._afib[-1],

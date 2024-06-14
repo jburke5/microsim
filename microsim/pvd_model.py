@@ -43,7 +43,7 @@ class PVDPrevalenceModel:
 
         return xb
         
-    def estimate_next_risk(self, person, rng=None, boolean=True):
+    def estimate_next_risk(self, person, boolean=True):
 
         lp = self.calc_linear_predictor_for_patient_characteristics(
                  person._age[-1], 
@@ -55,25 +55,16 @@ class PVDPrevalenceModel:
                  person._smokingStatus,
                  person._raceEthnicity)
        
-        risk = np.exp(lp)/(1+np.exp(lp)) #this is a logistic model
+        # note: this is a logistic model
+        # note: limit the calculation to avoid over/under-flow issues
+        if lp<-10:
+            risk = 0.
+        elif lp>10.:
+            risk = 1.
+        else:
+            risk = 1/(1+np.exp(-lp))
 
-        return rng.uniform()<risk if boolean else risk
-
-    def estimate_next_risk_vectorized(self, x, rng=None, boolean=True):
-
-        lp = self.calc_linear_predictor_for_patient_characteristics(
-                 x.age,
-                 x.sbp,
-                 x.dbp,
-                 x.totChol,
-                 x.hdl,
-                 x.gender,
-                 x.smokingStatus,
-                 x.raceEthnicity)
-  
-        risk = np.exp(lp)/(1+np.exp(lp)) #this is a logistic model
-
-        return rng.uniform()<risk if boolean else risk
+        return person._rng.uniform()<risk if boolean else risk
 
 # developed using the PVD prevalence model above, see pvdModelDevelopment notebooks for details
 class PVDIncidenceModel:
@@ -118,7 +109,7 @@ class PVDIncidenceModel:
 
         return xb
 
-    def estimate_next_risk(self, person, rng=None):
+    def estimate_next_risk(self, person):
 
         lp = self.calc_linear_predictor_for_patient_characteristics(
                  person._age[-1],
@@ -131,26 +122,17 @@ class PVDIncidenceModel:
                  person._raceEthnicity,
                  person._pvd[-1])
 
-        risk = np.exp(lp)/(1+np.exp(lp)) #this is a logistic model
+        # note: this is a logistic model
+        # note: limit the calculation to avoid over/under-flow issues
+        if lp<-10:
+            risk = 0.
+        elif lp>10.:
+            risk = 1.
+        else:
+            risk = 1/(1+np.exp(-lp))
 
-        return rng.uniform()<risk
+        return person._rng.uniform()<risk
 
-    def estimate_next_risk_vectorized(self, x, rng=None):
-
-        lp = self.calc_linear_predictor_for_patient_characteristics(
-                 x.age,
-                 x.sbp,
-                 x.dbp,
-                 x.totChol,
-                 x.hdl,
-                 x.gender,
-                 x.smokingStatus,
-                 x.raceEthnicity,
-                 x.pvd)
-
-        risk = np.exp(lp)/(1+np.exp(lp)) #this is a logistic model
-
-        return rng.uniform()<risk
 
 
 

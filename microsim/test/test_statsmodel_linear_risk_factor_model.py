@@ -8,19 +8,18 @@ from microsim.alcohol_category import AlcoholCategory
 from microsim.test.helper.init_vectorized_population_dataframe import (
     init_vectorized_population_dataframe,
 )
-
-
+from microsim.population_factory import PopulationFactory
+from microsim.risk_factor import StaticRiskFactorsType, DynamicRiskFactorsType
+from microsim.treatment import DefaultTreatmentsType
 from microsim.person import Person
+from microsim.person_factory import PersonFactory
 
 import unittest
 import pandas as pd
 import numpy as np
 import statsmodels.formula.api as statsmodel
 
-
-def initializeAfib(person):
-    return None
-
+initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
 
 class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
     def setUp(self):
@@ -37,65 +36,54 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
             self.simpleModelResultSM.resid.std(),
         )
 
-        self.person = Person(
-            age=80,
-            gender=NHANESGender.MALE,
-            raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-            sbp=120,
-            dbp=80,
-            a1c=5.5,
-            hdl=50,
-            totChol=200,
-            bmi=27,
-            ldl=90,
-            trig=150,
-            waist=70,
-            anyPhysicalActivity=0,
-            education=Education.COLLEGEGRADUATE,
-            smokingStatus=SmokingStatus.NEVER,
-            alcohol=AlcoholCategory.NONE,
-            antiHypertensiveCount=0,
-            statin=0,
-            otherLipidLoweringMedicationCount=0,
-            creatinine=0.0,
-            initializeAfib=initializeAfib,
-            rng = np.random.default_rng(),
-        )
+        x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 80,
+                               StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               DynamicRiskFactorsType.SBP.value: 120,
+                               DynamicRiskFactorsType.DBP.value: 80,
+                               DynamicRiskFactorsType.A1C.value: 5.5,
+                               DynamicRiskFactorsType.HDL.value: 50,
+                               DynamicRiskFactorsType.TOT_CHOL.value: 200,
+                               DynamicRiskFactorsType.BMI.value: 27,
+                               DynamicRiskFactorsType.LDL.value: 90,
+                               DynamicRiskFactorsType.TRIG.value: 150,
+                               DynamicRiskFactorsType.WAIST.value: 70,
+                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
+                               StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
+                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
+                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
+                               DefaultTreatmentsType.STATIN.value: 0,
+                               DynamicRiskFactorsType.CREATININE.value: 0,
+                               "name": "0"}, index=[0])
+        self.person = PersonFactory.get_nhanes_person(x.iloc[0], initializationModelRepository)
+        self.person._afib = [False]
 
-        self.people = [
-            Person(
-                age=80,
-                gender=NHANESGender.MALE,
-                raceEthnicity=NHANESRaceEthnicity.NON_HISPANIC_WHITE,
-                sbp=bpinstance,
-                dbp=80,
-                a1c=5.5,
-                hdl=50,
-                totChol=200,
-                bmi=27,
-                ldl=90,
-                trig=150,
-                waist=70,
-                anyPhysicalActivity=0,
-                education=Education.COLLEGEGRADUATE,
-                smokingStatus=SmokingStatus.NEVER,
-                alcohol=AlcoholCategory.NONE,
-                antiHypertensiveCount=0,
-                statin=0,
-                otherLipidLoweringMedicationCount=0,
-                creatinine=0.0,
-                initializeAfib=initializeAfib,
-                rng = np.random.default_rng(),
-            )
-            for bpinstance in sbp
-        ]
+        xList = [pd.DataFrame({DynamicRiskFactorsType.AGE.value: 80,
+                               StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               DynamicRiskFactorsType.SBP.value: bpinstance,
+                               DynamicRiskFactorsType.DBP.value: 80,
+                               DynamicRiskFactorsType.A1C.value: 5.5,
+                               DynamicRiskFactorsType.HDL.value: 50,
+                               DynamicRiskFactorsType.TOT_CHOL.value: 200,
+                               DynamicRiskFactorsType.BMI.value: 27,
+                               DynamicRiskFactorsType.LDL.value: 90,
+                               DynamicRiskFactorsType.TRIG.value: 150,
+                               DynamicRiskFactorsType.WAIST.value: 70,
+                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
+                               StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
+                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
+                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
+                               DefaultTreatmentsType.STATIN.value: 0,
+                               DynamicRiskFactorsType.CREATININE.value: 0,
+                               "name": "0"}, index=[0]) for bpinstance in sbp]
+        self.people = list(map(lambda x: PersonFactory.get_nhanes_person(x.iloc[0], initializationModelRepository), xList))
+        
         for person in self.people:
-            self.advancePerson(person)
-        self.population_dataframe = init_vectorized_population_dataframe(
-            self.people,
-            with_base_gcp=True,
-            rng = np.random.default_rng(),
-        )
+            person._afib = [False]
+            #self.advancePerson(person)
 
         df2 = pd.DataFrame(
             {
@@ -188,15 +176,13 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
         )
 
     def testSimpleModel(self):
-        df = init_vectorized_population_dataframe([self.person], with_base_gcp=True, rng = np.random.default_rng())
-        person_data = df.iloc[0]
         expected_model_result = (
-            self.simpleModelResultSM.params["age"] * person_data.age
+            self.simpleModelResultSM.params["age"] * self.person._age[-1]
             + self.simpleModelResultSM.params["Intercept"]
         )
         model = StatsModelLinearRiskFactorModel(self.simpleModelResult)
 
-        actual_model_result = model.estimate_next_risk_vectorized(person_data)
+        actual_model_result = model.estimate_next_risk(self.person)
 
         self.assertEqual(expected_model_result, actual_model_result)
 
@@ -208,9 +194,8 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
             + self.meanModelResultSM.params["Intercept"]
         )
         model = StatsModelLinearRiskFactorModel(self.meanModelResult)
-        person_data = self.population_dataframe.iloc[5]
 
-        actual_model_result = model.estimate_next_risk_vectorized(person_data)
+        actual_model_result = model.estimate_next_risk(testPerson)
 
         self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 
@@ -223,9 +208,8 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
             + self.meanLagModelResultSM.params["Intercept"]
         )
         model = StatsModelLinearRiskFactorModel(self.meanLagModelResult)
-        person_data = self.population_dataframe.iloc[12]
 
-        actual_model_result = model.estimate_next_risk_vectorized(person_data)
+        actual_model_result = model.estimate_next_risk(testPerson)
 
         self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 
@@ -238,9 +222,8 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
             + self.logMeanModelResultSM.params["Intercept"]
         )
         model = StatsModelLinearRiskFactorModel(self.logMeanModelResult)
-        person_data = self.population_dataframe.iloc[10]
 
-        actual_model_result = model.estimate_next_risk_vectorized(person_data)
+        actual_model_result = model.estimate_next_risk(testPerson)
 
         self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 
@@ -254,22 +237,20 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
             + self.raceModelResultSM.params["Intercept"]
         )
         model = StatsModelLinearRiskFactorModel(self.raceModelResult)
-        person_data = self.population_dataframe.iloc[21]
 
-        actual_model_result = model.estimate_next_risk_vectorized(person_data)
+        actual_model_result = model.estimate_next_risk(testPerson)
 
         self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 
     def testInteractionModel(self):
-        testPerson = self.people[32]
+        testPerson = self.people[32] 
         expected_model_result = (
             np.array(testPerson._sbp).mean() * testPerson._age[-1] * self.ageSbpInteractionCoeff
             + np.array(testPerson._sbp).mean() * self.sbpInteractionCoeff
         )
         model = StatsModelLinearRiskFactorModel(self.interactionModel)
-        person_data = self.population_dataframe.iloc[32]
 
-        actual_model_result = model.estimate_next_risk_vectorized(person_data)
+        actual_model_result = model.estimate_next_risk(testPerson)
 
         self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 

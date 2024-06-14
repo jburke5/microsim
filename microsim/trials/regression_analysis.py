@@ -1,41 +1,24 @@
 import pandas as pd
-import numpy as np
 
 class RegressionAnalysis:
-    def __init__(self, outcomeAssessor, nameStem):
-        self.outcomeAssessor = outcomeAssessor
-        self.name = nameStem + outcomeAssessor.get_name()
-
-    def get_dataframe(self, treatedPopList, untreatedPopList, includeTime=False):
-        treatedOutcomes = [self.outcomeAssessor.get_outcome(person) for i, person in enumerate(treatedPopList)]
-        untreatedOutcomes = [self.outcomeAssessor.get_outcome(person) for i, person in enumerate(untreatedPopList)]
-
-        if includeTime:
-            treatedOutcomeTimes = [self.outcomeAssessor.get_outcome_time(person) for i, person in enumerate(treatedPopList)]
-            untreatedOutcomesTimes = [self.outcomeAssessor.get_outcome_time(person) for i, person in enumerate(untreatedPopList)]
-
-
-        treatedOutcomes.extend(untreatedOutcomes)
-        analysisDF = pd.DataFrame({'treatment' : np.append(np.ones(len(treatedPopList),dtype=int), np.zeros(len(untreatedPopList),dtype=int)),
-                    'outcome' : treatedOutcomes})
-        if includeTime:
-            treatedOutcomeTimes.extend(untreatedOutcomesTimes)
-            analysisDF['time'] = treatedOutcomeTimes
-            analysisDF['time'] = analysisDF['time'].astype('int')
-        analysisDF.outcome = analysisDF.outcome.astype('int')
-        return analysisDF
-      
-    def get_means(self, analysisDF):
-        #column names and flag values in this method are based on get_dataframe method above
-        analysisDFTreated = analysisDF.loc[analysisDF["treatment"]==1]
-        analysisDFUntreated = analysisDF.loc[analysisDF["treatment"]==0]
-        
-        #for logistic regression: returns proportions (# of outcomes)/(# of people in group) in control and treated groups
-        #for linear regression: returns attribute mean in control and treated groups
-        #note: I can use mean for both because LogisticRegressionAnalysis uses, exclusively for now I think,
-        #OutcomeAssessor which returns a value of 1 for True and 0 for False and this allows an easy calculation of proportions
-        
-        return analysisDFUntreated["outcome"].mean(), analysisDFTreated["outcome"].mean()
+    def __init__(self):
+        pass
+    
+    def get_trial_outcome_df(self, trial, assessmentFunctionDict, assessmentAnalysis):
+        treatment = [1]*trial.treatedPop._n+[0]*trial.controlPop._n
+        dfDict=dict()
+        dfDict["treatment"]=treatment
+        assessmentFunction = assessmentFunctionDict["outcome"]
+        dfDict["outcome"] = list(map(assessmentFunction, [trial.treatedPop]))[0] + list(map(assessmentFunction, [trial.controlPop]))[0]
+        if assessmentAnalysis=="logistic":
+            dfDict["outcome"] = [int(x) for x in dfDict["outcome"]]
+        elif assessmentAnalysis=="cox":
+            assessmentFunction = assessmentFunctionDict["time"]
+            dfDict["outcomeTime"] = list(map(assessmentFunction, [trial.treatedPop]))[0] + list(map(assessmentFunction, [trial.controlPop]))[0]
+        if len(trial.trialDescription.blockFactors)>0:
+            blockFactor = trial.trialDescription.blockFactors[0]
+            dfDict[blockFactor]=trial.treatedPop.get_attr(blockFactor) + trial.controlPop.get_attr(blockFactor)      
+        return pd.DataFrame(dfDict) 
 
 
 

@@ -5,12 +5,13 @@ import numpy as np
 class StrokeOutcome(Outcome):
 
     #phenotypeItems = ["nihss","strokeSubtype","strokeType","localization","disability"]
-    phenotypeItems = ["nihss","strokeSubtype","strokeType"]
+    phenotypeItems = ["nihss","strokeSubtype","strokeType", "priorToSim"]
 
     #def __init__(self, fatal, nihss, strokeType, strokeSubtype, location, disability):
-    def __init__(self, fatal, nihss, strokeType, strokeSubtype):
+    def __init__(self, fatal, nihss, strokeType, strokeSubtype, priorToSim=False):
         self.fatal = fatal
-        super().__init__(OutcomeType.STROKE, self.fatal)
+        self.priorToSim = priorToSim
+        super().__init__(OutcomeType.STROKE, self.fatal, self.priorToSim)
         self.nihss = nihss
         self.strokeType = strokeType
         self.strokeSubtype = strokeSubtype

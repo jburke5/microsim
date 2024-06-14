@@ -6,7 +6,7 @@ from microsim.regression_model import RegressionModel
 
 class StrokeNihssModel(StatsModelLinearRiskFactorModel):
 
-    def __init__(self, rng=None):
+    def __init__(self):
         self._model = {"coefficients": {
             "Intercept":           -2.6063356,   #_cons + aric + glucose_sim * (-46.7)
             "age":                  0.0771289,   #stroke_age
@@ -20,7 +20,7 @@ class StrokeNihssModel(StatsModelLinearRiskFactorModel):
             "smokingStatus[T.2]":  -0.1257199 ,  #currsmoker_sim
             "anyPhysicalActivity": -0.3476088,   #physact_sim
             "afib":                 1.794008,    #hxafib_sim     
-            "current_bp_treatment": 0.6804093,   #htntx_sim
+            "any_antiHypertensive": 0.6804093,   #htntx_sim
             "statin":              -0.1660485,   #choltx_sim
             "sbp":                  0.0131255 ,  #sbpstkcog_sim
             "dbp":                 -0.0144218,   #dbpstkcog_sim 
@@ -39,28 +39,26 @@ class StrokeNihssModel(StatsModelLinearRiskFactorModel):
                 "residual_standard_deviation": 4.329692 }
         
         self._regressionModel = RegressionModel(**self._model)
-        self._rng = rng
         super().__init__(self._regressionModel)
 
     def estimate_next_risk_vectorized(self, person):
         #constrain regression results
-        return min( max(0, round(super().estimate_next_risk_vectorized(person, rng=self._rng, withResidual=True))), 42) 
+        return min( max(0, round(super().estimate_next_risk_vectorized(person, rng=person._rng, withResidual=True))), 42) 
 
     def estimate_next_risk(self, person):
         #constrain regression results
-        return min( max(0, round(super().estimate_next_risk(person, rng=self._rng, withResidual=True))), 42)  
+        return min( max(0, round(super().estimate_next_risk(person, rng=person._rng, withResidual=True))), 42)  
 
 class StrokeTypeModel():
     
-    def __init__(self, rng=None):
+    def __init__(self):
         self._ischemicRatio = 0.89956 #1227/1364 using data from Levine et al. 
-        self._rng = rng
 
     def estimate_ischemic_risk(self, person):
-        return self._rng.uniform()
+        return person._rng.uniform()
 
     def estimate_ischemic_risk_vectorized(self, person):
-        return self._rng.uniform()
+        return person._rng.uniform()
 
     def get_stroke_type(self, person):
         return StrokeType.ISCHEMIC if (self.estimate_ischemic_risk(person)<self._ischemicRatio) else StrokeType.ICH
@@ -87,7 +85,7 @@ class StrokeSubtypeCEModel(StatsModelRelRiskFactorModel):
            "smokingStatus[T.2]":  0.0464248,   #currsmoker_sim
            "anyPhysicalActivity": 0.171529,    #physact_sim
            "afib":                1.858444,    #hxafib_sim     
-           "current_bp_treatment":0.1267211,   #htntx_sim
+           "any_antiHypertensive":0.1267211,   #htntx_sim
            "statin":              0.0405856,   #choltx_sim
            "sbp":                 0.0044229,   #sbpstkcog_sim
            "dbp":                -0.0211307,   #dbpstkcog_sim 
@@ -125,7 +123,7 @@ class StrokeSubtypeLVModel(StatsModelRelRiskFactorModel):
             "smokingStatus[T.2]": -0.4087069,   #currsmoker_sim
             "anyPhysicalActivity": 0.3283082,   #physact_sim
             "afib":                0.7040827,   #hxafib_sim     
-            "current_bp_treatment":0.1878509,   #htntx_sim
+            "any_antiHypertensive":0.1878509,   #htntx_sim
             "statin":              0.1681594,   #choltx_sim
             "sbp":                 0.0105225,   #sbpstkcog_sim
             "dbp":                -0.0154197,   #dbpstkcog_sim 
@@ -163,7 +161,7 @@ class StrokeSubtypeSVModel(StatsModelRelRiskFactorModel):
             "smokingStatus[T.2]":   0.0207556,   #currsmoker_sim
             "anyPhysicalActivity":  0.1915707,   #physact_sim
             "afib":                -0.0698982,   #hxafib_sim     
-            "current_bp_treatment":-0.0168805,   #htntx_sim
+            "any_antiHypertensive":-0.0168805,   #htntx_sim
             "statin":              -0.4778607,   #choltx_sim
             "sbp":                  0.0101797,   #sbpstkcog_sim
             "dbp":                 -0.0110669,   #dbpstkcog_sim 
@@ -186,9 +184,9 @@ class StrokeSubtypeSVModel(StatsModelRelRiskFactorModel):
 
 class StrokeSubtypeModelRepository:
     
-    def __init__(self, rng=None):
-        self._rng = rng
-    
+    def __init__(self):
+        pass   
+ 
     def get_stroke_subtype(self, person):
         
         ceRelRisk = StrokeSubtypeCEModel().estimate_rel_risk(person)
@@ -199,7 +197,7 @@ class StrokeSubtypeModelRepository:
         sumRelRisk = otRelRisk + ceRelRisk + lvRelRisk + svRelRisk
 
         #probabilities are just rescaled relative risks, no need to calculate them, just draw on the rel risk scale
-        draw = self._rng.uniform(low=0., high=sumRelRisk)
+        draw = person._rng.uniform(low=0., high=sumRelRisk)
 
         if (draw<lvRelRisk):
             return StrokeSubtype.LARGE_VESSEL #most common, so check this first
@@ -220,7 +218,7 @@ class StrokeSubtypeModelRepository:
         sumRelRisk = otRelRisk + ceRelRisk + lvRelRisk + svRelRisk
 
         #probabilities are just rescaled relative risks, no need to calculate them, just draw on the rel risk scale
-        draw = self._rng.uniform(low=0., high=sumRelRisk)
+        draw = person._rng.uniform(low=0., high=sumRelRisk)
 
         if (draw<lvRelRisk):
             return StrokeSubtype.LARGE_VESSEL #most common, so check this first

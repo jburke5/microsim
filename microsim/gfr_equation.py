@@ -1,6 +1,7 @@
 import pandas as pd
 from microsim.gender import NHANESGender
 from microsim.race_ethnicity import NHANESRaceEthnicity
+import numpy as np
 
 # will use the CKD-EPI equation: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2763564/
 # because it prediicts better in blacks, https://bmcnephrol.biomedcentral.com/articles/10.1186/s12882-017-0788-y
@@ -57,26 +58,12 @@ class GFREquation:
             )
         ].iloc[0]["constant"]
 
-        #print(f"thresholds: {crThreshold} constant: {constant} exponent: {exponent} female: {gender==NHANESGender.FEMALE}, black: {raceEthnicity==NHANESRaceEthnicity.NON_HISPANIC_BLACK}, cr: {creatinine}")
+        #Q: creatinine and exponent are both negative and fractional...what do we return in this case?
+        if (crThreshold < 0.001) | (creatinine/crThreshold<0) | np.isnan(exponent) | np.isinf(exponent) | np.isnan(creatinine / crThreshold) | np.isinf(creatinine / crThreshold):
+            print(f"thresholds: {crThreshold} constant: {constant} exponent: {exponent} female: {gender==NHANESGender.FEMALE}, black: {raceEthnicity==NHANESRaceEthnicity.NON_HISPANIC_BLACK}, cr: {creatinine}")
         return (
             constant
             * (creatinine / crThreshold) ** exponent
             * 0.993 ** age
         )
 
-    def get_gfr_for_person_vectorized(self, x):
-        crThreshold = 0.7 if x.gender == NHANESGender.FEMALE else 0.9
-        exponent = GFREquation.exponentForGenderCr.loc[
-            (GFREquation.exponentForGenderCr["female"] == (x.gender == NHANESGender.FEMALE))
-            & (GFREquation.exponentForGenderCr["underThreshold"] == (x.creatinine <= crThreshold))
-        ].iloc[0]["exponent"]
-        constant = GFREquation.constantForRaceGender.loc[
-            (
-                GFREquation.constantForRaceGender["black"]
-                == (x.raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK)
-            )
-            & (GFREquation.constantForRaceGender["female"] == (x.gender == NHANESGender.FEMALE))
-        ].iloc[0]["constant"]
-
-        # print(f"thresholds: {crThreshold} constant: {constant} exponent: {exponent} female: {self._gender==NHANESGender.FEMALE}, black: {self._raceEthnicity==NHANESRaceEthnicity.NON_HISPANIC_BLACK}, cr: {self._creatinine[-1]}")
-        return constant * (x.creatinine / crThreshold) ** exponent * 0.993**x.age

@@ -2,12 +2,16 @@ import statsmodels.formula.api as smf
 from microsim.trials.regression_analysis import RegressionAnalysis
 
 class LinearRegressionAnalysis(RegressionAnalysis):
-    def __init__(self, outcomeAssessor, nameStem='linearRegression-'):
-        super().__init__(outcomeAssessor, nameStem)
-
-    def analyze(self, treatedPop, untreatedPop):
-        data=self.get_dataframe(treatedPop, untreatedPop)
-        reg = smf.ols("outcome ~ treatment", data).fit(disp=False)
-        return reg.params['treatment'], reg.params['Intercept'], reg.bse['treatment'], reg.pvalues['treatment'], self.get_means(data)
+    def __init__(self):
+        pass
+    
+    def analyze(self, trial, assessmentFunctionDict, assessmentAnalysis):
+        df = self.get_trial_outcome_df(trial, assessmentFunctionDict, assessmentAnalysis)
+        blockFactors = trial.trialDescription.blockFactors
+        formula = f"outcome ~ treatment"
+        for blockFactor in blockFactors:
+            formula += f" + {blockFactor}"
+        reg = smf.ols(formula, df).fit(disp=False)
+        return reg.params['treatment'], reg.params['Intercept'], reg.bse['treatment'], reg.pvalues['treatment']
 
 

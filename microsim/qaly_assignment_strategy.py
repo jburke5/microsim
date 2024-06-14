@@ -1,7 +1,7 @@
 import numpy as np
 
+from microsim.qaly_outcome import QALYOutcome
 from microsim.outcome import OutcomeType
-
 
 class QALYAssignmentStrategy:
     def __init__(self):
@@ -12,6 +12,15 @@ class QALYAssignmentStrategy:
         self._qalysForOutcome[OutcomeType.MI] = [0.88, 0.90]
         self._qalysForOutcome[OutcomeType.DEMENTIA] = list(np.arange(0.80, 0, -0.01))
 
+    def generate_next_outcome(self, person):
+        qaly = self.get_next_qaly(person)
+        fatal = False
+        selfReported = False
+        return QALYOutcome(fatal, selfReported, qaly)
+
+    def get_next_outcome(self, person):
+        return self.generate_next_outcome(person)
+
     def get_next_qaly(self, person, rng=None, age=-1):
         if age==-1:
             age=person._age[-1]
@@ -19,7 +28,7 @@ class QALYAssignmentStrategy:
         # qaly assignment happens prior to advancing an age, but after condtiions are set...
         wave = person.get_wave_for_age(age) 
         conditions = self.get_conditions_for_person(person, wave)
-        return self.get_qalys_for_age_and_conditions(age, conditions, person.is_dead())
+        return self.get_qalys_for_age_and_conditions(age, conditions, person.is_dead)
 
     def get_qalys_for_age_and_conditions(self, age, conditions, dead, x=None):
         base = self.get_base_qaly_for_age(age)
@@ -32,14 +41,14 @@ class QALYAssignmentStrategy:
     def get_conditions_for_person(self, person, wave):
         return {
             OutcomeType.DEMENTIA: (
-                person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.DEMENTIA, True),
+                person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.DEMENTIA),
                 person.get_age_at_first_outcome(OutcomeType.DEMENTIA),
             ),
             OutcomeType.STROKE: (
-                person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.STROKE, True),
+                person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.STROKE),
                 person.get_age_at_first_outcome(OutcomeType.STROKE),
             ),
-            OutcomeType.MI: (person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.MI, True), person.get_age_at_first_outcome(OutcomeType.MI)),
+            OutcomeType.MI: (person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.MI), person.get_age_at_first_outcome(OutcomeType.MI)),
         }
 
     # simple age-based approximation that after age 70, you lose about 0.01 QALYs per year
@@ -94,10 +103,3 @@ class QALYAssignmentStrategy:
 
         return multipliers
 
-    def get_qalys_vectorized(self, x):
-        conditions = {
-            OutcomeType.DEMENTIA: (x.dementia or x.dementiaNext, x.ageAtFirstDementia),
-            OutcomeType.STROKE: (x.strokeNext or x.stroke, x.ageAtFirstStroke),
-            OutcomeType.MI: (x.miNext or x.mi, x.ageAtFirstMI),
-        }
-        return self.get_qalys_for_age_and_conditions(x.age, conditions, x.dead, x)
