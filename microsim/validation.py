@@ -29,7 +29,9 @@ class Validation:
 
     @staticmethod
     def nhanes_over_time(nWorkers=5, path=None):
-        '''Performs the over time validation of a population against the NHANES sample.'''
+        '''Performs the over time validation of a population against the NHANES sample.
+           nWorkers determines the number of cores used
+           path=None will result in displaying the figures whereas an actual path will export them to that path'''
         nYears = 18
         popSize = 100000
         pop = PopulationFactory.get_nhanes_population(n=popSize, year=1999, personFilters=None, nhanesWeights=True, distributions=False)
