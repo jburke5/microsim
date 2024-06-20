@@ -370,50 +370,6 @@ class Population:
         )
         return pd.Series([event[0] for event in events]).mean()
 
-    def get_person_attributes_from_person(self, person, timeVaryingCovariates):
-        attrForPerson = person.get_current_state_as_dict()
-        try:
-            attrForPerson["populationIndex"] = person._populationIndex
-        except AttributeError:
-            pass  # populationIndex is not necessary for advancing; can continue safely without it
-
-        timeVaryingAttrsForPerson = person.get_tvc_state_as_dict(timeVaryingCovariates)
-        attrForPerson.update(timeVaryingAttrsForPerson)
-        return attrForPerson
-
-    def get_people_current_state_as_dataframe(self):
-            timeVaryingCovariatesAndOutcomes = self._timeVaryingCovariates
-            timeVaryingCovariatesAndOutcomes.append("gcp")
-            return pd.DataFrame(
-                list(
-                    self.applyMethodSeries(self._people,
-                        self.get_person_attributes_from_person,
-                        timeVaryingCovariates=timeVaryingCovariatesAndOutcomes,
-                    )
-                )
-            )
-
-    def get_people_current_state_and_summary_as_dataframe(self):
-        df = self.get_people_current_state_as_dataframe()
-        # iterate through variables that vary over time
-        tvcMeans = {}
-        for var in self._timeVaryingCovariates:
-            tvcMeans["mean" + var.capitalize()] = [
-                pd.Series(getattr(person, "_" + var)).mean()
-                for i, person in self._people.items()
-            ]   
-        df = pd.concat([df, pd.DataFrame(tvcMeans)], axis=1)
-        #I thought I needed these, I no longer do
-        #the GCP Stroke model needs the median of some quantities (will not get the medians for all TVCs for now) 
-        #varMedians = {}
-        #for var in ["bmi", "gcp", "waist"]:
-        #    varMedians["median" + var.capitalize()] = [
-        #        pd.Series(getattr(person, "_" + var)).median()
-        #        for i, person in self._people.items()
-        #    ]   
-        #df = pd.concat([df, pd.DataFrame(varMedians)], axis=1)
-        return df
-
     def get_all_person_years_as_df(self):
         """This function creates a dataframe where each row is a person-year from the simulation.
            Thus a single person object will be represented in N rows in this dataframe where N is the 
