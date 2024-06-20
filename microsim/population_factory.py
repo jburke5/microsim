@@ -139,7 +139,7 @@ class PopulationFactory:
         if distributions:
             dfForGroups = PopulationFactory.get_partitioned_nhanes_people(year=year)
             distributions = PopulationFactory.get_distributions(dfForGroups)
-            drawsForGroups = PopulationFactory.draw_from_distributions(dfForGroups, distributions)
+            drawsForGroups = PopulationFactory.draw_from_distributions(distributions)
             df = PopulationFactory.get_df_from_draws(drawsForGroups, dfForGroups)
             df = df.merge(nhanesDf[["name","WTINT2YR"]], on="name", how="inner").copy()
             nhanesDf = df
@@ -236,7 +236,10 @@ class PopulationFactory:
     @staticmethod
     def is_singular(cov):
        """Checks if a covariance matrix is singular or not."""
+       #with NHANES it was sufficient to assume real eigenvalues
        return True if not np.all(np.linalg.eig(cov)[0]>10**(-3)) else False
+       #with KAISER I get a lot of complex eigenvalues
+       #return True if not np.all(np.array(list(map(lambda x: np.linalg.norm(x), np.linalg.eig(cov)[0])))>10**(-3)) else False
 
     @staticmethod
     def get_distributions(dfForGroups):
@@ -249,13 +252,16 @@ class PopulationFactory:
         covForGroups = dict()
         minForGroups = dict()
         maxForGroups = dict()
+        sizeForGroups = dict()
         singularForGroups = dict()
         for key in dfForGroups.keys():
             meanForGroups[key], covForGroups[key] = multivariate_normal.fit(np.array(dfForGroups[key][nhanesContinuousVariables]))
             singularForGroups[key] = PopulationFactory.is_singular(covForGroups[key])
             minForGroups[key] = np.min(np.array(dfForGroups[key][nhanesContinuousVariables]), axis=0)
             maxForGroups[key] = np.max(np.array(dfForGroups[key][nhanesContinuousVariables]), axis=0)
-        distributions = {"mean": meanForGroups, "cov": covForGroups, "min": minForGroups, "max": maxForGroups, "singular": singularForGroups}
+            sizeForGroups[key] = dfForGroups[key].shape[0]
+        distributions = {"mean": meanForGroups, "cov": covForGroups, "min": minForGroups, "max": maxForGroups, "singular": singularForGroups,
+                         "size": sizeForGroups}
         distributions = PopulationFactory.get_alt_groups(distributions)
         return distributions
 
@@ -282,14 +288,15 @@ class PopulationFactory:
         return distributions
 
     @staticmethod
-    def draw_from_distributions(dfForGroups, distributions):
+    def draw_from_distributions(distributions):
         """Draws from the multivariate normal distributions for each combination of categorical variables (group).
         If a draw includes a continuous variable value outside the bounds, it re-draws.
         For each group, the number of draws from the distribution is equal to the number of people in that group in 
         the original NHANES dataframe (as contained in dfForGroups).""" 
         drawsForGroups = dict()
-        for key in dfForGroups.keys():
-            size = len(dfForGroups[key]["name"].tolist())
+        #just use the "mean" for the keys
+        for key in distributions["mean"].keys():
+            size = distributions["size"][key]
             #use either the original distribution or the alternative if the cov matrix is singular
             distKey = key if not distributions["singular"][key] else distributions["alt"][key]
             distMean = distributions["mean"][distKey]
