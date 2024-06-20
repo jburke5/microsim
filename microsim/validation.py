@@ -28,7 +28,7 @@ class Validation:
         pop.print_baseline_summary()
 
     @staticmethod
-    def nhanes_over_time(nWorkers=1, path=None):
+    def nhanes_over_time(nWorkers=5, path=None):
         '''Performs the over time validation of a population against the NHANES sample.'''
         nYears = 18
         popSize = 100000
@@ -51,7 +51,7 @@ class Validation:
         pop.print_dementia_incidence(path=path)
 
     @staticmethod
-    def nhanes_treatment_effects(sampleSize=2000000, nWorkers=5):
+    def nhanes_treatment_effects(sampleSize=2000000, nWorkers=1):
         '''This function creates and advances a control and a treated population in order to estimate the 
            BP medication treatment effect on the MI relative risk and the stroke relative risk.'''
         print("\nVALIDATION OF TREATMENT EFFECTS")
@@ -85,10 +85,10 @@ class Validation:
             print(f"         sd of {nSimulations} simulations: strokeRR= {np.std(strokeRRList):<8.2f}, miRR= {np.std(miRRList):<8.2f}")    
 
     @staticmethod
-    def nhanes(sampleSize=2000000, nWorkers=5, path=None):
+    def nhanes(path=None):
         Validation.nhanes_baseline_pop()       
-        Validation.nhanes_over_time(nWorkers=nWorkers, path=path)
-        Validation.nhanes_treatment_effects(sampleSize=sampleSize, nWorkers=nWorkers)
+        Validation.nhanes_over_time(path=path)
+        Validation.nhanes_treatment_effects()
 
 
 
