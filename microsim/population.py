@@ -22,7 +22,7 @@ from microsim.nhanes_risk_model_repository import NHANESRiskModelRepository
 from microsim.outcome import Outcome, OutcomeType
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.person import Person
-from microsim.person_factory import PersonFactory, microsimToNhanes
+from microsim.person_factory import PersonFactory
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
 from microsim.race_ethnicity import NHANESRaceEthnicity
 from microsim.smoking_status import SmokingStatus
@@ -524,7 +524,7 @@ class Population:
                 col = 0
             else:
                 col = 1
-            if rf.value in microsimToNhanes.keys():
+            if rf.value in PersonFactory.get_microsimToNhanes().keys():
                 rfListNhanes = other.get_attr_at_index(rf, -1)
                 ax[row,col].hist([rfList, rfListNhanes], bins=20, density=True)
             else:

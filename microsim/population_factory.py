@@ -4,7 +4,7 @@ from itertools import product
 from scipy.stats import multivariate_normal
 from enum import Enum
 
-from microsim.person_factory import PersonFactory, microsimToNhanes
+from microsim.person_factory import PersonFactory
 from microsim.person_filter_factory import PersonFilterFactory
 from microsim.population import Population
 from microsim.afib_model import AFibPrevalenceModel
@@ -80,7 +80,7 @@ class PopulationFactory:
         #in Person-objects, the attribute name is used
         nhanesDf = nhanesDf.rename(columns={"level_0":"name"})
         #rename the columns that have different column names than the ones that appear in Microsim
-        for key, value in microsimToNhanes.items():
+        for key, value in PersonFactory.get_microsimToNhanes().items():
             if key!=value:
                 nhanesDf = nhanesDf.rename(columns={value:key})
         #convert the integers to booleans because in the simulation we always use bool for this rf
@@ -345,7 +345,7 @@ class PopulationFactory:
         return pop
 
     @staticmethod
-    def get_nhanes_attributes():
+    def get_nhanes_pop_attributes():
         attrDict = {PopulationRepositoryType.STATIC_RISK_FACTORS.value: [StaticRiskFactorsType.GENDER.value,
                                                                      StaticRiskFactorsType.SMOKING_STATUS.value, 
                                                                      StaticRiskFactorsType.RACE_ETHNICITY.value,
@@ -364,16 +364,20 @@ class PopulationFactory:
                                                                       DynamicRiskFactorsType.SBP.value, 
                                                                       DynamicRiskFactorsType.DBP.value],
                     PopulationRepositoryType.DEFAULT_TREATMENTS.value: [DefaultTreatmentsType.STATIN.value,
-                                                                    DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value],
-                    #these are used below to define groups ( = specific combinations of all NHANES categorical variables)
-                    # and to define which columns from the NHANES dataframe to model as Gaussians ( = all continuous variables present
-                    # in the original NHANES dataset).
-                    # The last point is important, the Gaussians model the continuous variables present in the original NHANES dataset
-                    # not all continuous variables present in the Microsim simulation (which includes more continuous variables not
-                    # present in the original NHANES dataset such as PVD)
-                    # The order of these two lists is important,as they define the column names of the final dataframe. The numpy arrays used in between do 
-                    # not keep track of which column is which attribute.
-                    VariableType.CATEGORICAL.value:  [StaticRiskFactorsType.GENDER.value, 
+                                                                    DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value]}
+        return attrDict
+ 
+    @staticmethod
+    def get_nhanes_variable_types():
+        #these are used below to define groups ( = specific combinations of all NHANES categorical variables)
+        # and to define which columns from the NHANES dataframe to model as Gaussians ( = all continuous variables present
+        # in the original NHANES dataset).
+        # The last point is important, the Gaussians model the continuous variables present in the original NHANES dataset
+        # not all continuous variables present in the Microsim simulation (which includes more continuous variables not
+        # present in the original NHANES dataset such as PVD)
+        # The order of these two lists is important,as they define the column names of the final dataframe. The numpy arrays used in between do 
+        # not keep track of which column is which attribute.
+        variablesDict = {VariableType.CATEGORICAL.value:  [StaticRiskFactorsType.GENDER.value, 
                                                   StaticRiskFactorsType.SMOKING_STATUS.value, 
                                                   StaticRiskFactorsType.RACE_ETHNICITY.value, 
                                                   DefaultTreatmentsType.STATIN.value,
@@ -392,7 +396,7 @@ class PopulationFactory:
                                                   DynamicRiskFactorsType.CREATININE.value, 
                                                   DynamicRiskFactorsType.SBP.value, 
                                                   DynamicRiskFactorsType.DBP.value]}
-        return attrDict
+        return variablesDict
 
     @staticmethod
     def get_cloned_people(person, n):
