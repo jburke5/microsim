@@ -291,7 +291,7 @@ class PopulationFactory:
                 distMin = distributions["min"][distKey]
                 distMax = distributions["max"][distKey]
 
-            nhanesContinuousVariables = PopulationFactory.get_nhanes_attributes()[VariableType.CONTINUOUS.value]
+            nhanesContinuousVariables = PopulationFactory.get_nhanes_variable_types()[VariableType.CONTINUOUS.value]
             drawsNeeded = size
             draws = None
             #the logic about when to reshape can be improved probably...
