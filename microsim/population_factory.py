@@ -80,15 +80,22 @@ class PopulationFactory:
         #in Person-objects, the attribute name is used
         nhanesDf = nhanesDf.rename(columns={"level_0":"name"})
         #rename the columns that have different column names than the ones that appear in Microsim
-        for key, value in PersonFactory.get_microsimToNhanes().items():
-            if key!=value:
-                nhanesDf = nhanesDf.rename(columns={value:key})
+        nhanesDf = PopulationFactory.rename_df_columns(nhanesDf, PersonFactory.get_microsimToNhanes())
         #convert the integers to booleans because in the simulation we always use bool for this rf
         nhanesDf[DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value] = nhanesDf[DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value].astype(bool)
         #convert drinks per week to category
         nhanesDf[DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value] = nhanesDf.apply(lambda x:
                                                                                  AlcoholCategory.get_category_for_consumption(x[DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value]), axis=1)
         return nhanesDf
+
+    @staticmethod
+    def rename_df_columns(df, microsimToDfDict):
+        '''Dataframes that we typically use to import person data, eg NHANES, have column names that are different than microsim attributes.
+        This function takes a dictionary that helps convert those column names to the exact names that microsim uses.'''
+        for key, value in microsimToDfDict.items():
+            if key!=value:
+                df = df.rename(columns={value:key})
+        return df
 
     @staticmethod
     def get_nhanes_people(n=None, year=None, personFilters=None, nhanesWeights=False, distributions=False, customWeights=None):
