@@ -23,12 +23,82 @@ from microsim.treatment import DefaultTreatmentsType
 from microsim.alcohol_category import AlcoholCategory
 from microsim.standardized_population import StandardizedPopulation
 from microsim.variable_type import VariableType
+from microsim.outcome import OutcomeType
 
 class PopulationType(Enum):
     NHANES = "nhanes"
     KAISER = "kaiser"
 
 class PopulationFactory:
+    nhanes_pop_attributes = {PopulationRepositoryType.STATIC_RISK_FACTORS.value: 
+                                                                    [StaticRiskFactorsType.GENDER.value,
+                                                                     StaticRiskFactorsType.SMOKING_STATUS.value, 
+                                                                     StaticRiskFactorsType.RACE_ETHNICITY.value,
+                                                                     StaticRiskFactorsType.EDUCATION.value],
+                             PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value: 
+                                                                     [DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value,
+                                                                      DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value,
+                                                                      DynamicRiskFactorsType.AGE.value, 
+                                                                      DynamicRiskFactorsType.HDL.value, 
+                                                                      DynamicRiskFactorsType.BMI.value, 
+                                                                      DynamicRiskFactorsType.TOT_CHOL.value, 
+                                                                      DynamicRiskFactorsType.TRIG.value, 
+                                                                      DynamicRiskFactorsType.A1C.value, 
+                                                                      DynamicRiskFactorsType.LDL.value, 
+                                                                      DynamicRiskFactorsType.WAIST.value, 
+                                                                      DynamicRiskFactorsType.CREATININE.value, 
+                                                                      DynamicRiskFactorsType.SBP.value, 
+                                                                      DynamicRiskFactorsType.DBP.value],
+                             PopulationRepositoryType.DEFAULT_TREATMENTS.value: 
+                                                                     [DefaultTreatmentsType.STATIN.value,
+                                                                       DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value],
+                             PopulationRepositoryType.OUTCOMES.value: 
+                                                                      [OutcomeType.COGNITION.value,
+                                                                       OutcomeType.CI.value,
+                                                                       OutcomeType.CARDIOVASCULAR.value,
+                                                                       OutcomeType.STROKE.value,
+                                                                       OutcomeType.MI.value,
+                                                                       OutcomeType.NONCARDIOVASCULAR.value,
+                                                                       OutcomeType.DEMENTIA.value,
+                                                                       OutcomeType.DEATH.value,
+                                                                       OutcomeType.QUALITYADJUSTED_LIFE_YEARS.value]}
+                                                  
+    #these are used below to define groups ( = specific combinations of all NHANES categorical variables)
+    # and to define which columns from the NHANES dataframe to model as Gaussians ( = all continuous variables present
+    # in the original NHANES dataset).
+    # The last point is important, the Gaussians model the continuous variables present in the original NHANES dataset
+    # not all continuous variables present in the Microsim simulation (which includes more continuous variables not
+    # present in the original NHANES dataset such as PVD)
+    # The order of these two lists is important,as they define the column names of the final dataframe. The numpy arrays used in between do 
+    # not keep track of which column is which attribute.
+    nhanes_variable_types = {VariableType.CATEGORICAL.value:  [StaticRiskFactorsType.GENDER.value, 
+                                                  StaticRiskFactorsType.SMOKING_STATUS.value, 
+                                                  StaticRiskFactorsType.RACE_ETHNICITY.value, 
+                                                  DefaultTreatmentsType.STATIN.value,
+                                                  StaticRiskFactorsType.EDUCATION.value,
+                                                  DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value,
+                                                  DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value,
+                                                  DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value],
+                             VariableType.CONTINUOUS.value:   [DynamicRiskFactorsType.AGE.value, 
+                                                  DynamicRiskFactorsType.HDL.value, 
+                                                  DynamicRiskFactorsType.BMI.value, 
+                                                  DynamicRiskFactorsType.TOT_CHOL.value, 
+                                                  DynamicRiskFactorsType.TRIG.value, 
+                                                  DynamicRiskFactorsType.A1C.value, 
+                                                  DynamicRiskFactorsType.LDL.value, 
+                                                  DynamicRiskFactorsType.WAIST.value, 
+                                                  DynamicRiskFactorsType.CREATININE.value, 
+                                                  DynamicRiskFactorsType.SBP.value, 
+                                                  DynamicRiskFactorsType.DBP.value]}
+
+    @staticmethod
+    def get_pop_attributes(popType=PopulationType.NHANES.value):
+        if popType == PopulationType.NHANES.value:
+            return PopulationFactory.nhanes_pop_attributes 
+        elif popType == PopulationType.KAISER.value:
+            return PopulationFactory.kaiser_pop_attributes
+        else:
+            raise RuntimeError("Population type not a valid one in PopulationFactory.get_pop_attributes.")      
 
     @staticmethod
     def get_population(popType, **kwargs):
@@ -80,7 +150,7 @@ class PopulationFactory:
         #in Person-objects, the attribute name is used
         nhanesDf = nhanesDf.rename(columns={"level_0":"name"})
         #rename the columns that have different column names than the ones that appear in Microsim
-        nhanesDf = PopulationFactory.rename_df_columns(nhanesDf, PersonFactory.get_microsimToNhanes())
+        nhanesDf = PopulationFactory.rename_df_columns(nhanesDf, PersonFactory.microsimToNhanes)
         #convert the integers to booleans because in the simulation we always use bool for this rf
         nhanesDf[DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value] = nhanesDf[DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value].astype(bool)
         #convert drinks per week to category
@@ -291,7 +361,7 @@ class PopulationFactory:
                 distMin = distributions["min"][distKey]
                 distMax = distributions["max"][distKey]
 
-            nhanesContinuousVariables = PopulationFactory.get_nhanes_variable_types()[VariableType.CONTINUOUS.value]
+            nhanesContinuousVariables = PopulationFactory.nhanes_variable_types[VariableType.CONTINUOUS.value]
             drawsNeeded = size
             draws = None
             #the logic about when to reshape can be improved probably...
@@ -324,8 +394,8 @@ class PopulationFactory:
     @staticmethod
     def get_df_from_draws(drawsForGroups, dfForGroups):
         """Converts the draws from the distributions to a Pandas df."""
-        nhanesCategoricalVariables = PopulationFactory.get_nhanes_attributes()[VariableType.CATEGORICAL.value]
-        nhanesContinuousVariables = PopulationFactory.get_nhanes_attributes()[VariableType.CONTINUOUS.value]
+        nhanesCategoricalVariables = PopulationFactory.nhanes_attributes[VariableType.CATEGORICAL.value]
+        nhanesContinuousVariables = PopulationFactory.nhanes_attributes[VariableType.CONTINUOUS.value]
         df = pd.DataFrame(data=None, columns= ["name"]+nhanesCategoricalVariables+nhanesContinuousVariables)
         for key in drawsForGroups.keys():
             names = dfForGroups[key]["name"].tolist()
@@ -350,60 +420,6 @@ class PopulationFactory:
         weights = pd.merge(nhanesDf, weights, how="left", on=["age", "gender"]).popWeight
         pop = PopulationFactory.get_nhanes_population(n=n, year=year, personFilters=None, nhanesWeights=False, distributions=False, customWeights=weights)
         return pop
-
-    @staticmethod
-    def get_nhanes_pop_attributes():
-        attrDict = {PopulationRepositoryType.STATIC_RISK_FACTORS.value: [StaticRiskFactorsType.GENDER.value,
-                                                                     StaticRiskFactorsType.SMOKING_STATUS.value, 
-                                                                     StaticRiskFactorsType.RACE_ETHNICITY.value,
-                                                                     StaticRiskFactorsType.EDUCATION.value],
-                    PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value: [DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value,
-                                                                      DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value,
-                                                                      DynamicRiskFactorsType.AGE.value, 
-                                                                      DynamicRiskFactorsType.HDL.value, 
-                                                                      DynamicRiskFactorsType.BMI.value, 
-                                                                      DynamicRiskFactorsType.TOT_CHOL.value, 
-                                                                      DynamicRiskFactorsType.TRIG.value, 
-                                                                      DynamicRiskFactorsType.A1C.value, 
-                                                                      DynamicRiskFactorsType.LDL.value, 
-                                                                      DynamicRiskFactorsType.WAIST.value, 
-                                                                      DynamicRiskFactorsType.CREATININE.value, 
-                                                                      DynamicRiskFactorsType.SBP.value, 
-                                                                      DynamicRiskFactorsType.DBP.value],
-                    PopulationRepositoryType.DEFAULT_TREATMENTS.value: [DefaultTreatmentsType.STATIN.value,
-                                                                    DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value]}
-        return attrDict
- 
-    @staticmethod
-    def get_nhanes_variable_types():
-        #these are used below to define groups ( = specific combinations of all NHANES categorical variables)
-        # and to define which columns from the NHANES dataframe to model as Gaussians ( = all continuous variables present
-        # in the original NHANES dataset).
-        # The last point is important, the Gaussians model the continuous variables present in the original NHANES dataset
-        # not all continuous variables present in the Microsim simulation (which includes more continuous variables not
-        # present in the original NHANES dataset such as PVD)
-        # The order of these two lists is important,as they define the column names of the final dataframe. The numpy arrays used in between do 
-        # not keep track of which column is which attribute.
-        variablesDict = {VariableType.CATEGORICAL.value:  [StaticRiskFactorsType.GENDER.value, 
-                                                  StaticRiskFactorsType.SMOKING_STATUS.value, 
-                                                  StaticRiskFactorsType.RACE_ETHNICITY.value, 
-                                                  DefaultTreatmentsType.STATIN.value,
-                                                  StaticRiskFactorsType.EDUCATION.value,
-                                                  DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value,
-                                                  DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value,
-                                                  DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value],
-                    VariableType.CONTINUOUS.value:   [DynamicRiskFactorsType.AGE.value, 
-                                                  DynamicRiskFactorsType.HDL.value, 
-                                                  DynamicRiskFactorsType.BMI.value, 
-                                                  DynamicRiskFactorsType.TOT_CHOL.value, 
-                                                  DynamicRiskFactorsType.TRIG.value, 
-                                                  DynamicRiskFactorsType.A1C.value, 
-                                                  DynamicRiskFactorsType.LDL.value, 
-                                                  DynamicRiskFactorsType.WAIST.value, 
-                                                  DynamicRiskFactorsType.CREATININE.value, 
-                                                  DynamicRiskFactorsType.SBP.value, 
-                                                  DynamicRiskFactorsType.DBP.value]}
-        return variablesDict
 
     @staticmethod
     def get_cloned_people(person, n):

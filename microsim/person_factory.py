@@ -16,6 +16,24 @@ from microsim.stroke_outcome import StrokeOutcome
 class PersonFactory:
     """A class used to obtain Person-objects using data from a variety of sources."""
 
+    #a dictionary with microsim attributes as keys and dataframe column names as values.
+    #Useful to convert column names from the NHANES data to the names Microsim uses.'''
+    #Q: this probably belongs somewhere else...but I also need to avoid circular imports...
+    microsimToNhanes = {DynamicRiskFactorsType.SBP.value: "meanSBP",
+                    DynamicRiskFactorsType.DBP.value: "meanDBP",
+                    DynamicRiskFactorsType.A1C.value: "a1c",
+                    DynamicRiskFactorsType.HDL.value: "hdl",
+                    DynamicRiskFactorsType.LDL.value: "ldl",
+                    DynamicRiskFactorsType.TRIG.value: "trig",
+                    DynamicRiskFactorsType.TOT_CHOL.value: "tot_chol",
+                    DynamicRiskFactorsType.BMI.value: "bmi",
+                    DynamicRiskFactorsType.WAIST.value: "waist",
+                    DynamicRiskFactorsType.AGE.value: "age",
+                    DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: 'anyPhysicalActivity',
+                    DynamicRiskFactorsType.CREATININE.value: "serumCreatinine",
+                    DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: "alcoholPerWeek",
+                    DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: "antiHypertensive"} 
+
     @staticmethod
     def get_nhanes_person_init_information(x):
         """Takes all Person-instance-related data via x and and organizes it."""
@@ -102,25 +120,4 @@ class PersonFactory:
         person._pvd = [initializationModelRepository[DynamicRiskFactorsType.PVD].estimate_next_risk(person)]
         person._afib = [initializationModelRepository[DynamicRiskFactorsType.AFIB].estimate_next_risk(person)]
         return person
-
-    @staticmethod
-    def get_microsimToNhanes():
-        '''Returns a dictionary with microsim attributes as keys and dataframe column names as values.
-           Useful to convert column names from the NHANES data to the names Microsim uses.'''
-        #Q: this probably belongs somewhere else...but I also need to avoid circular imports...
-        microsimToNhanes = {DynamicRiskFactorsType.SBP.value: "meanSBP",
-                    DynamicRiskFactorsType.DBP.value: "meanDBP",
-                    DynamicRiskFactorsType.A1C.value: "a1c",
-                    DynamicRiskFactorsType.HDL.value: "hdl",
-                    DynamicRiskFactorsType.LDL.value: "ldl",
-                    DynamicRiskFactorsType.TRIG.value: "trig",
-                    DynamicRiskFactorsType.TOT_CHOL.value: "tot_chol",
-                    DynamicRiskFactorsType.BMI.value: "bmi",
-                    DynamicRiskFactorsType.WAIST.value: "waist",
-                    DynamicRiskFactorsType.AGE.value: "age",
-                    DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: 'anyPhysicalActivity',
-                    DynamicRiskFactorsType.CREATININE.value: "serumCreatinine",
-                    DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: "alcoholPerWeek",
-                    DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: "antiHypertensive"}  
-        return microsimToNhanes
 
