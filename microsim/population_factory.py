@@ -17,7 +17,7 @@ from microsim.cohort_risk_model_repository import (CohortDynamicRiskFactorModelR
                                                    CohortDefaultTreatmentModelRepository)
 from microsim.education import Education
 from microsim.gender import NHANESGender
-from microsim.race_ethnicity import NHANESRaceEthnicity
+#from microsim.race_ethnicity import RaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.treatment import DefaultTreatmentsType
 from microsim.alcohol_category import AlcoholCategory

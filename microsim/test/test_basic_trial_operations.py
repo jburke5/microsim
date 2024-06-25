@@ -7,7 +7,7 @@ from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.dementia_model import DementiaModel
 from microsim.trials.trial_description import NhanesTrialDescription
 from microsim.trials.trial import Trial
@@ -54,7 +54,7 @@ class TestBasicTrialOperations(unittest.TestCase):
 
         self.x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 60,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 140,
                                DynamicRiskFactorsType.DBP.value: 90,
                                DynamicRiskFactorsType.A1C.value: 5.5,

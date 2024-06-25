@@ -10,7 +10,7 @@ from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 
 import unittest
 import numpy as np
@@ -22,7 +22,7 @@ class TestNHANESLinearRiskFactorModel(unittest.TestCase):
 
         self.x_test_person = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 75,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.MEXICAN_AMERICAN.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.MEXICAN_AMERICAN.value,
                                DynamicRiskFactorsType.SBP.value: 140,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 6.5,
@@ -54,7 +54,7 @@ class TestNHANESLinearRiskFactorModel(unittest.TestCase):
         initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
         x_highBPPerson = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 75,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.MEXICAN_AMERICAN.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.MEXICAN_AMERICAN.value,
                                DynamicRiskFactorsType.SBP.value: 500,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 6.5,

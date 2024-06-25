@@ -6,7 +6,7 @@ from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.risk_factor import StaticRiskFactorsType, DynamicRiskFactorsType
 from microsim.population_factory import PopulationFactory
 from microsim.person_factory import PersonFactory
@@ -18,7 +18,7 @@ class TestCKDEquation(unittest.TestCase):
 
         self.x_black_female_high_cr = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 52,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: Person.convert_fasting_glucose_to_a1c(100),
@@ -42,7 +42,7 @@ class TestCKDEquation(unittest.TestCase):
 
         self.x_black_female_low_cr = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 52,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: Person.convert_fasting_glucose_to_a1c(100),
@@ -66,7 +66,7 @@ class TestCKDEquation(unittest.TestCase):
 
         self.x_white_male_high_cr = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 52,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: Person.convert_fasting_glucose_to_a1c(100),
@@ -90,7 +90,7 @@ class TestCKDEquation(unittest.TestCase):
 
         self.x_white_male_low_cr = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 52,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: Person.convert_fasting_glucose_to_a1c(100),

@@ -6,7 +6,7 @@ from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
 from microsim.risk_model_repository import RiskModelRepository
 from microsim.outcome import Outcome, OutcomeType
 from microsim.person import Person
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.smoking_status import SmokingStatus
@@ -43,7 +43,7 @@ class PersonFactory:
         name = x.name
    
         personStaticRiskFactors = {
-                            StaticRiskFactorsType.RACE_ETHNICITY.value: NHANESRaceEthnicity(int(x.raceEthnicity)),
+                            StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity(int(x.raceEthnicity)),
                             StaticRiskFactorsType.EDUCATION.value: Education(int(x.education)),
                             StaticRiskFactorsType.GENDER.value: NHANESGender(int(x.gender)),
                             StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus(int(x.smokingStatus))}

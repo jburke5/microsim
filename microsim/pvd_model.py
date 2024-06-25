@@ -1,6 +1,6 @@
 import numpy as np
 from microsim.smoking_status import SmokingStatus
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.gender import NHANESGender
 
 # based on the publication: https://doi.org/10.1097%2FMD.0000000000003454
@@ -34,11 +34,11 @@ class PVDPrevalenceModel:
             xb += 0.14
         if ( (smokingStatus==SmokingStatus.CURRENT) | (smokingStatus==SmokingStatus.FORMER) ):
             xb += 0.47
-        if raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
+        if raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
             xb += 1.23
-        elif ( (raceEthnicity==NHANESRaceEthnicity.MEXICAN_AMERICAN) | (raceEthnicity==NHANESRaceEthnicity.OTHER_HISPANIC) ):
+        elif ( (raceEthnicity== RaceEthnicity.MEXICAN_AMERICAN) | (raceEthnicity==RaceEthnicity.OTHER_HISPANIC) ):
             xb += 0.17
-        elif raceEthnicity == NHANESRaceEthnicity.OTHER:
+        elif raceEthnicity == RaceEthnicity.OTHER:
             xb += -1.78
 
         return xb
@@ -100,11 +100,11 @@ class PVDIncidenceModel:
                 xb += 0.01
             if ( (smokingStatus==SmokingStatus.CURRENT) | (smokingStatus==SmokingStatus.FORMER) ):
                 xb += 0.02
-            if raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
+            if raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
                 xb += 1.09
-            elif ( (raceEthnicity==NHANESRaceEthnicity.MEXICAN_AMERICAN) | (raceEthnicity==NHANESRaceEthnicity.OTHER_HISPANIC) ):
+            elif ( (raceEthnicity== RaceEthnicity.MEXICAN_AMERICAN) | (raceEthnicity==RaceEthnicity.OTHER_HISPANIC) ):
                 xb += 0.27
-            elif raceEthnicity == NHANESRaceEthnicity.OTHER:
+            elif raceEthnicity == RaceEthnicity.OTHER:
                 xb += -1.34
 
         return xb

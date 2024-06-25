@@ -8,7 +8,7 @@ from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.outcome import Outcome, OutcomeType
 from microsim.gcp_stroke_model import GCPStrokeModel
 from microsim.population_factory import PopulationFactory
@@ -71,7 +71,7 @@ class TestCaseOne(Person):
     
         x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: ageList[0],    #agemed10
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,  #female0
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,  #black
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,  #black
                                DynamicRiskFactorsType.SBP.value: sbpList[0],   #bs_sbpstkcog
                                DynamicRiskFactorsType.DBP.value: dbpList[0],   #same as TestGCPModel
                                DynamicRiskFactorsType.A1C.value: a1cList[0],   #bs_glucosefmed10
@@ -186,7 +186,7 @@ class TestCaseTwo(Person):
 
         x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: ageList[0],    #agemed10
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,  #female0
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,  #black
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,  #black
                                DynamicRiskFactorsType.SBP.value: sbpList[0],   #bs_sbpstkcog
                                DynamicRiskFactorsType.DBP.value: dbpList[0],   #same as TestGCPModel
                                DynamicRiskFactorsType.A1C.value: a1cList[0],   #bs_glucosefmed10
@@ -302,7 +302,7 @@ class TestCaseThree(Person):
         #create the person
         x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: ageList[0],    #agemed10
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,  #female0
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,  #black
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,  #black
                                DynamicRiskFactorsType.SBP.value: sbpList[0],   #bs_sbpstkcog
                                DynamicRiskFactorsType.DBP.value: dbpList[0],   #same as TestGCPModel
                                DynamicRiskFactorsType.A1C.value: a1cList[0],   #bs_glucosefmed10
@@ -419,7 +419,7 @@ class TestCaseFour(Person):
         #create the person
         x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: ageList[0],    #agemed10
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,  #female0
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,  #black
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,  #black
                                DynamicRiskFactorsType.SBP.value: sbpList[0],   #bs_sbpstkcog
                                DynamicRiskFactorsType.DBP.value: dbpList[0],   #same as TestGCPModel
                                DynamicRiskFactorsType.A1C.value: a1cList[0],   #bs_glucosefmed10

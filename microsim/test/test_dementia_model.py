@@ -7,7 +7,7 @@ from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.dementia_model import DementiaModel
 from microsim.test.do_not_change_risk_factors_model_repository import (
     DoNotChangeRiskFactorsModelRepository,
@@ -36,7 +36,7 @@ class TestDementiaModel(unittest.TestCase):
         # 2740200061fos
         self.x_test_case_one = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 54.06023,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: Person.convert_fasting_glucose_to_a1c(100),
@@ -69,7 +69,7 @@ class TestDementiaModel(unittest.TestCase):
         # 2740201178fos
         self.x_test_case_two = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 34.504449,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: Person.convert_fasting_glucose_to_a1c(100),
@@ -99,7 +99,7 @@ class TestDementiaModel(unittest.TestCase):
 
         self.x_test_case_one_parametric = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 40,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: Person.convert_fasting_glucose_to_a1c(100),
@@ -128,7 +128,7 @@ class TestDementiaModel(unittest.TestCase):
         # test case 71 in rep_gdta.
         self.x_test_case_two_parametric = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 80,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: Person.convert_fasting_glucose_to_a1c(100),
@@ -157,7 +157,7 @@ class TestDementiaModel(unittest.TestCase):
         # test case 72 in rep_gdta.
         self.x_test_case_three_parametric = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 80,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: Person.convert_fasting_glucose_to_a1c(100),

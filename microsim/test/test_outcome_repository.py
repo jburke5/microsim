@@ -1,6 +1,6 @@
 from microsim.gender import NHANESGender
 from microsim.person import Person
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.education import Education
@@ -24,7 +24,7 @@ class TestOutcomeRepository(unittest.TestCase):
 
         self.x_white_male = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 55,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 6,
@@ -47,7 +47,7 @@ class TestOutcomeRepository(unittest.TestCase):
 
         self.x_black_male = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 55,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 6,
@@ -70,7 +70,7 @@ class TestOutcomeRepository(unittest.TestCase):
 
         self.x_treated_black_male = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 55,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 6,
@@ -93,7 +93,7 @@ class TestOutcomeRepository(unittest.TestCase):
 
         self.x_white_female = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 55,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 6,
@@ -116,7 +116,7 @@ class TestOutcomeRepository(unittest.TestCase):
 
         self.x_black_female = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 55,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 6,

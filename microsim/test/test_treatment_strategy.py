@@ -19,7 +19,7 @@ from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.treatment import DefaultTreatmentsType
 from microsim.risk_factor import StaticRiskFactorsType, DynamicRiskFactorsType
 from microsim.test.outcome_models_repositories import NoOutcome
@@ -33,7 +33,7 @@ class TestTreatmentStrategy(unittest.TestCase):
         initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
         x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 75,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.MEXICAN_AMERICAN.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.MEXICAN_AMERICAN.value,
                                DynamicRiskFactorsType.SBP.value: baselineSBP,
                                DynamicRiskFactorsType.DBP.value: baselineDBP,
                                DynamicRiskFactorsType.A1C.value: 6.5,

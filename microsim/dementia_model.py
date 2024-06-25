@@ -1,4 +1,4 @@
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.statsmodel_cox_model import StatsModelCoxModel
@@ -57,7 +57,7 @@ class DementiaModel(StatsModelCoxModel):
         elif education == Education.SOMECOLLEGE:
             xb += -0.2263593
 
-        if raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
+        if raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
             xb += 0.1937563
         return xb
 

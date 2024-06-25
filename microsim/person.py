@@ -10,7 +10,7 @@ from typing import Callable
 from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.outcome import Outcome, OutcomeType
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
@@ -422,11 +422,11 @@ class Person:
 
     @property
     def _black(self):
-        return self._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK
+        return self._raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK
 
     @property
     def _white(self):
-        return self._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_WHITE
+        return self._raceEthnicity == RaceEthnicity.NON_HISPANIC_WHITE
 
     def get_median_age(self):
         medianYear = math.floor(len(self._age) / 2)

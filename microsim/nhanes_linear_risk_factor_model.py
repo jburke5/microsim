@@ -1,5 +1,5 @@
 from microsim.smoking_status import SmokingStatus
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 
 import numpy as np
 
@@ -69,13 +69,13 @@ class NHANESLinearRiskFactorModel:
         linear_pred += bmi * self.get_coefficent_from_params("bmi", rng)
         linear_pred += self.get_coefficent_from_params("intercept", rng)
 
-        if raceEthnicity == NHANESRaceEthnicity.OTHER_HISPANIC:
+        if raceEthnicity == RaceEthnicity.OTHER_HISPANIC:
             linear_pred += self.get_coefficent_from_params("raceEth2", rng)
-        elif raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_WHITE:
+        elif raceEthnicity == RaceEthnicity.NON_HISPANIC_WHITE:
             linear_pred += self.get_coefficent_from_params("raceEth3", rng)
-        elif raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
+        elif raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
             linear_pred += self.get_coefficent_from_params("raceEth4", rng)
-        elif raceEthnicity == NHANESRaceEthnicity.OTHER:
+        elif raceEthnicity == RaceEthnicity.OTHER:
             linear_pred += self.get_coefficent_from_params("raceEth5", rng)
 
         if smokingStatus == SmokingStatus.FORMER:

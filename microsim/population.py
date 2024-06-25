@@ -4,17 +4,17 @@ import multiprocessing as mp
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from pandarallel import pandarallel
+#from pandarallel import pandarallel
 from collections import Counter
 
-from microsim.alcohol_category import AlcoholCategory
+#from microsim.alcohol_category import AlcoholCategory
 from microsim.bp_treatment_strategies import *
-from microsim.cohort_risk_model_repository import (CohortDynamicRiskFactorModelRepository, 
-                                                   CohortStaticRiskFactorModelRepository,
-                                                   CohortDefaultTreatmentModelRepository)
+#from microsim.cohort_risk_model_repository import (CohortDynamicRiskFactorModelRepository, 
+#                                                   CohortStaticRiskFactorModelRepository,
+#                                                   CohortDefaultTreatmentModelRepository)
 from microsim.data_loader import (get_absolute_datafile_path,
                                   load_regression_model)
-from microsim.education import Education
+#from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.gfr_equation import GFREquation
 from microsim.initialization_repository import InitializationRepository
@@ -24,14 +24,14 @@ from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.person import Person
 from microsim.person_factory import PersonFactory
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
-from microsim.race_ethnicity import NHANESRaceEthnicity
-from microsim.smoking_status import SmokingStatus
+#from microsim.race_ethnicity import RaceEthnicity
+#from microsim.smoking_status import SmokingStatus
 from microsim.statsmodel_logistic_risk_factor_model import \
     StatsModelLogisticRiskFactorModel
 from microsim.stroke_outcome import StrokeOutcome
 from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType, CategoricalRiskFactorsType, ContinuousRiskFactorsType
-from microsim.afib_model import AFibPrevalenceModel
-from microsim.pvd_model import PVDPrevalenceModel
+#from microsim.afib_model import AFibPrevalenceModel
+#from microsim.pvd_model import PVDPrevalenceModel
 from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType
 from microsim.population_model_repository import PopulationRepositoryType, PopulationModelRepository
 from microsim.standardized_population import StandardizedPopulation

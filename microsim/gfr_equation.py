@@ -1,6 +1,6 @@
 import pandas as pd
 from microsim.gender import NHANESGender
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 import numpy as np
 
 # will use the CKD-EPI equation: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2763564/
@@ -50,7 +50,7 @@ class GFREquation:
         constant = GFREquation.constantForRaceGender.loc[
             (
                 GFREquation.constantForRaceGender["black"]
-                == (raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK)
+                == (raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK)
             )
             & (
                 GFREquation.constantForRaceGender["female"]
