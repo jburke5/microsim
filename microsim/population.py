@@ -524,7 +524,7 @@ class Population:
                 col = 0
             else:
                 col = 1
-            if rf.value in PersonFactory.get_microsimToNhanes().keys():
+            if rf.value in PersonFactory.microsimToNhanes.keys():
                 rfListNhanes = other.get_attr_at_index(rf, -1)
                 ax[row,col].hist([rfList, rfListNhanes], bins=20, density=True)
             else:

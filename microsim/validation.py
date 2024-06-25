@@ -30,6 +30,10 @@ class Validation:
     @staticmethod
     def nhanes_over_time(nWorkers=5, path=None):
         '''Performs the over time validation of a population against the NHANES sample.
+           The filters are used only for the NHANES comparison population from 2017.
+           People that died prior to 2017 are not removed from the simulation population, if the simulation population is large enough
+           and the death models work well, the resulting simulated population from an advancement of 18 years should be close to the
+           NHANES comparison population.
            nWorkers determines the number of cores used
            path=None will result in displaying the figures whereas an actual path will export them to that path'''
         nYears = 18
