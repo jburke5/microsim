@@ -28,7 +28,6 @@ import pandas as pd
 
 class TestPersonAdvanceOutcomes(unittest.TestCase):
     def setUp(self):
-        initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
         xJoe = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 42.,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
                                StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
@@ -49,7 +48,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "joe"}, index=[0])
-        self.joe = PersonFactory.get_nhanes_person(xJoe.iloc[0], initializationModelRepository)
+        self.joe = PersonFactory.get_nhanes_person(xJoe.iloc[0])
         self.joe._afib = [False]
 
         self.joe_with_cv = self.joe.__deepcopy__()

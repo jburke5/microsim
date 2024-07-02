@@ -23,7 +23,8 @@ class StaticRiskFactorsType(Enum):
     RACE_ETHNICITY = "raceEthnicity" # NHANESRaceEthnicity
     EDUCATION = "education"          # Education
     GENDER = "gender"                # NHANESGender
-    SMOKING_STATUS = "smokingStatus" # SmokingStatus, TODO : change smoking status into a factor that changes over time
+    SMOKING_STATUS = "smokingStatus" # SmokingStatus
+    MODALITY = "modality"
 
 class CategoricalRiskFactorsType(Enum):
     RACE_ETHNICITY = "raceEthnicity" 
@@ -34,6 +35,7 @@ class CategoricalRiskFactorsType(Enum):
     ALCOHOL_PER_WEEK = "alcoholPerWeek"
     AFIB = "afib"
     ANY_PHYSICAL_ACTIVITY = "anyPhysicalActivity" 
+    MODALITY = "modality"
     
 class ContinuousRiskFactorsType(Enum):
     AGE = "age"   # int

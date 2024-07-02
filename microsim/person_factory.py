@@ -12,6 +12,11 @@ from microsim.gender import NHANESGender
 from microsim.smoking_status import SmokingStatus
 from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType
 from microsim.stroke_outcome import StrokeOutcome
+from microsim.afib_model import AFibPrevalenceModel
+from microsim.pvd_model import PVDPrevalenceModel
+from microsim.waist_model import WaistPrevalenceModel
+from microsim.education_model import EducationPrevalenceModel
+from microsim.alcohol_model import AlcoholPrevalenceModel
 
 class PersonFactory:
     """A class used to obtain Person-objects using data from a variety of sources."""
@@ -98,7 +103,7 @@ class PersonFactory:
         return (name, personStaticRiskFactors, personDynamicRiskFactors, personDefaultTreatments, personTreatmentStrategies, personOutcomes)
 
     @staticmethod
-    def get_nhanes_person(x, initializationModelRepository):
+    def get_nhanes_person(x):
         """Takes all Person-instance-related data via x and initializationModelRepository and organizes it,
            passes the organized data to the Person class and returns a Person instance."""
 
@@ -117,7 +122,18 @@ class PersonFactory:
                         personOutcomes)
 
         #TO DO: find a way to initialize these rfs above with everything else
+        initializationModelRepository = PersonFactory.initialization_model_repository()
         person._pvd = [initializationModelRepository[DynamicRiskFactorsType.PVD].estimate_next_risk(person)]
         person._afib = [initializationModelRepository[DynamicRiskFactorsType.AFIB].estimate_next_risk(person)]
         return person
 
+    @staticmethod
+    def initialization_model_repository():
+        """Returns the repository needed in order to initialize a Person object.
+           This is due to the fact that some risk factors that are needed in Microsim simulations
+           are not included in the data we use to construct persons but we have models for these risk factors. """
+        return {DynamicRiskFactorsType.AFIB: AFibPrevalenceModel(),
+                DynamicRiskFactorsType.PVD: PVDPrevalenceModel(),
+                DynamicRiskFactorsType.WAIST: WaistPrevalenceModel(),
+                StaticRiskFactorsType.EDUCATION: EducationPrevalenceModel(),
+                DynamicRiskFactorsType.ALCOHOL_PER_WEEK: AlcoholPrevalenceModel()}

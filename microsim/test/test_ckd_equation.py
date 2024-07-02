@@ -14,7 +14,6 @@ from microsim.treatment import DefaultTreatmentsType
 
 class TestCKDEquation(unittest.TestCase):
     def setUp(self):
-        initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
 
         self.x_black_female_high_cr = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 52,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
@@ -37,7 +36,7 @@ class TestCKDEquation(unittest.TestCase):
                                DynamicRiskFactorsType.CREATININE.value: 0.8,
                                "name": "black_female_high_cr"}, index=[0])
 
-        self._black_female_high_cr = PersonFactory.get_nhanes_person(self.x_black_female_high_cr.iloc[0], initializationModelRepository)
+        self._black_female_high_cr = PersonFactory.get_nhanes_person(self.x_black_female_high_cr.iloc[0])
         self._black_female_high_cr._afib = [False]
 
         self.x_black_female_low_cr = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 52,
@@ -61,7 +60,7 @@ class TestCKDEquation(unittest.TestCase):
                                DynamicRiskFactorsType.CREATININE.value: 0.4,
                                "name": "black_female_low_cr"}, index=[0])
 
-        self._black_female_low_cr = PersonFactory.get_nhanes_person(self.x_black_female_low_cr.iloc[0], initializationModelRepository)
+        self._black_female_low_cr = PersonFactory.get_nhanes_person(self.x_black_female_low_cr.iloc[0])
         self._black_female_low_cr._afib = [False]
 
         self.x_white_male_high_cr = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 52,
@@ -85,7 +84,7 @@ class TestCKDEquation(unittest.TestCase):
                                DynamicRiskFactorsType.CREATININE.value: 1.2,
                                "name": "white_male_high_cr"}, index=[0])
 
-        self._white_male_high_cr = PersonFactory.get_nhanes_person(self.x_white_male_high_cr.iloc[0], initializationModelRepository)
+        self._white_male_high_cr = PersonFactory.get_nhanes_person(self.x_white_male_high_cr.iloc[0])
         self._white_male_high_cr._afib = [False]
 
         self.x_white_male_low_cr = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 52,
@@ -109,7 +108,7 @@ class TestCKDEquation(unittest.TestCase):
                                DynamicRiskFactorsType.CREATININE.value: 0.1,
                                "name": "white_male_low_cr"}, index=[0])
 
-        self._white_male_low_cr = PersonFactory.get_nhanes_person(self.x_white_male_low_cr.iloc[0], initializationModelRepository)
+        self._white_male_low_cr = PersonFactory.get_nhanes_person(self.x_white_male_low_cr.iloc[0])
         self._white_male_low_cr._afib = [False]
 
     def testGFRs(self):

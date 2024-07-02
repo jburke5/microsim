@@ -32,8 +32,6 @@ class TestGCPModel(unittest.TestCase):
 
     def setUp(self):
  
-        initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
-
         self.x_test_case_one = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 65 - 0.828576318 * 10,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
                                StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
@@ -54,7 +52,7 @@ class TestGCPModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "test_case_one"}, index=[0])
-        self._test_case_one = PersonFactory.get_nhanes_person(self.x_test_case_one.iloc[0], initializationModelRepository)
+        self._test_case_one = PersonFactory.get_nhanes_person(self.x_test_case_one.iloc[0])
         self._test_case_one._afib = [False]
 
         self.x_test_case_two = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 65 - 0.458555784 * 10,
@@ -77,7 +75,7 @@ class TestGCPModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "test_case_two"}, index=[0])
-        self._test_case_two = PersonFactory.get_nhanes_person(self.x_test_case_two.iloc[0], initializationModelRepository)
+        self._test_case_two = PersonFactory.get_nhanes_person(self.x_test_case_two.iloc[0])
         self._test_case_two._afib = [False]
 
         self.x_test_case_three = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 65 - 0.358692676 * 10,
@@ -100,7 +98,7 @@ class TestGCPModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "test_case_three"}, index=[0])
-        self._test_case_three = PersonFactory.get_nhanes_person(self.x_test_case_three.iloc[0], initializationModelRepository)
+        self._test_case_three = PersonFactory.get_nhanes_person(self.x_test_case_three.iloc[0])
         self._test_case_three._afib = [False]
 
         self._test_case_one._randomEffects["gcp"] = 0

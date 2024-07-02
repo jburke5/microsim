@@ -26,7 +26,6 @@ import pandas as pd
 
 class TestPersonWaveStatus(unittest.TestCase):
     def setUp(self):
-        initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
         xoldJoe = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 60,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
                                StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
@@ -47,7 +46,7 @@ class TestPersonWaveStatus(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "oldJoe"}, index=[0])
-        self.oldJoe = PersonFactory.get_nhanes_person(xoldJoe.iloc[0], initializationModelRepository)
+        self.oldJoe = PersonFactory.get_nhanes_person(xoldJoe.iloc[0])
         self.oldJoe._afib = [False]
 
         xyoungJoe = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 40,
@@ -70,7 +69,7 @@ class TestPersonWaveStatus(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "youngJoe"}, index=[0])
-        self.youngJoe = PersonFactory.get_nhanes_person(xyoungJoe.iloc[0], initializationModelRepository)
+        self.youngJoe = PersonFactory.get_nhanes_person(xyoungJoe.iloc[0])
         self.youngJoe._afib = [False]
 
     def testStatusAfterFatalStroke(self):

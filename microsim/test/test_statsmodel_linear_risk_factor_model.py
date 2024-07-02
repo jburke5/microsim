@@ -19,8 +19,6 @@ import pandas as pd
 import numpy as np
 import statsmodels.formula.api as statsmodel
 
-initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
-
 class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
     def setUp(self):
         popSize = 100
@@ -56,7 +54,7 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "0"}, index=[0])
-        self.person = PersonFactory.get_nhanes_person(x.iloc[0], initializationModelRepository)
+        self.person = PersonFactory.get_nhanes_person(x.iloc[0])
         self.person._afib = [False]
 
         xList = [pd.DataFrame({DynamicRiskFactorsType.AGE.value: 80,
@@ -79,7 +77,7 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "0"}, index=[0]) for bpinstance in sbp]
-        self.people = list(map(lambda x: PersonFactory.get_nhanes_person(x.iloc[0], initializationModelRepository), xList))
+        self.people = list(map(lambda x: PersonFactory.get_nhanes_person(x.iloc[0]), xList))
         
         for person in self.people:
             person._afib = [False]

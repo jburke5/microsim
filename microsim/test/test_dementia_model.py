@@ -31,7 +31,6 @@ from microsim.outcome import OutcomeType
 class TestDementiaModel(unittest.TestCase):
 
     def setUp(self):
-        initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
 
         # 2740200061fos
         self.x_test_case_one = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 54.06023,
@@ -54,7 +53,7 @@ class TestDementiaModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "test_case_one"}, index=[0])
-        self._test_case_one = PersonFactory.get_nhanes_person(self.x_test_case_one.iloc[0], initializationModelRepository)
+        self._test_case_one = PersonFactory.get_nhanes_person(self.x_test_case_one.iloc[0])
         self._test_case_one._afib = [False]
         #I initially used to advance the person to get an initial cognition outcome to get the initial gcp but then 
         #I realized I can just add the cognition outcomes
@@ -87,7 +86,7 @@ class TestDementiaModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "test_case_two"}, index=[0])
-        self._test_case_two = PersonFactory.get_nhanes_person(self.x_test_case_two.iloc[0], initializationModelRepository)
+        self._test_case_two = PersonFactory.get_nhanes_person(self.x_test_case_two.iloc[0])
         self._test_case_two._afib = [False]
         #self._test_case_two.advance(1, popModelRepository[PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value],
         #                       popModelRepository[PopulationRepositoryType.DEFAULT_TREATMENTS.value],
@@ -117,7 +116,7 @@ class TestDementiaModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "test_case_one_parametric"}, index=[0])
-        self._test_case_one_parametric = PersonFactory.get_nhanes_person(self.x_test_case_one_parametric.iloc[0], initializationModelRepository)
+        self._test_case_one_parametric = PersonFactory.get_nhanes_person(self.x_test_case_one_parametric.iloc[0])
         self._test_case_one_parametric._afib = [False] 
         #self._test_case_one_parametric._gcp[0] = 25
         # GCP slope is zero
@@ -146,7 +145,7 @@ class TestDementiaModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "test_case_two_parametric"}, index=[0])
-        self._test_case_two_parametric = PersonFactory.get_nhanes_person(self.x_test_case_two_parametric.iloc[0], initializationModelRepository)
+        self._test_case_two_parametric = PersonFactory.get_nhanes_person(self.x_test_case_two_parametric.iloc[0])
         self._test_case_two_parametric._afib = [False]
         #self._test_case_two_parametric._gcp[0] = 75
         #self._test_case_two_parametric._gcp.append(self._test_case_two._gcp[0])
@@ -175,7 +174,7 @@ class TestDementiaModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "test_case_three_parametric"}, index=[0])
-        self._test_case_three_parametric = PersonFactory.get_nhanes_person(self.x_test_case_three_parametric.iloc[0], initializationModelRepository)
+        self._test_case_three_parametric = PersonFactory.get_nhanes_person(self.x_test_case_three_parametric.iloc[0])
         self._test_case_three_parametric._afib = [False]
         #self._test_case_three_parametric._gcp[0] = 75
         #self._test_case_three_parametric._gcp.append(self._test_case_two._gcp[0])

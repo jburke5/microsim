@@ -7,8 +7,6 @@ from enum import Enum
 from microsim.person_factory import PersonFactory
 from microsim.person_filter_factory import PersonFilterFactory
 from microsim.population import Population
-from microsim.afib_model import AFibPrevalenceModel
-from microsim.pvd_model import PVDPrevalenceModel
 from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
 from microsim.population_model_repository import PopulationModelRepository, PopulationRepositoryType
 from microsim.outcome_model_repository import OutcomeModelRepository
@@ -127,15 +125,6 @@ class PopulationFactory:
         else:
             raise RuntimeError("Unknown popType in PopulationFactory.get_population_model_repo function.")
 
-
-    @staticmethod
-    def get_nhanes_person_initialization_model_repo():
-        """Returns the repository needed in order to initialize a Person object using NHANES data.
-           This is due to the fact that some risk factors that are needed in Microsim simulations
-           are not included in the NHANES data but we have models for these risk factors. """
-        return {DynamicRiskFactorsType.AFIB: AFibPrevalenceModel(),
-                DynamicRiskFactorsType.PVD: PVDPrevalenceModel()}
-
     @staticmethod
     def set_index_in_people(people, start=0):
         """Once people are created, its Person-objects do not have a unique index.
@@ -194,8 +183,6 @@ class PopulationFactory:
             df = df.merge(nhanesDf[["name","WTINT2YR"]], on="name", how="inner").copy()
             nhanesDf = df
 
-        initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
-
         if nhanesWeights & (customWeights is not None):
             raise RuntimeError("Cannot use both nhanesWeights (nhanesWeights=True) and custom weights (customWeights is not None).")
 
@@ -212,8 +199,7 @@ class PopulationFactory:
         else:
             nhanesDfForPeople = nhanesDf
 
-        people = pd.DataFrame.apply(nhanesDfForPeople,
-                                    PersonFactory.get_nhanes_person, initializationModelRepository=initializationModelRepository, axis="columns")
+        people = pd.DataFrame.apply(nhanesDfForPeople, PersonFactory.get_nhanes_person, axis="columns")
 
         if personFilters is not None:
             for filterFunction in personFilters.filters["person"].values():
@@ -223,8 +209,7 @@ class PopulationFactory:
             nRemaining = n - people.shape[0]
             while nRemaining>0:
                 nhanesDfForPeople = nhanesDf.sample(nRemaining, weights=weights, replace=True)
-                peopleRemaining = pd.DataFrame.apply(nhanesDfForPeople,
-                                    PersonFactory.get_nhanes_person, initializationModelRepository=initializationModelRepository, axis="columns")
+                peopleRemaining = pd.DataFrame.apply(nhanesDfForPeople, PersonFactory.get_nhanes_person, axis="columns")
                 for filterFunction in personFilters.filters["person"].values():
                     peopleRemaining = pd.Series(list(filter(filterFunction, peopleRemaining)), dtype=object)
                 people = pd.concat([people, peopleRemaining])

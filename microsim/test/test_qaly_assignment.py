@@ -27,8 +27,6 @@ from microsim.race_ethnicity import RaceEthnicity
 from microsim.treatment import DefaultTreatmentsType
 from microsim.test.outcome_models_repositories import AlwaysNonFatalStroke, AlwaysFatalStroke, AlwaysNonFatalMI, AlwaysDementia, NoOutcome
 
-initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
-
 class TestQALYAssignment(unittest.TestCase):
     def getPerson(self, age=65):
 
@@ -52,7 +50,7 @@ class TestQALYAssignment(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": f"person{age}"}, index=[0])
-        xPerson = PersonFactory.get_nhanes_person(x.iloc[0], initializationModelRepository)
+        xPerson = PersonFactory.get_nhanes_person(x.iloc[0])
         xPerson._afib = [False]
         return xPerson
 

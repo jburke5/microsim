@@ -32,8 +32,6 @@ from microsim.cognition_outcome import CognitionOutcome
 #term our implementation includes and add the correct one
 #tried to include test cases with diverse histories so that we can test as many model components as possible (I think no test case had afib though)
 
-initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
-
 #row 2 in excel file 
 class TestCaseOne(Person):
 

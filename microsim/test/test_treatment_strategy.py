@@ -30,7 +30,6 @@ from microsim.treatment import TreatmentStrategyStatus
 class TestTreatmentStrategy(unittest.TestCase):
 
     def getPerson(self, baselineSBP=140, baselineDBP=80):
-        initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
         x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 75,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
                                StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.MEXICAN_AMERICAN.value,
@@ -51,7 +50,7 @@ class TestTreatmentStrategy(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "person"}, index=[0])
-        person = PersonFactory.get_nhanes_person(x.iloc[0], initializationModelRepository)
+        person = PersonFactory.get_nhanes_person(x.iloc[0])
         person._afib = [False]
         return person
 
