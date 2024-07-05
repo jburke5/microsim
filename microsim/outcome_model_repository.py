@@ -8,6 +8,7 @@ from microsim.mi_partition_model_repository import MIPartitionModelRepository
 from microsim.non_cv_model_repository import NonCVModelRepository
 from microsim.death_model_repository import DeathModelRepository
 from microsim.ci_model_repository import CIModelRepository
+from microsim.wmh_model_repository import WMHModelRepository
 
 class OutcomeModelRepository:
     """Holds the rules for all outcomes.
@@ -19,7 +20,9 @@ class OutcomeModelRepository:
        Outcomes are Outcome subclasses, eg StrokeOutcome, when more information about the outcome need to be stored, an outcome phenotype.
        Examples are StrokeOutcome (nihss, type etc), GCPOutcome (gcp), QALYOutcome (qaly)."""
     def __init__(self):
-        self._repository = {OutcomeType.DEMENTIA: DementiaModelRepository(),
+        self._repository = {
+                          OutcomeType.WMH: WMHModelRepository(),
+                          OutcomeType.DEMENTIA: DementiaModelRepository(),
                           OutcomeType.COGNITION: CognitionModelRepository(),
                           OutcomeType.CI: CIModelRepository(),
                           OutcomeType.QUALITYADJUSTED_LIFE_YEARS: QALYModelRepository(),

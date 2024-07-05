@@ -23,7 +23,7 @@ class EducationPrevalenceModel:
             xb += 0.
         elif raceEthnicity==RaceEthnicity.OTHER_HISPANIC:
             xb += -0.84732
-        elif raceEthnicity==RaceEthnicity.NON_HISPANIC_WHITE:
+        elif (raceEthnicity==RaceEthnicity.NON_HISPANIC_WHITE) | (raceEthnicity==RaceEthnicity.ASIAN):
             xb += -1.99639
         elif raceEthnicity==RaceEthnicity.NON_HISPANIC_BLACK:
             xb += -1.23381

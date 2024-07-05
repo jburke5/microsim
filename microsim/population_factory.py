@@ -15,17 +15,14 @@ from microsim.cohort_risk_model_repository import (CohortDynamicRiskFactorModelR
                                                    CohortDefaultTreatmentModelRepository)
 from microsim.education import Education
 from microsim.gender import NHANESGender
-#from microsim.race_ethnicity import RaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.treatment import DefaultTreatmentsType
 from microsim.alcohol_category import AlcoholCategory
 from microsim.standardized_population import StandardizedPopulation
 from microsim.variable_type import VariableType
 from microsim.outcome import OutcomeType
-
-class PopulationType(Enum):
-    NHANES = "nhanes"
-    KAISER = "kaiser"
+from microsim.population_type import PopulationType
 
 class PopulationFactory:
     nhanes_pop_attributes = {PopulationRepositoryType.STATIC_RISK_FACTORS.value: 
@@ -88,6 +85,35 @@ class PopulationFactory:
                                                   DynamicRiskFactorsType.CREATININE.value, 
                                                   DynamicRiskFactorsType.SBP.value, 
                                                   DynamicRiskFactorsType.DBP.value]}
+    #the order of the items in the two lists is critical because functions later on, eg draw from the distributions, depend on the order
+    kaiser_variable_types = {VariableType.CATEGORICAL.value: [StaticRiskFactorsType.MODALITY.value,
+                                                      StaticRiskFactorsType.GENDER.value, 
+                                                      StaticRiskFactorsType.RACE_ETHNICITY.value, 
+                                                      StaticRiskFactorsType.SMOKING_STATUS.value, 
+                                                      DynamicRiskFactorsType.AFIB.value, 
+                                                      DynamicRiskFactorsType.PVD.value, 
+                                                      DefaultTreatmentsType.STATIN.value,
+                                                      DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value],
+                     VariableType.CONTINUOUS.value: [DynamicRiskFactorsType.AGE.value, 
+                                                     DynamicRiskFactorsType.HDL.value, 
+                                                     DynamicRiskFactorsType.A1C.value, 
+                                                     DynamicRiskFactorsType.TOT_CHOL.value, 
+                                                     DynamicRiskFactorsType.LDL.value, 
+                                                     DynamicRiskFactorsType.TRIG.value, 
+                                                     DynamicRiskFactorsType.CREATININE.value, 
+                                                     DynamicRiskFactorsType.SBP.value, 
+                                                     DynamicRiskFactorsType.DBP.value,
+                                                     DynamicRiskFactorsType.BMI.value, 
+                                                     DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value]}
+
+    @staticmethod
+    def variable_types(varType=VariableType.CATEGORICAL.value, popType=PopulationType.NHANES.value):
+        if popType==PopulationType.NHANES.value:
+            return PopulationFactory.nhanes_variable_types[varType]
+        elif popType==PopulationType.KAISER.value:
+            return PopulationFactory.kaiser_variable_types[varType]
+        else:
+            raise RuntimeError("Unrecognized population type in PopulationFactory.variable_types.")       
 
     @staticmethod
     def get_pop_attributes(popType=PopulationType.NHANES.value):
@@ -148,6 +174,33 @@ class PopulationFactory:
         return nhanesDf
 
     @staticmethod
+    def get_kaiserDf(csvFile):
+        """Reads and modifies the Kaiser file so that it is ready to be used in the simulation.
+           Returns a Pandas df with the Kaiser information as named in Microsim."""
+        df = pd.read_csv(csvFile).dropna()
+        #TO DO: needs to be FIXED, or REMOVED
+        df = df.loc[ (df["AHL_nonStatin"]==0) ]
+        df = df.drop("AHL_nonStatin", axis=1)
+        if 'weight' in df.columns:
+            df = df.drop('weight', axis=1)
+        df = PopulationFactory.rename_df_columns(df, PersonFactory.microsimToKaiser)
+        df = df.astype({StaticRiskFactorsType.SMOKING_STATUS.value: 'int',
+                        DynamicRiskFactorsType.AFIB.value:'int',
+                        DynamicRiskFactorsType.PVD.value:'int',
+                        DefaultTreatmentsType.STATIN.value:'int', 
+                        DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value:'int',
+                        #"age":'int'}).reset_index()
+                       }).reset_index()
+        df[StaticRiskFactorsType.GENDER.value] = df[StaticRiskFactorsType.GENDER.value].replace({'F': 2, 'M': 1}) #.infer_objects(copy=False)  
+        df[StaticRiskFactorsType.RACE_ETHNICITY.value] = df[StaticRiskFactorsType.RACE_ETHNICITY.value].replace(
+                                        {'Black': RaceEthnicity.NON_HISPANIC_BLACK.value, 
+                                        'Asian and Pacific Islander': RaceEthnicity.ASIAN.value,
+                                        'White': RaceEthnicity.NON_HISPANIC_WHITE.value,
+                                        'Multiple/Other/Unknown': RaceEthnicity.OTHER.value,
+                                        'Hispanic': RaceEthnicity.OTHER_HISPANIC}) 
+        return df
+
+    @staticmethod
     def rename_df_columns(df, microsimToDfDict):
         '''Dataframes that we typically use to import person data, eg NHANES, have column names that are different than microsim attributes.
         This function takes a dictionary that helps convert those column names to the exact names that microsim uses.'''
@@ -168,9 +221,7 @@ class PopulationFactory:
 
         if year is not None:
             nhanesDf = nhanesDf.loc[nhanesDf.year == year]
-        if personFilters is not None:
-            for personFilterFunction in personFilters.filters["df"].values():
-                nhanesDf = nhanesDf.loc[nhanesDf.apply(personFilterFunction, axis=1)] 
+        nhanesDf = PopulationFactory.apply_person_filters_on_df(personFilters, nhanesDf)        
  
         #if we want to draw from the NHANES distributions, then we fit the NHANES data first, draw, convert the draws to 
         #a Pandas dataframe, bring in the NHANES weights (because I do not keep those when I do the fits)
@@ -178,8 +229,8 @@ class PopulationFactory:
         if distributions:
             dfForGroups = PopulationFactory.get_partitioned_nhanes_people(year=year)
             distributions = PopulationFactory.get_distributions(dfForGroups)
-            drawsForGroups = PopulationFactory.draw_from_distributions(distributions)
-            df = PopulationFactory.get_df_from_draws(drawsForGroups, dfForGroups)
+            drawsForGroups, namesForGroups = PopulationFactory.draw_from_distributions(distributions)
+            df = PopulationFactory.get_df_from_draws(drawsForGroups, namesForGroups, popType=PopulationType.NHANES.value)
             df = df.merge(nhanesDf[["name","WTINT2YR"]], on="name", how="inner").copy()
             nhanesDf = df
 
@@ -201,19 +252,10 @@ class PopulationFactory:
 
         people = pd.DataFrame.apply(nhanesDfForPeople, PersonFactory.get_nhanes_person, axis="columns")
 
-        if personFilters is not None:
-            for filterFunction in personFilters.filters["person"].values():
-                people = pd.Series(list(filter(filterFunction, people)), dtype=object)
+        people = PopulationFactory.apply_person_filters_on_people(personFilters, people)
 
         if nhanesWeights:
-            nRemaining = n - people.shape[0]
-            while nRemaining>0:
-                nhanesDfForPeople = nhanesDf.sample(nRemaining, weights=weights, replace=True)
-                peopleRemaining = pd.DataFrame.apply(nhanesDfForPeople, PersonFactory.get_nhanes_person, axis="columns")
-                for filterFunction in personFilters.filters["person"].values():
-                    peopleRemaining = pd.Series(list(filter(filterFunction, peopleRemaining)), dtype=object)
-                people = pd.concat([people, peopleRemaining])
-                nRemaining = n - people.shape[0]
+            people = PopulationFactory.bring_people_to_target_n(n, people, nhanesDf, personFilters, popType=PopulationType.NHANES.value)
             
         PopulationFactory.set_index_in_people(people)
         return people
@@ -231,6 +273,12 @@ class PopulationFactory:
         '''Returns a Population-object with Person-objects being all NHANES persons with or without sampling.
            Person attributes can originate either from the NHANES dataset directly or from distributions fit to the NHANES dataset.'''
         people = PopulationFactory.get_nhanes_people(n=n, year=year, personFilters=personFilters, nhanesWeights=nhanesWeights, distributions=distributions,customWeights=customWeights)
+        popModelRepository = PopulationFactory.get_nhanes_population_model_repo()
+        return Population(people, popModelRepository)
+
+    @staticmethod
+    def get_kaiser_population(n=1000, personFilters=None):
+        people = PopulationFactory.get_kaiser_people(n=n, personFilters=personFilters)
         popModelRepository = PopulationFactory.get_nhanes_population_model_repo()
         return Population(people, popModelRepository)
 
@@ -271,10 +319,7 @@ class PopulationFactory:
     @staticmethod
     def is_singular(cov):
        """Checks if a covariance matrix is singular or not."""
-       #with NHANES it was sufficient to assume real eigenvalues
        return True if not np.all(np.linalg.eig(cov)[0]>10**(-3)) else False
-       #with KAISER I get a lot of complex eigenvalues
-       #return True if not np.all(np.array(list(map(lambda x: np.linalg.norm(x), np.linalg.eig(cov)[0])))>10**(-3)) else False
 
     @staticmethod
     def get_distributions(dfForGroups):
@@ -283,21 +328,86 @@ class PopulationFactory:
            Values for 'singular' are boolean depending on whether the covariance matrix for that key is singular or not.
            Values for all other keys are np arrays.
            The min and max are useful because we need to impose bounds on the draws, Gaussians extend to infinity...."""
-        nhanesContinuousVariables = PopulationFactory.get_nhanes_attributes()[VariableType.CONTINUOUS.value]
+        nhanesContinuousVariables = PopulationFactory.nhanes_variable_types[VariableType.CONTINUOUS.value]
         meanForGroups = dict()
         covForGroups = dict()
         minForGroups = dict()
         maxForGroups = dict()
         sizeForGroups = dict()
         singularForGroups = dict()
+        namesForGroups = dict()
         for key in dfForGroups.keys():
             meanForGroups[key], covForGroups[key] = multivariate_normal.fit(np.array(dfForGroups[key][nhanesContinuousVariables]))
             singularForGroups[key] = PopulationFactory.is_singular(covForGroups[key])
             minForGroups[key] = np.min(np.array(dfForGroups[key][nhanesContinuousVariables]), axis=0)
             maxForGroups[key] = np.max(np.array(dfForGroups[key][nhanesContinuousVariables]), axis=0)
             sizeForGroups[key] = dfForGroups[key].shape[0]
+            namesForGroups[key] = dfForGroups[key]["name"].tolist()
         distributions = {"mean": meanForGroups, "cov": covForGroups, "min": minForGroups, "max": maxForGroups, "singular": singularForGroups,
-                         "size": sizeForGroups}
+                         "size": sizeForGroups, "names": namesForGroups}
+        distributions = PopulationFactory.get_alt_groups(distributions)
+        return distributions
+
+    @staticmethod
+    def get_kaiser_distributions():
+        meanForGroups = dict()
+        covForGroups = dict()
+        minForGroups = dict()
+        maxForGroups = dict()
+        singularForGroups = dict()
+        sizeForGroups = dict()
+        namesForGroups = dict()
+
+        fileDir = "/Users/deligkaris.1/Desktop"
+        csvFiles = ['/min.csv', '/max.csv', '/means.csv', '/covs.csv']        
+        (minDf, maxDf, meanDf, covDf) = list(map(lambda x: PopulationFactory.get_kaiserDf(x), [fileDir+y for y in csvFiles]))
+        
+        catVariables = PopulationFactory.kaiser_variable_types[VariableType.CATEGORICAL.value]
+        conVariables = PopulationFactory.kaiser_variable_types[VariableType.CONTINUOUS.value]
+        
+        for index, key in minDf[catVariables].iterrows():
+            key = tuple(key.tolist())
+            meanForGroups[key] = meanDf.loc[
+                                (meanDf["modality"]==key[0]) &
+                                (meanDf["gender"]==key[1]) &
+                                (meanDf["raceEthnicity"]==key[2]) &
+                                (meanDf["smokingStatus"]==key[3]) &
+                                (meanDf["afib"]==key[4]) &
+                                (meanDf["pvd"]==key[5]) &
+                                (meanDf["statin"]==key[6]) &
+                                (meanDf["anyPhysicalActivity"]==key[7]), conVariables].to_numpy()[0]
+            covForGroups[key] = covDf.loc[
+                                (covDf["modality"]==key[0]) & 
+                                (covDf["gender"]==key[1]) &
+                                (covDf["raceEthnicity"]==key[2]) &
+                                (covDf["smokingStatus"]==key[3]) &
+                                (covDf["afib"]==key[4]) &
+                                (covDf["pvd"]==key[5]) &
+                                (covDf["statin"]==key[6]) &
+                                (covDf["anyPhysicalActivity"]==key[7]), conVariables].to_numpy()
+            singularForGroups[key] = PopulationFactory.is_singular(covForGroups[key])
+            minForGroups[key] = minDf.loc[
+                                (minDf["modality"]==key[0]) &
+                                (minDf["gender"]==key[1]) &
+                                (minDf["raceEthnicity"]==key[2]) &
+                                (minDf["smokingStatus"]==key[3]) &
+                                (minDf["afib"]==key[4]) &
+                                (minDf["pvd"]==key[5]) &
+                                (minDf["statin"]==key[6]) &
+                                (minDf["anyPhysicalActivity"]==key[7]), conVariables].to_numpy()[0]
+            maxForGroups[key] = maxDf.loc[
+                                (maxDf["modality"]==key[0]) &
+                                (maxDf["gender"]==key[1]) &
+                                (maxDf["raceEthnicity"]==key[2]) &
+                                (maxDf["smokingStatus"]==key[3]) &
+                                (maxDf["afib"]==key[4]) &
+                                (maxDf["pvd"]==key[5]) &
+                                (maxDf["statin"]==key[6]) &
+                                (maxDf["anyPhysicalActivity"]==key[7]), conVariables].to_numpy()[0]
+            sizeForGroups[key] = 1
+            namesForGroups[key] = ["kaiserPerson" for i in range(sizeForGroups[key])]
+        distributions = {"mean": meanForGroups, "cov": covForGroups, "min": minForGroups, "max": maxForGroups, 
+                         "singular": singularForGroups, "size": sizeForGroups, "names": namesForGroups}
         distributions = PopulationFactory.get_alt_groups(distributions)
         return distributions
 
@@ -330,9 +440,11 @@ class PopulationFactory:
         For each group, the number of draws from the distribution is equal to the number of people in that group in 
         the original NHANES dataframe (as contained in dfForGroups).""" 
         drawsForGroups = dict()
+        namesForGroups = dict()
         #just use the "mean" for the keys
         for key in distributions["mean"].keys():
             size = distributions["size"][key]
+            namesForGroups[key] = distributions["names"][key]
             #use either the original distribution or the alternative if the cov matrix is singular
             distKey = key if not distributions["singular"][key] else distributions["alt"][key]
             distMean = distributions["mean"][distKey]
@@ -374,21 +486,22 @@ class PopulationFactory:
                 #keep the draws that have all continuous variables within the bounds
                 draws = draws[~rowsOutOfBounds,:] 
             drawsForGroups[key] = draws
-        return drawsForGroups
+        return drawsForGroups, namesForGroups
 
     @staticmethod
-    def get_df_from_draws(drawsForGroups, dfForGroups):
+    def get_df_from_draws(drawsForGroups, namesForGroups, popType=PopulationType.NHANES.value):
         """Converts the draws from the distributions to a Pandas df."""
-        nhanesCategoricalVariables = PopulationFactory.nhanes_attributes[VariableType.CATEGORICAL.value]
-        nhanesContinuousVariables = PopulationFactory.nhanes_attributes[VariableType.CONTINUOUS.value]
-        df = pd.DataFrame(data=None, columns= ["name"]+nhanesCategoricalVariables+nhanesContinuousVariables)
+        catVariables = PopulationFactory.variable_types(VariableType.CATEGORICAL.value, popType=popType)
+        conVariables = PopulationFactory.variable_types(VariableType.CONTINUOUS.value, popType=popType)
+        df = pd.DataFrame(data=None, columns= ["name"]+catVariables+conVariables)
         for key in drawsForGroups.keys():
-            names = dfForGroups[key]["name"].tolist()
+            #names = dfForGroups[key]["name"].tolist()
+            names = namesForGroups[key]
             size = drawsForGroups[key].shape[0]
             dfCont = pd.DataFrame(drawsForGroups[key])
-            dfCont.columns = nhanesContinuousVariables
+            dfCont.columns = conVariables
             dfCat = pd.concat([pd.DataFrame(key).T]*size, ignore_index=True)
-            dfCat.columns = nhanesCategoricalVariables
+            dfCat.columns = catVariables
             dfForGroup = pd.concat( [pd.Series(names), dfCat, dfCont], axis=1).rename(columns={0:"name"})
             df = pd.concat([df,dfForGroup])
         df[DynamicRiskFactorsType.AGE.value] = round(df[DynamicRiskFactorsType.AGE.value]).astype('int')
@@ -410,6 +523,43 @@ class PopulationFactory:
     def get_cloned_people(person, n):
         return pd.Series([person.__deepcopy__() for i in range(n)])
 
+    @staticmethod
+    def apply_person_filters_on_df(personFilters, df):
+        if personFilters is not None:
+            for personFilterFunction in personFilters.filters["df"].values():
+                df = df.loc[df.apply(personFilterFunction, axis=1)] 
+        return df
+
+    @staticmethod
+    def apply_person_filters_on_people(personFilters, people):
+        if personFilters is not None:
+            for filterFunction in personFilters.filters["person"].values():
+                people = pd.Series(list(filter(filterFunction, people)), dtype=object)
+        return people
+
+    @staticmethod
+    def bring_people_to_target_n(n, people, df, personFilters, popType=PopulationType.NHANES.value):
+        nRemaining = n - people.shape[0]
+        while nRemaining>0:
+            dfForPeople = df.sample(nRemaining, replace=True)
+            peopleRemaining = pd.DataFrame.apply(dfForPeople, PersonFactory.get_person, popType=popType, axis="columns")
+            peopleRemaining = PopulationFactory.apply_person_filters_on_people(personFilters, peopleRemaining)
+            people = pd.concat([people, peopleRemaining])
+            nRemaining = n - people.shape[0]
+        return people
+
+    @staticmethod
+    def get_kaiser_people(n=1000, personFilters=None):
+        distributions = PopulationFactory.get_kaiser_distributions()
+        drawsForGroups, namesForGroups = PopulationFactory.draw_from_distributions(distributions)
+        df = PopulationFactory.get_df_from_draws(drawsForGroups, namesForGroups, popType=PopulationType.KAISER.value)
+        df = PopulationFactory.apply_person_filters_on_df(personFilters, df)
+        people = pd.DataFrame.apply(df, PersonFactory.get_kaiser_person, axis="columns")
+        people = PopulationFactory.apply_person_filters_on_people(personFilters, people)
+        people = PopulationFactory.bring_people_to_target_n(n, people, df, personFilters, popType=PopulationType.KAISER.value)   
+
+        PopulationFactory.set_index_in_people(people)
+        return people
 
 
 
