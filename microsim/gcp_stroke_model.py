@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from microsim.cognition_outcome import CognitionOutcome
 from microsim.smoking_status import SmokingStatus
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.person import Person
@@ -74,7 +74,7 @@ class GCPStrokeModel:
        if gender == NHANESGender.FEMALE:
            xb += 1.4858                                            #female0
            xb += yearsSinceStroke * (-0.2864)                      #t_gcp_stk*female0, change in the slope due to gender
-       if raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
+       if raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
            xb += -1.5739                                           #black
        if education == Education.HIGHSCHOOLGRADUATE:
            xb += 0.9930                                            #educ2

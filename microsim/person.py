@@ -10,7 +10,7 @@ from typing import Callable
 from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.outcome import Outcome, OutcomeType
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
@@ -42,7 +42,7 @@ class Person:
        provided to the class in an organized way, in their corresponding dictionaries.
        Default treatments correspond to the usual care, whereas treatment strategies correspond to approaches we would like to
        try and discover their effect.
-       _name: indicates the origin of the Person's instance data, eg in NHANES it will be the NHANES person unique identifier, 
+       _name: indicates the specific origin of the Person's instance data, eg in NHANES it will be the NHANES person unique identifier, 
               more than one Person instances can have the same name.
        _index: a unique identifier when the Person-instance is part of a bigger group, eg a Population instance (this is set from the Population instance).
        _waveCompleted: every time a complete advanced has been performed, increase this by 1, first complete advanced corresponds to 0.
@@ -218,9 +218,18 @@ class Person:
         #    #setattr(self,"_"+tsType.value+"TreatmentStatus", ts.status) 
 
     def advance_outcomes(self, outcomeModelRepository):
-        for outcomeType in OutcomeType:
+        #With outcomes the situation is complex, because the loop needs to go over the outcomes in a specific order
+        #which means I cannot just use the keys of a dictionary, the outcomes will need to be set in a list
+        for outcomeType in self.get_outcomes_in_order():
             outcome = outcomeModelRepository._repository[outcomeType].select_outcome_model_for_person(self).get_next_outcome(self)
             self.add_outcome(outcome)
+
+    def get_outcomes_in_order(self):
+        outcomesInOrder = list()
+        for outcomeType in OutcomeType:
+            if outcomeType in list(self._outcomes.keys()):
+                outcomesInOrder += [outcomeType]
+        return outcomesInOrder
 
     def add_outcome(self, outcome):
         if outcome is not None:
@@ -413,11 +422,11 @@ class Person:
 
     @property
     def _black(self):
-        return self._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK
+        return self._raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK
 
     @property
     def _white(self):
-        return self._raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_WHITE
+        return self._raceEthnicity == RaceEthnicity.NON_HISPANIC_WHITE
 
     def get_median_age(self):
         medianYear = math.floor(len(self._age) / 2)

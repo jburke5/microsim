@@ -1,6 +1,6 @@
 from microsim.person import Person
 from microsim.gender import NHANESGender
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.outcome import Outcome
 from microsim.alcohol_category import AlcoholCategory
@@ -26,10 +26,9 @@ import pandas as pd
 
 class TestPersonWaveStatus(unittest.TestCase):
     def setUp(self):
-        initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
         xoldJoe = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 60,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 140,
                                DynamicRiskFactorsType.DBP.value: 90,
                                DynamicRiskFactorsType.A1C.value: 5.5,
@@ -47,12 +46,12 @@ class TestPersonWaveStatus(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "oldJoe"}, index=[0])
-        self.oldJoe = PersonFactory.get_nhanes_person(xoldJoe.iloc[0], initializationModelRepository)
+        self.oldJoe = PersonFactory.get_nhanes_person(xoldJoe.iloc[0])
         self.oldJoe._afib = [False]
 
         xyoungJoe = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 40,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 140,
                                DynamicRiskFactorsType.DBP.value: 90,
                                DynamicRiskFactorsType.A1C.value: 5.5,
@@ -70,7 +69,7 @@ class TestPersonWaveStatus(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "youngJoe"}, index=[0])
-        self.youngJoe = PersonFactory.get_nhanes_person(xyoungJoe.iloc[0], initializationModelRepository)
+        self.youngJoe = PersonFactory.get_nhanes_person(xyoungJoe.iloc[0])
         self.youngJoe._afib = [False]
 
     def testStatusAfterFatalStroke(self):

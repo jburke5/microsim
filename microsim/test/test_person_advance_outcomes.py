@@ -1,6 +1,6 @@
 from microsim.person import Person
 from microsim.gender import NHANESGender
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.outcome import Outcome
 from microsim.outcome import OutcomeType
@@ -28,10 +28,9 @@ import pandas as pd
 
 class TestPersonAdvanceOutcomes(unittest.TestCase):
     def setUp(self):
-        initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
         xJoe = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 42.,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 140,
                                DynamicRiskFactorsType.DBP.value: 90,
                                DynamicRiskFactorsType.A1C.value: 5.5,
@@ -49,7 +48,7 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "joe"}, index=[0])
-        self.joe = PersonFactory.get_nhanes_person(xJoe.iloc[0], initializationModelRepository)
+        self.joe = PersonFactory.get_nhanes_person(xJoe.iloc[0])
         self.joe._afib = [False]
 
         self.joe_with_cv = self.joe.__deepcopy__()

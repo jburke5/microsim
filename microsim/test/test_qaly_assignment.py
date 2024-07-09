@@ -23,18 +23,16 @@ from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.treatment import DefaultTreatmentsType
 from microsim.test.outcome_models_repositories import AlwaysNonFatalStroke, AlwaysFatalStroke, AlwaysNonFatalMI, AlwaysDementia, NoOutcome
-
-initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
 
 class TestQALYAssignment(unittest.TestCase):
     def getPerson(self, age=65):
 
         x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: age,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.MEXICAN_AMERICAN.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.MEXICAN_AMERICAN.value,
                                DynamicRiskFactorsType.SBP.value: 140,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 6.5,
@@ -52,7 +50,7 @@ class TestQALYAssignment(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": f"person{age}"}, index=[0])
-        xPerson = PersonFactory.get_nhanes_person(x.iloc[0], initializationModelRepository)
+        xPerson = PersonFactory.get_nhanes_person(x.iloc[0])
         xPerson._afib = [False]
         return xPerson
 

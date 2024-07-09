@@ -1,6 +1,6 @@
 from microsim.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
 from microsim.gender import NHANESGender
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.regression_model import RegressionModel
 from microsim.education import Education
@@ -19,8 +19,6 @@ import pandas as pd
 import numpy as np
 import statsmodels.formula.api as statsmodel
 
-initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
-
 class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
     def setUp(self):
         popSize = 100
@@ -38,7 +36,7 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
 
         x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 80,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 5.5,
@@ -56,12 +54,12 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "0"}, index=[0])
-        self.person = PersonFactory.get_nhanes_person(x.iloc[0], initializationModelRepository)
+        self.person = PersonFactory.get_nhanes_person(x.iloc[0])
         self.person._afib = [False]
 
         xList = [pd.DataFrame({DynamicRiskFactorsType.AGE.value: 80,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
                                DynamicRiskFactorsType.SBP.value: bpinstance,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 5.5,
@@ -79,7 +77,7 @@ class TestStatsModelLinearRiskFactorModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "0"}, index=[0]) for bpinstance in sbp]
-        self.people = list(map(lambda x: PersonFactory.get_nhanes_person(x.iloc[0], initializationModelRepository), xList))
+        self.people = list(map(lambda x: PersonFactory.get_nhanes_person(x.iloc[0]), xList))
         
         for person in self.people:
             person._afib = [False]

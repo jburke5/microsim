@@ -1,6 +1,6 @@
 from microsim.gender import NHANESGender
 from microsim.person import Person
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.smoking_status import SmokingStatus
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.education import Education
@@ -20,11 +20,10 @@ import pandas as pd
 
 class TestOutcomeRepository(unittest.TestCase):
     def setUp(self):
-        initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
 
         self.x_white_male = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 55,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 6,
@@ -42,12 +41,12 @@ class TestOutcomeRepository(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "white_male"}, index=[0])
-        self._white_male = PersonFactory.get_nhanes_person(self.x_white_male.iloc[0], initializationModelRepository)
+        self._white_male = PersonFactory.get_nhanes_person(self.x_white_male.iloc[0])
         self._white_male._afib = [False]
 
         self.x_black_male = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 55,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 6,
@@ -65,12 +64,12 @@ class TestOutcomeRepository(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "black_male"}, index=[0])
-        self._black_male = PersonFactory.get_nhanes_person(self.x_black_male.iloc[0], initializationModelRepository)
+        self._black_male = PersonFactory.get_nhanes_person(self.x_black_male.iloc[0])
         self._black_male._afib = [False]
 
         self.x_treated_black_male = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 55,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 6,
@@ -88,12 +87,12 @@ class TestOutcomeRepository(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "black_treated_male"}, index=[0])
-        self._treated_black_male = PersonFactory.get_nhanes_person(self.x_treated_black_male.iloc[0], initializationModelRepository)
+        self._treated_black_male = PersonFactory.get_nhanes_person(self.x_treated_black_male.iloc[0])
         self._treated_black_male._afib = [False]
 
         self.x_white_female = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 55,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 6,
@@ -111,12 +110,12 @@ class TestOutcomeRepository(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "white_female"}, index=[0])
-        self._white_female = PersonFactory.get_nhanes_person(self.x_white_female.iloc[0], initializationModelRepository)
+        self._white_female = PersonFactory.get_nhanes_person(self.x_white_female.iloc[0])
         self._white_female._afib = [False]
 
         self.x_black_female = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 55,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 120,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: 6,
@@ -134,7 +133,7 @@ class TestOutcomeRepository(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "black_female"}, index=[0])
-        self._black_female = PersonFactory.get_nhanes_person(self.x_black_female.iloc[0], initializationModelRepository)
+        self._black_female = PersonFactory.get_nhanes_person(self.x_black_female.iloc[0])
         self._black_female._afib = [False]
 
         self._outcome_model_repository = OutcomeModelRepository()

@@ -6,7 +6,7 @@ from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.smoking_status import SmokingStatus
 from microsim.alcohol_category import AlcoholCategory
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.gcp_model import GCPModel
 from microsim.test.do_not_change_risk_factors_model_repository import (
     DoNotChangeRiskFactorsModelRepository,
@@ -32,11 +32,9 @@ class TestGCPModel(unittest.TestCase):
 
     def setUp(self):
  
-        initializationModelRepository = PopulationFactory.get_nhanes_person_initialization_model_repo()
-
         self.x_test_case_one = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 65 - 0.828576318 * 10,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
                                DynamicRiskFactorsType.SBP.value: 120 + 0.45 * 10,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: Person.convert_fasting_glucose_to_a1c(100 - 1.1 * 10),
@@ -54,12 +52,12 @@ class TestGCPModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "test_case_one"}, index=[0])
-        self._test_case_one = PersonFactory.get_nhanes_person(self.x_test_case_one.iloc[0], initializationModelRepository)
+        self._test_case_one = PersonFactory.get_nhanes_person(self.x_test_case_one.iloc[0])
         self._test_case_one._afib = [False]
 
         self.x_test_case_two = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 65 - 0.458555784 * 10,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_WHITE.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
                                DynamicRiskFactorsType.SBP.value: 120 + 0.3 * 10,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: Person.convert_fasting_glucose_to_a1c(100 + 0.732746529 * 10),
@@ -77,12 +75,12 @@ class TestGCPModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "test_case_two"}, index=[0])
-        self._test_case_two = PersonFactory.get_nhanes_person(self.x_test_case_two.iloc[0], initializationModelRepository)
+        self._test_case_two = PersonFactory.get_nhanes_person(self.x_test_case_two.iloc[0])
         self._test_case_two._afib = [False]
 
         self.x_test_case_three = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 65 - 0.358692676 * 10,
                                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:NHANESRaceEthnicity.NON_HISPANIC_BLACK.value,
+                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
                                DynamicRiskFactorsType.SBP.value: 120 + 2.3 * 10,
                                DynamicRiskFactorsType.DBP.value: 80,
                                DynamicRiskFactorsType.A1C.value: Person.convert_fasting_glucose_to_a1c(100 + 0.8893 * 10),
@@ -100,7 +98,7 @@ class TestGCPModel(unittest.TestCase):
                                DefaultTreatmentsType.STATIN.value: 0,
                                DynamicRiskFactorsType.CREATININE.value: 0,
                                "name": "test_case_three"}, index=[0])
-        self._test_case_three = PersonFactory.get_nhanes_person(self.x_test_case_three.iloc[0], initializationModelRepository)
+        self._test_case_three = PersonFactory.get_nhanes_person(self.x_test_case_three.iloc[0])
         self._test_case_three._afib = [False]
 
         self._test_case_one._randomEffects["gcp"] = 0

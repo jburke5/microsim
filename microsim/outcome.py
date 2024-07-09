@@ -41,6 +41,7 @@ class Outcome:
 #     dementia after cognition
 
 class OutcomeType(Enum):
+    WMH = "wmh"
     COGNITION = "cognition"
     CI = "ci"
     CARDIOVASCULAR = "cv"
@@ -51,5 +52,5 @@ class OutcomeType(Enum):
     DEATH = "death"
     QUALITYADJUSTED_LIFE_YEARS = "qalys"
     #making the order explicit here because some outcomes depend on other ones
-    _order_ = ["COGNITION", "CI", "CARDIOVASCULAR", "STROKE", "MI", "NONCARDIOVASCULAR",  
+    _order_ = ["WMH", "COGNITION", "CI", "CARDIOVASCULAR", "STROKE", "MI", "NONCARDIOVASCULAR",  
                "DEMENTIA", "DEATH",  "QUALITYADJUSTED_LIFE_YEARS"]

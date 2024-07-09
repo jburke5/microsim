@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from microsim.cognition_outcome import CognitionOutcome
 from microsim.smoking_status import SmokingStatus
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.person import Person
@@ -51,7 +51,7 @@ class GCPModel:
         #reportingDict['intercept'] = xb
         xb += yearsInSim * -0.2031
         #reportingDict['yearsInSim'] = xb - pd.Series(reportingDict.values()).sum()
-        if raceEthnicity == NHANESRaceEthnicity.NON_HISPANIC_BLACK:
+        if raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
             xb += -5.6818
             xb += yearsInSim * -0.00870
         #reportingDict['raceEthnicity'] = xb - pd.Series(reportingDict.values()).sum()

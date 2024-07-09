@@ -1,6 +1,6 @@
 import numpy as np
 from microsim.smoking_status import SmokingStatus
-from microsim.race_ethnicity import NHANESRaceEthnicity
+from microsim.race_ethnicity import RaceEthnicity
 from microsim.statsmodel_linear_risk_factor_model import StatsModelLinearRiskFactorModel
 from microsim.treatment import TreatmentStrategiesType
 

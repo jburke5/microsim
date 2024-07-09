@@ -4,17 +4,17 @@ import multiprocessing as mp
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from pandarallel import pandarallel
+#from pandarallel import pandarallel
 from collections import Counter
 
-from microsim.alcohol_category import AlcoholCategory
+#from microsim.alcohol_category import AlcoholCategory
 from microsim.bp_treatment_strategies import *
-from microsim.cohort_risk_model_repository import (CohortDynamicRiskFactorModelRepository, 
-                                                   CohortStaticRiskFactorModelRepository,
-                                                   CohortDefaultTreatmentModelRepository)
+#from microsim.cohort_risk_model_repository import (CohortDynamicRiskFactorModelRepository, 
+#                                                   CohortStaticRiskFactorModelRepository,
+#                                                   CohortDefaultTreatmentModelRepository)
 from microsim.data_loader import (get_absolute_datafile_path,
                                   load_regression_model)
-from microsim.education import Education
+#from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.gfr_equation import GFREquation
 from microsim.initialization_repository import InitializationRepository
@@ -22,16 +22,16 @@ from microsim.nhanes_risk_model_repository import NHANESRiskModelRepository
 from microsim.outcome import Outcome, OutcomeType
 from microsim.outcome_model_repository import OutcomeModelRepository
 from microsim.person import Person
-from microsim.person_factory import PersonFactory, microsimToNhanes
+from microsim.person_factory import PersonFactory
 from microsim.qaly_assignment_strategy import QALYAssignmentStrategy
-from microsim.race_ethnicity import NHANESRaceEthnicity
-from microsim.smoking_status import SmokingStatus
+#from microsim.race_ethnicity import RaceEthnicity
+#from microsim.smoking_status import SmokingStatus
 from microsim.statsmodel_logistic_risk_factor_model import \
     StatsModelLogisticRiskFactorModel
 from microsim.stroke_outcome import StrokeOutcome
 from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType, CategoricalRiskFactorsType, ContinuousRiskFactorsType
-from microsim.afib_model import AFibPrevalenceModel
-from microsim.pvd_model import PVDPrevalenceModel
+#from microsim.afib_model import AFibPrevalenceModel
+#from microsim.pvd_model import PVDPrevalenceModel
 from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType
 from microsim.population_model_repository import PopulationRepositoryType, PopulationModelRepository
 from microsim.standardized_population import StandardizedPopulation
@@ -78,6 +78,18 @@ class Population:
         self._n = self._people.shape[0]
         self._rng = np.random.default_rng() 
         self._modelRepository = popModelRepository._repository
+
+    @property
+    def _staticRiskFactors(self):
+        return list(self._modelRepository[PopulationRepositoryType.STATIC_RISK_FACTORS.value]._repository.keys())
+
+    @property
+    def _dynamicRiskFactors(self):
+        return list(self._modelRepository[PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value]._repository.keys())
+
+    @property
+    def _defaultTreatments(self):
+        return list(self._modelRepository[PopulationRepositoryType.DEFAULT_TREATMENTS.value]._repository.keys())
 
     def advance(self, years, treatmentStrategies=None, nWorkers=1):
         if nWorkers==1:
@@ -370,50 +382,6 @@ class Population:
         )
         return pd.Series([event[0] for event in events]).mean()
 
-    def get_person_attributes_from_person(self, person, timeVaryingCovariates):
-        attrForPerson = person.get_current_state_as_dict()
-        try:
-            attrForPerson["populationIndex"] = person._populationIndex
-        except AttributeError:
-            pass  # populationIndex is not necessary for advancing; can continue safely without it
-
-        timeVaryingAttrsForPerson = person.get_tvc_state_as_dict(timeVaryingCovariates)
-        attrForPerson.update(timeVaryingAttrsForPerson)
-        return attrForPerson
-
-    def get_people_current_state_as_dataframe(self):
-            timeVaryingCovariatesAndOutcomes = self._timeVaryingCovariates
-            timeVaryingCovariatesAndOutcomes.append("gcp")
-            return pd.DataFrame(
-                list(
-                    self.applyMethodSeries(self._people,
-                        self.get_person_attributes_from_person,
-                        timeVaryingCovariates=timeVaryingCovariatesAndOutcomes,
-                    )
-                )
-            )
-
-    def get_people_current_state_and_summary_as_dataframe(self):
-        df = self.get_people_current_state_as_dataframe()
-        # iterate through variables that vary over time
-        tvcMeans = {}
-        for var in self._timeVaryingCovariates:
-            tvcMeans["mean" + var.capitalize()] = [
-                pd.Series(getattr(person, "_" + var)).mean()
-                for i, person in self._people.items()
-            ]   
-        df = pd.concat([df, pd.DataFrame(tvcMeans)], axis=1)
-        #I thought I needed these, I no longer do
-        #the GCP Stroke model needs the median of some quantities (will not get the medians for all TVCs for now) 
-        #varMedians = {}
-        #for var in ["bmi", "gcp", "waist"]:
-        #    varMedians["median" + var.capitalize()] = [
-        #        pd.Series(getattr(person, "_" + var)).median()
-        #        for i, person in self._people.items()
-        #    ]   
-        #df = pd.concat([df, pd.DataFrame(varMedians)], axis=1)
-        return df
-
     def get_all_person_years_as_df(self):
         """This function creates a dataframe where each row is a person-year from the simulation.
            Thus a single person object will be represented in N rows in this dataframe where N is the 
@@ -446,7 +414,7 @@ class Population:
     @staticmethod
     def get_people_attr_at_index(people, rf, index):
         #rfList = list(map( lambda x: getattr(x, "_"+rf.value)[index] if x.is_alive else None, self._people))
-        rfList = list(map( lambda x: getattr(x, "_"+rf.value)[index] if x.is_alive_at_index(index) else None, people))
+        rfList = list(map( lambda x: getattr(x, "_"+rf)[index] if x.is_alive_at_index(index) else None, people))
         rfList = list(filter(lambda x: x is not None, rfList))
         rfList = list(map(lambda x: int(x) if (type(x)==bool)|(type(x)==np.bool_) else x, rfList))
         return rfList
@@ -460,13 +428,13 @@ class Population:
     def print_summary_at_index(self, index):
         """Prints a summary of both static and dynamic risk factors at index (baseline: index=0, last year: index=-1."""
         print(" "*50, "  min ", "  0.25", " "*1, "med", " "*2, "0.75", " "*2, "max", " "*1, "mean", " "*2, "sd")
-        for i,rf in enumerate(DynamicRiskFactorsType):
+        for i,rf in enumerate(self._dynamicRiskFactors):
             rfList = self.get_attr_at_index(rf, index)
-            print(f"{rf.value:>50} {np.min(rfList):> 6.1f} {np.quantile(rfList, 0.25):> 6.1f} {np.quantile(rfList, 0.5):> 6.1f} {np.quantile(rfList, 0.75):> 6.1f} {np.max(rfList):> 6.1f} {np.mean(rfList):> 6.1f} {np.std(rfList):> 6.1f}")
+            print(f"{rf:>50} {np.min(rfList):> 6.1f} {np.quantile(rfList, 0.25):> 6.1f} {np.quantile(rfList, 0.5):> 6.1f} {np.quantile(rfList, 0.75):> 6.1f} {np.max(rfList):> 6.1f} {np.mean(rfList):> 6.1f} {np.std(rfList):> 6.1f}")
         print(" "*50, "  proportions") 
-        for rf in StaticRiskFactorsType:
-            print(f"{rf.value:>50}")
-            rfList = list(map( lambda x: getattr(x, "_"+rf.value), self._people))
+        for rf in self._staticRiskFactors:
+            print(f"{rf:>50}")
+            rfList = list(map( lambda x: getattr(x, "_"+rf), self._people))
             rfValueCounts = Counter(rfList)
             for key in sorted(rfValueCounts.keys()):
                 print(f"{key.value:>50} {rfValueCounts[key]/self._n: 6.2f}")
@@ -492,22 +460,26 @@ class Population:
         print(" "*25, "-"*53, " ", "-"*53)
         print(" "*25, "min", " "*4, "0.25", " "*2, "med", " "*3, "0.75", " "*3, "max" , " "*2, "mean", " "*3, "sd", "    min ", "   0.25", " "*2, "med", " "*3, "0.75", " "*3, "max", " "*2, "mean", " "*3, "sd")
         print(" "*25, "-"*53, " ", "-"*53)
-        for i,rf in enumerate(DynamicRiskFactorsType):
+        #this is not a great solution...but...I need to be able to run this function without having to initialize a population
+        #but I also need to run this function within a population and right now we are about to have two types of population...
+        dynamicRiskFactors = people.iloc[0]._dynamicRiskFactors
+        for i,rf in enumerate(dynamicRiskFactors):
             #rfList = self.get_attr_at_index(rf, index)
             rfList = Population.get_people_attr_at_index(people, rf, index)
             #rfListOther = other.get_attr_at_index(rf, index)
             rfListOther = Population.get_people_attr_at_index(other, rf, index)
-            print(f"{rf.value:>23} {np.min(rfList):> 7.1f} {np.quantile(rfList, 0.25):> 7.1f} {np.quantile(rfList, 0.5):> 7.1f} {np.quantile(rfList, 0.75):> 7.1f} {np.max(rfList):> 7.1f} {np.mean(rfList):> 7.1f} {np.std(rfList):> 7.1f} {np.min(rfListOther):> 7.1f} {np.quantile(rfListOther, 0.25):> 7.1f} {np.quantile(rfListOther, 0.5):> 7.1f} {np.quantile(rfListOther, 0.75):> 7.1f} {np.max(rfListOther):> 7.1f} {np.mean(rfListOther):> 7.1f} {np.std(rfListOther):> 7.1f}")
+            print(f"{rf:>23} {np.min(rfList):> 7.1f} {np.quantile(rfList, 0.25):> 7.1f} {np.quantile(rfList, 0.5):> 7.1f} {np.quantile(rfList, 0.75):> 7.1f} {np.max(rfList):> 7.1f} {np.mean(rfList):> 7.1f} {np.std(rfList):> 7.1f} {np.min(rfListOther):> 7.1f} {np.quantile(rfListOther, 0.25):> 7.1f} {np.quantile(rfListOther, 0.5):> 7.1f} {np.quantile(rfListOther, 0.75):> 7.1f} {np.max(rfListOther):> 7.1f} {np.mean(rfListOther):> 7.1f} {np.std(rfListOther):> 7.1f}")
         print(" "*25, "self", "  other")
         print(" "*25, "proportions")
         print(" "*25, "-"*11)
-        for rf in StaticRiskFactorsType:
-            print(f"{rf.value:>23}")
+        staticRiskFactors = people.iloc[0]._staticRiskFactors
+        for rf in staticRiskFactors:
+            print(f"{rf:>23}")
             #rfList = list(map( lambda x: getattr(x, "_"+rf.value), self._people))
-            rfList = list(map( lambda x: getattr(x, "_"+rf.value), people))
+            rfList = list(map( lambda x: getattr(x, "_"+rf), people))
             rfValueCounts = Counter(rfList)
             #rfListOther = list(map( lambda x: getattr(x, "_"+rf.value), other._people))
-            rfListOther = list(map( lambda x: getattr(x, "_"+rf.value), other))
+            rfListOther = list(map( lambda x: getattr(x, "_"+rf), other))
             rfValueCountsOther = Counter(rfListOther)
             for key in sorted(rfValueCounts.keys()):
                 print(f"{key:>23} {rfValueCounts[key]/people.shape[0]: 6.2f} {rfValueCountsOther[key]/other.shape[0]: 6.2f}")
@@ -558,22 +530,23 @@ class Population:
            These distributions are then compared to the same distributions from other. 
            other: a Population instance.
            tmpDir: a complete path, if the user wants to save the plots instead of displaying them.'''
-        nRows = round(len(DynamicRiskFactorsType)/2)
+        dynamicRiskFactors = self._dynamicRiskFactors
+        nRows = round(len(dynamicRiskFactors)/2)
         fig, ax = plt.subplots(nRows, 2, figsize=(17,15))
         row=-1
-        for i,rf in enumerate(DynamicRiskFactorsType):
+        for i,rf in enumerate(dynamicRiskFactors):
             rfList = self.get_attr_at_index(rf, -1)
             if i%2==0:
                 row += 1
                 col = 0
             else:
                 col = 1
-            if rf.value in microsimToNhanes.keys():
+            if rf in PersonFactory.microsimToNhanes.keys():
                 rfListNhanes = other.get_attr_at_index(rf, -1)
                 ax[row,col].hist([rfList, rfListNhanes], bins=20, density=True)
             else:
                 ax[row,col].hist(rfList, bins=20, density=True)
-            ax[row,col].set_xlabel(rf.value)
+            ax[row,col].set_xlabel(rf)
             #ax[row,col].set_ylabel("probability density")
         plt.suptitle("probability densities for all dynamic risk factors")
         #plt.subplots_adjust(wspace=0.5, hspace=0.7)

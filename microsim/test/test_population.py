@@ -1,11 +1,11 @@
-from microsim.person import Person
-from microsim.gcp_model import GCPModel
-from microsim.gender import NHANESGender
-from microsim.race_ethnicity import NHANESRaceEthnicity
-from microsim.smoking_status import SmokingStatus
-from microsim.education import Education
-from microsim.alcohol_category import AlcoholCategory
-from microsim.population_factory import PopulationFactory
+#from microsim.person import Person
+#from microsim.gcp_model import GCPModel
+#from microsim.gender import NHANESGender
+#from microsim.race_ethnicity import NHANESRaceEthnicity
+#from microsim.smoking_status import SmokingStatus
+#from microsim.education import Education
+#from microsim.alcohol_category import AlcoholCategory
+#from microsim.population_factory import PopulationFactory
 
 import unittest
 import pandas as pd
