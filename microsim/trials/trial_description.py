@@ -190,3 +190,26 @@ class NhanesTrialDescription(TrialDescription):
         rep += f"\tDistributions: {self.distributions}\n"
         rep += f"\tPopulation type: {self.popType}"
         return rep
+
+class KaiserTrialDescription(TrialDescription):
+    '''This is a class that can be used to hold setup information for a trial that is using the KAISER population type.
+    It holds the information needed for all trials, those are provided to the initialization of the
+    superclass TrialDescription, and in addition it holds all information related to the KAISER population.
+    An instance of this class can be used to initialize the Trial class.'''
+    def __init__(self,
+                 trialType=TrialType.COMPLETELY_RANDOMIZED,
+                 blockFactors=list(),
+                 sampleSize=100,
+                 duration=5,
+                 treatmentStrategies=TreatmentStrategyRepository(),
+                 nWorkers=1,
+                 personFilters=None):
+        super().__init__(trialType, blockFactors, sampleSize, duration, treatmentStrategies, nWorkers=nWorkers, personFilters=personFilters)
+        self.popArgs = {"n":self.sampleSize,
+                        "personFilters":self.personFilters}
+        self.popType = PopulationType.KAISER
+
+    def __str__(self):
+        rep = super().__str__()
+        rep += f"\n\tPopulation type: {self.popType}"
+        return rep

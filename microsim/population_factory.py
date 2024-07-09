@@ -138,7 +138,7 @@ class PopulationFactory:
         if popType == PopulationType.NHANES:
             return PopulationFactory.get_nhanes_people(**kwargs)
         elif popType == PopulationType.KAISER:
-            raise RuntimeError("Kaiser popType not implemented yet in PopulationFactory.get_people function.")
+            return PopulationFactory.get_kaiser_people(**kwargs)
         else:
             raise RuntimeError("Unknown popType in PopulationFactory.get_people function.")
 
@@ -147,7 +147,7 @@ class PopulationFactory:
         if popType == PopulationType.NHANES:
             return PopulationFactory.get_nhanes_population_model_repo()
         elif popType == PopulationType.KAISER:
-            raise RuntimeError("Kaiser popType not implemented yet in PopulationFactory.get_population_model_repo function.")
+            return PopulationFactory.get_nhanes_population_model_repo()
         else:
             raise RuntimeError("Unknown popType in PopulationFactory.get_population_model_repo function.")
 
@@ -179,16 +179,16 @@ class PopulationFactory:
            Returns a Pandas df with the Kaiser information as named in Microsim."""
         df = pd.read_csv(csvFile).dropna()
         #TO DO: needs to be FIXED, or REMOVED
-        df = df.loc[ (df["AHL_nonStatin"]==0) ]
-        df = df.drop("AHL_nonStatin", axis=1)
-        if 'weight' in df.columns:
-            df = df.drop('weight', axis=1)
+        #df = df.loc[ (df["AHL_nonStatin"]==0) ]
+        #df = df.drop("AHL_nonStatin", axis=1)
+        #if 'weight' in df.columns:
+        #    df = df.drop('weight', axis=1)
         df = PopulationFactory.rename_df_columns(df, PersonFactory.microsimToKaiser)
         df = df.astype({StaticRiskFactorsType.SMOKING_STATUS.value: 'int',
-                        DynamicRiskFactorsType.AFIB.value:'int',
-                        DynamicRiskFactorsType.PVD.value:'int',
+                        DynamicRiskFactorsType.AFIB.value:'bool',
+                        DynamicRiskFactorsType.PVD.value:'bool',
                         DefaultTreatmentsType.STATIN.value:'int', 
-                        DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value:'int',
+                        DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value:'bool',
                         #"age":'int'}).reset_index()
                        }).reset_index()
         df[StaticRiskFactorsType.GENDER.value] = df[StaticRiskFactorsType.GENDER.value].replace({'F': 2, 'M': 1}) #.infer_objects(copy=False)  
@@ -357,10 +357,13 @@ class PopulationFactory:
         singularForGroups = dict()
         sizeForGroups = dict()
         namesForGroups = dict()
+        
+        #kaiser population size
+        popSize = 315142
 
-        fileDir = "/Users/deligkaris.1/Desktop"
-        csvFiles = ['/min.csv', '/max.csv', '/means.csv', '/covs.csv']        
-        (minDf, maxDf, meanDf, covDf) = list(map(lambda x: PopulationFactory.get_kaiserDf(x), [fileDir+y for y in csvFiles]))
+        fileDir = "microsim/data/kaiser"
+        csvFiles = ['/kaiserMin.csv', '/kaiserMax.csv', '/kaiserMean.csv', '/kaiserCovariance.csv', '/kaiserWeight.csv']        
+        (minDf, maxDf, meanDf, covDf, weightDf) = list(map(lambda x: PopulationFactory.get_kaiserDf(x), [fileDir+y for y in csvFiles]))
         
         catVariables = PopulationFactory.kaiser_variable_types[VariableType.CATEGORICAL.value]
         conVariables = PopulationFactory.kaiser_variable_types[VariableType.CONTINUOUS.value]
@@ -404,7 +407,17 @@ class PopulationFactory:
                                 (maxDf["pvd"]==key[5]) &
                                 (maxDf["statin"]==key[6]) &
                                 (maxDf["anyPhysicalActivity"]==key[7]), conVariables].to_numpy()[0]
-            sizeForGroups[key] = 1
+            sizeForGroups[key] = int(
+                                 popSize * 
+                                 weightDf.loc[
+                                (weightDf["modality"]==key[0]) &
+                                (weightDf["gender"]==key[1]) &
+                                (weightDf["raceEthnicity"]==key[2]) &
+                                (weightDf["smokingStatus"]==key[3]) &
+                                (weightDf["afib"]==key[4]) &
+                                (weightDf["pvd"]==key[5]) &
+                                (weightDf["statin"]==key[6]) &
+                                (weightDf["anyPhysicalActivity"]==key[7]), "weight"].to_numpy()[0])
             namesForGroups[key] = ["kaiserPerson" for i in range(sizeForGroups[key])]
         distributions = {"mean": meanForGroups, "cov": covForGroups, "min": minForGroups, "max": maxForGroups, 
                          "singular": singularForGroups, "size": sizeForGroups, "names": namesForGroups}
@@ -554,7 +567,8 @@ class PopulationFactory:
         drawsForGroups, namesForGroups = PopulationFactory.draw_from_distributions(distributions)
         df = PopulationFactory.get_df_from_draws(drawsForGroups, namesForGroups, popType=PopulationType.KAISER.value)
         df = PopulationFactory.apply_person_filters_on_df(personFilters, df)
-        people = pd.DataFrame.apply(df, PersonFactory.get_kaiser_person, axis="columns")
+        dfForPeople = df.sample(n, weights=None, replace=True)
+        people = pd.DataFrame.apply(dfForPeople, PersonFactory.get_kaiser_person, axis="columns")
         people = PopulationFactory.apply_person_filters_on_people(personFilters, people)
         people = PopulationFactory.bring_people_to_target_n(n, people, df, personFilters, popType=PopulationType.KAISER.value)   
 

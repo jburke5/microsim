@@ -34,6 +34,7 @@ class PVDPrevalenceModel:
             xb += 0.14
         if ( (smokingStatus==SmokingStatus.CURRENT) | (smokingStatus==SmokingStatus.FORMER) ):
             xb += 0.47
+        #it seems that white was the reference, so if we want to map asian to white for the microsim models we should not change this code...
         if raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
             xb += 1.23
         elif ( (raceEthnicity== RaceEthnicity.MEXICAN_AMERICAN) | (raceEthnicity==RaceEthnicity.OTHER_HISPANIC) ):
