@@ -20,11 +20,11 @@ class DynamicRiskFactorsType(Enum):
     PVD = "pvd"  # boolean
 
 class StaticRiskFactorsType(Enum):
-    RACE_ETHNICITY = "raceEthnicity" # NHANESRaceEthnicity
+    RACE_ETHNICITY = "raceEthnicity" # RaceEthnicity
     EDUCATION = "education"          # Education
     GENDER = "gender"                # NHANESGender
     SMOKING_STATUS = "smokingStatus" # SmokingStatus
-    MODALITY = "modality"
+    MODALITY = "modality"  # Modality, originated from the Kaiser WMH work 
 
 class CategoricalRiskFactorsType(Enum):
     RACE_ETHNICITY = "raceEthnicity" 
