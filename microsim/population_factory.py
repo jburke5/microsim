@@ -23,13 +23,15 @@ from microsim.standardized_population import StandardizedPopulation
 from microsim.variable_type import VariableType
 from microsim.outcome import OutcomeType
 from microsim.population_type import PopulationType
+from microsim.modality import Modality
 
 class PopulationFactory:
     nhanes_pop_attributes = {PopulationRepositoryType.STATIC_RISK_FACTORS.value: 
                                                                     [StaticRiskFactorsType.GENDER.value,
                                                                      StaticRiskFactorsType.SMOKING_STATUS.value, 
                                                                      StaticRiskFactorsType.RACE_ETHNICITY.value,
-                                                                     StaticRiskFactorsType.EDUCATION.value],
+                                                                     StaticRiskFactorsType.EDUCATION.value,
+                                                                     StaticRiskFactorsType.MODALITY.value],
                              PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value: 
                                                                      [DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value,
                                                                       DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value,
@@ -66,7 +68,9 @@ class PopulationFactory:
     # present in the original NHANES dataset such as PVD)
     # The order of these two lists is important,as they define the column names of the final dataframe. The numpy arrays used in between do 
     # not keep track of which column is which attribute.
-    nhanes_variable_types = {VariableType.CATEGORICAL.value:  [StaticRiskFactorsType.GENDER.value, 
+    nhanes_variable_types = {VariableType.CATEGORICAL.value:  [
+                                                  StaticRiskFactorsType.MODALITY.value,
+                                                  StaticRiskFactorsType.GENDER.value, 
                                                   StaticRiskFactorsType.SMOKING_STATUS.value, 
                                                   StaticRiskFactorsType.RACE_ETHNICITY.value, 
                                                   DefaultTreatmentsType.STATIN.value,
@@ -197,7 +201,9 @@ class PopulationFactory:
                                         'Asian and Pacific Islander': RaceEthnicity.ASIAN.value,
                                         'White': RaceEthnicity.NON_HISPANIC_WHITE.value,
                                         'Multiple/Other/Unknown': RaceEthnicity.OTHER.value,
-                                        'Hispanic': RaceEthnicity.OTHER_HISPANIC}) 
+                                        'Hispanic': RaceEthnicity.OTHER_HISPANIC.value}) 
+        df[StaticRiskFactorsType.MODALITY.value] = df[StaticRiskFactorsType.MODALITY.value].replace({"CT": Modality.CT.value,
+                                                                                                     "MR": Modality.MR.value})
         return df
 
     @staticmethod

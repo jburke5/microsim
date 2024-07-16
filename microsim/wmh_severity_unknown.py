@@ -6,9 +6,9 @@ from microsim.gender import NHANESGender
 from microsim.smoking_status import SmokingStatus
 from microsim.modality import Modality
 
-class WMHSeverityUnknown(Enum):
-    UNKNOWN = "unknown"
-    KNOWN = "known"
+#class WMHSeverityUnknown(Enum):
+#    UNKNOWN = "unknown"
+#    KNOWN = "known"
 
 class WMHSeverityUnknownModel:
     """White matter hypodensity severity unknown model."""
@@ -75,7 +75,7 @@ class WMHSeverityUnknownModel:
         xb += antiHypertensiveCount*0.0582
 
         #if otherLipidLowering:
-        #    xb += 0.00221
+        #    xb += -0.0133
 
         xb += a1c*0.0264
         xb += totChol*0.000864
@@ -84,7 +84,7 @@ class WMHSeverityUnknownModel:
         xb += trig*(-0.00023)
         xb += creatinine*0.0867
 
-        if modality==Modality.CT:
+        if modality==Modality.CT.value:
             xb += -0.2186
 
         return xb
