@@ -32,7 +32,7 @@ from microsim.stroke_outcome import StrokeOutcome
 from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType, CategoricalRiskFactorsType, ContinuousRiskFactorsType
 #from microsim.afib_model import AFibPrevalenceModel
 #from microsim.pvd_model import PVDPrevalenceModel
-from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType
+from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType, CategoricalDefaultTreatmentsType, ContinuousDefaultTreatmentsType
 from microsim.population_model_repository import PopulationRepositoryType, PopulationModelRepository
 from microsim.standardized_population import StandardizedPopulation
 from microsim.risk_model_repository import RiskModelRepository
@@ -464,14 +464,32 @@ class Population:
         #but I also need to run this function within a population and right now we are about to have two types of population...
         dynamicRiskFactors = people.iloc[0]._dynamicRiskFactors
         for i,rf in enumerate(dynamicRiskFactors):
-            #rfList = self.get_attr_at_index(rf, index)
-            rfList = Population.get_people_attr_at_index(people, rf, index)
-            #rfListOther = other.get_attr_at_index(rf, index)
-            rfListOther = Population.get_people_attr_at_index(other, rf, index)
-            print(f"{rf:>23} {np.min(rfList):> 7.1f} {np.quantile(rfList, 0.25):> 7.1f} {np.quantile(rfList, 0.5):> 7.1f} {np.quantile(rfList, 0.75):> 7.1f} {np.max(rfList):> 7.1f} {np.mean(rfList):> 7.1f} {np.std(rfList):> 7.1f} {np.min(rfListOther):> 7.1f} {np.quantile(rfListOther, 0.25):> 7.1f} {np.quantile(rfListOther, 0.5):> 7.1f} {np.quantile(rfListOther, 0.75):> 7.1f} {np.max(rfListOther):> 7.1f} {np.mean(rfListOther):> 7.1f} {np.std(rfListOther):> 7.1f}")
+            if rf in [crf.value for crf in ContinuousRiskFactorsType]:
+                #rfList = self.get_attr_at_index(rf, index)
+                rfList = Population.get_people_attr_at_index(people, rf, index)
+                #rfListOther = other.get_attr_at_index(rf, index)
+                rfListOther = Population.get_people_attr_at_index(other, rf, index)
+                print(f"{rf:>23} {np.min(rfList):> 7.1f} {np.quantile(rfList, 0.25):> 7.1f} {np.quantile(rfList, 0.5):> 7.1f} {np.quantile(rfList, 0.75):> 7.1f} {np.max(rfList):> 7.1f} {np.mean(rfList):> 7.1f} {np.std(rfList):> 7.1f} {np.min(rfListOther):> 7.1f} {np.quantile(rfListOther, 0.25):> 7.1f} {np.quantile(rfListOther, 0.5):> 7.1f} {np.quantile(rfListOther, 0.75):> 7.1f} {np.max(rfListOther):> 7.1f} {np.mean(rfListOther):> 7.1f} {np.std(rfListOther):> 7.1f}")
+        defaultTreatments = people.iloc[0]._defaultTreatments
+        for dt in defaultTreatments:
+            if dt in [cdt.value for cdt in ContinuousDefaultTreatmentsType]:
+                dtList = Population.get_people_attr_at_index(people, dt, index)
+                dtListOther = Population.get_people_attr_at_index(other, dt, index)
+                print(f"{dt:>23} {np.min(dtList):> 7.1f} {np.quantile(dtList, 0.25):> 7.1f} {np.quantile(dtList, 0.5):> 7.1f} {np.quantile(dtList, 0.75):> 7.1f} {np.max(dtList):> 7.1f} {np.mean(dtList):> 7.1f} {np.std(dtList):> 7.1f} {np.min(dtListOther):> 7.1f} {np.quantile(dtListOther, 0.25):> 7.1f} {np.quantile(dtListOther, 0.5):> 7.1f} {np.quantile(dtListOther, 0.75):> 7.1f} {np.max(dtListOther):> 7.1f} {np.mean(dtListOther):> 7.1f} {np.std(dtListOther):> 7.1f}")
         print(" "*25, "self", "  other")
         print(" "*25, "proportions")
         print(" "*25, "-"*11)
+        for i,rf in enumerate(dynamicRiskFactors):
+            if rf in [crf.value for crf in CategoricalRiskFactorsType]:
+                #rfList = self.get_attr_at_index(rf, index)
+                rfList = Population.get_people_attr_at_index(people, rf, index)
+                #rfListOther = other.get_attr_at_index(rf, index)
+                rfListOther = Population.get_people_attr_at_index(other, rf, index)
+                print(f"{rf:>23}")
+                rfValueCounts = Counter(rfList)
+                rfValueCountsOther = Counter(rfListOther)
+                for key in sorted(rfValueCounts.keys()):
+                    print(f"{key:>23} {rfValueCounts[key]/people.shape[0]: 6.2f} {rfValueCountsOther[key]/other.shape[0]: 6.2f}")
         staticRiskFactors = people.iloc[0]._staticRiskFactors
         for rf in staticRiskFactors:
             print(f"{rf:>23}")
@@ -483,6 +501,15 @@ class Population:
             rfValueCountsOther = Counter(rfListOther)
             for key in sorted(rfValueCounts.keys()):
                 print(f"{key:>23} {rfValueCounts[key]/people.shape[0]: 6.2f} {rfValueCountsOther[key]/other.shape[0]: 6.2f}")
+        for dt in defaultTreatments:
+            if dt in [cdt.value for cdt in CategoricalDefaultTreatmentsType]:
+                print(f"{dt:>23}")
+                dtList = Population.get_people_attr_at_index(people, dt, index)
+                dtListOther = Population.get_people_attr_at_index(other, dt, index)
+                dtValueCounts = Counter(dtList)
+                dtValueCountsOther = Counter(dtListOther)
+                for key in sorted(dtValueCounts.keys()):
+                    print(f"{key:>23} {dtValueCounts[key]/people.shape[0]: 6.2f} {dtValueCountsOther[key]/other.shape[0]: 6.2f}")
 
     def print_cv_standardized_rates(self):
         outcomes = [OutcomeType.MI, OutcomeType.STROKE, OutcomeType.DEATH,
