@@ -133,7 +133,7 @@ class PopulationFactory:
         if popType == PopulationType.NHANES:
             return PopulationFactory.get_nhanes_population(**kwargs)
         elif popType == PopulationType.KAISER:
-            raise RuntimeError("Kaiser popType not implemented yet in PopulationFactory.get_population function.")
+            return PopulationFactory.get_kaiser_population(**kwargs)
         else:
             raise RuntimeError("Unknown popType in PopulationFactory.get_population function.")
 
@@ -424,7 +424,7 @@ class PopulationFactory:
                                 (weightDf["pvd"]==key[5]) &
                                 (weightDf["statin"]==key[6]) &
                                 (weightDf["anyPhysicalActivity"]==key[7]), "weight"].to_numpy()[0])
-            namesForGroups[key] = ["kaiserPerson" for i in range(sizeForGroups[key])]
+            namesForGroups[key] = [f"{index}kaiserPerson{i}" for i in range(sizeForGroups[key])]
         distributions = {"mean": meanForGroups, "cov": covForGroups, "min": minForGroups, "max": maxForGroups, 
                          "singular": singularForGroups, "size": sizeForGroups, "names": namesForGroups}
         distributions = PopulationFactory.get_alt_groups(distributions)

@@ -1,7 +1,7 @@
 from microsim.sbi_model import SBIModel
 from microsim.wmh_outcome import WMHOutcome
 from microsim.wmh_severity_unknown import WMHSeverityUnknownModel
-from microsim.wmh_severity import WMHSeverityCTModel, WMHSeverityMRModel, WMHSeverity
+from microsim.wmh_severity import WMHSeverityCTModel, WMHSeverityMRModel, WMHSeverityModel, WMHSeverity
 from microsim.outcome import OutcomeType
 from microsim.modality import Modality
 
@@ -12,7 +12,8 @@ class WMHModel:
         self.wmhSeverityUnknownModel = WMHSeverityUnknownModel()
         self.wmhSeverityCTModel = WMHSeverityCTModel()
         self.wmhSeverityMRModel = WMHSeverityMRModel()
-    
+        self.wmhSeverityModel = WMHSeverityModel()    
+
     def generate_next_outcome(self, person):
         '''The severity unknown model was derived based on the entire population, which is why this is used first.
         When the severity was unknown, WMH was present in the population but without the severity known, which is why
@@ -26,12 +27,16 @@ class WMHModel:
         sbi = self.sbiModel.estimate_next_risk(person)
         wmhSeverityUnknown = self.wmhSeverityUnknownModel.estimate_next_risk(person)
         if wmhSeverityUnknown==False:
-            if person._modality == Modality.CT.value:
-                wmhSeverity = self.wmhSeverityCTModel.estimate_next_risk(person)
-                wmh = False if wmhSeverity == WMHSeverity.NO else True
-            elif person._modality == Modality.MR.value:
-                wmhSeverity = self.wmhSeverityMRModel.estimate_next_risk(person)
-                wmh = False if wmhSeverity == WMHSeverity.NO else True
+            #find wmh severity by using one model that includes modality as a coefficient
+            wmhSeverity = self.wmhSeverityModel.estimate_next_risk(person)
+            #decided against using two separate models for severity, we used the one above but with recalibrated intercepts
+            #we are not using two separate models because the coefficients for risk factors etc should not depend on modality
+            #find wmh severity by using two separate models for severity
+            #if person._modality == Modality.CT.value:
+            #    wmhSeverity = self.wmhSeverityCTModel.estimate_next_risk(person)
+            #elif person._modality == Modality.MR.value:
+            #    wmhSeverity = self.wmhSeverityMRModel.estimate_next_risk(person)
+            wmh = False if wmhSeverity == WMHSeverity.NO else True
         else:
             wmhSeverity = None
             wmh = True

@@ -382,9 +382,10 @@ class WMHSeverityModel():
             person._modality)
         
         #obtain the linear predictors
-        lpNoWMH = lpWithoutIntercept + 8.2116
-        lpMildWMH = lpWithoutIntercept + 10.2237
-        lpModerateWMH = lpWithoutIntercept + 11.6124
+        #these are the sum of two terms, the intercept as obtained from the original fit, and one obtained from our own recalibration
+        lpNoWMH = lpWithoutIntercept + 8.2116 -0.26733
+        lpMildWMH = lpWithoutIntercept + 10.2237 -0.43271
+        lpModerateWMH = lpWithoutIntercept + 11.6124 -0.49049
         #obtain the first three cumulative probabilities for the first three classes, last cumulative probability is 1.
         noWMHCumulative = self.inverse_logit(lpNoWMH)
         mildWMHCumulative = self.inverse_logit(lpMildWMH)

@@ -31,7 +31,7 @@ class SBIModel:
         trig,
         creatinine):
         
-        xb = -8.2055
+        xb = -8.2055 -0.2554 #original SBI model intercept plus the change found from recalibration
 
         if gender==NHANESGender.MALE:
             xb += 0.0677
