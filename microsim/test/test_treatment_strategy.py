@@ -26,6 +26,7 @@ from microsim.test.outcome_models_repositories import NoOutcome
 from microsim.treatment_strategy_repository import TreatmentStrategyRepository
 from microsim.population_model_repository import PopulationRepositoryType
 from microsim.treatment import TreatmentStrategyStatus
+from microsim.modality import Modality
 
 class TestTreatmentStrategy(unittest.TestCase):
 

@@ -146,9 +146,9 @@ class Trial:
         '''This function is provided to help examine the balance of the Trial populations.'''
         if not self.trialDescription.is_block_randomized():
             print(" "*25, 
-                      "self=treated, unique people count=",  Population.get_unique_people_count(self.treatedPop._people), 
-                      " "*15,
-                      "other=control, unique people count=",  Population.get_unique_people_count(self.controlPop._people))
+                      "self=treated, unique people count= ",  f"{Population.get_unique_people_count(self.treatedPop._people):<8}", 
+                      " "*10,
+                      "other=control, unique people count= ",  f"{Population.get_unique_people_count(self.controlPop._people):<8}")
             self.treatedPop.print_lastyear_summary_comparison(self.controlPop)
         else:
             blockFactor = self.trialDescription.blockFactors[0]

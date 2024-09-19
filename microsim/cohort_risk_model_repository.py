@@ -13,7 +13,8 @@ class CohortStaticRiskFactorModelRepository:
         self._repository = {StaticRiskFactorsType.RACE_ETHNICITY.value: None,
                             StaticRiskFactorsType.EDUCATION.value: None,
                             StaticRiskFactorsType.GENDER.value: None,
-                            StaticRiskFactorsType.SMOKING_STATUS.value: None}
+                            StaticRiskFactorsType.SMOKING_STATUS.value: None,
+                            StaticRiskFactorsType.MODALITY.value: None}
 
 class CohortDynamicRiskFactorModelRepository(RiskModelRepository):
     def __init__(self):

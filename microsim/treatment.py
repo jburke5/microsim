@@ -9,7 +9,12 @@ class DefaultTreatmentsType(Enum):
     STATIN = "statin"
     ANTI_HYPERTENSIVE_COUNT = "antiHypertensiveCount"
     OTHER_LIPID_LOWERING_MEDICATION_COUNT = "otherLipidLoweringMedicationCount"
-    
+ 
+class CategoricalDefaultTreatmentsType(Enum):
+    STATIN = "statin"
+
+class ContinuousDefaultTreatmentsType(Enum):
+    ANTI_HYPERTENSIVE_COUNT = "antiHypertensiveCount"   
 class TreatmentStrategiesType(Enum):
     BP = "bp"
 

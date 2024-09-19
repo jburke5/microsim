@@ -23,13 +23,15 @@ from microsim.standardized_population import StandardizedPopulation
 from microsim.variable_type import VariableType
 from microsim.outcome import OutcomeType
 from microsim.population_type import PopulationType
+from microsim.modality import Modality
 
 class PopulationFactory:
     nhanes_pop_attributes = {PopulationRepositoryType.STATIC_RISK_FACTORS.value: 
                                                                     [StaticRiskFactorsType.GENDER.value,
                                                                      StaticRiskFactorsType.SMOKING_STATUS.value, 
                                                                      StaticRiskFactorsType.RACE_ETHNICITY.value,
-                                                                     StaticRiskFactorsType.EDUCATION.value],
+                                                                     StaticRiskFactorsType.EDUCATION.value,
+                                                                     StaticRiskFactorsType.MODALITY.value],
                              PopulationRepositoryType.DYNAMIC_RISK_FACTORS.value: 
                                                                      [DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value,
                                                                       DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value,
@@ -66,7 +68,9 @@ class PopulationFactory:
     # present in the original NHANES dataset such as PVD)
     # The order of these two lists is important,as they define the column names of the final dataframe. The numpy arrays used in between do 
     # not keep track of which column is which attribute.
-    nhanes_variable_types = {VariableType.CATEGORICAL.value:  [StaticRiskFactorsType.GENDER.value, 
+    nhanes_variable_types = {VariableType.CATEGORICAL.value:  [
+                                                  StaticRiskFactorsType.MODALITY.value,
+                                                  StaticRiskFactorsType.GENDER.value, 
                                                   StaticRiskFactorsType.SMOKING_STATUS.value, 
                                                   StaticRiskFactorsType.RACE_ETHNICITY.value, 
                                                   DefaultTreatmentsType.STATIN.value,
@@ -129,7 +133,7 @@ class PopulationFactory:
         if popType == PopulationType.NHANES:
             return PopulationFactory.get_nhanes_population(**kwargs)
         elif popType == PopulationType.KAISER:
-            raise RuntimeError("Kaiser popType not implemented yet in PopulationFactory.get_population function.")
+            return PopulationFactory.get_kaiser_population(**kwargs)
         else:
             raise RuntimeError("Unknown popType in PopulationFactory.get_population function.")
 
@@ -197,7 +201,9 @@ class PopulationFactory:
                                         'Asian and Pacific Islander': RaceEthnicity.ASIAN.value,
                                         'White': RaceEthnicity.NON_HISPANIC_WHITE.value,
                                         'Multiple/Other/Unknown': RaceEthnicity.OTHER.value,
-                                        'Hispanic': RaceEthnicity.OTHER_HISPANIC}) 
+                                        'Hispanic': RaceEthnicity.OTHER_HISPANIC.value}) 
+        df[StaticRiskFactorsType.MODALITY.value] = df[StaticRiskFactorsType.MODALITY.value].replace({"CT": Modality.CT.value,
+                                                                                                     "MR": Modality.MR.value})
         return df
 
     @staticmethod
@@ -418,7 +424,7 @@ class PopulationFactory:
                                 (weightDf["pvd"]==key[5]) &
                                 (weightDf["statin"]==key[6]) &
                                 (weightDf["anyPhysicalActivity"]==key[7]), "weight"].to_numpy()[0])
-            namesForGroups[key] = ["kaiserPerson" for i in range(sizeForGroups[key])]
+            namesForGroups[key] = [f"{index}kaiserPerson{i}" for i in range(sizeForGroups[key])]
         distributions = {"mean": meanForGroups, "cov": covForGroups, "min": minForGroups, "max": maxForGroups, 
                          "singular": singularForGroups, "size": sizeForGroups, "names": namesForGroups}
         distributions = PopulationFactory.get_alt_groups(distributions)
