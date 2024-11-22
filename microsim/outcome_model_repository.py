@@ -9,6 +9,7 @@ from microsim.non_cv_model_repository import NonCVModelRepository
 from microsim.death_model_repository import DeathModelRepository
 from microsim.ci_model_repository import CIModelRepository
 from microsim.wmh_model_repository import WMHModelRepository
+from microsim.epilepsy_model_repository import EpilepsyModelRepository
 
 class OutcomeModelRepository:
     """Holds the rules for all outcomes.
@@ -23,6 +24,7 @@ class OutcomeModelRepository:
         self._repository = {
                           OutcomeType.WMH: WMHModelRepository(),
                           OutcomeType.DEMENTIA: DementiaModelRepository(),
+                          OutcomeType.EPILEPSY: EpilepsyModelRepository(),
                           OutcomeType.COGNITION: CognitionModelRepository(),
                           OutcomeType.CI: CIModelRepository(),
                           OutcomeType.QUALITYADJUSTED_LIFE_YEARS: QALYModelRepository(),
@@ -38,5 +40,3 @@ class OutcomeModelRepository:
         for outcome in OutcomeType:
             if outcome not in list(self._repository.keys()):
                 raise RuntimeError("OutcomeModelRepository is incomplete")
-
-
