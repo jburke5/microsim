@@ -525,30 +525,30 @@ class Population:
         for i in range(len(outcomes)):
             print(f"{outcomes[i].value:>30} {standardizedRates[i]:> 10.1f} {standardizedRatesBlack[i]:> 10.1f} {standardizedRatesWhite[i]:> 10.1f}")
 
-    def print_dementia_incidence(self, path=None):
-        '''Produces the dementia incidence rate by age.'''
-        dementiaIncidentRate = self.get_raw_incidence_by_age(OutcomeType.DEMENTIA)
-        plt.scatter(dementiaIncidentRate.keys(), dementiaIncidentRate.values())
+    def print_outcome_incidence(self, path=None, outcomeType=OutcomeType.DEMENTIA):
+        '''Produces the outcome incidence rate by age.'''
+        incidentRate = self.get_raw_incidence_by_age(outcomeType)
+        plt.scatter(incidentRate.keys(), incidentRate.values())
         plt.xlabel("age")
-        plt.ylabel("dementia incidence rate")
+        plt.ylabel("outcome incidence rate")
         if path is None:
             plt.show()
         else:
-            plt.savefig(path+"/dementia-incidence-rate.png")
+            plt.savefig(path+"/outcome-incidence-rate.png")
             plt.clf()
             print("exported results as PNG figures")
-        ageDementia = list(map(lambda y: (y._age[-1], len(y._outcomes[OutcomeType.DEMENTIA])>0),
+        ageOutcome = list(map(lambda y: (y._age[-1], len(y._outcomes[outcomeType])>0),
                                list(filter(lambda x: x.is_alive, self._people))))
-        nAlive = len(ageDementia)
-        ageDementia = list(filter(lambda x: x[1]==True, ageDementia))
-        ageDementia = [int(x[0]) for x in ageDementia]
-        plt.hist(ageDementia)
+        nAlive = len(ageOutcome)
+        ageOutcome = list(filter(lambda x: x[1]==True, ageOutcome))
+        ageOutcome = [int(x[0]) for x in ageOutcome]
+        plt.hist(ageOutcome)
         plt.xlabel("age")
-        plt.title(f"dementia cases at end of simulation ({nAlive} Person objects alive)")
+        plt.title(f"outcome cases at end of simulation ({nAlive} Person objects alive)")
         if path is None:
             plt.show()
         else:
-            plt.savefig(path+"/dementia-cases-at-end.png")
+            plt.savefig(path+"/outcome-cases-at-end.png")
             plt.clf()
             print("exported results as PNG figures")
  

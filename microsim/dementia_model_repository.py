@@ -1,9 +1,16 @@
 from microsim.dementia_model import DementiaModel
+#from microsim.outcome import OutcomeType
+from microsim.modality import Modality
 
 class DementiaModelRepository:
     def __init__(self):
-        self._model = DementiaModel()
+        self._models = {"NHANES": DementiaModel(), #default linear and quadratic terms for NHANES
+                        "brainScan": DementiaModel(linearTerm=3.05555556e-04, quadraticTerm=2.40000000e-06)} #had a brain scan
         
     def select_outcome_model_for_person(self, person):
-        return self._model
+        '''Use modality to select the appropriate dementia model because not all Kaiser population members have silent
+        cerebrovascular disease, but all of them had some kind of imaging done on their brains.
+        So, it is the imaging that determined participation in this group, not silent cerebrovascular disease.'''
+        brainScan = not person._modality == Modality.NONE.value #if person had a brain scan or not
+        return self._models["brainScan"] if brainScan else self._models["NHANES"]
         
