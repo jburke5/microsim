@@ -206,6 +206,9 @@ class Population:
     def get_min_age_of_first_outcomes(self, outcomeTypeList, inSim=True):
         return list(map(lambda x: x.get_min_age_of_first_outcomes(outcomeTypeList, inSim=inSim), self._people))
 
+    def get_min_wave_of_first_outcomes(self, outcomesTypeList=[OutcomeType.STROKE]):
+        return list(map(lambda x: get_min_wave_of_first_outcomes(x, outcomesTypeList=outcomesTypeList), self._people))
+
     def get_min_age_of_first_outcomes_or_last_age(self, outcomeTypeList, inSim=True):
         return list(map(lambda x: x.get_min_age_of_first_outcomes_or_last_age(outcomeTypeList, inSim=inSim), self._people))
 
@@ -339,6 +342,9 @@ class Population:
     def has_any_outcome(self, outcomeTypeList, inSim=True):
         return list(map(lambda x: x.has_any_outcome(outcomeTypeList, inSim=inSim), self._people))
 
+    def has_any_outcome_by_end_of_wave(self, outcomesTypeList=[OutcomeType.STROKE], wave=0):
+        return list(map(lambda x: x.has_any_outcome_by_end_of_wave(outcomesTypeList=outcomesTypeList, wave=wave), self._people))
+
     def has_all_outcomes(self, outcomeTypeList, inSim=True):
         return list(map(lambda x: x.has_all_outcomes(outcomeTypeList, inSim=inSim), self._people))
 
@@ -418,6 +424,40 @@ class Population:
         rfList = list(filter(lambda x: x is not None, rfList))
         rfList = list(map(lambda x: int(x) if (type(x)==bool)|(type(x)==np.bool_) else x, rfList))
         return rfList
+
+    def get_outcome_survival_info(self, outcomesTypeList=[OutcomeType.STROKE], personFunctionsList=[lambda x: x.get_scd_group()]):
+        '''Returns a nested list, a list of lists: each sublist corresponds to a single person in the population.
+        Each sublist includes information related to survival analysis, time to either censoring or outcome, and desired covariates.
+        Currently, the person get_outcome_survival_info function tests if the person object has any of the outcomes provided in the list.
+        Covariates are include via the personFunctionsList argument, the list must include pure functions that can be applied to a person object.'''
+        return list(map(lambda x: x.get_outcome_survival_info(outcomesTypeList=outcomesTypeList, personFunctionsList=personFunctionsList), self._people))
+
+    def get_outcome_incidence_rates_by_scd_and_modality_at_end_of_wave(self, outcomesTypeList=[OutcomeType.STROKE], wave=3):
+        '''Returns outcome incidence rate per 1000 person-years as a dictionary.
+        Keys are the SCD and Modality group (for now this goes from 0 to 11) and values are the incidence rates per 1000 person-years.
+        Need to be careful with wave: wave=0 is the first wave, so set the wave to be number of years you want - 1
+        The defaul wave=3 is due to Kaiser group publications on stroke and dementia eg Kent2022.
+        By outcome rates, this is interpreted as the presence of any of the outcomes provided in outcomesTypeList at any year for a person.
+        CAUTION: this function is designed to produce outcome incidence rates consistent with the way they were measured in 
+        Kent2021 (doi:10.1212/WNL.0000000000012602) and Kent2022 (DOI: 10.1161/JAHA.122.027672).
+        CAUTION: this function is NOT designed to calculate outcome incidence rates by the definition of this term.'''
+        if wave<0:
+            raise RuntimeError(f"wave {wave=} cannot be a negative number")
+        if self._waveCompleted < wave:
+            raise RuntimeError(f"Population has not advanced enough to reach end of {wave=}")
+        anyOutcome = self.has_any_outcome_by_end_of_wave(outcomesTypeList=outcomesTypeList, wave=wave)
+        group = self.get_scd_by_modality_group()
+        rates = dict() #store rates in a dictionary
+        for i in set(group):
+            #keep anyOutcome for that group only eg [0,0,1,1,0,...1,0]
+            anyOutcomeForGroup = list(map(lambda y: int(y[1]), filter(lambda x: x[0]==i, zip(group,anyOutcome))))
+            groupSize = len(anyOutcomeForGroup) #how many people are part of the SCD and Modality group
+            groupOutcomeCounts = sum(anyOutcomeForGroup) if groupSize>0 else 0 #how many had any of the outcomes
+            rates[i] = 1000. * groupOutcomeCounts / groupSize / (wave+1.) if groupSize>0 else 0
+        return rates
+
+    def get_scd_by_modality_group(self):
+        return list(map(lambda x: x.get_scd_by_modality_group(), self._people))
 
     def print_baseline_summary(self):
         self.print_summary_at_index(0)
