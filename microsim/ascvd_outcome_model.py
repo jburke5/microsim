@@ -39,7 +39,6 @@ class ASCVDOutcomeModel(StatsModelLinearRiskFactorModel):
         return interceptChange
 
     def get_one_year_linear_predictor(self, person, interceptChangeFor1bpMedsAdded=0):
-        #lp = super(ASCVDOutcomeModel, self).estimate_next_risk(person) + self.get_intercept_change_for_person(person, interceptChangeFor1bpMedsAdded)
         lp = super().estimate_next_risk(person) + self.get_intercept_change_for_person(person, interceptChangeFor1bpMedsAdded)
         lp += self.get_scd_term(person)
         return lp
@@ -76,10 +75,10 @@ class ASCVDOutcomeModel(StatsModelLinearRiskFactorModel):
         Scaling factors were found by optimizing the 4 year microsim stroke rates against the published stroke rates (which have 
         a follow up of around 4 years.''' 
         if not person._modality == Modality.NO.value: #if there was a brain scan 
-            scdTerm = 0.82 #intercept change
-            scalingMriSbi = 4.285714285 #scaling factors to the published hazard ratios so that I can use them in the ascvd logistic model
-            scalingCtSbi = 5.4
-            scalingCtWmh = 2.142857
+            scdTerm = 0.645 #intercept change
+            scalingMriSbi = 2.6 #scaling factors to the published hazard ratios so that I can use them in the ascvd logistic model
+            scalingCtSbi = 3.8
+            scalingCtWmh = 1.8
             window = len(person._age) #how many years since the brain scan
             severityUnknown=person.get_outcome_item_first(OutcomeType.WMH, "wmhSeverityUnknown", inSim=True),
             severity=person.get_outcome_item_first(OutcomeType.WMH, "wmhSeverity", inSim=True)
@@ -125,7 +124,7 @@ class ASCVDOutcomeModel(StatsModelLinearRiskFactorModel):
                 else:
                     raise RuntimeError("Person has SBI but no modality")
             if person._outcomes[OutcomeType.WMH][0][1].wmh:
-                if person._modality == Modality.MR.value: #I did not need to optimize a scaling factor for WMH MRI
+                if person._modality == Modality.MR.value: #I did not need to optimize a scaling factor for WMH MRI, rates were close to published data
                     if severityUnknown:
                         scdTerm += np.log(1.89)
                     elif severity == WMHSeverity.MILD:

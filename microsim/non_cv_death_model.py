@@ -36,10 +36,10 @@ class NonCVDeathModel(StatsModelLogisticRiskFactorModel):
         In addition, because the non cv death model is a logistic model, we scale the hazard ratios.'''
         if not person._modality == Modality.NO.value: #if there was a brain scan      
             scdTerm = 0.35 #this modifies the intercept
-            scalingMriSbi = 2.2777 #these are the four scaling factors so that I can use the hazard ratios in the logistic non cv death  model
-            scalingMriWmh = 0.
-            scalingCtSbi = 1.21428571
-            scalingCtWmh = 0.3714285
+            scalingMriSbi = 1.25 #these are the four scaling factors so that I can use the hazard ratios in the logistic non cv death  model
+            scalingMriWmh = 0.16667
+            scalingCtSbi = 0.64
+            scalingCtWmh = 0.01
             if person._outcomes[OutcomeType.WMH][0][1].sbi:
                 scdTerm += np.log(1.76 - 0.007513 * person._age[-1])
                 if person._modality == Modality.CT.value:

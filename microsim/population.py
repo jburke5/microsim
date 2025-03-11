@@ -207,7 +207,7 @@ class Population:
         return list(map(lambda x: x.get_min_age_of_first_outcomes(outcomeTypeList, inSim=inSim), self._people))
 
     def get_min_wave_of_first_outcomes(self, outcomesTypeList=[OutcomeType.STROKE]):
-        return list(map(lambda x: get_min_wave_of_first_outcomes(x, outcomesTypeList=outcomesTypeList), self._people))
+        return list(map(lambda x: x.get_min_wave_of_first_outcomes(outcomesTypeList=outcomesTypeList), self._people))
 
     def get_min_age_of_first_outcomes_or_last_age(self, outcomeTypeList, inSim=True):
         return list(map(lambda x: x.get_min_age_of_first_outcomes_or_last_age(outcomeTypeList, inSim=inSim), self._people))
@@ -445,15 +445,19 @@ class Population:
             raise RuntimeError(f"wave {wave=} cannot be a negative number")
         if self._waveCompleted < wave:
             raise RuntimeError(f"Population has not advanced enough to reach end of {wave=}")
-        anyOutcome = self.has_any_outcome_by_end_of_wave(outcomesTypeList=outcomesTypeList, wave=wave)
+        anyOutcome = self.has_any_outcome_by_end_of_wave(outcomesTypeList=outcomesTypeList, wave=wave) #[False,True,False,False,True,...]
+        waves = self.get_min_wave_of_first_outcomes_or_last_wave(outcomesTypeList) #[5,1,6,8,0,...]
+        personYearsAtRisk = list(map(lambda x: min(x, wave), waves)) #with wave=3 [3,1,3,3,0,..]
         group = self.get_scd_by_modality_group()
         rates = dict() #store rates in a dictionary
         for i in set(group):
-            #keep anyOutcome for that group only eg [0,0,1,1,0,...1,0]
+            #keep anyOutcome for that group only and convert to integer eg [0,0,1,1,0,...1,0]
             anyOutcomeForGroup = list(map(lambda y: int(y[1]), filter(lambda x: x[0]==i, zip(group,anyOutcome))))
+            personYearsAtRiskForGroup = list(map(lambda y: y[1]+1, filter(lambda x: x[0]==i, zip(group,personYearsAtRisk))))
             groupSize = len(anyOutcomeForGroup) #how many people are part of the SCD and Modality group
             groupOutcomeCounts = sum(anyOutcomeForGroup) if groupSize>0 else 0 #how many had any of the outcomes
-            rates[i] = 1000. * groupOutcomeCounts / groupSize / (wave+1.) if groupSize>0 else 0
+            #rates[i] = 1000. * groupOutcomeCounts / groupSize / (wave+1.) if groupSize>0 else 0 #assumes everyone had outcome at last wave, underestimates
+            rates[i] = 1000. * sum(anyOutcomeForGroup) / sum(personYearsAtRiskForGroup)
         return rates
 
     def get_scd_by_modality_group(self):
