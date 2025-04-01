@@ -433,30 +433,36 @@ class Population:
         return list(map(lambda x: x.get_outcome_survival_info(outcomesTypeList=outcomesTypeList, personFunctionsList=personFunctionsList), self._people))
 
     def get_outcome_incidence_rates_by_scd_and_modality_at_end_of_wave(self, outcomesTypeList=[OutcomeType.STROKE], wave=3):
-        '''Returns outcome incidence rate per 1000 person-years as a dictionary.
+        '''Returns outcome incidence rate per 1000 person-years as a dictionary at the end of the wave argument.
         Keys are the SCD and Modality group (for now this goes from 0 to 11) and values are the incidence rates per 1000 person-years.
         Need to be careful with wave: wave=0 is the first wave, so set the wave to be number of years you want - 1
-        The defaul wave=3 is due to Kaiser group publications on stroke and dementia eg Kent2022.
+        For example, if you want to get the outcome incidence rates at the end of the first year then you will need to set wave=0.
+        The defaul wave=3 is due to Kaiser group publications on stroke and dementia eg Kent2022 (about 4 years was the average follow up).
         By outcome rates, this is interpreted as the presence of any of the outcomes provided in outcomesTypeList at any year for a person.
-        CAUTION: this function is designed to produce outcome incidence rates consistent with the way they were measured in 
-        Kent2021 (doi:10.1212/WNL.0000000000012602) and Kent2022 (DOI: 10.1161/JAHA.122.027672).
-        CAUTION: this function is NOT designed to calculate outcome incidence rates by the definition of this term.'''
+        The calculation is as follows: for each SCD subgroup, we need to count the logical variables for each person dependent on whether they
+        had any of the outcomes in the outecomesTypeList and we also need to count all the years each person was at risk of having any of the outcomes.
+        For each subgroup, then we do 1000. * # of people with outcome / # of at risk person years to get the outcome incidence rate.
+        This function is also designed to produce outcome incidence rates consistent with the way they were measured in 
+        Kent2021 (doi:10.1212/WNL.0000000000012602) and Kent2022 (DOI: 10.1161/JAHA.122.027672).'''
         if wave<0:
             raise RuntimeError(f"wave {wave=} cannot be a negative number")
         if self._waveCompleted < wave:
             raise RuntimeError(f"Population has not advanced enough to reach end of {wave=}")
+        #determine if each person in the population had any of the outcomes
         anyOutcome = self.has_any_outcome_by_end_of_wave(outcomesTypeList=outcomesTypeList, wave=wave) #[False,True,False,False,True,...]
+        #get the number of years each person in the population was at risk
         waves = self.get_min_wave_of_first_outcomes_or_last_wave(outcomesTypeList) #[5,1,6,8,0,...]
         personYearsAtRisk = list(map(lambda x: min(x, wave), waves)) #with wave=3 [3,1,3,3,0,..]
+        #get the SCD by modality group number for each person in the population
         group = self.get_scd_by_modality_group()
         rates = dict() #store rates in a dictionary
-        for i in set(group):
+        for i in set(group): 
             #keep anyOutcome for that group only and convert to integer eg [0,0,1,1,0,...1,0]
             anyOutcomeForGroup = list(map(lambda y: int(y[1]), filter(lambda x: x[0]==i, zip(group,anyOutcome))))
+            #keep the at risk person years for that group only
             personYearsAtRiskForGroup = list(map(lambda y: y[1]+1, filter(lambda x: x[0]==i, zip(group,personYearsAtRisk))))
             groupSize = len(anyOutcomeForGroup) #how many people are part of the SCD and Modality group
-            groupOutcomeCounts = sum(anyOutcomeForGroup) if groupSize>0 else 0 #how many had any of the outcomes
-            #rates[i] = 1000. * groupOutcomeCounts / groupSize / (wave+1.) if groupSize>0 else 0 #assumes everyone had outcome at last wave, underestimates
+            groupOutcomeCounts = sum(anyOutcomeForGroup) if groupSize>0 else 0 #how many people from the group had any of the outcomes
             rates[i] = 1000. * sum(anyOutcomeForGroup) / sum(personYearsAtRiskForGroup)
         return rates
 
