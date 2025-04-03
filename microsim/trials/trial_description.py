@@ -148,7 +148,7 @@ class TrialDescription:
         rep += f"\tBlock factors: {self.blockFactors}\n"
         rep += f"\tSample size: {self.sampleSize}\n"
         rep += f"\tDuration: {self.duration}\n"
-        rep += f"\tTreatment strategies: {self.treatmentStrategies}\n"
+        rep += f"\tTreatment strategies: {list(self.treatmentStrategies._repository.keys())}\n"
         rep += f"\tNumber of workers: {self.nWorkers}\n"
         rep += f"\tPerson filters: \n\t {self.personFilters}"
         return rep

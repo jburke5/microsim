@@ -1,4 +1,4 @@
-from microsim.trials.trial_outcome_assessor import TrialOutcomeAssessor
+from microsim.trials.trial_outcome_assessor import TrialOutcomeAssessor, AnalysisType
 from microsim.outcome import OutcomeType
 
 class TrialOutcomeAssessorFactory:
@@ -11,45 +11,45 @@ class TrialOutcomeAssessorFactory:
         if addCommonAssessments:
             toa.add_outcome_assessment("death", 
                                        {"outcome": lambda x: x.has_outcome(OutcomeType.DEATH)}, 
-                                        "logistic")
+                                        AnalysisType.LOGISTIC.value)
             toa.add_outcome_assessment("anyEvent", 
                                        {"outcome": lambda x: x.has_any_outcome([OutcomeType.DEATH, OutcomeType.MI, OutcomeType.STROKE,
                                                                   OutcomeType.DEMENTIA, OutcomeType.CI])}, 
-                                        "logistic")
+                                        AnalysisType.LOGISTIC.value)
             toa.add_outcome_assessment("vascularEventOrDeath", 
                                        {"outcome": lambda x: x.has_any_outcome([OutcomeType.DEATH, OutcomeType.MI, OutcomeType.STROKE])}, 
-                                        "logistic")
+                                        AnalysisType.LOGISTIC.value)
             toa.add_outcome_assessment("vascularEvent", 
                                        {"outcome": lambda x: x.has_any_outcome([OutcomeType.MI, OutcomeType.STROKE])}, 
-                                        "logistic")
+                                        AnalysisType.LOGISTIC.value)
             toa.add_outcome_assessment("qalys", 
                                        {"outcome": lambda x: x.get_outcome_item_sum(OutcomeType.QUALITYADJUSTED_LIFE_YEARS, "qaly")}, 
-                                        "linear")
+                                        AnalysisType.LINEAR.value)
             toa.add_outcome_assessment("meanGCP", 
                                        {"outcome": lambda x: x.get_outcome_item_mean(OutcomeType.COGNITION, "gcp")}, 
-                                        "linear")
+                                        AnalysisType.LINEAR.value)
             toa.add_outcome_assessment("lastGCP", 
                                        {"outcome": lambda x: x.get_outcome_item_last(OutcomeType.COGNITION, "gcp")}, 
-                                        "linear")
+                                        AnalysisType.LINEAR.value)
             toa.add_outcome_assessment("cogEvent", 
                                        {"outcome": lambda x: x.has_any_outcome([OutcomeType.CI, OutcomeType.DEMENTIA])}, 
-                                        "logistic")
+                                        AnalysisType.LOGISTIC.value)
             toa.add_outcome_assessment("deathCox", 
                                        {"outcome": lambda x: x.has_outcome(OutcomeType.DEATH),
                                         "time": lambda x: x.get_min_wave_of_first_outcomes_or_last_wave([OutcomeType.DEATH])},
-                                        "cox")
+                                        AnalysisType.COX.value)
             toa.add_outcome_assessment("cogEventCox", 
                                        {"outcome": lambda x: x.has_any_outcome([OutcomeType.CI, OutcomeType.DEMENTIA]),
                                         "time": lambda x: x.get_min_wave_of_first_outcomes_or_last_wave([OutcomeType.CI, OutcomeType.DEMENTIA])},
-                                        "cox")
+                                        AnalysisType.COX.value)
             toa.add_outcome_assessment("vascularEventOrDeathCox",
                                        {"outcome": lambda x: x.has_any_outcome([OutcomeType.DEATH, OutcomeType.MI, OutcomeType.STROKE]),
                                         "time": lambda x: x.get_min_wave_of_first_outcomes_or_last_wave([OutcomeType.DEATH, OutcomeType.MI, OutcomeType.STROKE])},
-                                        "cox")
+                                        AnalysisType.COX.value)
             toa.add_outcome_assessment("strokeRR",
                                        {"outcome": lambda x: x.get_outcome_risk(OutcomeType.STROKE)},
-                                        "relRisk")
+                                        AnalysisType.RELATIVE_RISK.value)
             toa.add_outcome_assessment("miRR",
                                        {"outcome": lambda x: x.get_outcome_risk(OutcomeType.MI)},
-                                        "relRisk")
+                                        AnalysisType.RELATIVE_RISK.value)
         return toa

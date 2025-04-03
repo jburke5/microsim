@@ -2,6 +2,7 @@ from microsim.population_factory import PopulationFactory
 from microsim.trials.trial_type import TrialType
 from microsim.population import Population
 from microsim.treatment import TreatmentStrategiesType, TreatmentStrategyStatus
+from microsim.trials.trial_outcome_assessor import AnalysisType
 
 import pandas as pd
 import random
@@ -136,7 +137,11 @@ class Trial:
             assessmentAnalysisFunction = trialOutcomeAssessor._analysis[assessmentAnalysis]
             assessmentFunctionDict = trialOutcomeAssessor._assessments[assessmentName]["assessmentFunctionDict"]
             assessmentResults = assessmentAnalysisFunction.analyze(self, assessmentFunctionDict, assessmentAnalysis)
-            self.results[assessmentName] = assessmentResults
+            #self.results[assessmentName] = assessmentResults
+            if assessmentAnalysis in self.results.keys():
+                self.results[assessmentAnalysis][assessmentName] = assessmentResults
+            else:
+                self.results[assessmentAnalysis] = {assessmentName: assessmentResults}
     
     def run_analyze(self, trialOutcomeAssessor):
         self.run()
@@ -175,18 +180,34 @@ class Trial:
         rep += f"\tTrial completed: {self.completed}\n"
         if self.analyzed:
             rep += f"Trial results:\n"
-            rep += "\t" +" "*25 + " "*16 + "Z" + " "*6 + "Intercept" + " "*11 + "Z SE" + " "*9 + "pValue\n"
-            rep += "\t" +" "*25 + " "*10 + "relRisk" + " "*4 + "treatedRisk" + " "*4 + "controlRisk" + " "*9 + "|diff|\n"
-            for key in self.results.keys():
-                rep += f"\t{key:>25}: "
-                for result in self.results[key]:
-                    if (result is not None) & (result is not float('inf')):
-                        rep += f"{result:>15.2f}"
-                    elif result== float('inf'):
-                        rep += f"{'inf':>15}"
-                    else:
-                        rep += " "*15
-                rep += "\n"
+            for analysisType in AnalysisType:
+                rep += "\t" + "Analysis: " + f"{analysisType.value}\n"
+                if analysisType == AnalysisType.RELATIVE_RISK:
+                    rep += "\t" +" "*25 + " "*10 + "relRisk" + " "*4 + "treatedRisk" + " "*4 + "controlRisk" + " "*9 + "|diff|\n"
+                else:
+                    rep += "\t" +" "*25 + " "*16 + "Z" + " "*6 + "Intercept" + " "*11 + "Z SE" + " "*9 + "pValue\n"
+                for key in self.results[analysisType.value].keys():
+                    rep += f"\t{key:>25}: "
+                    for result in self.results[analysisType.value][key]:
+                        if (result is not None) & (result is not float('inf')):
+                            rep += f"{result:>15.2f}"
+                        elif result== float('inf'):
+                            rep += f"{'inf':>15}"
+                        else:
+                            rep += " "*15
+                    rep += "\n"
+            #rep += "\t" +" "*25 + " "*16 + "Z" + " "*6 + "Intercept" + " "*11 + "Z SE" + " "*9 + "pValue\n"
+            #rep += "\t" +" "*25 + " "*10 + "relRisk" + " "*4 + "treatedRisk" + " "*4 + "controlRisk" + " "*9 + "|diff|\n"
+            #for key in self.results.keys():
+            #    rep += f"\t{key:>25}: "
+            #    for result in self.results[key]:
+            #        if (result is not None) & (result is not float('inf')):
+            #            rep += f"{result:>15.2f}"
+            #        elif result== float('inf'):
+            #            rep += f"{'inf':>15}"
+            #        else:
+            #            rep += " "*15
+            #    rep += "\n"
         return rep
 
     def __repr__(self):
