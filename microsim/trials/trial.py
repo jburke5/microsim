@@ -196,18 +196,6 @@ class Trial:
                         else:
                             rep += " "*15
                     rep += "\n"
-            #rep += "\t" +" "*25 + " "*16 + "Z" + " "*6 + "Intercept" + " "*11 + "Z SE" + " "*9 + "pValue\n"
-            #rep += "\t" +" "*25 + " "*10 + "relRisk" + " "*4 + "treatedRisk" + " "*4 + "controlRisk" + " "*9 + "|diff|\n"
-            #for key in self.results.keys():
-            #    rep += f"\t{key:>25}: "
-            #    for result in self.results[key]:
-            #        if (result is not None) & (result is not float('inf')):
-            #            rep += f"{result:>15.2f}"
-            #        elif result== float('inf'):
-            #            rep += f"{'inf':>15}"
-            #        else:
-            #            rep += " "*15
-            #    rep += "\n"
         return rep
 
     def __repr__(self):
