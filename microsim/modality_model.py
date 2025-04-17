@@ -7,5 +7,5 @@ class ModalityPrevalenceModel:
         pass
  
     def estimate_next_risk(self, person):
-        return  Modality.CT.value 
+        return  Modality.NO.value 
 

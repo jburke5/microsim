@@ -140,3 +140,8 @@ class SprintTreatment(jnc8ForHighRiskLowBpTarget):
     def __init__(self):
         super().__init__(0.075, {'sbp' : 126, 'dbp': 85})
         self.status = TreatmentStrategyStatus.BEGIN
+
+class SprintForLowerDbpGoalTreatment(jnc8ForHighRiskLowBpTarget):
+    def __init__(self):
+        super().__init__(0.075, {'sbp' : 126, 'dbp': 65})
+        self.status = TreatmentStrategyStatus.BEGIN

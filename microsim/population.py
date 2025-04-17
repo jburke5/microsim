@@ -32,7 +32,7 @@ from microsim.stroke_outcome import StrokeOutcome
 from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType, CategoricalRiskFactorsType, ContinuousRiskFactorsType
 #from microsim.afib_model import AFibPrevalenceModel
 #from microsim.pvd_model import PVDPrevalenceModel
-from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType, CategoricalDefaultTreatmentsType, ContinuousDefaultTreatmentsType
+from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType, CategoricalDefaultTreatmentsType, ContinuousDefaultTreatmentsType, ContinuousTreatmentStrategiesType, CategoricalTreatmentStrategiesType
 from microsim.population_model_repository import PopulationRepositoryType, PopulationModelRepository
 from microsim.standardized_population import StandardizedPopulation
 from microsim.risk_model_repository import RiskModelRepository
@@ -206,6 +206,9 @@ class Population:
     def get_min_age_of_first_outcomes(self, outcomeTypeList, inSim=True):
         return list(map(lambda x: x.get_min_age_of_first_outcomes(outcomeTypeList, inSim=inSim), self._people))
 
+    def get_min_wave_of_first_outcomes(self, outcomesTypeList=[OutcomeType.STROKE]):
+        return list(map(lambda x: x.get_min_wave_of_first_outcomes(outcomesTypeList=outcomesTypeList), self._people))
+
     def get_min_age_of_first_outcomes_or_last_age(self, outcomeTypeList, inSim=True):
         return list(map(lambda x: x.get_min_age_of_first_outcomes_or_last_age(outcomeTypeList, inSim=inSim), self._people))
 
@@ -339,6 +342,9 @@ class Population:
     def has_any_outcome(self, outcomeTypeList, inSim=True):
         return list(map(lambda x: x.has_any_outcome(outcomeTypeList, inSim=inSim), self._people))
 
+    def has_any_outcome_by_end_of_wave(self, outcomesTypeList=[OutcomeType.STROKE], wave=0):
+        return list(map(lambda x: x.has_any_outcome_by_end_of_wave(outcomesTypeList=outcomesTypeList, wave=wave), self._people))
+
     def has_all_outcomes(self, outcomeTypeList, inSim=True):
         return list(map(lambda x: x.has_all_outcomes(outcomeTypeList, inSim=inSim), self._people))
 
@@ -419,6 +425,50 @@ class Population:
         rfList = list(map(lambda x: int(x) if (type(x)==bool)|(type(x)==np.bool_) else x, rfList))
         return rfList
 
+    def get_outcome_survival_info(self, outcomesTypeList=[OutcomeType.STROKE], personFunctionsList=[lambda x: x.get_scd_group()]):
+        '''Returns a nested list, a list of lists: each sublist corresponds to a single person in the population.
+        Each sublist includes information related to survival analysis, time to either censoring or outcome, and desired covariates.
+        Currently, the person get_outcome_survival_info function tests if the person object has any of the outcomes provided in the list.
+        Covariates are include via the personFunctionsList argument, the list must include pure functions that can be applied to a person object.'''
+        return list(map(lambda x: x.get_outcome_survival_info(outcomesTypeList=outcomesTypeList, personFunctionsList=personFunctionsList), self._people))
+
+    def get_outcome_incidence_rates_by_scd_and_modality_at_end_of_wave(self, outcomesTypeList=[OutcomeType.STROKE], wave=3):
+        '''Returns outcome incidence rate per 1000 person-years as a dictionary at the end of the wave argument.
+        Keys are the SCD and Modality group (for now this goes from 0 to 11) and values are the incidence rates per 1000 person-years.
+        Need to be careful with wave: wave=0 is the first wave, so set the wave to be number of years you want - 1
+        For example, if you want to get the outcome incidence rates at the end of the first year then you will need to set wave=0.
+        The defaul wave=3 is due to Kaiser group publications on stroke and dementia eg Kent2022 (about 4 years was the average follow up).
+        By outcome rates, this is interpreted as the presence of any of the outcomes provided in outcomesTypeList at any year for a person.
+        The calculation is as follows: for each SCD subgroup, we need to count the logical variables for each person dependent on whether they
+        had any of the outcomes in the outecomesTypeList and we also need to count all the years each person was at risk of having any of the outcomes.
+        For each subgroup, then we do 1000. * # of people with outcome / # of at risk person years to get the outcome incidence rate.
+        This function is also designed to produce outcome incidence rates consistent with the way they were measured in 
+        Kent2021 (doi:10.1212/WNL.0000000000012602) and Kent2022 (DOI: 10.1161/JAHA.122.027672).'''
+        if wave<0:
+            raise RuntimeError(f"wave {wave=} cannot be a negative number")
+        if self._waveCompleted < wave:
+            raise RuntimeError(f"Population has not advanced enough to reach end of {wave=}")
+        #determine if each person in the population had any of the outcomes
+        anyOutcome = self.has_any_outcome_by_end_of_wave(outcomesTypeList=outcomesTypeList, wave=wave) #[False,True,False,False,True,...]
+        #get the number of years each person in the population was at risk
+        waves = self.get_min_wave_of_first_outcomes_or_last_wave(outcomesTypeList) #[5,1,6,8,0,...]
+        personYearsAtRisk = list(map(lambda x: min(x, wave), waves)) #with wave=3 [3,1,3,3,0,..]
+        #get the SCD by modality group number for each person in the population
+        group = self.get_scd_by_modality_group()
+        rates = dict() #store rates in a dictionary
+        for i in set(group): 
+            #keep anyOutcome for that group only and convert to integer eg [0,0,1,1,0,...1,0]
+            anyOutcomeForGroup = list(map(lambda y: int(y[1]), filter(lambda x: x[0]==i, zip(group,anyOutcome))))
+            #keep the at risk person years for that group only
+            personYearsAtRiskForGroup = list(map(lambda y: y[1]+1, filter(lambda x: x[0]==i, zip(group,personYearsAtRisk))))
+            groupSize = len(anyOutcomeForGroup) #how many people are part of the SCD and Modality group
+            groupOutcomeCounts = sum(anyOutcomeForGroup) if groupSize>0 else 0 #how many people from the group had any of the outcomes
+            rates[i] = 1000. * sum(anyOutcomeForGroup) / sum(personYearsAtRiskForGroup)
+        return rates
+
+    def get_scd_by_modality_group(self):
+        return list(map(lambda x: x.get_scd_by_modality_group(), self._people))
+
     def print_baseline_summary(self):
         self.print_summary_at_index(0)
 
@@ -437,7 +487,10 @@ class Population:
             rfList = list(map( lambda x: getattr(x, "_"+rf), self._people))
             rfValueCounts = Counter(rfList)
             for key in sorted(rfValueCounts.keys()):
-                print(f"{key.value:>50} {rfValueCounts[key]/self._n: 6.2f}")
+                if type(key)==str: #eg in Modality the value, a string, is used, whereas for risk factors, eg education, I need to use .value to get the string
+                    print(f"{key:>50} {rfValueCounts[key]/self._n: 6.2f}")
+                else:
+                    print(f"{key.value:>50} {rfValueCounts[key]/self._n: 6.2f}")
 
     def print_baseline_summary_comparison(self, other):
         self.print_summary_at_index_comparison(other, 0)
@@ -511,6 +564,31 @@ class Population:
                 for key in sorted(dtValueCounts.keys()):
                     print(f"{key:>23} {dtValueCounts[key]/people.shape[0]: 6.2f} {dtValueCountsOther[key]/other.shape[0]: 6.2f}")
 
+    def print_lastyear_treatment_strategy_distributions(self):
+        print(" "*25, "self")
+        print(" "*25, "-"*53)
+        print(" "*25, "min", " "*4, "0.25", " "*2, "med", " "*3, "0.75", " "*3, "max" , " "*2, "mean", " "*3, "sd")
+        print(" "*25, "-"*53)
+        treatmentStrategies = self._people.iloc[0]._treatmentStrategies.keys()
+        for ts in treatmentStrategies:
+            tsVariables = self._people.iloc[0]._treatmentStrategies[ts].keys()
+            for tsv in tsVariables:
+                if (tsv in [ctst.value for ctst in ContinuousTreatmentStrategiesType]) & (tsv!="status"):
+                    tsvList = list(map(lambda x: x._treatmentStrategies[ts][tsv], self._people))
+                    print(f"{tsv:>23} {np.min(tsvList):> 7.1f} {np.quantile(tsvList, 0.25):> 7.1f} {np.quantile(tsvList, 0.5):> 7.1f} {np.quantile(tsvList, 0.75):> 7.1f} {np.max(tsvList):> 7.1f} {np.mean(tsvList):> 7.1f} {np.std(tsvList):> 7.1f}")
+        print(" "*25, "self")
+        print(" "*25, "proportions")
+        print(" "*25, "-"*11)
+        for ts in treatmentStrategies:
+            tsVariables = self._people.iloc[0]._treatmentStrategies[ts].keys()
+            for tsv in tsVariables:
+                if (tsv in [ctst.value for ctst in CategoricalTreatmentStrategiesType]) & (tsv!="status"):
+                    tsvList = list(map(lambda x: x._treatmentStrategies[ts][tsv], self._people))
+                    print(f"{tsv:>23}")
+                    tsvValueCounts = Counter(tsvList)
+                    for key in sorted(tsvValueCounts.keys()):
+                        print(f"{key:>23} {tsvValueCounts[key]/self._people.shape[0]: 6.2f}")
+
     def print_cv_standardized_rates(self):
         outcomes = [OutcomeType.MI, OutcomeType.STROKE, OutcomeType.DEATH,
                     OutcomeType.CARDIOVASCULAR, OutcomeType.NONCARDIOVASCULAR, OutcomeType.DEMENTIA]
@@ -525,30 +603,30 @@ class Population:
         for i in range(len(outcomes)):
             print(f"{outcomes[i].value:>30} {standardizedRates[i]:> 10.1f} {standardizedRatesBlack[i]:> 10.1f} {standardizedRatesWhite[i]:> 10.1f}")
 
-    def print_dementia_incidence(self, path=None):
-        '''Produces the dementia incidence rate by age.'''
-        dementiaIncidentRate = self.get_raw_incidence_by_age(OutcomeType.DEMENTIA)
-        plt.scatter(dementiaIncidentRate.keys(), dementiaIncidentRate.values())
+    def print_outcome_incidence(self, path=None, outcomeType=OutcomeType.DEMENTIA):
+        '''Produces the outcome incidence rate by age.'''
+        incidentRate = self.get_raw_incidence_by_age(outcomeType)
+        plt.scatter(incidentRate.keys(), incidentRate.values())
         plt.xlabel("age")
-        plt.ylabel("dementia incidence rate")
+        plt.ylabel("outcome incidence rate")
         if path is None:
             plt.show()
         else:
-            plt.savefig(path+"/dementia-incidence-rate.png")
+            plt.savefig(path+"/outcome-incidence-rate.png")
             plt.clf()
             print("exported results as PNG figures")
-        ageDementia = list(map(lambda y: (y._age[-1], len(y._outcomes[OutcomeType.DEMENTIA])>0),
+        ageOutcome = list(map(lambda y: (y._age[-1], len(y._outcomes[outcomeType])>0),
                                list(filter(lambda x: x.is_alive, self._people))))
-        nAlive = len(ageDementia)
-        ageDementia = list(filter(lambda x: x[1]==True, ageDementia))
-        ageDementia = [int(x[0]) for x in ageDementia]
-        plt.hist(ageDementia)
+        nAlive = len(ageOutcome)
+        ageOutcome = list(filter(lambda x: x[1]==True, ageOutcome))
+        ageOutcome = [int(x[0]) for x in ageOutcome]
+        plt.hist(ageOutcome)
         plt.xlabel("age")
-        plt.title(f"dementia cases at end of simulation ({nAlive} Person objects alive)")
+        plt.title(f"outcome cases at end of simulation ({nAlive} Person objects alive)")
         if path is None:
             plt.show()
         else:
-            plt.savefig(path+"/dementia-cases-at-end.png")
+            plt.savefig(path+"/outcome-cases-at-end.png")
             plt.clf()
             print("exported results as PNG figures")
  

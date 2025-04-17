@@ -1,9 +1,13 @@
+import numpy as np
+
 from microsim.race_ethnicity import RaceEthnicity
 from microsim.education import Education
 from microsim.gender import NHANESGender
 from microsim.statsmodel_cox_model import StatsModelCoxModel
 from microsim.cox_regression_model import CoxRegressionModel
 from microsim.outcome import OutcomeType, Outcome
+from microsim.modality import Modality
+from microsim.wmh_severity import WMHSeverity
 
 class DementiaModel(StatsModelCoxModel):
 
@@ -33,10 +37,15 @@ class DementiaModel(StatsModelCoxModel):
             gender=person._gender,
             education=person._education,
             raceEthnicity=person._raceEthnicity,
+            modality=person._modality,
+            sbi=person.get_outcome_item_first(OutcomeType.WMH, "sbi", inSim=True),
+            wmh=person.get_outcome_item_first(OutcomeType.WMH, "wmh", inSim=True),
+            severityUnknown=person.get_outcome_item_first(OutcomeType.WMH, "wmhSeverityUnknown", inSim=True),
+            severity=person.get_outcome_item_first(OutcomeType.WMH, "wmhSeverity", inSim=True),
         )
 
     def linear_predictor_for_patient_characteristics(
-        self, currentAge, baselineGcp, gcpSlope, gender, education, raceEthnicity
+        self, currentAge, baselineGcp, gcpSlope, gender, education, raceEthnicity, modality, sbi, wmh, severityUnknown, severity
     ):
         xb = 0
         xb += currentAge * 0.1023685
@@ -59,5 +68,32 @@ class DementiaModel(StatsModelCoxModel):
 
         if raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
             xb += 0.1937563
+
+        if sbi:
+            if currentAge < 70:
+                xb += np.log(2.02)
+            else:
+                xb += np.log(1.22) 
+        if modality == Modality.MR.value:
+            if severityUnknown:
+                xb += np.log(1.67)
+            elif severity == WMHSeverity.MILD:
+                xb += np.log(1.41)
+            elif severity == WMHSeverity.MODERATE:
+                xb += np.log(2.03)
+            elif severity == WMHSeverity.SEVERE:
+                xb += np.log(2.32)
+        elif modality == Modality.CT.value:
+            if severityUnknown:
+                xb += np.log(3.40)
+            elif severity == WMHSeverity.MILD:
+                xb += np.log(2.62)
+            elif severity == WMHSeverity.MODERATE:
+                xb += np.log(4.16)
+            elif severity == WMHSeverity.SEVERE:
+                xb += np.log(4.11)
+            elif severity == WMHSeverity.NO:
+                xb += np.log(1.58)
+
         return xb
 

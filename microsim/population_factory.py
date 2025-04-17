@@ -195,13 +195,13 @@ class PopulationFactory:
                         DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value:'bool',
                         #"age":'int'}).reset_index()
                        }).reset_index()
-        df[StaticRiskFactorsType.GENDER.value] = df[StaticRiskFactorsType.GENDER.value].replace({'F': 2, 'M': 1}) #.infer_objects(copy=False)  
+        df[StaticRiskFactorsType.GENDER.value] = df[StaticRiskFactorsType.GENDER.value].replace({'F': 2, 'M': 1}).astype('int') #.infer_objects(copy=False)  
         df[StaticRiskFactorsType.RACE_ETHNICITY.value] = df[StaticRiskFactorsType.RACE_ETHNICITY.value].replace(
                                         {'Black': RaceEthnicity.NON_HISPANIC_BLACK.value, 
                                         'Asian and Pacific Islander': RaceEthnicity.ASIAN.value,
                                         'White': RaceEthnicity.NON_HISPANIC_WHITE.value,
                                         'Multiple/Other/Unknown': RaceEthnicity.OTHER.value,
-                                        'Hispanic': RaceEthnicity.OTHER_HISPANIC.value}) 
+                                        'Hispanic': RaceEthnicity.OTHER_HISPANIC.value}).astype('int') 
         df[StaticRiskFactorsType.MODALITY.value] = df[StaticRiskFactorsType.MODALITY.value].replace({"CT": Modality.CT.value,
                                                                                                      "MR": Modality.MR.value})
         return df
@@ -522,7 +522,7 @@ class PopulationFactory:
             dfCat = pd.concat([pd.DataFrame(key).T]*size, ignore_index=True)
             dfCat.columns = catVariables
             dfForGroup = pd.concat( [pd.Series(names), dfCat, dfCont], axis=1).rename(columns={0:"name"})
-            df = pd.concat([df,dfForGroup])
+            df = pd.concat([df,dfForGroup]) if not df.empty else dfForGroup
         df[DynamicRiskFactorsType.AGE.value] = round(df[DynamicRiskFactorsType.AGE.value]).astype('int')
         return df
 

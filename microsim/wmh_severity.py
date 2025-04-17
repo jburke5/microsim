@@ -345,6 +345,8 @@ class WMHSeverityModel():
             xb += 0.9846
         elif modality==Modality.MR.value:
             pass
+        elif modality==Modality.NO.value:
+            pass
         else:
             raise RuntimeError("Unrecognized modality in WMHSeverityModel")
         return xb

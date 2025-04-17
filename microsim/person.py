@@ -18,6 +18,8 @@ from microsim.gfr_equation import GFREquation
 from microsim.pvd_model import PVDPrevalenceModel
 from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
 from microsim.treatment import TreatmentStrategiesType, TreatmentStrategyStatus, DefaultTreatmentsType
+from microsim.modality import Modality
+from microsim.wmh_severity import WMHSeverity
 
 # luciana-tag...lne thing that tripped me up was probable non clear communication regarding "waves"
 # so, i'm going to spell it out here and try to make the code consistent.
@@ -63,8 +65,7 @@ class Person:
         self._index = None
         self._waveCompleted = -1    
         self._randomEffects = dict()
-        #for now, I assume that the OS-derived entropy will be different for each person instance even when mp is used
-        self._rng = np.random.default_rng()
+        self._rng = np.random.default_rng() #assume that the OS-derived entropy will be different for each person instance even when mp is used
 
         #will it be better if static, dynamic RiskFactors and treatments were attributes-dictionaries like the outcomes?
         #will it double the attribute access time by having to find 2 pointers as opposed to 1? how significant will that be?
@@ -80,29 +81,27 @@ class Person:
         #for now I will keep lists of the static, dynamic risk factors etc so that I know how to advance each person
         #even though it is not ideal for memory purposes all Person instances to have exactly the same lists...
 
+        #all elements of risk factors and treatments will become attributes of the person object 
         for key,value in staticRiskFactorsDict.items():
             setattr(self, "_"+key, value)
         self._staticRiskFactors = list(staticRiskFactorsDict.keys())
         for key,value in dynamicRiskFactorsDict.items():
             setattr(self, "_"+key, [value])
         self._dynamicRiskFactors = list(dynamicRiskFactorsDict.keys())
-
         for key,value in defaultTreatmentsDict.items():
             setattr(self, "_"+key, [value])
         self._defaultTreatments = list(defaultTreatmentsDict.keys())
-
-        #for key, value in treatmentStrategiesDict.items():
-        #    setattr(self, "_"+key+"TreatmentStatus", value)
-        #self._treatmentStrategies = list(treatmentStrategiesDict.keys())
+        #treatment strategies and outcomes will remain a dictionary on the person object
         self._treatmentStrategies = treatmentStrategiesDict
-
         self._outcomes = outcomesDict
 
     def advance(self, years, dynamicRiskFactorRepository, defaultTreatmentRepository, outcomeModelRepository, treatmentStrategies=None):
-        """years: for how many years we want to make predictions for.
+        """This function makes all predictions for a person object 1 year to the future.
+           Since the person object does not have the models for making the predictions, all models, eg for dynamic risk factors,
+           default treatments, outcomes, and treatment strategies, must be provided as arguments.
+           years: for how many years we want to make predictions for.
            dynamicRiskFactorRepository, defaultTreatmentRepository, outcomeModelRepository, treatmentStrategies: the rules/models
                   that predict the state of the Person-instance in the future."""
-        
         #Q: how we do the first advance right after the initialization of an instance depends on the structure of the instance
         #   which depends in turn on the database we used to do the initialization
         #   eg, NHANES has risk factor information (incomplete but most of it at least) and default treatment information
@@ -126,6 +125,7 @@ class Person:
                 self._waveCompleted += 1
 
     def advance_risk_factors(self, rfdRepository):
+        """Makes predictions for the risk factors 1 year to the future."""
         for rf in self._dynamicRiskFactors:
             nextRiskFactor = rfdRepository.apply_bounds(rf, self.get_next_risk_factor(rf, rfdRepository))
             setattr(self, "_"+rf, getattr(self,"_"+rf)+[nextRiskFactor]) 
@@ -137,10 +137,17 @@ class Person:
     #there is nothing preventing us from using a regression model as the effect of a treatment strategy
     #also, notice that dynamic risk factors and treatments are lists that get their next quantity in the same way
     def advance_treatments(self, defaultTreatmentRepository):
+        """Makes predictions for the default treatments 1 year to the future."""
         for treatment in self._defaultTreatments:
             setattr(self, "_"+treatment, getattr(self,"_"+treatment)+[self.get_next_treatment(treatment, defaultTreatmentRepository)]) 
 
-    def advance_treatment_strategies_and_update_risk_factors(self, treatmentStrategies=None):      
+    def get_next_treatment(self, treatment, treatmentRepository):
+        model = treatmentRepository.get_model(treatment)
+        return model.estimate_next_risk(self)
+
+    def advance_treatment_strategies_and_update_risk_factors(self, treatmentStrategies=None):
+        """Makes predictionr for the treatment strategies 1 year to the future and updates the risk factors based
+           on the effect of those treatment strategies."""      
         #choice of words: get_next returns the final/next wave quantity, update modifies that quantity in place
         for tsType in TreatmentStrategiesType:
             ts = treatmentStrategies._repository[tsType.value] if treatmentStrategies is not None else None
@@ -158,12 +165,17 @@ class Person:
                 getattr(self, "_"+treatment)[-1] = updatedTreatments[treatment]
 
     def update_risk_factors(self, treatmentStrategy):
+        """Updates the person's risk factors due to the effect of applying the treatment strategy."""
         updatedRiskFactors = treatmentStrategy.get_updated_risk_factors(self)
         for rf in self._dynamicRiskFactors:
             if rf in updatedRiskFactors.keys():
                 getattr(self, "_"+rf)[-1] = updatedRiskFactors[rf]
 
     def update_treatment_strategy_status(self, treatmentStrategy, treatmentStrategyType):
+        """The treatment strategy status holds information about whether the strategy is just now being applied on the person
+        simply continuous, or ends. The status is important because it dictates, at least for some strategies, what the effect
+        on risk factors is. This function decides what the status is based on the current status and whether or not
+        the strategy continues to be applied."""
         if treatmentStrategy is not None:
             if self._treatmentStrategies[treatmentStrategyType.value]["status"] is None:
                 if treatmentStrategy.status==TreatmentStrategyStatus.BEGIN:
@@ -218,6 +230,7 @@ class Person:
         #    #setattr(self,"_"+tsType.value+"TreatmentStatus", ts.status) 
 
     def advance_outcomes(self, outcomeModelRepository):
+        """Predict the outcomes of the person for the next year (1 year only)."""
         #With outcomes the situation is complex, because the loop needs to go over the outcomes in a specific order
         #which means I cannot just use the keys of a dictionary, the outcomes will need to be set in a list
         for outcomeType in self.get_outcomes_in_order():
@@ -225,6 +238,7 @@ class Person:
             self.add_outcome(outcome)
 
     def get_outcomes_in_order(self):
+        """Returns the outcomes in a meaningful order so that the outcome predictions can be made correctly and consistently."""
         outcomesInOrder = list()
         for outcomeType in OutcomeType:
             if outcomeType in list(self._outcomes.keys()):
@@ -232,6 +246,7 @@ class Person:
         return outcomesInOrder
 
     def add_outcome(self, outcome):
+        """Adds the outcome to the person object."""
         if outcome is not None:
             self._outcomes[outcome.type].append((self._current_age, outcome))
 
@@ -316,10 +331,6 @@ class Person:
     def _selfReportMIPriorToSim(self):
         return False if len(self._outcomes[OutcomeType.MI])==0 else self._outcomes[OutcomeType.MI][0][1].priorToSim
     
-    def get_next_treatment(self, treatment, treatmentRepository):
-        model = treatmentRepository.get_model(treatment)
-        return model.estimate_next_risk(self)
-
     def get_gender_age_of_all_outcomes_in_sim(self, outcomeType):
         genderAge = []
         if len(self._outcomes[outcomeType])>0:
@@ -591,6 +602,13 @@ class Person:
                 return True
         return False
 
+    def has_any_outcome_by_end_of_wave(self, outcomesTypeList=[OutcomeType.STROKE], wave=0):
+        minWave = self.get_min_wave_of_first_outcomes(outcomesTypeList)
+        if minWave is None:
+            return False
+        else:
+            return True if minWave<=wave else False
+
     def get_age_at_first_outcome(self, outcomeType, inSim=True):
         if len(self.get_outcomes(outcomeType, inSim=inSim))>0:
             return self.get_outcomes(outcomeType, inSim=inSim)[0][0]
@@ -601,6 +619,10 @@ class Person:
         firstAgeList = list(map(lambda x: self.get_age_at_first_outcome(x, inSim=inSim), outcomeTypeList))
         firstAgeList = list(filter(lambda x: x is not None, firstAgeList))
         return min(firstAgeList) if len(firstAgeList)>0 else None
+
+    def get_min_wave_of_first_outcomes(self, outcomesTypeList=[OutcomeType.STROKE]):
+        minAge = self.get_min_age_of_first_outcomes(outcomesTypeList)
+        return self.get_wave_for_age(minAge) if minAge is not None else None
 
     def get_min_age_of_first_outcomes_or_last_age(self, outcomeTypeList, inSim=True):
         minAgeOfFirstOutcomes = self.get_min_age_of_first_outcomes(outcomeTypeList, inSim=inSim) 
@@ -711,6 +733,100 @@ class Person:
         if use_residual:
             glucose += rng.normal(0, 21)
         return glucose
+
+    def get_outcome_survival_info(self, outcomesTypeList=[OutcomeType.STROKE], personFunctionsList=[lambda x: x.get_scd_group()]):
+        '''Returns person information useful for survival analysis.
+        Time to event (based on waves), or last time person was still alive, and other person covariates.
+        The personFunctionsList argument should be a list of pure person functions.
+        These are useful if you want to do the survival analysis separately for different groups.'''
+        time = self.get_min_wave_of_first_outcomes_or_last_wave(outcomesTypeList)+1
+        event = int(self.has_any_outcome(outcomesTypeList)) #convert logical to int
+        survivalInfo = [time, event]
+        if personFunctionsList is not None:
+            survivalInfo += [func(self) for func in personFunctionsList]
+        return survivalInfo
+
+    def get_person_years_with_outcome_by_end_of_wave(self, outcomeType=OutcomeType.STROKE, wave=3):
+        '''Returns the number of person years during which person has outcome.
+        Note that wave starts from 0 with a population, so wave=0 would be the end of the first wave.'''
+        outcomes = self._outcomes[outcomeType]
+        #keep age of outcome, convert age to waveForAge, check if waveForAge is less than wave, then count how many
+        personYearsWithOutcome = len(list(filter(lambda y: y<=wave, map(lambda x: self.get_wave_for_age(x[0]), outcomes))))
+        if (personYearsWithOutcome<0) | (personYearsWithOutcome>wave):
+            raise RuntimeError("{personYearsWithOutcome=} cannot be <0 or >{wave}")
+        return personYearsWithOutcome
+
+    def get_person_years_at_risk_by_end_of_wave(self, wave=3):
+        '''Returns the number of person years during which this person could have had an outcome.'''
+        personAges = getattr(self, "_"+DynamicRiskFactorsType.AGE.value)
+        #convert ages to waves, keep waves less than max wave set by the argument, count how many
+        personYearsAtRisk = len(list(filter(lambda y: y<=wave, map(lambda x: self.get_wave_for_age(x), personAges))))
+        return personYearsAtRisk
+
+    def get_scd_group(self):
+        '''This function categorizes the Person object based on their WMH outcome.
+        Analyses performed on WMH depend, sometimes, on the presence of SBI, WMH so we need to have a categorical variable.
+        For example, see Kent2021, Kent2022 and other papers by that group.'''
+        sbi = int(self._outcomes[OutcomeType.WMH][0][1].sbi)
+        wmh = int(self._outcomes[OutcomeType.WMH][0][1].wmh)
+        return Person.scdGroupMap()[wmh][sbi]
+
+    def get_modality_group(self):
+        '''This function categorizes the Person object based on their modality.
+        Analyses performed on WMH depend, sometimes, on the modality so we need a categorical variable for this.'''
+        modality = self._modality
+        if modality in Person.modalityGroupMap().keys():
+            return Person.modalityGroupMap()[modality]
+        else:
+            raise RuntimeError("unknown key in modality group")
+
+    def get_scd_by_modality_group(self):
+        '''This function categorizes the Person object based on their SCD group and modality.
+        Analyses performed on WMH depend, sometimes, on SCD and modality so we need a categorical variable for this.'''
+        scdGroup = self.get_scd_group()
+        modalityGroup = self.get_modality_group()
+        return modalityGroup*4+scdGroup # ct no sbi & no wmh -> 0, ..., mr no sbi & no wmh -> 4,...,no modality no sbi & no wmh - > 8...
+
+    def get_wmh_severity_group(self): 
+        '''This function categorizes the Person object based on their WMH severity and whether severity is known or unknown.
+        Analyses performed on WMH depend, sometimes, on severity and severity known status so we need a categorical variable for this.'''
+        severityUnknown = self._outcomes[OutcomeType.WMH][0][1].wmhSeverityUnknown
+        if severityUnknown:
+            return Person.wmhSeverityGroupMap()['unknown']
+        else:
+            severity = self._outcomes[OutcomeType.WMH][0][1].wmhSeverity.value
+            return Person.wmhSeverityGroupMap()[severity]
+
+    def get_wmh_severity_by_modality_group(self):
+        '''This function categorizes the Person object based on their WMH severity and modality.
+        Analyses performed on WMH depend, sometimes, on severity and modality so we need a categorical variable for this.'''
+        modalityGroup = self.get_modality_group()
+        wmhSeverityGroup = self.get_wmh_severity_group()
+        return modalityGroup*len(Person.wmhSeverityGroupMap()) + wmhSeverityGroup #ct and severity no -> 0,..., mr and severity no -> 5
+
+    @staticmethod
+    def scdGroupMap():
+        '''Returns a map to be used for the classification of person objects regarding the WMH outcome.
+        This serves as the categorical variable to be used later on with regression, as a covariate.
+        This is another representation of the map in table form:
+                    sbi=False    sbi=True
+        wmh=False       0            1
+        wmh=True        2            3
+        '''
+        scdGroupMap = [ [0,1], [2,3] ] # no sbi & no wmh -> 0, sbi only -> 1, wmh only -> 2, both sbi & wmh -> 3
+        return scdGroupMap
+
+    @staticmethod
+    def modalityGroupMap():
+        '''Returns a map to be used for the classification of person objects regarding modality.
+        This serves as the categorical variable to be used later on with regression, as a covariate.'''
+        return {Modality.CT.value: 0, Modality.MR.value: 1, Modality.NO.value:2}
+        
+    @staticmethod
+    def wmhSeverityGroupMap():
+        '''Returns a map to be used for the classification of person objects regarding the WMH outcome.
+        This serves as the categorical variable to be used later on with regression.'''
+        return {WMHSeverity.NO.value: 0, 'unknown': 1, WMHSeverity.MILD.value: 2, WMHSeverity.MODERATE.value: 3, WMHSeverity.SEVERE.value: 4}
 
     def __hash__(self):
         return hash(self.__repr__())

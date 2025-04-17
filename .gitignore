@@ -184,3 +184,5 @@ tags
 ### User-added Ignores
 .vscode/*
 !.vscode/settings.example.json
+.DS_Store
+microsim/.DS_Store

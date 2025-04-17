@@ -7,7 +7,9 @@ from microsim.treatment import DefaultTreatmentsType
 from microsim.trials.trial_description import NhanesTrialDescription
 from microsim.trials.trial import Trial
 from microsim.trials.trial_outcome_assessor_factory import TrialOutcomeAssessorFactory
+from microsim.trials.trial_outcome_assessor import AnalysisType
 from microsim.trials.trial_type import TrialType
+from microsim.outcome import OutcomeType
 
 class Validation:
 
@@ -54,7 +56,7 @@ class Validation:
         print("\nVALIDATION OF CV EVENT INCIDENCE AND MORTALITY")
         pop.print_cv_standardized_rates()
         print("\nVALIDATION OF DEMENTIA INCIDENCE")
-        pop.print_dementia_incidence(path=path)
+        pop.print_outcome_incidence(path=path, outcomeType=OutcomeType.DEMENTIA)
 
     @staticmethod
     def nhanes_treatment_effects(sampleSize=2000000, nWorkers=1):
@@ -82,8 +84,8 @@ class Validation:
                 tr = Trial(td)
                 tr.run()
                 tr.analyze(toa )
-                strokeRR = tr.results["strokeRR"][0]
-                miRR = tr.results["miRR"][0]
+                strokeRR = tr.results[AnalysisType.RELATIVE_RISK.value]["strokeRR"][0]
+                miRR = tr.results[AnalysisType.RELATIVE_RISK.value]["miRR"][0]
                 miRRList += [miRR]
                 strokeRRList += [strokeRR]
                 print(f"\t\tsimulation={i}, strokeRR= {strokeRR:<8.2f}, miRR= {miRR:<8.2f}")

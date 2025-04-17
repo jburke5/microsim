@@ -3,6 +3,14 @@ from microsim.trials.cox_regression_analysis import CoxRegressionAnalysis
 from microsim.trials.linear_regression_analysis import LinearRegressionAnalysis
 from microsim.trials.logistic_regression_analysis import LogisticRegressionAnalysis
 
+from enum import Enum
+
+class AnalysisType(Enum):
+    LINEAR = "linear"
+    LOGISTIC = "logistic"
+    COX = "cox"
+    RELATIVE_RISK = "relativeRisk"
+
 class TrialOutcomeAssessor:
     '''This class will store the specific analyses that will be obtained from a Trial instance.
     This class provides a link between Population-level functions and methodologies used to analyze 
@@ -17,10 +25,10 @@ class TrialOutcomeAssessor:
                          know how to analyze the results.'''
     def __init__(self):
         self._assessments = dict()
-        self._analysis = {"linear": LinearRegressionAnalysis(),
-                          "logistic": LogisticRegressionAnalysis(),
-                          "cox": CoxRegressionAnalysis(),
-                          "relRisk": RelativeRiskAnalysis()} 
+        self._analysis = {AnalysisType.LINEAR.value : LinearRegressionAnalysis(),
+                          AnalysisType.LOGISTIC.value : LogisticRegressionAnalysis(),
+                          AnalysisType.COX.value : CoxRegressionAnalysis(),
+                          AnalysisType.RELATIVE_RISK.value : RelativeRiskAnalysis()} 
 
     def add_outcome_assessment(self, assessmentName, assessmentFunctionDict, assessmentAnalysis):
         if assessmentAnalysis in self._analysis.keys():
