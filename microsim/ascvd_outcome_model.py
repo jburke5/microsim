@@ -148,4 +148,6 @@ class ASCVDOutcomeModel(StatsModelLinearRiskFactorModel):
                         scdTerm += scalingCtWmh * np.log(1.39)
                 else:
                     raise RuntimeError("Person has WMH but no modality")
+        else:
+            scdTerm=0.
         return scdTerm            

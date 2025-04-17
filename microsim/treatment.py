@@ -15,6 +15,7 @@ class CategoricalDefaultTreatmentsType(Enum):
 
 class ContinuousDefaultTreatmentsType(Enum):
     ANTI_HYPERTENSIVE_COUNT = "antiHypertensiveCount"   
+
 class TreatmentStrategiesType(Enum):
     BP = "bp"
 
@@ -22,3 +23,10 @@ class TreatmentStrategyStatus(Enum):
     BEGIN = "begin"
     MAINTAIN = "maintain"
     END = "end"
+
+class ContinuousTreatmentStrategiesType(Enum):
+    pass
+    #BP_MEDS_ADDED = "bpMedsAdded" #found in BP TreatmentStrategiesType
+
+class CategoricalTreatmentStrategiesType(Enum):
+    BP_MEDS_ADDED = "bpMedsAdded" #found in BP TreatmentStrategiesType

@@ -32,7 +32,7 @@ from microsim.stroke_outcome import StrokeOutcome
 from microsim.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType, CategoricalRiskFactorsType, ContinuousRiskFactorsType
 #from microsim.afib_model import AFibPrevalenceModel
 #from microsim.pvd_model import PVDPrevalenceModel
-from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType, CategoricalDefaultTreatmentsType, ContinuousDefaultTreatmentsType
+from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType, CategoricalDefaultTreatmentsType, ContinuousDefaultTreatmentsType, ContinuousTreatmentStrategiesType, CategoricalTreatmentStrategiesType
 from microsim.population_model_repository import PopulationRepositoryType, PopulationModelRepository
 from microsim.standardized_population import StandardizedPopulation
 from microsim.risk_model_repository import RiskModelRepository
@@ -487,7 +487,10 @@ class Population:
             rfList = list(map( lambda x: getattr(x, "_"+rf), self._people))
             rfValueCounts = Counter(rfList)
             for key in sorted(rfValueCounts.keys()):
-                print(f"{key.value:>50} {rfValueCounts[key]/self._n: 6.2f}")
+                if type(key)==str: #eg in Modality the value, a string, is used, whereas for risk factors, eg education, I need to use .value to get the string
+                    print(f"{key:>50} {rfValueCounts[key]/self._n: 6.2f}")
+                else:
+                    print(f"{key.value:>50} {rfValueCounts[key]/self._n: 6.2f}")
 
     def print_baseline_summary_comparison(self, other):
         self.print_summary_at_index_comparison(other, 0)
@@ -560,6 +563,31 @@ class Population:
                 dtValueCountsOther = Counter(dtListOther)
                 for key in sorted(dtValueCounts.keys()):
                     print(f"{key:>23} {dtValueCounts[key]/people.shape[0]: 6.2f} {dtValueCountsOther[key]/other.shape[0]: 6.2f}")
+
+    def print_lastyear_treatment_strategy_distributions(self):
+        print(" "*25, "self")
+        print(" "*25, "-"*53)
+        print(" "*25, "min", " "*4, "0.25", " "*2, "med", " "*3, "0.75", " "*3, "max" , " "*2, "mean", " "*3, "sd")
+        print(" "*25, "-"*53)
+        treatmentStrategies = self._people.iloc[0]._treatmentStrategies.keys()
+        for ts in treatmentStrategies:
+            tsVariables = self._people.iloc[0]._treatmentStrategies[ts].keys()
+            for tsv in tsVariables:
+                if (tsv in [ctst.value for ctst in ContinuousTreatmentStrategiesType]) & (tsv!="status"):
+                    tsvList = list(map(lambda x: x._treatmentStrategies[ts][tsv], self._people))
+                    print(f"{tsv:>23} {np.min(tsvList):> 7.1f} {np.quantile(tsvList, 0.25):> 7.1f} {np.quantile(tsvList, 0.5):> 7.1f} {np.quantile(tsvList, 0.75):> 7.1f} {np.max(tsvList):> 7.1f} {np.mean(tsvList):> 7.1f} {np.std(tsvList):> 7.1f}")
+        print(" "*25, "self")
+        print(" "*25, "proportions")
+        print(" "*25, "-"*11)
+        for ts in treatmentStrategies:
+            tsVariables = self._people.iloc[0]._treatmentStrategies[ts].keys()
+            for tsv in tsVariables:
+                if (tsv in [ctst.value for ctst in CategoricalTreatmentStrategiesType]) & (tsv!="status"):
+                    tsvList = list(map(lambda x: x._treatmentStrategies[ts][tsv], self._people))
+                    print(f"{tsv:>23}")
+                    tsvValueCounts = Counter(tsvList)
+                    for key in sorted(tsvValueCounts.keys()):
+                        print(f"{key:>23} {tsvValueCounts[key]/self._people.shape[0]: 6.2f}")
 
     def print_cv_standardized_rates(self):
         outcomes = [OutcomeType.MI, OutcomeType.STROKE, OutcomeType.DEATH,
