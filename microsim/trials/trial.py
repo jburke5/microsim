@@ -188,7 +188,7 @@ class Trial:
             for analysisType in AnalysisType:
                 rep += "\t" + "Analysis: " + f"{analysisType.value}\n"
                 if analysisType == AnalysisType.RELATIVE_RISK:
-                    rep += "\t" +" "*25 + " "*10 + "relRisk" + " "*4 + "treatedRisk" + " "*4 + "controlRisk" + " "*9 + "|diff|\n"
+                    rep += "\t" +" "*25 + " "*10 + "relRisk" + " "*4 + "treatedRisk" + " "*4 + "controlRisk" + " "*4 + "|diff|*1000\n"
                 else:
                     rep += "\t" +" "*25 + " "*16 + "Z" + " "*6 + "Intercept" + " "*11 + "Z SE" + " "*9 + "pValue\n"
                 for key in self.results[analysisType.value].keys():

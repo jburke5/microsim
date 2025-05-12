@@ -565,18 +565,20 @@ class Population:
                     print(f"{key:>23} {dtValueCounts[key]/people.shape[0]: 6.2f} {dtValueCountsOther[key]/other.shape[0]: 6.2f}")
 
     def print_lastyear_treatment_strategy_distributions(self):
-        print(" "*25, "self")
-        print(" "*25, "-"*53)
-        print(" "*25, "min", " "*4, "0.25", " "*2, "med", " "*3, "0.75", " "*3, "max" , " "*2, "mean", " "*3, "sd")
-        print(" "*25, "-"*53)
+        #at this point there is no continuous treatment-related variable...so uncomment when there is one...
+        #print(" "*25, "self")
+        #print(" "*25, "-"*53)
+        #print(" "*25, "min", " "*4, "0.25", " "*2, "med", " "*3, "0.75", " "*3, "max" , " "*2, "mean", " "*3, "sd")
+        #print(" "*25, "-"*53)
         treatmentStrategies = self._people.iloc[0]._treatmentStrategies.keys()
-        for ts in treatmentStrategies:
-            tsVariables = self._people.iloc[0]._treatmentStrategies[ts].keys()
-            for tsv in tsVariables:
-                if (tsv in [ctst.value for ctst in ContinuousTreatmentStrategiesType]) & (tsv!="status"):
-                    tsvList = list(map(lambda x: x._treatmentStrategies[ts][tsv], self._people))
-                    print(f"{tsv:>23} {np.min(tsvList):> 7.1f} {np.quantile(tsvList, 0.25):> 7.1f} {np.quantile(tsvList, 0.5):> 7.1f} {np.quantile(tsvList, 0.75):> 7.1f} {np.max(tsvList):> 7.1f} {np.mean(tsvList):> 7.1f} {np.std(tsvList):> 7.1f}")
+        #for ts in treatmentStrategies:
+        #    tsVariables = self._people.iloc[0]._treatmentStrategies[ts].keys()
+        #    for tsv in tsVariables:
+        #        if (tsv in [ctst.value for ctst in ContinuousTreatmentStrategiesType]) & (tsv!="status"):
+        #            tsvList = list(map(lambda x: x._treatmentStrategies[ts][tsv], self._people))
+        #            print(f"{tsv:>23} {np.min(tsvList):> 7.1f} {np.quantile(tsvList, 0.25):> 7.1f} {np.quantile(tsvList, 0.5):> 7.1f} {np.quantile(tsvList, 0.75):> 7.1f} {np.max(tsvList):> 7.1f} {np.mean(tsvList):> 7.1f} {np.std(tsvList):> 7.1f}")
         print(" "*25, "self")
+        print(" "*25, "-"*53)
         print(" "*25, "proportions")
         print(" "*25, "-"*11)
         for ts in treatmentStrategies:

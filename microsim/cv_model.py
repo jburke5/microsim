@@ -44,6 +44,12 @@ class CVModelBase(ASCVDOutcomeModel):
         else: 
             return None        
 
+    def get_risk_components_for_person(self, person, years=1):
+        '''Returns the risk without taking into account silent cerebrovascular disease and the risk just due to scd.
+        Does not make adjustments for secondary prevention as get_risk_for_person does.'''
+        riskComponents = super().get_risk_components_for_person(person, person._rng, years=years, interceptChangeFor1bpMedsAdded=self.interceptChangeFor1bpMedsAdded)
+        return riskComponents
+
 class CVModelMale(CVModelBase):
     """CV model details for male gender."""
     #Some information about intercepts and bpMedsAdded...

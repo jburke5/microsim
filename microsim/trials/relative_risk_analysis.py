@@ -9,6 +9,6 @@ class RelativeRiskAnalysis:
         controlRisk = list(map(assessmentFunction, [trial.controlPop]))[0]
         if controlRisk!=0.:
             outcomeRelativeRisk = treatedRisk/controlRisk
-            return outcomeRelativeRisk, treatedRisk, controlRisk, abs(treatedRisk-controlRisk)
+            return outcomeRelativeRisk, treatedRisk, controlRisk, abs(treatedRisk-controlRisk)*1000.
         else:
-            return float('inf'), treatedRisk, controlRisk, abs(treatedRisk-controlRisk)
+            return float('inf'), treatedRisk, controlRisk, abs(treatedRisk-controlRisk)*1000.

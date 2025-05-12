@@ -68,6 +68,21 @@ class ASCVDOutcomeModel(StatsModelLinearRiskFactorModel):
 
         return (self.transform_to_ten_year_risk(linearRiskMinusFourYears)) / 10 * years
 
+    def get_risk_components_for_person(self, person, rng, years, interceptChangeFor1bpMedsAdded=0):
+        '''This function returns the silent cerebrovascular disease component of the ASCVD risk
+        and the ascvd risk without the scd component.
+        This function utilizes the get_risk_for_person functionality and the get_one_year_linear_predictor functionality.'''
+        lpMinusScd = super().estimate_next_risk(person) + self.get_intercept_change_for_person(person, interceptChangeFor1bpMedsAdded)
+        lpScd = self.get_scd_term(person)
+        
+        fourYearLinearAgeChange = self.parameters["lagAge"] * 4
+
+        lpMinusScdMinusFourYears = lpMinusScd - fourYearLinearAgeChange
+        lpScdMinusFourYears = lpScd - fourYearLinearAgeChange
+        
+        return {"riskMinusScd": (self.transform_to_ten_year_risk(lpMinusScdMinusFourYears)) / 10 * years,
+                "riskScd": (self.transform_to_ten_year_risk(lpScdMinusFourYears)) / 10 * years}
+
     def get_scd_term(self, person):
         '''This is the contribution to the one year linear predictor due to the silent cerebrovascular disease (scd).
         The WMH hazard ratios were taken from the Wang2024 paper. 
