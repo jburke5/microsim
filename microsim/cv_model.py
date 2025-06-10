@@ -13,6 +13,7 @@ class CVModelBase(ASCVDOutcomeModel):
         self._secondary_mi_case_fatality = 0.13
         self._stroke_case_fatality = 0.15
         self._secondary_stroke_case_fatality = 0.15
+        self._statinAdded_relative_risk = 0.72 #doi:10.1001/jama.2022.12138
         #This is the average change of the intercept, see the models for male and female below for more details of
         #the optimized intercepts I found from simulations (and then obtained this average I use here)
         self.interceptChangeFor1bpMedsAdded = -0.1103125
@@ -30,6 +31,12 @@ class CVModelBase(ASCVDOutcomeModel):
 
         if (person._mi) | (person._stroke):
             cvRisk = cvRisk * self._secondary_prevention_multiplier
+
+        tst = TreatmentStrategiesType.STATIN.value
+        if "statinsAdded" in person._treatmentStrategies[tst]:
+            statinsAdded = person._treatmentStrategies[tst]['statinsAdded']
+            cvRisk = cvRisk * self._statinAdded_relative_risk if statinsAdded>0 else cvRisk
+
         return cvRisk
         
     def generate_next_outcome(self, person):

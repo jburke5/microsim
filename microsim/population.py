@@ -187,6 +187,10 @@ class Population:
     def get_unique_people_count(people):
         return len(set(list(map(lambda x: x._name, people))))
 
+    @staticmethod
+    def get_unique_alive_people_count(people):
+        return len(set(list(map(lambda x: x._name, filter(lambda y: y.is_alive, people)))))
+
     def get_attr(self, attr):
         return list(map(lambda x: getattr(x, "_"+attr), self._people))
 
@@ -432,6 +436,26 @@ class Population:
         Covariates are include via the personFunctionsList argument, the list must include pure functions that can be applied to a person object.'''
         return list(map(lambda x: x.get_outcome_survival_info(outcomesTypeList=outcomesTypeList, personFunctionsList=personFunctionsList), self._people))
 
+    def get_outcome_incidence_rates_at_end_of_wave(self, outcomesTypeList=[OutcomeType.STROKE], wave=3):
+        '''Returns outcome incidence rate per 1000 person-years at the end of the wave argument.
+        Need to be careful with wave: wave=0 is the first wave, so set the wave to be number of years you want - 1.'''
+        if wave<0:
+            raise RuntimeError(f"wave {wave=} cannot be a negative number")
+        if self._waveCompleted < wave:
+            raise RuntimeError(f"Population has not advanced enough to reach end of {wave=}")
+        #determine if each person in the population had any of the outcomes
+        anyOutcome = self.has_any_outcome_by_end_of_wave(outcomesTypeList=outcomesTypeList, wave=wave) #[False,True,False,False,True,...]
+        #convert to integer eg [0,0,1,1,0,...1,0]
+        anyOutcome = list(map(lambda y: int(y), anyOutcome))
+        #get the number of years each person in the population was at risk
+        waves = self.get_min_wave_of_first_outcomes_or_last_wave(outcomesTypeList) #[5,1,6,8,0,...]
+        personYearsAtRisk = list(map(lambda x: min(x, wave), waves)) #with wave=3 [3,1,3,3,0,..]
+        personYearsAtRisk = list(map(lambda y: y+1, personYearsAtRisk))
+        popSize = len(anyOutcome) #how many people are part of the SCD and Modality group
+        outcomeCounts = sum(anyOutcome) if popSize>0 else 0 #how many people had any of the outcomes
+        rate = 1000. * outcomeCounts / sum(personYearsAtRisk)
+        return rate
+
     def get_outcome_incidence_rates_by_scd_and_modality_at_end_of_wave(self, outcomesTypeList=[OutcomeType.STROKE], wave=3):
         '''Returns outcome incidence rate per 1000 person-years as a dictionary at the end of the wave argument.
         Keys are the SCD and Modality group (for now this goes from 0 to 11) and values are the incidence rates per 1000 person-years.
@@ -565,6 +589,8 @@ class Population:
                     print(f"{key:>23} {dtValueCounts[key]/people.shape[0]: 6.2f} {dtValueCountsOther[key]/other.shape[0]: 6.2f}")
 
     def print_lastyear_treatment_strategy_distributions(self):
+        '''Prints distributional information about treatment strategy variables, such as bpMedsAdded, statinsAdded,
+        but only for the people of the population that are still alive.'''
         #at this point there is no continuous treatment-related variable...so uncomment when there is one...
         #print(" "*25, "self")
         #print(" "*25, "-"*53)
@@ -585,11 +611,12 @@ class Population:
             tsVariables = self._people.iloc[0]._treatmentStrategies[ts].keys()
             for tsv in tsVariables:
                 if (tsv in [ctst.value for ctst in CategoricalTreatmentStrategiesType]) & (tsv!="status"):
-                    tsvList = list(map(lambda x: x._treatmentStrategies[ts][tsv], self._people))
+                    alivePeople = filter(lambda x: x.is_alive, self._people)
+                    tsvList = list(map(lambda x: x._treatmentStrategies[ts][tsv], alivePeople))
                     print(f"{tsv:>23}")
                     tsvValueCounts = Counter(tsvList)
                     for key in sorted(tsvValueCounts.keys()):
-                        print(f"{key:>23} {tsvValueCounts[key]/self._people.shape[0]: 6.2f}")
+                        print(f"{key:>23} {tsvValueCounts[key]/len(tsvList): 6.2f}")
 
     def print_cv_standardized_rates(self):
         outcomes = [OutcomeType.MI, OutcomeType.STROKE, OutcomeType.DEATH,

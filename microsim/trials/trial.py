@@ -174,9 +174,9 @@ class Trial:
                       "other=control, unique people count=",  Population.get_unique_people_count(controlPeopleBlock))
                 Population.print_people_summary_at_index_comparison(treatedPeopleBlock, controlPeopleBlock, -1)
              
-    def print_treatment_strategy_distributions(self):
+    def print_treatment_strategy_variables_distribution(self):
         '''Prints distribution information about each treatment strategy variable, eg bpMedsAdded'''
-        print(" "*25, "self=treated, unique people count= ",  f"{Population.get_unique_people_count(self.treatedPop._people):<8}")
+        print(" "*25, "self=treated & alive, unique people count= ",  f"{Population.get_unique_alive_people_count(self.treatedPop._people):<8}")
         self.treatedPop.print_lastyear_treatment_strategy_distributions()
 
     def __string__(self):

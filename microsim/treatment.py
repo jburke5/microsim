@@ -18,6 +18,7 @@ class ContinuousDefaultTreatmentsType(Enum):
 
 class TreatmentStrategiesType(Enum):
     BP = "bp"
+    STATIN = "statin"
 
 class TreatmentStrategyStatus(Enum):
     BEGIN = "begin"

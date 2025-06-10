@@ -40,7 +40,7 @@ class ASCVDOutcomeModel(StatsModelLinearRiskFactorModel):
 
     def get_one_year_linear_predictor(self, person, interceptChangeFor1bpMedsAdded=0):
         lp = super().estimate_next_risk(person) + self.get_intercept_change_for_person(person, interceptChangeFor1bpMedsAdded)
-        lp += self.get_scd_term(person)
+        lp += self.get_scd_term(person) #need to uncomment on 6/7/2025
         return lp
 
     def transform_to_ten_year_risk(self, linearRisk):
