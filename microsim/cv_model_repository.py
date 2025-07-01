@@ -3,9 +3,9 @@ from microsim.gender import NHANESGender
 from microsim.treatment import TreatmentStrategiesType
 
 class CVModelRepository:
-    def __init__(self):
-        self._models = {"male": CVModelMale(),
-                        "female": CVModelFemale()}
+    def __init__(self, wmhSpecific=True):
+        self._models = {"male": CVModelMale(wmhSpecific=wmhSpecific),
+                        "female": CVModelFemale(wmhSpecific=wmhSpecific)}
 
     def select_outcome_model_for_person(self, person):
         gender = "male" if person._gender==NHANESGender.MALE else "female"

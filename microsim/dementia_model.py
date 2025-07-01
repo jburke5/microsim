@@ -15,12 +15,13 @@ class DementiaModel(StatsModelCoxModel):
     # recalibrated fit to population incidence equation in notebook: identifyOptimalBaselineSurvivalParametersForDementia, linear multiplier = 0.5, quad = 0.05
 
     def __init__(
-        self, linearTerm=1.33371239e-05, quadraticTerm=5.64485841e-05, populationRecalibration=True
+        self, linearTerm=1.33371239e-05, quadraticTerm=5.64485841e-05, wmhSpecific=True, populationRecalibration=True
     ):
         super().__init__(CoxRegressionModel({}, {}, linearTerm, quadraticTerm), False)
         if populationRecalibration:
             self.one_year_linear_cumulative_hazard = self.one_year_linear_cumulative_hazard * 0.5
             self.one_year_quad_cumulative_hazard = self.one_year_quad_cumulative_hazard * 0.175
+        self.wmhSpecific = wmhSpecific
 
     def generate_next_outcome(self, person):
         fatal = False
@@ -69,31 +70,32 @@ class DementiaModel(StatsModelCoxModel):
         if raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
             xb += 0.1937563
 
-        if sbi:
-            if currentAge < 70:
-                xb += np.log(2.02)
-            else:
-                xb += np.log(1.22) 
-        if modality == Modality.MR.value:
-            if severityUnknown:
-                xb += np.log(1.67)
-            elif severity == WMHSeverity.MILD:
-                xb += np.log(1.41)
-            elif severity == WMHSeverity.MODERATE:
-                xb += np.log(2.03)
-            elif severity == WMHSeverity.SEVERE:
-                xb += np.log(2.32)
-        elif modality == Modality.CT.value:
-            if severityUnknown:
-                xb += np.log(3.40)
-            elif severity == WMHSeverity.MILD:
-                xb += np.log(2.62)
-            elif severity == WMHSeverity.MODERATE:
-                xb += np.log(4.16)
-            elif severity == WMHSeverity.SEVERE:
-                xb += np.log(4.11)
-            elif severity == WMHSeverity.NO:
-                xb += np.log(1.58)
+        if self.wmhSpecific: #if we just want a mean increased risk for the kaiser population then the modified linear and quadratic term adjustment did it    
+            if sbi:
+                if currentAge < 70:
+                    xb += np.log(2.02)
+                else:
+                    xb += np.log(1.22) 
+            if modality == Modality.MR.value:
+                if severityUnknown:
+                    xb += np.log(1.67)
+                elif severity == WMHSeverity.MILD:
+                    xb += np.log(1.41)
+                elif severity == WMHSeverity.MODERATE:
+                    xb += np.log(2.03)
+                elif severity == WMHSeverity.SEVERE:
+                    xb += np.log(2.32)
+            elif modality == Modality.CT.value:
+                if severityUnknown:
+                    xb += np.log(3.40)
+                elif severity == WMHSeverity.MILD:
+                    xb += np.log(2.62)
+                elif severity == WMHSeverity.MODERATE:
+                    xb += np.log(4.16)
+                elif severity == WMHSeverity.SEVERE:
+                    xb += np.log(4.11)
+                elif severity == WMHSeverity.NO:
+                    xb += np.log(1.58)
 
         return xb
 
