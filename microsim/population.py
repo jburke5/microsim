@@ -692,3 +692,54 @@ class Population:
             plt.clf()
             print("exported results as PNG figures")
         self.print_lastyear_summary_comparison(other)
+ 
+    def print_scd_cv_risk_proportions_table(self):
+        '''Prints a table of proportions where the columns are CV risks without taking into account SCD specific information, such as WMH, SBI,
+        and the rows are CV risks that include SCD specific information.'''
+        alive = filter(lambda x: x.is_alive, self._people) #just an iterator
+        cvNonScdSpecificRiskList = list(map(lambda x: CVModelRepository(wmhSpecific=False).select_outcome_model_for_person(x).get_risk_for_person(x, years=10),
+                                            alive))
+    
+        alive = filter(lambda x: x.is_alive, self._people) #iterator again
+        cvRiskList = list(map(lambda x: CVModelRepository().select_outcome_model_for_person(x).get_risk_for_person(x, years=10), alive))    
+    
+        binEdges = np.array([0.   , 0.05 , 0.075, 0.1  , 0.125, 0.15 , 1.001]) #use meaningful bins
+        personCounts, xEdgesActual, yEdgesActual = np.histogram2d(cvRiskList, cvNonScdSpecificRiskList,  bins=[binEdges,binEdges])
+    
+        risks = ["0.0-0.05", "0.05-0.075", "0.075-0.1", "0.1-0.125", "0.125-0.15", "0.15-1.0"]
+    
+        print(" "*25, "-"*53)
+        print(" "*25, "proportion of people in risk bins")
+        print(" "*25, "-"*53)
+        print(" "*25, "CV risk (non-SCD specific)")
+        print(" "*2, "CV risk (SCD specific) " + " ".join(risks)) #     0       1       2       3       4 ") 
+        for i,row in enumerate(np.flip(personCounts, axis=0)/personCounts.sum()):
+            printString = f"{risks[-i-1]:>23} "
+            for item in row:
+                printString += f"{item:> 9.2f} " 
+            print(printString)
+    
+        print(" "*25, "-"*53)
+        print(" "*25, "cumulative (column-wise) proportion of people in risk bins")
+        print(" "*25, "-"*53)
+        print(" "*25, "CV risk (non-SCD specific)")
+        print(" "*2, "CV risk (SCD specific) " + " ".join(risks)) #     0       1       2       3       4 ") 
+        for i,row in enumerate(np.flip(personCounts, axis=0).cumsum(axis=0)/personCounts.sum()):  #column wise
+        #for i,row in enumerate(np.flip(personCounts, axis=0).cumsum(axis=0).cumsum(axis=1)/personCounts.sum()): #from top left to bottom right
+            printString = f"{risks[-i-1]:>23} "
+            for item in row:
+                printString += f"{item:> 9.2f} " 
+            print(printString) 
+
+        print(" "*25, "-"*53)
+        print(" "*25, "cumulative (row-wise) proportion of people in risk bins")
+        print(" "*25, "-"*53)
+        print(" "*25, "CV risk (non-SCD specific)")
+        print(" "*2, "CV risk (SCD specific) " + " ".join(risks)) #     0       1       2       3       4 ") 
+        for i,row in enumerate(np.flip(personCounts, axis=0).cumsum(axis=1)/personCounts.sum()):  #row wise
+        #for i,row in enumerate(np.flip(personCounts, axis=0).cumsum(axis=0).cumsum(axis=1)/personCounts.sum()): #from top left to bottom right
+            printString = f"{risks[-i-1]:>23} "
+            for item in row:
+                printString += f"{item:> 9.2f} " 
+            print(printString)
+
