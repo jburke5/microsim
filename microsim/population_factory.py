@@ -223,6 +223,10 @@ class PopulationFactory:
            represented in people.
            The flag distributions controls if the Person-objects will come directly from the NHANES data or
            if Gaussian distributions will first be fit to the NHANES data and then draws are obtained from the distributions.'''
+
+        if year not in [2011, 2015, 2007, 2003, 2009, 2001, 2005, 1999, 2013, 2017]:
+            raise RuntimeError(f"NHANES data for year {year} is not available") 
+
         nhanesDf = PopulationFactory.get_nhanesDf()        
 
         if year is not None:
