@@ -184,6 +184,10 @@ class Population:
         return blocks
 
     @staticmethod
+    def get_alive_people_count(people):
+        return len(list(map(lambda x: x._name, filter(lambda y: y.is_alive, people))))
+
+    @staticmethod
     def get_unique_people_count(people):
         return len(set(list(map(lambda x: x._name, people))))
 
@@ -426,8 +430,18 @@ class Population:
 
     @staticmethod
     def get_people_attr_at_index(people, rf, index):
-        #rfList = list(map( lambda x: getattr(x, "_"+rf.value)[index] if x.is_alive else None, self._people))
+        '''Returns a list of the alive people attributes at exactly the index specified.
+        People must be alive at the index specified.'''
         rfList = list(map( lambda x: getattr(x, "_"+rf)[index] if x.is_alive_at_index(index) else None, people))
+        rfList = list(filter(lambda x: x is not None, rfList))
+        rfList = list(map(lambda x: int(x) if (type(x)==bool)|(type(x)==np.bool_) else x, rfList))
+        return rfList
+
+    @staticmethod
+    def get_people_attr_static(people, rf, index):
+        '''Returns a list of the alive people static attributes.
+        People must be alive at the index specified.'''
+        rfList = list(map( lambda x: getattr(x, "_"+rf) if x.is_alive_at_index(index) else None, people))
         rfList = list(filter(lambda x: x is not None, rfList))
         rfList = list(map(lambda x: int(x) if (type(x)==bool)|(type(x)==np.bool_) else x, rfList))
         return rfList
@@ -569,18 +583,20 @@ class Population:
                 rfValueCounts = Counter(rfList)
                 rfValueCountsOther = Counter(rfListOther)
                 for key in sorted(rfValueCounts.keys()):
-                    print(f"{key:>23} {rfValueCounts[key]/people.shape[0]: 6.2f} {rfValueCountsOther[key]/other.shape[0]: 6.2f}")
+                    print(f"{key:>23} {rfValueCounts[key]/len(rfList): 6.2f} {rfValueCountsOther[key]/len(rfListOther): 6.2f}")
         staticRiskFactors = people.iloc[0]._staticRiskFactors
         for rf in staticRiskFactors:
             print(f"{rf:>23}")
             #rfList = list(map( lambda x: getattr(x, "_"+rf.value), self._people))
-            rfList = list(map( lambda x: getattr(x, "_"+rf), people))
+            #rfList = list(map( lambda x: getattr(x, "_"+rf), people))
+            rfList = Population.get_people_attr_static(people, rf, index)
             rfValueCounts = Counter(rfList)
             #rfListOther = list(map( lambda x: getattr(x, "_"+rf.value), other._people))
-            rfListOther = list(map( lambda x: getattr(x, "_"+rf), other))
+            #rfListOther = list(map( lambda x: getattr(x, "_"+rf), other))
+            rfListOther = Population.get_people_attr_static(other, rf, index)
             rfValueCountsOther = Counter(rfListOther)
             for key in sorted(rfValueCounts.keys()):
-                print(f"{key:>23} {rfValueCounts[key]/people.shape[0]: 6.2f} {rfValueCountsOther[key]/other.shape[0]: 6.2f}")
+                print(f"{key:>23} {rfValueCounts[key]/len(rfList): 6.2f} {rfValueCountsOther[key]/len(rfListOther): 6.2f}")
         for dt in defaultTreatments:
             if dt in [cdt.value for cdt in CategoricalDefaultTreatmentsType]:
                 print(f"{dt:>23}")
@@ -589,7 +605,7 @@ class Population:
                 dtValueCounts = Counter(dtList)
                 dtValueCountsOther = Counter(dtListOther)
                 for key in sorted(dtValueCounts.keys()):
-                    print(f"{key:>23} {dtValueCounts[key]/people.shape[0]: 6.2f} {dtValueCountsOther[key]/other.shape[0]: 6.2f}")
+                    print(f"{key:>23} {dtValueCounts[key]/len(dtList): 6.2f} {dtValueCountsOther[key]/len(dtListOther): 6.2f}")
 
     def print_lastyear_treatment_strategy_distributions(self):
         '''Prints distributional information about treatment strategy variables, such as bpMedsAdded, statinsAdded,

@@ -150,10 +150,15 @@ class Trial:
     def print_covariate_distributions(self):
         '''This function is provided to help examine the balance of the Trial populations.'''
         if not self.trialDescription.is_block_randomized():
+            print(" "*25, "Printing covariate information for people still alive...")
+            print(" "*25,
+                      "self=treated, alive people count= ",  f"{Population.get_alive_people_count(self.treatedPop._people):<8}",
+                      " "*11,
+                      "other=control, alive people count= ",  f"{Population.get_alive_people_count(self.controlPop._people):<8}")
             print(" "*25, 
-                      "self=treated, unique people count= ",  f"{Population.get_unique_people_count(self.treatedPop._people):<8}", 
-                      " "*10,
-                      "other=control, unique people count= ",  f"{Population.get_unique_people_count(self.controlPop._people):<8}")
+                      "self=treated, unique alive people count= ",  f"{Population.get_unique_alive_people_count(self.treatedPop._people):<8}", 
+                      " "*4,
+                      "other=control, unique alive people count= ",  f"{Population.get_unique_alive_people_count(self.controlPop._people):<8}")
             self.treatedPop.print_lastyear_summary_comparison(self.controlPop)
         else:
             blockFactor = self.trialDescription.blockFactors[0]
