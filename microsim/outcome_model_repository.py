@@ -19,17 +19,18 @@ class OutcomeModelRepository:
        Examples are death outcomes, mi outcomes.
        Outcomes are Outcome subclasses, eg StrokeOutcome, when more information about the outcome need to be stored, an outcome phenotype.
        Examples are StrokeOutcome (nihss, type etc), GCPOutcome (gcp), QALYOutcome (qaly)."""
-    def __init__(self):
+    def __init__(self, wmhSpecific=True):
+        self._wmhSpecific = wmhSpecific
         self._repository = {
                           OutcomeType.WMH: WMHModelRepository(),
-                          OutcomeType.DEMENTIA: DementiaModelRepository(),
+                          OutcomeType.DEMENTIA: DementiaModelRepository(wmhSpecific = self._wmhSpecific),
                           OutcomeType.COGNITION: CognitionModelRepository(),
                           OutcomeType.CI: CIModelRepository(),
                           OutcomeType.QUALITYADJUSTED_LIFE_YEARS: QALYModelRepository(),
-                          OutcomeType.CARDIOVASCULAR: CVModelRepository(),
+                          OutcomeType.CARDIOVASCULAR: CVModelRepository(wmhSpecific = self._wmhSpecific),
                           OutcomeType.MI: MIPartitionModelRepository(),
                           OutcomeType.STROKE: StrokePartitionModelRepository(),
-                          OutcomeType.NONCARDIOVASCULAR: NonCVModelRepository(),
+                          OutcomeType.NONCARDIOVASCULAR: NonCVModelRepository(wmhSpecific = self._wmhSpecific),
                           OutcomeType.DEATH: DeathModelRepository()}
         #must have a model repository for all outcome types
         self.check_repository_completeness()

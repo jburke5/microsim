@@ -271,11 +271,11 @@ class PopulationFactory:
         return people
 
     @staticmethod
-    def get_nhanes_population_model_repo():
+    def get_nhanes_population_model_repo(wmhSpecific=True):
         """Return the default, self-consistent set of models for advancing an NHANES Population."""
         return PopulationModelRepository(CohortDynamicRiskFactorModelRepository(),
                                          CohortDefaultTreatmentModelRepository(),
-                                         OutcomeModelRepository(),
+                                         OutcomeModelRepository(wmhSpecific=wmhSpecific),
                                          CohortStaticRiskFactorModelRepository())
 
     @staticmethod    
@@ -287,9 +287,9 @@ class PopulationFactory:
         return Population(people, popModelRepository)
 
     @staticmethod
-    def get_kaiser_population(n=1000, personFilters=None):
+    def get_kaiser_population(n=1000, personFilters=None, wmhSpecific=True):
         people = PopulationFactory.get_kaiser_people(n=n, personFilters=personFilters)
-        popModelRepository = PopulationFactory.get_nhanes_population_model_repo()
+        popModelRepository = PopulationFactory.get_nhanes_population_model_repo(wmhSpecific=wmhSpecific)
         return Population(people, popModelRepository)
 
     @staticmethod
