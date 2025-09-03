@@ -203,10 +203,13 @@ class KaiserTrialDescription(TrialDescription):
                  duration=5,
                  treatmentStrategies=TreatmentStrategyRepository(),
                  nWorkers=1,
-                 personFilters=None):
+                 personFilters=None,
+                 wmhSpecific=True):
         super().__init__(trialType, blockFactors, sampleSize, duration, treatmentStrategies, nWorkers=nWorkers, personFilters=personFilters)
+        self._wmhSpecific = wmhSpecific
         self.popArgs = {"n":self.sampleSize,
-                        "personFilters":self.personFilters}
+                        "personFilters":self.personFilters,
+                        "wmhSpecific": self._wmhSpecific}
         self.popType = PopulationType.KAISER
 
     def __str__(self):

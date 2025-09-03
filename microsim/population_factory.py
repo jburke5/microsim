@@ -151,7 +151,7 @@ class PopulationFactory:
         if popType == PopulationType.NHANES:
             return PopulationFactory.get_nhanes_population_model_repo()
         elif popType == PopulationType.KAISER:
-            return PopulationFactory.get_nhanes_population_model_repo()
+            return PopulationFactory.get_kaiser_population_model_repo()
         else:
             raise RuntimeError("Unknown popType in PopulationFactory.get_population_model_repo function.")
 
@@ -271,8 +271,16 @@ class PopulationFactory:
         return people
 
     @staticmethod
-    def get_nhanes_population_model_repo(wmhSpecific=True):
+    def get_nhanes_population_model_repo():
         """Return the default, self-consistent set of models for advancing an NHANES Population."""
+        return PopulationModelRepository(CohortDynamicRiskFactorModelRepository(),
+                                         CohortDefaultTreatmentModelRepository(),
+                                         OutcomeModelRepository(),
+                                         CohortStaticRiskFactorModelRepository())
+
+    @staticmethod
+    def get_kaiser_population_model_repo(wmhSpecific=True):
+        """Return the default, self-consistent set of models for advancing a Kaiser Population."""
         return PopulationModelRepository(CohortDynamicRiskFactorModelRepository(),
                                          CohortDefaultTreatmentModelRepository(),
                                          OutcomeModelRepository(wmhSpecific=wmhSpecific),
@@ -289,7 +297,7 @@ class PopulationFactory:
     @staticmethod
     def get_kaiser_population(n=1000, personFilters=None, wmhSpecific=True):
         people = PopulationFactory.get_kaiser_people(n=n, personFilters=personFilters)
-        popModelRepository = PopulationFactory.get_nhanes_population_model_repo(wmhSpecific=wmhSpecific)
+        popModelRepository = PopulationFactory.get_kaiser_population_model_repo(wmhSpecific=wmhSpecific)
         return Population(people, popModelRepository)
 
     @staticmethod
