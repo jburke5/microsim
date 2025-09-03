@@ -828,6 +828,9 @@ class Person:
         This serves as the categorical variable to be used later on with regression.'''
         return {WMHSeverity.NO.value: 0, 'unknown': 1, WMHSeverity.MILD.value: 2, WMHSeverity.MODERATE.value: 3, WMHSeverity.SEVERE.value: 4}
 
+    def get_last_default_treatment(self, defaultTreatmentType):
+        return getattr(self, "_" + defaultTreatmentType)[-1]
+
     def __hash__(self):
         return hash(self.__repr__())
 
