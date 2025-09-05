@@ -36,6 +36,7 @@ from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType, C
 from microsim.population_model_repository import PopulationRepositoryType, PopulationModelRepository
 from microsim.standardized_population import StandardizedPopulation
 from microsim.risk_model_repository import RiskModelRepository
+from microsim.wmh_severity import WMHSeverity
 
 class Population:
     """A Population-instance has three main parts:
@@ -518,20 +519,45 @@ class Population:
 
     def print_summary_at_index(self, index):
         """Prints a summary of both static and dynamic risk factors at index (baseline: index=0, last year: index=-1."""
-        print(" "*50, "  min ", "  0.25", " "*1, "med", " "*2, "0.75", " "*2, "max", " "*1, "mean", " "*2, "sd")
-        for i,rf in enumerate(self._dynamicRiskFactors):
-            rfList = self.get_attr_at_index(rf, index)
-            print(f"{rf:>50} {np.min(rfList):> 6.1f} {np.quantile(rfList, 0.25):> 6.1f} {np.quantile(rfList, 0.5):> 6.1f} {np.quantile(rfList, 0.75):> 6.1f} {np.max(rfList):> 6.1f} {np.mean(rfList):> 6.1f} {np.std(rfList):> 6.1f}")
-        print(" "*50, "  proportions") 
-        for rf in self._staticRiskFactors:
-            print(f"{rf:>50}")
-            rfList = list(map( lambda x: getattr(x, "_"+rf), self._people))
+        print(" "*25, "Printing a summary of risk factors and default treatments...")
+        print(" "*25, "min", " "*4, "0.25", " "*2, "med", " "*3, "0.75", " "*3, "max" , " "*2, "mean", " "*3, "sd")
+        print(" "*25, "-"*53)
+        #this is not a great solution...but...I need to be able to run this function without having to initialize a population
+        #but I also need to run this function within a population and right now we are about to have two types of population...
+        dynamicRiskFactors = self._dynamicRiskFactors
+        for i,rf in enumerate(dynamicRiskFactors):
+            if rf in [crf.value for crf in ContinuousRiskFactorsType]:
+                rfList = Population.get_people_attr_at_index(self._people, rf, index)
+                print(f"{rf:>23} {np.min(rfList):> 7.1f} {np.quantile(rfList, 0.25):> 7.1f} {np.quantile(rfList, 0.5):> 7.1f} {np.quantile(rfList, 0.75):> 7.1f} {np.max(rfList):> 7.1f} {np.mean(rfList):> 7.1f} {np.std(rfList):> 7.1f}")
+        defaultTreatments = self._defaultTreatments
+        for dt in defaultTreatments:
+            if dt in [cdt.value for cdt in ContinuousDefaultTreatmentsType]:
+                dtList = Population.get_people_attr_at_index(self._people, dt, index)
+                print(f"{dt:>23} {np.min(dtList):> 7.1f} {np.quantile(dtList, 0.25):> 7.1f} {np.quantile(dtList, 0.5):> 7.1f} {np.quantile(dtList, 0.75):> 7.1f} {np.max(dtList):> 7.1f} {np.mean(dtList):> 7.1f} {np.std(dtList):> 7.1f}")
+        print(" "*25, "proportions")
+        print(" "*25, "-"*11)
+        for i,rf in enumerate(dynamicRiskFactors):
+            if rf in [crf.value for crf in CategoricalRiskFactorsType]:
+                rfList = Population.get_people_attr_at_index(self._people, rf, index)
+                print(f"{rf:>23}")
+                rfValueCounts = Counter(rfList)
+                for key in sorted(rfValueCounts.keys()):
+                    print(f"{key:>23} {rfValueCounts[key]/len(rfList): 6.2f}")
+        staticRiskFactors = self._staticRiskFactors
+        for rf in staticRiskFactors:
+            print(f"{rf:>23}")
+            rfList = Population.get_people_attr_static(self._people, rf, index)
             rfValueCounts = Counter(rfList)
             for key in sorted(rfValueCounts.keys()):
-                if type(key)==str: #eg in Modality the value, a string, is used, whereas for risk factors, eg education, I need to use .value to get the string
-                    print(f"{key:>50} {rfValueCounts[key]/self._n: 6.2f}")
-                else:
-                    print(f"{key.value:>50} {rfValueCounts[key]/self._n: 6.2f}")
+                print(f"{key:>23} {rfValueCounts[key]/len(rfList): 6.2f}")
+        for dt in defaultTreatments:
+            if dt in [cdt.value for cdt in CategoricalDefaultTreatmentsType]:
+                print(f"{dt:>23}")
+                dtList = Population.get_people_attr_at_index(self._people, dt, index)
+                dtValueCounts = Counter(dtList)
+                for key in sorted(dtValueCounts.keys()):
+                    print(f"{key:>23} {dtValueCounts[key]/len(dtList): 6.2f}")  
+
 
     def print_baseline_summary_comparison(self, other):
         self.print_summary_at_index_comparison(other, 0)
@@ -761,4 +787,28 @@ class Population:
             for item in row:
                 printString += f"{item:> 9.2f} " 
             print(printString)
+
+
+    def print_wmh_outcome_summary(self):
+
+        severityList = list(map(lambda x: x._outcomes[OutcomeType.WMH][0][1].wmhSeverity, self._people))
+        severityList = [y.value if y is not None else "unknown" for y in severityList]
+        sbiList =  list(map(lambda x: x._outcomes[OutcomeType.WMH][0][1].sbi, self._people))
+        print("\n")
+        print(" "*25, "Printing a summary of the WMH outcome...")
+        print(" "*16, "severity proportion")
+        print(" "*25, "-"*16)
+        for severity in WMHSeverity:
+            print(f"{severity.value:>23} {sum([x==severity.value for x in severityList])/self._n:>6.2f}")
+        print(" "*15, f"unknown {sum([x=='unknown' for x in severityList])/self._n:>6.2f}\n")
+        print(" "*21, "SBI proportion")
+        print(" "*25, "-"*16)
+        print(" "*18,f"TRUE {sum(sbiList)/self._n:>6.2f}")
+
+
+
+
+
+
+
 
