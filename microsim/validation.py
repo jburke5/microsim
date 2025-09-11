@@ -108,19 +108,24 @@ class Validation:
         pop.print_wmh_outcome_summary()
         print("\n")
         print(" "*25, "Reference for Kaiser population...")
+        print(" "*16, "severity proportion")
         print(" "*25, "-"*20)
-        print(f"{'severity no  0.707':>30}")
-        print(f"{'severity mild  0.172':>30}")
-        print(f"{'severity moderate  0.038':>30}")
-        print(f"{'severity severe  0.015':>30}")
-        print(f"{'severity unknown  0.069':>30}")
-        print(f"{'SBI proportion  0.044':>30}")
+        print(f"{'no  0.707':>31}")
+        print(f"{'mild  0.172':>31}")
+        print(f"{'moderate  0.038':>31}")
+        print(f"{'severe  0.015':>31}")
+        print(f"{'unknown  0.069':>31}")
+        print("\n")
+        print(" "*21, "SBI proportion")
+        print(" "*25, "-"*20)
+        print(f"{'TRUE  0.044':>31}")
 
     @staticmethod
     def kaiser_over_time(wmhSpecific=True, nWorkers=1):
         print(f"\nVALIDATION OF SIMULATED POPULATION OVER TIME\n")
         print("Note: this function will return a dictionary of Pandas dataframes with the information needed to do a proportional hazards analysis...")
         print("Note: so ensure you will capture the return variable from this function call...")
+        print("Note: because this might take a while...")
         popSize = 500000
         pop = PopulationFactory.get_kaiser_population(n=popSize, personFilters=None, wmhSpecific=wmhSpecific)
         pop.advance(11, nWorkers=nWorkers)
@@ -230,7 +235,8 @@ class Validation:
     @staticmethod
     def kaiser(wmhSpecific=True, nWorkers=1):
         Validation.kaiser_baseline_pop(wmhSpecific=wmhSpecific)
-        Validation.kaiser_over_time(wmhSpecific=wmhSpecific, nWorkers=nWorkers)
+        dfs = Validation.kaiser_over_time(wmhSpecific=wmhSpecific, nWorkers=nWorkers)
+        return dfs
 
  
 
