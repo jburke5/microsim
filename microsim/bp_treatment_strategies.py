@@ -145,3 +145,12 @@ class SprintForLowerDbpGoalTreatment(jnc8ForHighRiskLowBpTarget):
     def __init__(self):
         super().__init__(0.075, {'sbp' : 126, 'dbp': 65})
         self.status = TreatmentStrategyStatus.BEGIN
+
+class SprintForSbpOnlyTreatment(jnc8ForHighRiskLowBpTarget):
+    '''This treatment strategy practically implements an SBP only goal for blood pressure treatment.
+    There are formally two goals for both SBP and DBP but the DBP goal is set so high that it 
+    will be unlikely ever used.'''
+    def __init__(self):
+        super().__init__(0.075, {'sbp' : 126, 'dbp': 200})
+        self.status = TreatmentStrategyStatus.BEGIN
+
