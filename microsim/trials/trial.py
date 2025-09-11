@@ -181,6 +181,7 @@ class Trial:
              
     def print_treatment_strategy_variables_distribution(self):
         '''Prints distribution information about each treatment strategy variable, eg bpMedsAdded'''
+        print(" "*25, "self=treated, alive people count= ",  f"{Population.get_alive_people_count(self.treatedPop._people):<8}")
         print(" "*25, "self=treated & alive, unique people count= ",  f"{Population.get_unique_alive_people_count(self.treatedPop._people):<8}")
         self.treatedPop.print_lastyear_treatment_strategy_distributions()
 

@@ -580,7 +580,9 @@ class PopulationFactory:
         return people
 
     @staticmethod
-    def get_kaiser_people(n=1000, personFilters=None):
+    def get_kaiser_people(n=1000, personFilters=None, wmhSpecific=None):
+        '''The wmhSpecific variable is not needed in the function but it is passed on to the function from the trial.py
+        because the NHANES get_nhanes_people function needs to get arguments from the trial.py'''
         distributions = PopulationFactory.get_kaiser_distributions()
         drawsForGroups, namesForGroups = PopulationFactory.draw_from_distributions(distributions)
         df = PopulationFactory.get_df_from_draws(drawsForGroups, namesForGroups, popType=PopulationType.KAISER.value)
