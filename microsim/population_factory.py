@@ -582,7 +582,13 @@ class PopulationFactory:
     @staticmethod
     def get_kaiser_people(n=1000, personFilters=None, wmhSpecific=None):
         '''The wmhSpecific variable is not needed in the function but it is passed on to the function from the trial.py
-        because the NHANES get_nhanes_people function needs to get arguments from the trial.py'''
+        because the NHANES get_nhanes_people function needs to get arguments from the trial.py.
+        Creating Kaiser people is a time consuming process, in part due to the time needed to get the distributions.
+        That is why we do that step only once and create a pandas dataframe only once.
+        Since we need to plan for the possibility of using filters, and sometimes filters can be fairly restrictive,
+        we need to use sampling with replacement from the dataframe. 
+        It is unclear what memory needs we would have in order to create always a much larger sample than the one we need in
+        simulations in order to avoid sampling with replacement.'''
         distributions = PopulationFactory.get_kaiser_distributions()
         drawsForGroups, namesForGroups = PopulationFactory.draw_from_distributions(distributions)
         df = PopulationFactory.get_df_from_draws(drawsForGroups, namesForGroups, popType=PopulationType.KAISER.value)
@@ -591,7 +597,6 @@ class PopulationFactory:
         people = pd.DataFrame.apply(dfForPeople, PersonFactory.get_kaiser_person, axis="columns")
         people = PopulationFactory.apply_person_filters_on_people(personFilters, people)
         people = PopulationFactory.bring_people_to_target_n(n, people, df, personFilters, popType=PopulationType.KAISER.value)   
-
         PopulationFactory.set_index_in_people(people)
         return people
 
