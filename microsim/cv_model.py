@@ -7,12 +7,13 @@ from microsim.treatment import TreatmentStrategiesType
 class CVModelBase(ASCVDOutcomeModel):
     """CV is an outcome type that we need to use with some outcome type model implementations (stroke and mi).
        The male and female cv models share the same functions so this base class includes all common elements."""
-    def __init__(self, coefficients, tot_chol_hdl_ratio, black_race_x_tot_chol_hdl_ratio):
+    def __init__(self, coefficients, tot_chol_hdl_ratio, black_race_x_tot_chol_hdl_ratio, wmhSpecific=True):
         self._secondary_prevention_multiplier = 1.0
         self._mi_case_fatality = 0.13
         self._secondary_mi_case_fatality = 0.13
         self._stroke_case_fatality = 0.15
         self._secondary_stroke_case_fatality = 0.15
+        self._statinAdded_relative_risk = 0.72 #doi:10.1001/jama.2022.12138
         #This is the average change of the intercept, see the models for male and female below for more details of
         #the optimized intercepts I found from simulations (and then obtained this average I use here)
         self.interceptChangeFor1bpMedsAdded = -0.1103125
@@ -22,7 +23,8 @@ class CVModelBase(ASCVDOutcomeModel):
                             residual_mean=0,
                             residual_standard_deviation=0,),
                          tot_chol_hdl_ratio=tot_chol_hdl_ratio,
-                         black_race_x_tot_chol_hdl_ratio=black_race_x_tot_chol_hdl_ratio,)
+                         black_race_x_tot_chol_hdl_ratio=black_race_x_tot_chol_hdl_ratio,
+                         wmhSpecific=wmhSpecific)
 
     def get_risk_for_person(self, person, years=1):
         #risk without any adjustment for bp meds
@@ -30,6 +32,12 @@ class CVModelBase(ASCVDOutcomeModel):
 
         if (person._mi) | (person._stroke):
             cvRisk = cvRisk * self._secondary_prevention_multiplier
+
+        tst = TreatmentStrategiesType.STATIN.value
+        if "statinsAdded" in person._treatmentStrategies[tst]:
+            statinsAdded = person._treatmentStrategies[tst]['statinsAdded']
+            cvRisk = cvRisk * self._statinAdded_relative_risk if statinsAdded>0 else cvRisk
+
         return cvRisk
         
     def generate_next_outcome(self, person):
@@ -44,6 +52,12 @@ class CVModelBase(ASCVDOutcomeModel):
         else: 
             return None        
 
+    def get_risk_components_for_person(self, person, years=1):
+        '''Returns the risk without taking into account silent cerebrovascular disease and the risk just due to scd.
+        Does not make adjustments for secondary prevention as get_risk_for_person does.'''
+        riskComponents = super().get_risk_components_for_person(person, person._rng, years=years, interceptChangeFor1bpMedsAdded=self.interceptChangeFor1bpMedsAdded)
+        return riskComponents
+
 class CVModelMale(CVModelBase):
     """CV model details for male gender."""
     #Some information about intercepts and bpMedsAdded...
@@ -54,7 +68,7 @@ class CVModelMale(CVModelBase):
     #intercept = -12.00771437 #3
     #intercept = -12.101460   #4
 
-    def __init__(self, intercept = -11.679980):
+    def __init__(self, intercept = -11.679980, wmhSpecific=True):
         maleCVCoefficients = {
             "lagAge": 0.064200,
             "black": 0.482835,
@@ -76,7 +90,7 @@ class CVModelMale(CVModelBase):
         }
         tot_chol_hdl_ratio=0.193307
         black_race_x_tot_chol_hdl_ratio=-0.117749
-        super().__init__(maleCVCoefficients, tot_chol_hdl_ratio, black_race_x_tot_chol_hdl_ratio)
+        super().__init__(maleCVCoefficients, tot_chol_hdl_ratio, black_race_x_tot_chol_hdl_ratio, wmhSpecific=wmhSpecific)
 
 class CVModelFemale(CVModelBase):
     """CV model details for female gender."""
@@ -88,7 +102,7 @@ class CVModelFemale(CVModelBase):
     #intercept = -13.150500  #3
     #intercept = -13.244250  #4
 
-    def __init__(self, intercept = -12.823110):
+    def __init__(self, intercept = -12.823110, wmhSpecific=True):
         femaleCVCoefficients = {
             "lagAge": 0.106501,
             "black": 0.432440,
@@ -110,6 +124,6 @@ class CVModelFemale(CVModelBase):
         }
         tot_chol_hdl_ratio=0.151318
         black_race_x_tot_chol_hdl_ratio=0.070498
-        super().__init__(femaleCVCoefficients, tot_chol_hdl_ratio, black_race_x_tot_chol_hdl_ratio)
+        super().__init__(femaleCVCoefficients, tot_chol_hdl_ratio, black_race_x_tot_chol_hdl_ratio, wmhSpecific=wmhSpecific)
 
 

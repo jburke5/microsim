@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from microsim.population_factory import PopulationFactory
 from microsim.person_filter_factory import PersonFilterFactory
@@ -98,5 +99,144 @@ class Validation:
         Validation.nhanes_over_time(path=path)
         Validation.nhanes_treatment_effects()
 
+    @staticmethod
+    def kaiser_baseline_pop(wmhSpecific=True):
+        print(f"\nVALIDATION OF BASELINE SIMULATED POPULATION\n")
+        popSize = 500000
+        pop = PopulationFactory.get_kaiser_population(n=popSize, personFilters=None, wmhSpecific=wmhSpecific)
+        pop.print_baseline_summary()
+        pop.print_wmh_outcome_summary()
+        print("\n")
+        print(" "*25, "Reference for Kaiser population...")
+        print(" "*16, "severity proportion")
+        print(" "*25, "-"*20)
+        print(f"{'no  0.707':>31}")
+        print(f"{'mild  0.172':>31}")
+        print(f"{'moderate  0.038':>31}")
+        print(f"{'severe  0.015':>31}")
+        print(f"{'unknown  0.069':>31}")
+        print("\n")
+        print(" "*21, "SBI proportion")
+        print(" "*25, "-"*20)
+        print(f"{'TRUE  0.044':>31}")
 
+    @staticmethod
+    def kaiser_over_time(wmhSpecific=True, nWorkers=1):
+        print(f"\nVALIDATION OF SIMULATED POPULATION OVER TIME\n")
+        print("Note: this function will return a dictionary of Pandas dataframes with the information needed to do a proportional hazards analysis...")
+        print("Note: so ensure you will capture the return variable from this function call...")
+        print("Note: because this might take a while...")
+        popSize = 500000
+        pop = PopulationFactory.get_kaiser_population(n=popSize, personFilters=None, wmhSpecific=wmhSpecific)
+        pop.advance(11, nWorkers=nWorkers)
+        groupStrings = {1:"CT SBI", 2: "CT WMD", 3: "CT BOTH", 0: "CT NONE", 5:"MRI SBI", 6:"MRI WMD", 7:"MRI BOTH", 4:"MRI NONE"}
+
+        ratesRef = {"stroke": 12, "death": 27, "dementia": 11, "mi": 12}
+        strokeRates = pop.get_outcome_incidence_rates_at_end_of_wave(outcomesTypeList=[OutcomeType.STROKE], wave=3)
+        dementiaRates = pop.get_outcome_incidence_rates_at_end_of_wave(outcomesTypeList=[OutcomeType.DEMENTIA], wave=3)
+        deathRates = pop.get_outcome_incidence_rates_at_end_of_wave(outcomesTypeList=[OutcomeType.DEATH], wave=3)
+        miRates = pop.get_outcome_incidence_rates_at_end_of_wave(outcomesTypeList=[OutcomeType.MI], wave=3)
+        rates = {"stroke": strokeRates, "dementia": dementiaRates, "death": deathRates, "mi": miRates}
+        print(" "*12, "Printing outcome incidence rates at the end of year 4...")
+        print(" "*12, "References: a Microsim simulation with all WMH-related models.\n")
+        print(" "*12, "Outcome     Reference     Simulation")
+        print(" "*12, "-"*40)
+        for outcome in rates.keys():
+            print(" "*10 + f"{outcome:>10}" + f"{ratesRef[outcome]:>14.1f} " + f"{rates[outcome]:>14.1f}")
+
+        print("\n")
+        print(" "*12, "Printing outcome incidence rates by SCD group and modality at the end of year 11...")
+        print(" "*12, "References: Stroke-Kent2021, Wang2024, Mortality-Clancy2025, Dementia-Kent2022, MI-no available publication.\n")
+        print(" "*12, "Mortality rates")
+        print(" "*12, "-"*40)
+        deathRatesRef = {1:61.5, 2: 63.8, 3: 84.9, 0:18.2, 5:49.2, 6:28.5, 7:53.7, 4:14.}
+        deathMinCiRef = {1:59.1, 2:62.6,  3: 80.9, 0:17.8, 5:45.1, 6:27.6, 7:48.8, 4:13.4}
+        deathMaxCiRef = {1:63.9, 2:65.1,  3:89.2,  0:18.5, 5:53.6, 6:29.4, 7:59.0, 4:14.6}
+        deathRates = pop.get_outcome_incidence_rates_by_scd_and_modality_at_end_of_wave(outcomesTypeList=[OutcomeType.DEATH], wave=3)
+        deathRatesList = list()
+        print("     Group                  Reference     Simulation")
+        for group in deathRatesRef.keys():
+            deathRatesList += [ [f"{groupStrings[group]:>10} ", 
+                                 f"{deathRatesRef[group]:>10.1f} ({deathMinCiRef[group]:>5.1f} - {deathMaxCiRef[group]:>4.1f} ) ",
+                                 f"{deathRates[group]:>14.1f}"] ]
+            print(f"{groupStrings[group]:>10} " + 
+                  f"{deathRatesRef[group]:>10.1f} ({deathMinCiRef[group]:>5.1f} - {deathMaxCiRef[group]:>4.1f} ) " +
+                  f"{deathRates[group]:>14.1f}")
+        print("\n")
+        print(" "*12, "Stroke rates")
+        print(" "*12, "-"*40)
+        strokeRatesRef = {1: 36.6, 2: 28.5, 3: 47.4, 0: 8.2, 5:31.2, 6: 13.,  7:34.5, 4: 4.8}
+        strokeMinCiRef = {1: 34.9, 2: 27.7, 3: 44.5, 0: 8.,  5:28.,  6: 12.4, 7:30.6, 4: 4.5}
+        strokeMaxCiRef = {1: 38.4, 2: 29.3, 3: 50.5, 0: 8.4, 5:34.6, 6: 13.6, 7:38.7, 4: 5.2}
+        strokeRates = pop.get_outcome_incidence_rates_by_scd_and_modality_at_end_of_wave(outcomesTypeList=[OutcomeType.STROKE], wave=3)
+        strokeRatesList = list()
+        print("     Group                  Reference     Simulation")
+        for group in strokeRatesRef.keys():
+            strokeRatesList += [ [f"{groupStrings[group]:10} ", 
+                                  f"{strokeRatesRef[group]:>4.1f} ({strokeMinCiRef[group]:>5.1f} - {strokeMaxCiRef[group]:>4.1f} ) ",
+                                  f"{strokeRates[group]:<4.1f}" ] ]
+            print(f"{groupStrings[group]:>10} " + 
+                  f"{strokeRatesRef[group]:>10.1f} ({strokeMinCiRef[group]:>5.1f} - {strokeMaxCiRef[group]:>4.1f} ) " +
+                  f"{strokeRates[group]:>14.1f}")
+        print("\n")
+        print(" "*12, "MI rates")
+        print(" "*12, "-"*40)
+        miRates = pop.get_outcome_incidence_rates_by_scd_and_modality_at_end_of_wave(outcomesTypeList=[OutcomeType.MI], wave=3)
+        print("     Group                                Simulation")
+        miRatesList = list()
+        for group in groupStrings.keys():
+            miRatesList += [ [f"{groupStrings[group]:>10} ",  
+                              f"{miRates[group]:>14.1f}"] ]
+            print(f"{groupStrings[group]:>10} " + 
+                  f"{miRates[group]:>41.1f}")
+        print("\n")
+        print(" "*12, "Dementia rates")
+        print(" "*12, "-"*40)
+        dementiaRatesRef = {1:32.8, 2:37.7, 3:51.6, 0:6.7, 5:16.6, 6:9.6, 7:19.1, 4:2.9}
+        dementiaMinCiRef = {1:31.,  2:36.7, 3:48.3, 0:6.5, 5:14.2, 6:9.1, 7:16.2, 4:2.7}
+        dementiaMaxCiRef = {1:34.6, 2:38.7, 3:55.1, 0:6.9, 5:19.3, 6:10.1,7:22.4, 4:3.3}
+        dementiaRates = pop.get_outcome_incidence_rates_by_scd_and_modality_at_end_of_wave(outcomesTypeList=[OutcomeType.DEMENTIA], wave=3)
+        dementiaRatesList = list()
+        print("     Group                  Reference     Simulation")
+        for group in dementiaRatesRef.keys():
+            dementiaRatesList += [ [f"{groupStrings[group]:>10} ", 
+                                    f"{dementiaRatesRef[group]:>10.1f} ({dementiaMinCiRef[group]:>5.1f} - {dementiaMaxCiRef[group]:>4.1f} ) ",
+                                    f"{dementiaRates[group]:>14.1f}"] ]
+            print(f"{groupStrings[group]:>10} " + 
+                  f"{dementiaRatesRef[group]:>10.1f} ({dementiaMinCiRef[group]:>5.1f} - {dementiaMaxCiRef[group]:>4.1f} ) " +
+                  f"{dementiaRates[group]:>14.1f}")
+
+        #obtain data for the stroke survival analysis, see figure 1 in Kent2021
+        strokeInfo = pop.get_outcome_survival_info(outcomesTypeList = [OutcomeType.STROKE],
+                                                   personFunctionsList = [lambda x: x.get_scd_group(), 
+                                                                          lambda x: x.get_wmh_severity_by_modality_group()])
+        strokeDf = pd.DataFrame(strokeInfo, columns=["time","event", "sbiwmhGroup", "severityGroup"])
+  
+        miInfo = pop.get_outcome_survival_info(outcomesTypeList = [OutcomeType.MI],
+                                               personFunctionsList = [lambda x: x.get_scd_group(), 
+                                                                      lambda x: x.get_wmh_severity_by_modality_group()])
+        miDf = pd.DataFrame(miInfo, columns=["time","event", "sbiwmhGroup", "severityGroup"])
+
+        #obtain data for the dementia survival analysis, see figure 2 in Kent2023
+        dementiaInfo = pop.get_outcome_survival_info(outcomesTypeList = [OutcomeType.DEMENTIA],
+                                                     personFunctionsList = [lambda x: x.get_wmh_severity_by_modality_group(),
+                                                                            lambda x: int(x.get_outcome_item_first(OutcomeType.WMH, "sbi")),
+                                                                            lambda x: int(x.get_outcome_item_first(OutcomeType.WMH, "wmh"))])
+        dementiaDf = pd.DataFrame(dementiaInfo, columns=["time","event", "severityGroup", "sbi", "wmh"])
+
+        deathInfo = pop.get_outcome_survival_info(outcomesTypeList = [OutcomeType.DEATH],
+                                                  personFunctionsList = [lambda x: x.get_wmh_severity_by_modality_group(),
+                                                                         lambda x: int(x.get_outcome_item_first(OutcomeType.WMH, "sbi")),
+                                                                         lambda x: int(x.get_outcome_item_first(OutcomeType.WMH, "wmh"))])
+        deathDf = pd.DataFrame(deathInfo, columns=["time","event", "severityGroup", "sbi", "wmh"])
+
+        return {"death": deathDf, "mi": miDf, "stroke": strokeDf, "dementia": dementiaDf}
+
+    @staticmethod
+    def kaiser(wmhSpecific=True, nWorkers=1):
+        Validation.kaiser_baseline_pop(wmhSpecific=wmhSpecific)
+        dfs = Validation.kaiser_over_time(wmhSpecific=wmhSpecific, nWorkers=nWorkers)
+        return dfs
+
+ 
 

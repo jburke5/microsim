@@ -150,10 +150,15 @@ class Trial:
     def print_covariate_distributions(self):
         '''This function is provided to help examine the balance of the Trial populations.'''
         if not self.trialDescription.is_block_randomized():
+            print(" "*25, "Printing covariate information for people still alive...")
+            print(" "*25,
+                      "self=treated, alive people count= ",  f"{Population.get_alive_people_count(self.treatedPop._people):<8}",
+                      " "*11,
+                      "other=control, alive people count= ",  f"{Population.get_alive_people_count(self.controlPop._people):<8}")
             print(" "*25, 
-                      "self=treated, unique people count= ",  f"{Population.get_unique_people_count(self.treatedPop._people):<8}", 
-                      " "*10,
-                      "other=control, unique people count= ",  f"{Population.get_unique_people_count(self.controlPop._people):<8}")
+                      "self=treated, unique alive people count= ",  f"{Population.get_unique_alive_people_count(self.treatedPop._people):<8}", 
+                      " "*4,
+                      "other=control, unique alive people count= ",  f"{Population.get_unique_alive_people_count(self.controlPop._people):<8}")
             self.treatedPop.print_lastyear_summary_comparison(self.controlPop)
         else:
             blockFactor = self.trialDescription.blockFactors[0]
@@ -174,9 +179,10 @@ class Trial:
                       "other=control, unique people count=",  Population.get_unique_people_count(controlPeopleBlock))
                 Population.print_people_summary_at_index_comparison(treatedPeopleBlock, controlPeopleBlock, -1)
              
-    def print_treatment_strategy_distributions(self):
+    def print_treatment_strategy_variables_distribution(self):
         '''Prints distribution information about each treatment strategy variable, eg bpMedsAdded'''
-        print(" "*25, "self=treated, unique people count= ",  f"{Population.get_unique_people_count(self.treatedPop._people):<8}")
+        print(" "*25, "self=treated, alive people count= ",  f"{Population.get_alive_people_count(self.treatedPop._people):<8}")
+        print(" "*25, "self=treated & alive, unique people count= ",  f"{Population.get_unique_alive_people_count(self.treatedPop._people):<8}")
         self.treatedPop.print_lastyear_treatment_strategy_distributions()
 
     def __string__(self):
@@ -188,7 +194,7 @@ class Trial:
             for analysisType in AnalysisType:
                 rep += "\t" + "Analysis: " + f"{analysisType.value}\n"
                 if analysisType == AnalysisType.RELATIVE_RISK:
-                    rep += "\t" +" "*25 + " "*10 + "relRisk" + " "*4 + "treatedRisk" + " "*4 + "controlRisk" + " "*9 + "|diff|\n"
+                    rep += "\t" +" "*25 + " "*10 + "relRisk" + " "*4 + "treatedRisk" + " "*4 + "controlRisk" + " "*4 + "|diff|*1000\n"
                 else:
                     rep += "\t" +" "*25 + " "*16 + "Z" + " "*6 + "Intercept" + " "*11 + "Z SE" + " "*9 + "pValue\n"
                 for key in self.results[analysisType.value].keys():

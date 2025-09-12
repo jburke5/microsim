@@ -151,7 +151,7 @@ class PopulationFactory:
         if popType == PopulationType.NHANES:
             return PopulationFactory.get_nhanes_population_model_repo()
         elif popType == PopulationType.KAISER:
-            return PopulationFactory.get_nhanes_population_model_repo()
+            return PopulationFactory.get_kaiser_population_model_repo()
         else:
             raise RuntimeError("Unknown popType in PopulationFactory.get_population_model_repo function.")
 
@@ -223,6 +223,10 @@ class PopulationFactory:
            represented in people.
            The flag distributions controls if the Person-objects will come directly from the NHANES data or
            if Gaussian distributions will first be fit to the NHANES data and then draws are obtained from the distributions.'''
+
+        if year not in [2011, 2015, 2007, 2003, 2009, 2001, 2005, 1999, 2013, 2017]:
+            raise RuntimeError(f"NHANES data for year {year} is not available") 
+
         nhanesDf = PopulationFactory.get_nhanesDf()        
 
         if year is not None:
@@ -274,6 +278,14 @@ class PopulationFactory:
                                          OutcomeModelRepository(),
                                          CohortStaticRiskFactorModelRepository())
 
+    @staticmethod
+    def get_kaiser_population_model_repo(wmhSpecific=True):
+        """Return the default, self-consistent set of models for advancing a Kaiser Population."""
+        return PopulationModelRepository(CohortDynamicRiskFactorModelRepository(),
+                                         CohortDefaultTreatmentModelRepository(),
+                                         OutcomeModelRepository(wmhSpecific=wmhSpecific),
+                                         CohortStaticRiskFactorModelRepository())
+
     @staticmethod    
     def get_nhanes_population(n=None, year=None, personFilters=None, nhanesWeights=False, distributions=False, customWeights=None):
         '''Returns a Population-object with Person-objects being all NHANES persons with or without sampling.
@@ -283,9 +295,9 @@ class PopulationFactory:
         return Population(people, popModelRepository)
 
     @staticmethod
-    def get_kaiser_population(n=1000, personFilters=None):
+    def get_kaiser_population(n=1000, personFilters=None, wmhSpecific=True):
         people = PopulationFactory.get_kaiser_people(n=n, personFilters=personFilters)
-        popModelRepository = PopulationFactory.get_nhanes_population_model_repo()
+        popModelRepository = PopulationFactory.get_kaiser_population_model_repo(wmhSpecific=wmhSpecific)
         return Population(people, popModelRepository)
 
     @staticmethod
@@ -568,7 +580,15 @@ class PopulationFactory:
         return people
 
     @staticmethod
-    def get_kaiser_people(n=1000, personFilters=None):
+    def get_kaiser_people(n=1000, personFilters=None, wmhSpecific=None):
+        '''The wmhSpecific variable is not needed in the function but it is passed on to the function from the trial.py
+        because the NHANES get_nhanes_people function needs to get arguments from the trial.py.
+        Creating Kaiser people is a time consuming process, in part due to the time needed to get the distributions.
+        That is why we do that step only once and create a pandas dataframe only once.
+        Since we need to plan for the possibility of using filters, and sometimes filters can be fairly restrictive,
+        we need to use sampling with replacement from the dataframe. 
+        It is unclear what memory needs we would have in order to create always a much larger sample than the one we need in
+        simulations in order to avoid sampling with replacement.'''
         distributions = PopulationFactory.get_kaiser_distributions()
         drawsForGroups, namesForGroups = PopulationFactory.draw_from_distributions(distributions)
         df = PopulationFactory.get_df_from_draws(drawsForGroups, namesForGroups, popType=PopulationType.KAISER.value)
@@ -577,7 +597,6 @@ class PopulationFactory:
         people = pd.DataFrame.apply(dfForPeople, PersonFactory.get_kaiser_person, axis="columns")
         people = PopulationFactory.apply_person_filters_on_people(personFilters, people)
         people = PopulationFactory.bring_people_to_target_n(n, people, df, personFilters, popType=PopulationType.KAISER.value)   
-
         PopulationFactory.set_index_in_people(people)
         return people
 

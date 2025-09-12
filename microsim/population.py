@@ -36,6 +36,7 @@ from microsim.treatment import DefaultTreatmentsType, TreatmentStrategiesType, C
 from microsim.population_model_repository import PopulationRepositoryType, PopulationModelRepository
 from microsim.standardized_population import StandardizedPopulation
 from microsim.risk_model_repository import RiskModelRepository
+from microsim.wmh_severity import WMHSeverity
 
 class Population:
     """A Population-instance has three main parts:
@@ -184,8 +185,16 @@ class Population:
         return blocks
 
     @staticmethod
+    def get_alive_people_count(people):
+        return len(list(map(lambda x: x._name, filter(lambda y: y.is_alive, people))))
+
+    @staticmethod
     def get_unique_people_count(people):
         return len(set(list(map(lambda x: x._name, people))))
+
+    @staticmethod
+    def get_unique_alive_people_count(people):
+        return len(set(list(map(lambda x: x._name, filter(lambda y: y.is_alive, people)))))
 
     def get_attr(self, attr):
         return list(map(lambda x: getattr(x, "_"+attr), self._people))
@@ -333,6 +342,9 @@ class Population:
     def get_outcome_risk(self, outcomeType):
         return sum(list(map(lambda x: x.has_outcome_during_simulation(outcomeType), self._people)))/self._n
 
+    def get_any_outcome_risk(self, outcomeTypeList):
+        return sum(list(map(lambda x: x.has_any_outcome(outcomeTypeList, inSim=True), self._people)))/self._n
+
     def get_outcome_count(self, outcomeType):
         return sum(self.has_outcome(outcomeType))
 
@@ -419,8 +431,18 @@ class Population:
 
     @staticmethod
     def get_people_attr_at_index(people, rf, index):
-        #rfList = list(map( lambda x: getattr(x, "_"+rf.value)[index] if x.is_alive else None, self._people))
+        '''Returns a list of the alive people attributes at exactly the index specified.
+        People must be alive at the index specified.'''
         rfList = list(map( lambda x: getattr(x, "_"+rf)[index] if x.is_alive_at_index(index) else None, people))
+        rfList = list(filter(lambda x: x is not None, rfList))
+        rfList = list(map(lambda x: int(x) if (type(x)==bool)|(type(x)==np.bool_) else x, rfList))
+        return rfList
+
+    @staticmethod
+    def get_people_attr_static(people, rf, index):
+        '''Returns a list of the alive people static attributes.
+        People must be alive at the index specified.'''
+        rfList = list(map( lambda x: getattr(x, "_"+rf) if x.is_alive_at_index(index) else None, people))
         rfList = list(filter(lambda x: x is not None, rfList))
         rfList = list(map(lambda x: int(x) if (type(x)==bool)|(type(x)==np.bool_) else x, rfList))
         return rfList
@@ -431,6 +453,26 @@ class Population:
         Currently, the person get_outcome_survival_info function tests if the person object has any of the outcomes provided in the list.
         Covariates are include via the personFunctionsList argument, the list must include pure functions that can be applied to a person object.'''
         return list(map(lambda x: x.get_outcome_survival_info(outcomesTypeList=outcomesTypeList, personFunctionsList=personFunctionsList), self._people))
+
+    def get_outcome_incidence_rates_at_end_of_wave(self, outcomesTypeList=[OutcomeType.STROKE], wave=3):
+        '''Returns outcome incidence rate per 1000 person-years at the end of the wave argument.
+        Need to be careful with wave: wave=0 is the first wave, so set the wave to be number of years you want - 1.'''
+        if wave<0:
+            raise RuntimeError(f"wave {wave=} cannot be a negative number")
+        if self._waveCompleted < wave:
+            raise RuntimeError(f"Population has not advanced enough to reach end of {wave=}")
+        #determine if each person in the population had any of the outcomes
+        anyOutcome = self.has_any_outcome_by_end_of_wave(outcomesTypeList=outcomesTypeList, wave=wave) #[False,True,False,False,True,...]
+        #convert to integer eg [0,0,1,1,0,...1,0]
+        anyOutcome = list(map(lambda y: int(y), anyOutcome))
+        #get the number of years each person in the population was at risk
+        waves = self.get_min_wave_of_first_outcomes_or_last_wave(outcomesTypeList) #[5,1,6,8,0,...]
+        personYearsAtRisk = list(map(lambda x: min(x, wave), waves)) #with wave=3 [3,1,3,3,0,..]
+        personYearsAtRisk = list(map(lambda y: y+1, personYearsAtRisk))
+        popSize = len(anyOutcome) #how many people are part of the SCD and Modality group
+        outcomeCounts = sum(anyOutcome) if popSize>0 else 0 #how many people had any of the outcomes
+        rate = 1000. * outcomeCounts / sum(personYearsAtRisk)
+        return rate
 
     def get_outcome_incidence_rates_by_scd_and_modality_at_end_of_wave(self, outcomesTypeList=[OutcomeType.STROKE], wave=3):
         '''Returns outcome incidence rate per 1000 person-years as a dictionary at the end of the wave argument.
@@ -477,20 +519,45 @@ class Population:
 
     def print_summary_at_index(self, index):
         """Prints a summary of both static and dynamic risk factors at index (baseline: index=0, last year: index=-1."""
-        print(" "*50, "  min ", "  0.25", " "*1, "med", " "*2, "0.75", " "*2, "max", " "*1, "mean", " "*2, "sd")
-        for i,rf in enumerate(self._dynamicRiskFactors):
-            rfList = self.get_attr_at_index(rf, index)
-            print(f"{rf:>50} {np.min(rfList):> 6.1f} {np.quantile(rfList, 0.25):> 6.1f} {np.quantile(rfList, 0.5):> 6.1f} {np.quantile(rfList, 0.75):> 6.1f} {np.max(rfList):> 6.1f} {np.mean(rfList):> 6.1f} {np.std(rfList):> 6.1f}")
-        print(" "*50, "  proportions") 
-        for rf in self._staticRiskFactors:
-            print(f"{rf:>50}")
-            rfList = list(map( lambda x: getattr(x, "_"+rf), self._people))
+        print(" "*25, "Printing a summary of risk factors and default treatments...")
+        print(" "*25, "min", " "*4, "0.25", " "*2, "med", " "*3, "0.75", " "*3, "max" , " "*2, "mean", " "*3, "sd")
+        print(" "*25, "-"*53)
+        #this is not a great solution...but...I need to be able to run this function without having to initialize a population
+        #but I also need to run this function within a population and right now we are about to have two types of population...
+        dynamicRiskFactors = self._dynamicRiskFactors
+        for i,rf in enumerate(dynamicRiskFactors):
+            if rf in [crf.value for crf in ContinuousRiskFactorsType]:
+                rfList = Population.get_people_attr_at_index(self._people, rf, index)
+                print(f"{rf:>23} {np.min(rfList):> 7.1f} {np.quantile(rfList, 0.25):> 7.1f} {np.quantile(rfList, 0.5):> 7.1f} {np.quantile(rfList, 0.75):> 7.1f} {np.max(rfList):> 7.1f} {np.mean(rfList):> 7.1f} {np.std(rfList):> 7.1f}")
+        defaultTreatments = self._defaultTreatments
+        for dt in defaultTreatments:
+            if dt in [cdt.value for cdt in ContinuousDefaultTreatmentsType]:
+                dtList = Population.get_people_attr_at_index(self._people, dt, index)
+                print(f"{dt:>23} {np.min(dtList):> 7.1f} {np.quantile(dtList, 0.25):> 7.1f} {np.quantile(dtList, 0.5):> 7.1f} {np.quantile(dtList, 0.75):> 7.1f} {np.max(dtList):> 7.1f} {np.mean(dtList):> 7.1f} {np.std(dtList):> 7.1f}")
+        print(" "*25, "proportions")
+        print(" "*25, "-"*11)
+        for i,rf in enumerate(dynamicRiskFactors):
+            if rf in [crf.value for crf in CategoricalRiskFactorsType]:
+                rfList = Population.get_people_attr_at_index(self._people, rf, index)
+                print(f"{rf:>23}")
+                rfValueCounts = Counter(rfList)
+                for key in sorted(rfValueCounts.keys()):
+                    print(f"{key:>23} {rfValueCounts[key]/len(rfList): 6.2f}")
+        staticRiskFactors = self._staticRiskFactors
+        for rf in staticRiskFactors:
+            print(f"{rf:>23}")
+            rfList = Population.get_people_attr_static(self._people, rf, index)
             rfValueCounts = Counter(rfList)
             for key in sorted(rfValueCounts.keys()):
-                if type(key)==str: #eg in Modality the value, a string, is used, whereas for risk factors, eg education, I need to use .value to get the string
-                    print(f"{key:>50} {rfValueCounts[key]/self._n: 6.2f}")
-                else:
-                    print(f"{key.value:>50} {rfValueCounts[key]/self._n: 6.2f}")
+                print(f"{key:>23} {rfValueCounts[key]/len(rfList): 6.2f}")
+        for dt in defaultTreatments:
+            if dt in [cdt.value for cdt in CategoricalDefaultTreatmentsType]:
+                print(f"{dt:>23}")
+                dtList = Population.get_people_attr_at_index(self._people, dt, index)
+                dtValueCounts = Counter(dtList)
+                for key in sorted(dtValueCounts.keys()):
+                    print(f"{key:>23} {dtValueCounts[key]/len(dtList): 6.2f}")  
+
 
     def print_baseline_summary_comparison(self, other):
         self.print_summary_at_index_comparison(other, 0)
@@ -542,18 +609,20 @@ class Population:
                 rfValueCounts = Counter(rfList)
                 rfValueCountsOther = Counter(rfListOther)
                 for key in sorted(rfValueCounts.keys()):
-                    print(f"{key:>23} {rfValueCounts[key]/people.shape[0]: 6.2f} {rfValueCountsOther[key]/other.shape[0]: 6.2f}")
+                    print(f"{key:>23} {rfValueCounts[key]/len(rfList): 6.2f} {rfValueCountsOther[key]/len(rfListOther): 6.2f}")
         staticRiskFactors = people.iloc[0]._staticRiskFactors
         for rf in staticRiskFactors:
             print(f"{rf:>23}")
             #rfList = list(map( lambda x: getattr(x, "_"+rf.value), self._people))
-            rfList = list(map( lambda x: getattr(x, "_"+rf), people))
+            #rfList = list(map( lambda x: getattr(x, "_"+rf), people))
+            rfList = Population.get_people_attr_static(people, rf, index)
             rfValueCounts = Counter(rfList)
             #rfListOther = list(map( lambda x: getattr(x, "_"+rf.value), other._people))
-            rfListOther = list(map( lambda x: getattr(x, "_"+rf), other))
+            #rfListOther = list(map( lambda x: getattr(x, "_"+rf), other))
+            rfListOther = Population.get_people_attr_static(other, rf, index)
             rfValueCountsOther = Counter(rfListOther)
             for key in sorted(rfValueCounts.keys()):
-                print(f"{key:>23} {rfValueCounts[key]/people.shape[0]: 6.2f} {rfValueCountsOther[key]/other.shape[0]: 6.2f}")
+                print(f"{key:>23} {rfValueCounts[key]/len(rfList): 6.2f} {rfValueCountsOther[key]/len(rfListOther): 6.2f}")
         for dt in defaultTreatments:
             if dt in [cdt.value for cdt in CategoricalDefaultTreatmentsType]:
                 print(f"{dt:>23}")
@@ -562,32 +631,37 @@ class Population:
                 dtValueCounts = Counter(dtList)
                 dtValueCountsOther = Counter(dtListOther)
                 for key in sorted(dtValueCounts.keys()):
-                    print(f"{key:>23} {dtValueCounts[key]/people.shape[0]: 6.2f} {dtValueCountsOther[key]/other.shape[0]: 6.2f}")
+                    print(f"{key:>23} {dtValueCounts[key]/len(dtList): 6.2f} {dtValueCountsOther[key]/len(dtListOther): 6.2f}")
 
     def print_lastyear_treatment_strategy_distributions(self):
-        print(" "*25, "self")
-        print(" "*25, "-"*53)
-        print(" "*25, "min", " "*4, "0.25", " "*2, "med", " "*3, "0.75", " "*3, "max" , " "*2, "mean", " "*3, "sd")
-        print(" "*25, "-"*53)
+        '''Prints distributional information about treatment strategy variables, such as bpMedsAdded, statinsAdded,
+        but only for the people of the population that are still alive.'''
+        #at this point there is no continuous treatment-related variable...so uncomment when there is one...
+        #print(" "*25, "self")
+        #print(" "*25, "-"*53)
+        #print(" "*25, "min", " "*4, "0.25", " "*2, "med", " "*3, "0.75", " "*3, "max" , " "*2, "mean", " "*3, "sd")
+        #print(" "*25, "-"*53)
         treatmentStrategies = self._people.iloc[0]._treatmentStrategies.keys()
-        for ts in treatmentStrategies:
-            tsVariables = self._people.iloc[0]._treatmentStrategies[ts].keys()
-            for tsv in tsVariables:
-                if (tsv in [ctst.value for ctst in ContinuousTreatmentStrategiesType]) & (tsv!="status"):
-                    tsvList = list(map(lambda x: x._treatmentStrategies[ts][tsv], self._people))
-                    print(f"{tsv:>23} {np.min(tsvList):> 7.1f} {np.quantile(tsvList, 0.25):> 7.1f} {np.quantile(tsvList, 0.5):> 7.1f} {np.quantile(tsvList, 0.75):> 7.1f} {np.max(tsvList):> 7.1f} {np.mean(tsvList):> 7.1f} {np.std(tsvList):> 7.1f}")
+        #for ts in treatmentStrategies:
+        #    tsVariables = self._people.iloc[0]._treatmentStrategies[ts].keys()
+        #    for tsv in tsVariables:
+        #        if (tsv in [ctst.value for ctst in ContinuousTreatmentStrategiesType]) & (tsv!="status"):
+        #            tsvList = list(map(lambda x: x._treatmentStrategies[ts][tsv], self._people))
+        #            print(f"{tsv:>23} {np.min(tsvList):> 7.1f} {np.quantile(tsvList, 0.25):> 7.1f} {np.quantile(tsvList, 0.5):> 7.1f} {np.quantile(tsvList, 0.75):> 7.1f} {np.max(tsvList):> 7.1f} {np.mean(tsvList):> 7.1f} {np.std(tsvList):> 7.1f}")
         print(" "*25, "self")
+        print(" "*25, "-"*53)
         print(" "*25, "proportions")
         print(" "*25, "-"*11)
         for ts in treatmentStrategies:
             tsVariables = self._people.iloc[0]._treatmentStrategies[ts].keys()
             for tsv in tsVariables:
                 if (tsv in [ctst.value for ctst in CategoricalTreatmentStrategiesType]) & (tsv!="status"):
-                    tsvList = list(map(lambda x: x._treatmentStrategies[ts][tsv], self._people))
+                    alivePeople = filter(lambda x: x.is_alive, self._people)
+                    tsvList = list(map(lambda x: x._treatmentStrategies[ts][tsv], alivePeople))
                     print(f"{tsv:>23}")
                     tsvValueCounts = Counter(tsvList)
                     for key in sorted(tsvValueCounts.keys()):
-                        print(f"{key:>23} {tsvValueCounts[key]/self._people.shape[0]: 6.2f}")
+                        print(f"{key:>23} {tsvValueCounts[key]/len(tsvList): 6.2f}")
 
     def print_cv_standardized_rates(self):
         outcomes = [OutcomeType.MI, OutcomeType.STROKE, OutcomeType.DEATH,
@@ -663,3 +737,78 @@ class Population:
             plt.clf()
             print("exported results as PNG figures")
         self.print_lastyear_summary_comparison(other)
+ 
+    def print_scd_cv_risk_proportions_table(self):
+        '''Prints a table of proportions where the columns are CV risks without taking into account SCD specific information, such as WMH, SBI,
+        and the rows are CV risks that include SCD specific information.'''
+        alive = filter(lambda x: x.is_alive, self._people) #just an iterator
+        cvNonScdSpecificRiskList = list(map(lambda x: CVModelRepository(wmhSpecific=False).select_outcome_model_for_person(x).get_risk_for_person(x, years=10),
+                                            alive))
+    
+        alive = filter(lambda x: x.is_alive, self._people) #iterator again
+        cvRiskList = list(map(lambda x: CVModelRepository().select_outcome_model_for_person(x).get_risk_for_person(x, years=10), alive))    
+    
+        binEdges = np.array([0.   , 0.05 , 0.075, 0.1  , 0.125, 0.15 , 1.001]) #use meaningful bins
+        personCounts, xEdgesActual, yEdgesActual = np.histogram2d(cvRiskList, cvNonScdSpecificRiskList,  bins=[binEdges,binEdges])
+    
+        risks = ["0.0-0.05", "0.05-0.075", "0.075-0.1", "0.1-0.125", "0.125-0.15", "0.15-1.0"]
+    
+        print(" "*25, "-"*53)
+        print(" "*25, "proportion of people in risk bins")
+        print(" "*25, "-"*53)
+        print(" "*25, "CV risk (non-SCD specific)")
+        print(" "*2, "CV risk (SCD specific) " + " ".join(risks)) #     0       1       2       3       4 ") 
+        for i,row in enumerate(np.flip(personCounts, axis=0)/personCounts.sum()):
+            printString = f"{risks[-i-1]:>23} "
+            for item in row:
+                printString += f"{item:> 9.2f} " 
+            print(printString)
+    
+        print(" "*25, "-"*53)
+        print(" "*25, "cumulative (column-wise) proportion of people in risk bins")
+        print(" "*25, "-"*53)
+        print(" "*25, "CV risk (non-SCD specific)")
+        print(" "*2, "CV risk (SCD specific) " + " ".join(risks)) #     0       1       2       3       4 ") 
+        for i,row in enumerate(np.flip(personCounts, axis=0).cumsum(axis=0)/personCounts.sum()):  #column wise
+        #for i,row in enumerate(np.flip(personCounts, axis=0).cumsum(axis=0).cumsum(axis=1)/personCounts.sum()): #from top left to bottom right
+            printString = f"{risks[-i-1]:>23} "
+            for item in row:
+                printString += f"{item:> 9.2f} " 
+            print(printString) 
+
+        print(" "*25, "-"*53)
+        print(" "*25, "cumulative (row-wise) proportion of people in risk bins")
+        print(" "*25, "-"*53)
+        print(" "*25, "CV risk (non-SCD specific)")
+        print(" "*2, "CV risk (SCD specific) " + " ".join(risks)) #     0       1       2       3       4 ") 
+        for i,row in enumerate(np.flip(personCounts, axis=0).cumsum(axis=1)/personCounts.sum()):  #row wise
+        #for i,row in enumerate(np.flip(personCounts, axis=0).cumsum(axis=0).cumsum(axis=1)/personCounts.sum()): #from top left to bottom right
+            printString = f"{risks[-i-1]:>23} "
+            for item in row:
+                printString += f"{item:> 9.2f} " 
+            print(printString)
+
+
+    def print_wmh_outcome_summary(self):
+
+        severityList = list(map(lambda x: x._outcomes[OutcomeType.WMH][0][1].wmhSeverity, self._people))
+        severityList = [y.value if y is not None else "unknown" for y in severityList]
+        sbiList =  list(map(lambda x: x._outcomes[OutcomeType.WMH][0][1].sbi, self._people))
+        print("\n")
+        print(" "*25, "Printing a summary of the WMH outcome...")
+        print(" "*16, "severity proportion")
+        print(" "*25, "-"*16)
+        for severity in WMHSeverity:
+            print(f"{severity.value:>23} {sum([x==severity.value for x in severityList])/self._n:>6.2f}")
+        print(" "*15, f"unknown {sum([x=='unknown' for x in severityList])/self._n:>6.2f}\n")
+        print(" "*21, "SBI proportion")
+        print(" "*25, "-"*16)
+        print(" "*18,f"TRUE {sum(sbiList)/self._n:>6.2f}")
+
+
+
+
+
+
+
+

@@ -19,6 +19,7 @@ from microsim.education_model import EducationPrevalenceModel
 from microsim.alcohol_model import AlcoholPrevalenceModel
 from microsim.population_type import PopulationType
 from microsim.modality_model import ModalityPrevalenceModel
+from microsim.wmh_model_repository import WMHModelRepository
 
 class PersonFactory:
     """A class used to obtain Person-objects using data from a variety of sources."""
@@ -228,6 +229,11 @@ class PersonFactory:
         person._alcoholPerWeek = [imr[DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value].estimate_next_risk(person)]
         person._education = imr[StaticRiskFactorsType.EDUCATION.value].estimate_next_risk(person)
 
+        #originally this outcome was obtained along with the rest of the outcomes, however treatment strategies need the CV risk, some of them at least,
+        #the CV risks requires knowledge of wmh severity and the rest of the wmh parameters, so I am adding this outcome here... 
+        outcome = WMHModelRepository().select_outcome_model_for_person(person).get_next_outcome(person)
+        person.add_outcome(outcome)
+        
         return person
 
 

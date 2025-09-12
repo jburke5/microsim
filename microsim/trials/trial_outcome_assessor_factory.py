@@ -52,4 +52,16 @@ class TrialOutcomeAssessorFactory:
             toa.add_outcome_assessment("miRR",
                                        {"outcome": lambda x: x.get_outcome_risk(OutcomeType.MI)},
                                         AnalysisType.RELATIVE_RISK.value)
+            toa.add_outcome_assessment("cvRR",
+                                       {"outcome": lambda x: x.get_outcome_risk(OutcomeType.CARDIOVASCULAR)},
+                                        AnalysisType.RELATIVE_RISK.value)
+            toa.add_outcome_assessment("dementiaRR",
+                                       {"outcome": lambda x: x.get_outcome_risk(OutcomeType.DEMENTIA)},
+                                        AnalysisType.RELATIVE_RISK.value)
+            toa.add_outcome_assessment("ciRR",
+                                       {"outcome": lambda x: x.get_outcome_risk(OutcomeType.CI)},
+                                        AnalysisType.RELATIVE_RISK.value)
+            toa.add_outcome_assessment("dementiaOrCiRR",
+                                       {"outcome": lambda x: x.get_any_outcome_risk([OutcomeType.DEMENTIA, OutcomeType.CI])},
+                                        AnalysisType.RELATIVE_RISK.value)
         return toa
