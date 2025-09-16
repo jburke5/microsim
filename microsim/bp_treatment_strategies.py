@@ -118,17 +118,17 @@ class jnc8Treatment(AddBPTreatmentMedsToGoal120):
         return int(medsToReturn) if medsToReturn > 0 else 0
 
 class jnc8ForHighRisk(jnc8Treatment):
-    def __init__(self, targetRisk):
+    def __init__(self, targetRisk, wmhSpecific=True):
         self.targetRisk = targetRisk
-        self.cvModelRepository = CVModelRepository()
+        self.cvModelRepository = CVModelRepository(wmhSpecific=wmhSpecific)
     
     def low_target(self, person):
         risk = self.cvModelRepository.select_outcome_model_for_person(person).get_risk_for_person(person, years=10)
         return risk >  self.targetRisk
     
 class jnc8ForHighRiskLowBpTarget(jnc8ForHighRisk):
-    def __init__(self, targetRisk, targetBP):
-        super().__init__(targetRisk)
+    def __init__(self, targetRisk, targetBP, wmhSpecific=True):
+        super().__init__(targetRisk, wmhSpecific)
         self.targetBP = targetBP
         self.status = TreatmentStrategyStatus.BEGIN
     
@@ -137,8 +137,8 @@ class jnc8ForHighRiskLowBpTarget(jnc8ForHighRisk):
     
 # simplified class to represent SPRINT.
 class SprintTreatment(jnc8ForHighRiskLowBpTarget):
-    def __init__(self):
-        super().__init__(0.075, {'sbp' : 126, 'dbp': 85})
+    def __init__(self, wmhSpecific=True):
+        super().__init__(0.075, {'sbp' : 126, 'dbp': 85}, wmhSpecific)
         self.status = TreatmentStrategyStatus.BEGIN
 
 class SprintForLowerDbpGoalTreatment(jnc8ForHighRiskLowBpTarget):
@@ -150,8 +150,8 @@ class SprintForSbpOnlyTreatment(jnc8ForHighRiskLowBpTarget):
     '''This treatment strategy practically implements an SBP only goal for blood pressure treatment.
     There are formally two goals for both SBP and DBP but the DBP goal is set so high that it 
     will be unlikely ever used.'''
-    def __init__(self):
-        super().__init__(0.075, {'sbp' : 126, 'dbp': 200})
+    def __init__(self, wmhSpecific=True):
+        super().__init__(0.075, {'sbp' : 126, 'dbp': 200}, wmhSpecific)
         self.status = TreatmentStrategyStatus.BEGIN
 
     def get_meds_needed_for_goal(self, person, goal):
@@ -169,8 +169,8 @@ class SprintForSbpOnlyTreatment(jnc8ForHighRiskLowBpTarget):
 class SprintForSbpRiskThreshold(SprintForSbpOnlyTreatment):
     '''This strategy will be use an SBP goal only and it will implement the goal only if the CV risk is above 
     a threshold.'''
-    def __init__(self):
-        super().__init__()
+    def __init__(self, wmhSpecific=True):
+        super().__init__(wmhSpecific)
         self.status = TreatmentStrategyStatus.BEGIN
 
     def get_meds_needed_for_goal(self, person, goal):
