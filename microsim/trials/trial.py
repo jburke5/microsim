@@ -178,12 +178,23 @@ class Trial:
                       " "*15,
                       "other=control, unique people count=",  Population.get_unique_people_count(controlPeopleBlock))
                 Population.print_people_summary_at_index_comparison(treatedPeopleBlock, controlPeopleBlock, -1)
-             
-    def print_treatment_strategy_variables_distribution(self):
-        '''Prints distribution information about each treatment strategy variable, eg bpMedsAdded'''
+ 
+    def print_treatment_strategy_variables_information(self):
+        '''Prints various types of information about treatment strategy variables.'''
+        print(" "*25, "Printing treatment strategy variable information at the end of the trial...")
         print(" "*25, "self=treated, alive people count= ",  f"{Population.get_alive_people_count(self.treatedPop._people):<8}")
         print(" "*25, "self=treated & alive, unique people count= ",  f"{Population.get_unique_alive_people_count(self.treatedPop._people):<8}")
+        self.print_treatment_strategy_variables_distributions()
+        self.print_treatment_strategy_variables_distributions_by_risk()    
+
+    def print_treatment_strategy_variables_distributions(self):
+        '''Prints distribution information about each treatment strategy variable, eg bpMedsAdded'''
         self.treatedPop.print_lastyear_treatment_strategy_distributions()
+
+    def print_treatment_strategy_variables_distributions_by_risk(self):
+        '''Prints distribution information about each treatment strategy variable for each CV risk quintile.'''
+        wmhSpecific = self.trialDescription._wmhSpecific if "wmhSpecific" in self.trialDescription.popArgs.keys() else True
+        self.treatedPop.print_lastyear_treatment_strategy_distributions_by_risk(wmhSpecific=wmhSpecific) 
 
     def __string__(self):
         rep = self.trialDescription.__str__()
