@@ -166,4 +166,14 @@ class SprintForSbpOnlyTreatment(jnc8ForHighRiskLowBpTarget):
         medsToReturn = BaseTreatmentStrategy.MAX_BP_MEDS - currentMeds  if cappedMeds + currentMeds > BaseTreatmentStrategy.MAX_BP_MEDS else cappedMeds
         return int(medsToReturn) if medsToReturn > 0 else 0
 
+class SprintForSbpRiskThreshold(SprintForSbpOnlyTreatment):
+    '''This strategy will be use an SBP goal only and it will implement the goal only if the CV risk is above 
+    a threshold.'''
+    def __init__(self):
+        super().__init__()
+        self.status = TreatmentStrategyStatus.BEGIN
+
+    def get_meds_needed_for_goal(self, person, goal):
+        '''The low_target function determines if the CV risk is above the threshold.'''
+        return super().get_meds_needed_for_goal(person, goal) if self.low_target(person) else 0
 
