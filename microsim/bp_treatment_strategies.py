@@ -154,3 +154,16 @@ class SprintForSbpOnlyTreatment(jnc8ForHighRiskLowBpTarget):
         super().__init__(0.075, {'sbp' : 126, 'dbp': 200})
         self.status = TreatmentStrategyStatus.BEGIN
 
+    def get_meds_needed_for_goal(self, person, goal):
+        '''The Sprint-based classes utilize the minimum of the SBP and DBP meds needed to reach the goal...
+        essentially I cannot just initialize the super class with an extremely high DBP goal because then the DBP meds needed
+        would always be 0 and that is the minimum no matter how many SBP meds are needed to reach the goal.
+        So, I actually need to implement this function here based on SBP only.'''
+        sbpMedCount = int((getattr(person, "_"+DynamicRiskFactorsType.SBP.value)[-1] - goal["sbp"])
+                          / AddBPTreatmentMedsToGoal120.sbpLowering)
+        currentMeds = person._antiHypertensiveCountPlusBPMedsAdded()
+        cappedMeds = BaseTreatmentStrategy.MAX_BP_MEDS if sbpMedCount > BaseTreatmentStrategy.MAX_BP_MEDS else sbpMedCount
+        medsToReturn = BaseTreatmentStrategy.MAX_BP_MEDS - currentMeds  if cappedMeds + currentMeds > BaseTreatmentStrategy.MAX_BP_MEDS else cappedMeds
+        return int(medsToReturn) if medsToReturn > 0 else 0
+
+
