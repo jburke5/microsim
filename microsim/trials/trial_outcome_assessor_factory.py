@@ -64,4 +64,7 @@ class TrialOutcomeAssessorFactory:
             toa.add_outcome_assessment("dementiaOrCiRR",
                                        {"outcome": lambda x: x.get_any_outcome_risk([OutcomeType.DEMENTIA, OutcomeType.CI])},
                                         AnalysisType.RELATIVE_RISK.value)
+            toa.add_outcome_assessment("deathRR",
+                                       {"outcome": lambda x: x.get_outcome_risk(OutcomeType.DEATH)},
+                                        AnalysisType.RELATIVE_RISK.value)
         return toa

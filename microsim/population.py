@@ -663,6 +663,64 @@ class Population:
                     for key in sorted(tsvValueCounts.keys()):
                         print(f"{key:>23} {tsvValueCounts[key]/len(tsvList): 6.2f}")
 
+    def print_lastyear_treatment_strategy_distributions_by_risk(self, wmhSpecific=True):
+        ''''''
+        popAlive = filter(lambda x: x.is_alive, self._people)
+        ts = TreatmentStrategiesType.BP.value
+        tsv = "bpMedsAdded"
+        bpMedsAddedList = list(map(lambda x: x._treatmentStrategies[ts][tsv], popAlive))
+    
+        popAlive = filter(lambda x: x.is_alive, self._people)
+        ts = TreatmentStrategiesType.STATIN.value
+        tsv = "statinsAdded"
+        statinsAddedList = list(map(lambda x: x._treatmentStrategies[ts][tsv], popAlive))
+    
+        cvModelRepository = CVModelRepository(wmhSpecific=wmhSpecific)
+        popAlive = filter(lambda x: x.is_alive, self._people)
+        cvRiskList = list(map(lambda x: cvModelRepository.select_outcome_model_for_person(x).get_risk_for_person(x, years=10), popAlive))
+        cvRiskBoundaries = np.quantile(cvRiskList, np.linspace(0, 1, 6))
+        cvRiskQuintiles = np.digitize(cvRiskList, cvRiskBoundaries, right=False)
+        cvRiskQuintiles[cvRiskList == cvRiskBoundaries[-1]] = 5
+    
+        print(" "*25, "-"*53)
+        print(" "*25, "proportions in each quintile")
+        print(" "*25, "-"*53)
+     
+        print(" "*25, "bpMedsAdded")
+        print(" "*6, "CV risk quintile      0       1       2       3       4      >4 ")    
+        for ile in sorted(set(cvRiskQuintiles)):  
+            printString = f"{ile:>23} "
+            bmaForIle = list(map(lambda y: y[1], filter(lambda x: x[0]==ile, zip(cvRiskQuintiles, bpMedsAddedList))))
+            for bmaNumber in range(0,5):
+                #get a list of 0 and 1, 1 when person from specified decile has specified number of meds
+                bmaForIleAndNumber = list(map(lambda x: 1.*(x==bmaNumber), bmaForIle))
+                #get the proportion of the decile people with specified number of meds
+                bmaProportion = np.mean(bmaForIleAndNumber)
+                printString += f"{bmaProportion:> 7.2f} "
+            #same for >4 
+            bmaForIleAndNumber = list(map(lambda x: 1.*(x>4), bmaForIle))
+            bmaProportion = np.mean(bmaForIleAndNumber)
+            printString += f"{bmaProportion:> 7.2f} "
+            print(printString)
+        
+        print(" "*25, "statinsAdded")
+        print(" "*28, "0       1       2 ")    
+        for ile in sorted(set(cvRiskQuintiles)):  
+            printString = f"{ile:>23} "
+            saForIle = list(map(lambda y: y[1], filter(lambda x: x[0]==ile, zip(cvRiskQuintiles, statinsAddedList))))    
+            for saNumber in range(0,3):
+                #get a list of 0 and 1, 1 when person from specified decile has specified number of meds
+                saForIleAndNumber = list(map(lambda x: 1.*(x==saNumber), saForIle))
+                #get the proportion of the decile people with specified number of meds
+                saProportion = np.mean(saForIleAndNumber)
+                printString += f"{saProportion:> 7.2f} "
+            #same for >4 
+            #spsaForIleAndNumber = list(map(lambda x: 1.*(x>4), spsaForIle))
+            #spsaProportion = np.mean(spsaForIleAndNumber)
+            #printString += f"{spsaProportion:> 7.2f} "
+            print(printString)
+
+
     def print_cv_standardized_rates(self):
         outcomes = [OutcomeType.MI, OutcomeType.STROKE, OutcomeType.DEATH,
                     OutcomeType.CARDIOVASCULAR, OutcomeType.NONCARDIOVASCULAR, OutcomeType.DEMENTIA]
