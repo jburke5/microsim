@@ -16,10 +16,6 @@ class StatinTreatmentStrategy():
         else:
             raise RuntimeError(f"Cannot create StatinTreatmentStrategy with invalid risk cutoff {cvRiskCutoff}. Risk must not be <0 or >1.")
 
-    #def get_updated_treatments(self, person):
-    #    return dict()
-
-    #def get_updated_risk_factors(self, person):
     def get_updated_treatments(self, person):
         if person._treatmentStrategies[TreatmentStrategiesType.STATIN.value]["status"]==TreatmentStrategyStatus.BEGIN:
             cvRisk = self.cvModelRepository.select_outcome_model_for_person(person).get_risk_for_person(person, years=10)
