@@ -291,7 +291,7 @@ class PopulationFactory:
         people = PopulationFactory.apply_person_filters_on_people(personFilters, people)
 
         if nhanesWeights:
-            people = PopulationFactory.bring_people_to_target_n(n, people, nhanesDf, personFilters, popType=PopulationType.NHANES.value, initializationModelRepository=imr, outcomePrevalenceModelRepository=outcomePrevalenceModelRepository)
+            people = PopulationFactory.bring_people_to_target_n(n, people, nhanesDf, personFilters, popType=PopulationType.NHANES.value, initializationModelRepository=imr, outcomePrevalenceModelRepository=outcomePrevalenceModelRepository, weights=weights)
             
         PopulationFactory.set_index_in_people(people)
         return people
@@ -739,10 +739,10 @@ class PopulationFactory:
         return people
 
     @staticmethod
-    def bring_people_to_target_n(n, people, df, personFilters, popType=PopulationType.NHANES.value, initializationModelRepository=None, outcomePrevalenceModelRepository=None):
+    def bring_people_to_target_n(n, people, df, personFilters, popType=PopulationType.NHANES.value, initializationModelRepository=None, outcomePrevalenceModelRepository=None, weights=None):
         nRemaining = n - people.shape[0]
         while nRemaining>0:
-            dfForPeople = df.sample(nRemaining, replace=True)
+            dfForPeople = df.sample(nRemaining, weights=weights, replace=True)
             peopleRemaining = pd.DataFrame.apply(dfForPeople, PersonFactory.get_person, popType=popType, initializationModelRepository=initializationModelRepository, outcomePrevalenceModelRepository=outcomePrevalenceModelRepository, axis="columns")
             peopleRemaining = PopulationFactory.apply_person_filters_on_people(personFilters, peopleRemaining)
             people = pd.concat([people, peopleRemaining])
