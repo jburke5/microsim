@@ -1,5 +1,4 @@
 from microsim.treatment_strategies.treatment_strategies import TreatmentStrategiesType
-from microsim.treatment_strategies.statin_treatment_strategies import StatinTreatmentStrategy
 from microsim.treatment_strategies.bp_treatment_strategies import (
     AddNBPMedsTreatmentStrategy,
     AddBPTreatmentMedsToGoal120,
