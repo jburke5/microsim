@@ -244,7 +244,7 @@ class PopulationFactory:
            if Gaussian distributions will first be fit to the NHANES data and then draws are obtained from the distributions.'''
 
         if year not in [2011, 2015, 2007, 2003, 2009, 2001, 2005, 1999, 2013, 2017]:
-            raise RuntimeError(f"NHANES data for year {year} is not available")
+            raise RuntimeError(f"NHANES data for year {year} is not available") 
 
         nhanesDf = PopulationFactory.get_nhanesDf()        
 
