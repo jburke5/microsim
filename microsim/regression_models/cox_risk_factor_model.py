@@ -35,4 +35,6 @@ class CoxRiskFactorModel(LinearRiskFactorModel):
             raise NotImplementedError("CoxRiskFactorModel computes 1-year risk only")
         linear_predictor = self.linear_predictor(person)
         yearsInSim = len(person._age)
-        return self.get_cumulative_hazard_for_years_in_sim(yearsInSim) * np.exp(float(linear_predictor))
+        return self.get_cumulative_hazard_for_years_in_sim(yearsInSim) * np.exp(
+            float(linear_predictor)
+        )

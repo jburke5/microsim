@@ -1,13 +1,14 @@
 import numpy as np
-from enum import Enum
 
 from microsim.risk_factors.race_ethnicity import RaceEthnicity
 from microsim.risk_factors.gender import NHANESGender
 from microsim.risk_factors.smoking_status import SmokingStatus
 from microsim.risk_factors.modality import Modality
 
+
 class WMHSeverityUnknownModel:
     """White matter hypodensity severity unknown model."""
+
     def __init__(self):
         pass
 
@@ -31,23 +32,26 @@ class WMHSeverityUnknownModel:
         ldl,
         trig,
         creatinine,
-        modality):
+        modality,
+    ):
 
         xb = -8.1153
 
-        if gender==NHANESGender.MALE:
+        if gender == NHANESGender.MALE:
             xb += -0.00119
 
-        if raceEthnicity==RaceEthnicity.OTHER:
+        if raceEthnicity == RaceEthnicity.OTHER:
             xb += -0.00891
-        elif raceEthnicity==RaceEthnicity.NON_HISPANIC_BLACK:
+        elif raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
             xb += 0.2251
-        elif (raceEthnicity==RaceEthnicity.MEXICAN_AMERICAN) | (raceEthnicity==RaceEthnicity.OTHER_HISPANIC):
+        elif (raceEthnicity == RaceEthnicity.MEXICAN_AMERICAN) | (
+            raceEthnicity == RaceEthnicity.OTHER_HISPANIC
+        ):
             xb += -0.1197
-        elif raceEthnicity==RaceEthnicity.ASIAN:
+        elif raceEthnicity == RaceEthnicity.ASIAN:
             xb += -0.053
 
-        if (smokingStatus!=SmokingStatus.NEVER):
+        if smokingStatus != SmokingStatus.NEVER:
             xb += 0.0478
 
         if statin:
@@ -58,37 +62,36 @@ class WMHSeverityUnknownModel:
 
         if pvd:
             xb += -0.014
-   
-        xb += age*0.0704
-        xb += sbp*0.00327
-        xb += dbp*0.00656
-        xb += bmi*(-0.00913)
+
+        xb += age * 0.0704
+        xb += sbp * 0.00327
+        xb += dbp * 0.00656
+        xb += bmi * (-0.00913)
 
         if anyPhysicalActivity:
-            xb += (-0.0503)
+            xb += -0.0503
 
-        xb += antiHypertensiveCount*0.0582
+        xb += antiHypertensiveCount * 0.0582
 
+        xb += a1c * 0.0264
+        xb += totChol * 0.000864
+        xb += hdl * 0.000177
+        xb += ldl * (-0.00192)
+        xb += trig * (-0.00023)
+        xb += creatinine * 0.0867
 
-        xb += a1c*0.0264
-        xb += totChol*0.000864
-        xb += hdl*0.000177
-        xb += ldl*(-0.00192)
-        xb += trig*(-0.00023)
-        xb += creatinine*0.0867
-
-        if modality==Modality.CT.value:
+        if modality == Modality.CT.value:
             xb += -0.2186
 
         return xb
 
     def inverse_logit(self, lp):
-        if lp<-10:
-            risk = 0.
-        elif lp>10.:
-            risk = 1.
+        if lp < -10:
+            risk = 0.0
+        elif lp > 10.0:
+            risk = 1.0
         else:
-            risk = 1/(1+np.exp(-lp))
+            risk = 1 / (1 + np.exp(-lp))
         return risk
 
     def estimate_next_risk(self, person):
@@ -111,13 +114,7 @@ class WMHSeverityUnknownModel:
             person._ldl[-1],
             person._trig[-1],
             person._creatinine[-1],
-            person._modality)
+            person._modality,
+        )
 
-        return True if person._rng.uniform()<self.inverse_logit(lp) else False     
-
-
-
-
-
-
-
+        return True if person._rng.uniform() < self.inverse_logit(lp) else False

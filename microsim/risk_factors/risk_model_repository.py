@@ -1,17 +1,27 @@
 from microsim.regression_models.linear_risk_factor_model import LinearRiskFactorModel
-from microsim.regression_models.linear_probability_risk_factor_model import LinearProbabilityRiskFactorModel
-from microsim.regression_models.rounded_linear_risk_factor_model import RoundedLinearRiskFactorModel
+from microsim.regression_models.linear_probability_risk_factor_model import (
+    LinearProbabilityRiskFactorModel,
+)
+from microsim.regression_models.rounded_linear_risk_factor_model import (
+    RoundedLinearRiskFactorModel,
+)
 from microsim.common.data_loader import load_regression_model
 from microsim.risk_factors.risk_factor_bounds import RiskFactorBounds
 
+
 class BoundedRiskFactorModel:
-    """Applies RiskFactorBounds to the wrapped model's prediction, adult/child chosen by person age."""
+    """Applies RiskFactorBounds to the wrapped model's prediction, adult/child chosen by person
+    age."""
+
     def __init__(self, name, model):
         self._name = name
         self._model = model
 
     def estimate_next_risk(self, person):
-        return RiskFactorBounds.apply_to_person(self._name, self._model.estimate_next_risk(person), person)
+        return RiskFactorBounds.apply_to_person(
+            self._name, self._model.estimate_next_risk(person), person
+        )
+
 
 class RiskModelRepository:
     def __init__(self):

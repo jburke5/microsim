@@ -10,7 +10,6 @@ from microsim.outcomes.outcome import OutcomeType
 from microsim.outcomes.outcome_prevalence_model_repository import OutcomePrevalenceModelRepository
 from microsim.person.person import Person
 from microsim.person.person_factory import PersonFactory
-from microsim.risk_factors.alcohol_category import AlcoholCategory
 from microsim.risk_factors.education import Education
 from microsim.risk_factors.gender import NHANESGender
 from microsim.risk_factors.initialization_model_repository import InitializationModelRepository
@@ -39,7 +38,7 @@ def build_nhanes_row(**overrides):
         DynamicRiskFactorsType.BMI.value: 25,
         DynamicRiskFactorsType.WAIST.value: 90,
         DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
-        DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 0.,  #drinks/week
+        DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 0.0,  # drinks/week
         DynamicRiskFactorsType.CREATININE.value: 0.9,
         DefaultTreatmentsType.STATIN.value: 0,
         DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
@@ -82,15 +81,19 @@ class TestGetPersonDispatch(unittest.TestCase):
 
     def test_dispatches_to_nhanes(self):
         person = PersonFactory.get_person(
-            build_nhanes_row(), popType=PopulationType.NHANES.value,
-            initializationModelRepository=self._imr)
+            build_nhanes_row(),
+            popType=PopulationType.NHANES.value,
+            initializationModelRepository=self._imr,
+        )
         self.assertIsInstance(person, Person)
         self.assertEqual(person._modality, Modality.NO.value)
 
     def test_dispatches_to_kaiser(self):
         person = PersonFactory.get_person(
-            build_kaiser_row(), popType=PopulationType.KAISER.value,
-            initializationModelRepository=self._imr)
+            build_kaiser_row(),
+            popType=PopulationType.KAISER.value,
+            initializationModelRepository=self._imr,
+        )
         self.assertIsInstance(person, Person)
         self.assertEqual(person._modality, Modality.CT.value)
 
@@ -101,15 +104,18 @@ class TestGetPersonDispatch(unittest.TestCase):
 
 class TestGetNhanesPersonInitInformation(unittest.TestCase):
     def test_organizes_row_into_init_dicts(self):
-        (name, static, dynamic, treatments, strategies, outcomes) = \
+        (name, static, dynamic, treatments, strategies, outcomes) = (
             PersonFactory.get_nhanes_person_init_information(build_nhanes_row())
+        )
         self.assertEqual(name, "testNhanesPerson")
         self.assertIsInstance(static[StaticRiskFactorsType.RACE_ETHNICITY.value], RaceEthnicity)
         self.assertIsInstance(static[StaticRiskFactorsType.EDUCATION.value], Education)
         self.assertIsInstance(static[StaticRiskFactorsType.GENDER.value], NHANESGender)
         self.assertIsInstance(static[StaticRiskFactorsType.SMOKING_STATUS.value], SmokingStatus)
         self.assertIsNone(static[StaticRiskFactorsType.MODALITY.value])
-        self.assertEqual(dynamic[DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value], 0.)  #drinks/week
+        self.assertEqual(
+            dynamic[DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value], 0.0
+        )  # drinks/week
         self.assertIsNone(dynamic[DynamicRiskFactorsType.AFIB.value])
         self.assertIsNone(dynamic[DynamicRiskFactorsType.PVD.value])
         self.assertEqual(dynamic[DynamicRiskFactorsType.SBP.value], 120)
@@ -122,21 +128,25 @@ class TestGetNhanesPersonInitInformation(unittest.TestCase):
             self.assertEqual(outcomeList, [])
 
     def test_statin_is_converted_to_bool(self):
-        #NHANES includes statin=2; the models expect a 0/1 indicator
+        # NHANES includes statin=2; the models expect a 0/1 indicator
         for rawStatin, expected in [(0, False), (1, True), (2, True)]:
             (_, _, _, treatments, _, _) = PersonFactory.get_nhanes_person_init_information(
-                build_nhanes_row(statin=rawStatin))
+                build_nhanes_row(statin=rawStatin)
+            )
             self.assertIs(treatments[DefaultTreatmentsType.STATIN.value], expected)
 
     def test_adult_bounds_applied(self):
         (_, _, dynamic, _, _, _) = PersonFactory.get_nhanes_person_init_information(
-            build_nhanes_row(**{DynamicRiskFactorsType.SBP.value: 500}))
-        self.assertEqual(dynamic[DynamicRiskFactorsType.SBP.value], 297.)
+            build_nhanes_row(**{DynamicRiskFactorsType.SBP.value: 500})
+        )
+        self.assertEqual(dynamic[DynamicRiskFactorsType.SBP.value], 297.0)
 
     def test_child_bounds_applied(self):
         (_, _, dynamic, _, _, _) = PersonFactory.get_nhanes_person_init_information(
-            build_nhanes_row(**{DynamicRiskFactorsType.AGE.value: 10,
-                                DynamicRiskFactorsType.SBP.value: 500}))
+            build_nhanes_row(
+                **{DynamicRiskFactorsType.AGE.value: 10, DynamicRiskFactorsType.SBP.value: 500}
+            )
+        )
         self.assertEqual(dynamic[DynamicRiskFactorsType.SBP.value], 190.3)
 
 
@@ -161,9 +171,11 @@ class TestGetNhanesPerson(unittest.TestCase):
 
     def test_prevalence_seeding_with_repository(self):
         person = PersonFactory.get_nhanes_person(
-            build_nhanes_row(), self._imr,
-            outcomePrevalenceModelRepository=OutcomePrevalenceModelRepository())
-        #cognition is a continuous score, so its prevalence model always seeds an outcome
+            build_nhanes_row(),
+            self._imr,
+            outcomePrevalenceModelRepository=OutcomePrevalenceModelRepository(),
+        )
+        # cognition is a continuous score, so its prevalence model always seeds an outcome
         cognition = person._outcomes[OutcomeType.COGNITION]
         self.assertEqual(len(cognition), 1)
         age, outcome = cognition[0]
@@ -173,8 +185,9 @@ class TestGetNhanesPerson(unittest.TestCase):
 
 class TestGetKaiserPersonInitInformation(unittest.TestCase):
     def test_organizes_row_into_init_dicts(self):
-        (name, static, dynamic, treatments, strategies, outcomes) = \
+        (name, static, dynamic, treatments, strategies, outcomes) = (
             PersonFactory.get_kaiser_person_init_information(build_kaiser_row())
+        )
         self.assertEqual(name, "testKaiserPerson")
         self.assertEqual(static[StaticRiskFactorsType.MODALITY.value], Modality.CT.value)
         self.assertIsNone(static[StaticRiskFactorsType.EDUCATION.value])
@@ -204,18 +217,20 @@ class TestGetKaiserPerson(unittest.TestCase):
     def test_seeds_outcomes(self):
         self.assertEqual(len(self._person._outcomes[OutcomeType.WMH]), 1)
         self.assertEqual(len(self._person._outcomes[OutcomeType.COGNITION]), 1)
-        #epilepsy seeding is probabilistic, so presence is 0 or 1
+        # epilepsy seeding is probabilistic, so presence is 0 or 1
         self.assertIn(len(self._person._outcomes[OutcomeType.EPILEPSY]), (0, 1))
 
     def test_accepts_shared_initialization_model_repository(self):
-        person = PersonFactory.get_kaiser_person(build_kaiser_row(), InitializationModelRepository())
+        person = PersonFactory.get_kaiser_person(
+            build_kaiser_row(), InitializationModelRepository()
+        )
         self.assertIsInstance(person._education, Education)
         self.assertIsNotNone(person._waist[0])
 
 
 class TestPersonConstructionContract(unittest.TestCase):
     """Behavioral invariants any fully constructed person must satisfy, regardless of
-       how the factory is implemented."""
+    how the factory is implemented."""
 
     @classmethod
     def setUpClass(cls):
@@ -246,16 +261,21 @@ class TestPersonConstructionContract(unittest.TestCase):
         kaiserPerson = PersonFactory.get_kaiser_person(build_kaiser_row())
         for person in (nhanesPerson, kaiserPerson):
             for rf in person._staticRiskFactors:
-                self.assertIsNotNone(getattr(person, "_" + rf),
-                                     f"static risk factor {rf} should be initialized")
+                self.assertIsNotNone(
+                    getattr(person, "_" + rf), f"static risk factor {rf} should be initialized"
+                )
 
     def test_seeded_outcomes_are_prior_to_sim_only(self):
         person = PersonFactory.get_nhanes_person(
-            build_nhanes_row(), self._imr,
-            outcomePrevalenceModelRepository=OutcomePrevalenceModelRepository())
+            build_nhanes_row(),
+            self._imr,
+            outcomePrevalenceModelRepository=OutcomePrevalenceModelRepository(),
+        )
         for outcomeType in OutcomeType:
-            self.assertFalse(person.has_outcome(outcomeType, inSim=True),
-                             f"{outcomeType} should not count as an in-sim event")
+            self.assertFalse(
+                person.has_outcome(outcomeType, inSim=True),
+                f"{outcomeType} should not count as an in-sim event",
+            )
             for age, outcome in person._outcomes[outcomeType]:
                 self.assertIsNone(age)
                 self.assertTrue(outcome.priorToSim)
@@ -270,33 +290,37 @@ class TestPersonConstructionContract(unittest.TestCase):
         self.assertEqual(len(person2._age), 1)
 
     def test_name_not_shadowed_by_series_index(self):
-        #a row taken out of a dataframe carries its index label as Series.name
+        # a row taken out of a dataframe carries its index label as Series.name
         x = pd.DataFrame([build_nhanes_row()]).iloc[0]
         person = PersonFactory.get_nhanes_person(x, self._imr)
         self.assertEqual(person._name, "testNhanesPerson")
 
     def test_bounds_clip_in_both_directions(self):
         (_, _, low, _, _, _) = PersonFactory.get_nhanes_person_init_information(
-            build_nhanes_row(sbp=1, bmi=1, hdl=1))
+            build_nhanes_row(sbp=1, bmi=1, hdl=1)
+        )
         self.assertEqual(low[DynamicRiskFactorsType.SBP.value], 58.20)
         self.assertEqual(low[DynamicRiskFactorsType.BMI.value], 10.836)
         self.assertEqual(low[DynamicRiskFactorsType.HDL.value], 5.4)
         (_, _, high, _, _, _) = PersonFactory.get_nhanes_person_init_information(
-            build_nhanes_row(bmi=1000, hdl=10000))
+            build_nhanes_row(bmi=1000, hdl=10000)
+        )
         self.assertEqual(high[DynamicRiskFactorsType.BMI.value], 143.23)
         self.assertEqual(high[DynamicRiskFactorsType.HDL.value], 248.6)
 
     def test_in_range_values_pass_through_unchanged(self):
         (_, _, dynamic, _, _, _) = PersonFactory.get_nhanes_person_init_information(
-            build_nhanes_row())
+            build_nhanes_row()
+        )
         self.assertEqual(dynamic[DynamicRiskFactorsType.SBP.value], 120)
         self.assertEqual(dynamic[DynamicRiskFactorsType.BMI.value], 25)
         self.assertEqual(dynamic[DynamicRiskFactorsType.A1C.value], 5.5)
 
     def test_dispatch_matches_direct_construction(self):
         row = build_nhanes_row()
-        viaDispatch = PersonFactory.get_person(row, popType=PopulationType.NHANES.value,
-                                               initializationModelRepository=self._imr)
+        viaDispatch = PersonFactory.get_person(
+            row, popType=PopulationType.NHANES.value, initializationModelRepository=self._imr
+        )
         direct = PersonFactory.get_nhanes_person(row, self._imr)
         self.assertEqual(viaDispatch._name, direct._name)
         self.assertEqual(viaDispatch._age, direct._age)

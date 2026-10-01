@@ -22,7 +22,10 @@ class TestPersonFilter(unittest.TestCase):
 
     def test_add_filter(self):
         pf = PersonFilter()
-        fn = lambda x: x[DynamicRiskFactorsType.AGE.value] >= 18
+
+        def fn(x):
+            return x[DynamicRiskFactorsType.AGE.value] >= 18
+
         pf.add_filter("df", "adult", fn)
         self.assertIs(pf.filters["df"]["adult"], fn)
         self.assertEqual(pf.filters["person"], {})
@@ -35,7 +38,10 @@ class TestPersonFilter(unittest.TestCase):
     def test_add_filter_overwrites_same_name(self):
         pf = PersonFilter()
         pf.add_filter("df", "adult", lambda x: True)
-        replacement = lambda x: False
+
+        def replacement(x):
+            return False
+
         pf.add_filter("df", "adult", replacement)
         self.assertIs(pf.filters["df"]["adult"], replacement)
 
@@ -101,7 +107,7 @@ class TestDfLevelRegistryFilters(unittest.TestCase):
 
 class TestPersonLevelRegistryFilters(unittest.TestCase):
     """Kaiser persons carry the cognition, WMH, and (possibly) epilepsy outcomes
-       the person-level filters need."""
+    the person-level filters need."""
 
     @classmethod
     def setUpClass(cls):
@@ -114,12 +120,16 @@ class TestPersonLevelRegistryFilters(unittest.TestCase):
         self.assertEqual(self._filter("hasEpilepsy")(self._person), self._person.has_epilepsy())
 
     def test_noMCI(self):
-        self.assertEqual(self._filter("noMCI")(self._person),
-                         not self._person.has_mci(inSim=False))
+        self.assertEqual(
+            self._filter("noMCI")(self._person), not self._person.has_mci(inSim=False)
+        )
 
     def test_highCVLimit(self):
-        risk = CVModelRepository().select_outcome_model_for_person(self._person)\
-                                  .get_risk_for_person(self._person)
+        risk = (
+            CVModelRepository()
+            .select_outcome_model_for_person(self._person)
+            .get_risk_for_person(self._person)
+        )
         self.assertEqual(self._filter("highCVLimit")(self._person), risk < 0.00477)
 
 
@@ -159,7 +169,7 @@ class TestPersonFilterContract(unittest.TestCase):
 
 class TestPersonFilterFactoryContract(unittest.TestCase):
     """The factory must hand out fresh, independent PersonFilters and never let a caller
-       mutate the shared registry."""
+    mutate the shared registry."""
 
     def test_returns_fresh_instances(self):
         pf1 = PersonFilterFactory.get_person_filter()
@@ -171,8 +181,9 @@ class TestPersonFilterFactoryContract(unittest.TestCase):
         pf = PersonFilterFactory.get_person_filter(["adult"])
         pf.add_filter("df", "custom", lambda x: True)
         self.assertNotIn("custom", PersonFilterFactory.filterMap)
-        self.assertEqual(set(PersonFilterFactory.get_person_filter(["adult"]).filters["df"]),
-                         {"adult"})
+        self.assertEqual(
+            set(PersonFilterFactory.get_person_filter(["adult"]).filters["df"]), {"adult"}
+        )
 
     def test_duplicate_names_collapse(self):
         pf = PersonFilterFactory.get_person_filter(["adult", "adult"])
@@ -189,16 +200,48 @@ class TestPersonLevelFilterLogic(unittest.TestCase):
 
     def test_highCVLimit_keeps_low_risk_and_drops_high_risk(self):
         highCV = PersonFilterFactory.filterMap["highCVLimit"][1]
-        healthy = PersonFactory.get_kaiser_person(build_kaiser_row(
-            age=40, gender=NHANESGender.FEMALE.value, smokingStatus=SmokingStatus.NEVER.value,
-            sbp=105, dbp=70, a1c=5.0, hdl=70, ldl=80, trig=90, totChol=160, bmi=22,
-            creatinine=0.7, anyPhysicalActivity=True, afib=False, pvd=False,
-            statin=0, antiHypertensiveCount=0))
-        sick = PersonFactory.get_kaiser_person(build_kaiser_row(
-            age=85, gender=NHANESGender.MALE.value, smokingStatus=SmokingStatus.CURRENT.value,
-            sbp=180, dbp=95, a1c=10., hdl=30, ldl=180, trig=300, totChol=280, bmi=35,
-            creatinine=1.4, anyPhysicalActivity=False, afib=True, pvd=True,
-            statin=1, antiHypertensiveCount=3))
+        healthy = PersonFactory.get_kaiser_person(
+            build_kaiser_row(
+                age=40,
+                gender=NHANESGender.FEMALE.value,
+                smokingStatus=SmokingStatus.NEVER.value,
+                sbp=105,
+                dbp=70,
+                a1c=5.0,
+                hdl=70,
+                ldl=80,
+                trig=90,
+                totChol=160,
+                bmi=22,
+                creatinine=0.7,
+                anyPhysicalActivity=True,
+                afib=False,
+                pvd=False,
+                statin=0,
+                antiHypertensiveCount=0,
+            )
+        )
+        sick = PersonFactory.get_kaiser_person(
+            build_kaiser_row(
+                age=85,
+                gender=NHANESGender.MALE.value,
+                smokingStatus=SmokingStatus.CURRENT.value,
+                sbp=180,
+                dbp=95,
+                a1c=10.0,
+                hdl=30,
+                ldl=180,
+                trig=300,
+                totChol=280,
+                bmi=35,
+                creatinine=1.4,
+                anyPhysicalActivity=False,
+                afib=True,
+                pvd=True,
+                statin=1,
+                antiHypertensiveCount=3,
+            )
+        )
         self.assertTrue(highCV(healthy), "a healthy 40-year-old should be under the CV risk limit")
         self.assertFalse(highCV(sick), "a sick 85-year-old should exceed the CV risk limit")
 

@@ -17,7 +17,7 @@ def _adults_filter():
 
 def _adults_filter_with_person_filter(name, filterFunction):
     """Adult df filter plus a person-level filter, which is what forces bring_people_to_target_n
-       to run: person-level filters can only drop people after they have been built."""
+    to run: person-level filters can only drop people after they have been built."""
     pf = PersonFilterFactory.get_person_filter(["adult"])
     pf.add_filter("person", name, filterFunction)
     return pf
@@ -28,7 +28,10 @@ class TestNIsHonored(unittest.TestCase):
 
     def test_n_honored_without_any_weights(self):
         people = PopulationFactory.get_nhanes_people(
-            n=25, year=1999, personFilters=_adults_filter(), nhanesWeights=False,
+            n=25,
+            year=1999,
+            personFilters=_adults_filter(),
+            nhanesWeights=False,
         )
         self.assertEqual(25, people.shape[0])
 
@@ -38,7 +41,10 @@ class TestNIsHonored(unittest.TestCase):
         pf = PersonFilterFactory.get_person_filter(["adult"])
         pf.add_filter("df", "age40", lambda x: x[DynamicRiskFactorsType.AGE.value] == 40)
         people = PopulationFactory.get_nhanes_people(
-            n=None, year=1999, personFilters=pf, nhanesWeights=False,
+            n=None,
+            year=1999,
+            personFilters=pf,
+            nhanesWeights=False,
         )
         nhanesDf = PopulationFactory.get_nhanesDf()
         nhanesDf = nhanesDf.loc[nhanesDf.year == 1999]
@@ -49,13 +55,16 @@ class TestNIsHonored(unittest.TestCase):
     def test_custom_weights_without_n_is_refused(self):
         with self.assertRaises(RuntimeError):
             PopulationFactory.get_nhanes_people(
-                n=None, year=1999, personFilters=_adults_filter(), customWeights=pd.Series([1.0]),
+                n=None,
+                year=1999,
+                personFilters=_adults_filter(),
+                customWeights=pd.Series([1.0]),
             )
 
 
 class TestDistributionsTypeIsChecked(unittest.TestCase):
     """distributions is combined with '&' in the argument checks, so a non-bool has to be refused
-       up front rather than raising an opaque TypeError out of the operator or slipping through."""
+    up front rather than raising an opaque TypeError out of the operator or slipping through."""
 
     def test_non_bool_distributions_is_refused(self):
         for bad in ("yes", 1, None, dict()):
@@ -68,12 +77,15 @@ class TestDistributionsTypeIsChecked(unittest.TestCase):
 
 class TestTopUpReachesTargetN(unittest.TestCase):
     """The top-up used to run only on the nhanesWeights branch, so the other two sampling
-       modes returned fewer than n people whenever a person-level filter dropped some."""
+    modes returned fewer than n people whenever a person-level filter dropped some."""
 
     def test_unweighted_sampling_reaches_target_n(self):
         pf = _adults_filter_with_person_filter("ageAtLeast60", lambda x: x._age[0] >= 60)
         people = PopulationFactory.get_nhanes_people(
-            n=20, year=1999, personFilters=pf, nhanesWeights=False,
+            n=20,
+            year=1999,
+            personFilters=pf,
+            nhanesWeights=False,
         )
         self.assertEqual(20, people.shape[0])
         for person in people:
@@ -84,14 +96,17 @@ class TestTopUpReachesTargetN(unittest.TestCase):
         customWeights = (nhanesDf.gender == NHANESGender.MALE.value).astype(float)
         pf = _adults_filter_with_person_filter("ageAtLeast60", lambda x: x._age[0] >= 60)
         people = PopulationFactory.get_nhanes_people(
-            n=20, year=1999, personFilters=pf, customWeights=customWeights,
+            n=20,
+            year=1999,
+            personFilters=pf,
+            customWeights=customWeights,
         )
         self.assertEqual(20, people.shape[0])
 
 
 class TestTopUpUsesSamplingWeights(unittest.TestCase):
     """The top-up used to sample without weights, so the people it added came from a
-       different distribution than the people of the initial, weighted draw."""
+    different distribution than the people of the initial, weighted draw."""
 
     def test_zero_weight_rows_are_never_drawn_by_the_top_up(self):
         # females get a weight of exactly 0, so a weight-respecting top-up can never
@@ -102,7 +117,10 @@ class TestTopUpUsesSamplingWeights(unittest.TestCase):
         # people come from the top-up rather than from the initial draw
         pf = _adults_filter_with_person_filter("ageAtLeast60", lambda x: x._age[0] >= 60)
         people = PopulationFactory.get_nhanes_people(
-            n=30, year=1999, personFilters=pf, customWeights=customWeights,
+            n=30,
+            year=1999,
+            personFilters=pf,
+            customWeights=customWeights,
         )
         self.assertEqual(30, people.shape[0])
         for person in people:
@@ -126,15 +144,24 @@ class TestTopUpTerminates(unittest.TestCase):
         # be max(100*n, 500)
         with self.assertRaises(RuntimeError):
             PopulationFactory.bring_people_to_target_n(
-                5, self.emptyPeople, self.df, pf, popType=PopulationType.NHANES.value,
-                initializationModelRepository=self.imr, maxDraws=20,
+                5,
+                self.emptyPeople,
+                self.df,
+                pf,
+                popType=PopulationType.NHANES.value,
+                initializationModelRepository=self.imr,
+                maxDraws=20,
             )
 
     def test_empty_dataframe_raises(self):
         with self.assertRaises(RuntimeError):
             PopulationFactory.bring_people_to_target_n(
-                5, self.emptyPeople, self.df.head(0), _adults_filter(),
-                popType=PopulationType.NHANES.value, initializationModelRepository=self.imr,
+                5,
+                self.emptyPeople,
+                self.df.head(0),
+                _adults_filter(),
+                popType=PopulationType.NHANES.value,
+                initializationModelRepository=self.imr,
             )
 
 

@@ -96,8 +96,12 @@ class TestKaiserTrialPopulationRiskScaling(unittest.TestCase):
         baselineRepo = self._get_outcome_model_repo()
         scaledRepo = self._get_outcome_model_repo(riskScaling={OutcomeType.CARDIOVASCULAR: 1.5})
         person = self._people.iloc[0]
-        baselineModel = baselineRepo._repository[OutcomeType.CARDIOVASCULAR].select_outcome_model_for_person(person)
-        scaledModel = scaledRepo._repository[OutcomeType.CARDIOVASCULAR].select_outcome_model_for_person(person)
+        baselineModel = baselineRepo._repository[
+            OutcomeType.CARDIOVASCULAR
+        ].select_outcome_model_for_person(person)
+        scaledModel = scaledRepo._repository[
+            OutcomeType.CARDIOVASCULAR
+        ].select_outcome_model_for_person(person)
         baselineRisk = baselineModel.get_risk_for_person(person)
         scaledRisk = scaledModel.get_risk_for_person(person)
         self.assertAlmostEqual(scaledRisk, baselineRisk * 1.5, places=10)

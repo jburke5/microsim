@@ -1,62 +1,65 @@
 from microsim.risk_factors.risk_factor import DynamicRiskFactorsType
 
+
 class RiskFactorBounds:
     """Static prespecified bounds for dynamic risk factors."""
 
-    #bounds based on NHANES data from 1999 to 2017 (all data), 0.9*nhanesMin, 1.1*nhanesMax
-    #age is an exception, bounds set manually
+    # bounds based on NHANES data from 1999 to 2017 (all data), 0.9*nhanesMin, 1.1*nhanesMax
+    # age is an exception, bounds set manually
     _lowerBoundsAdult = {
-                     DynamicRiskFactorsType.SBP.value: 58.20,
-                     DynamicRiskFactorsType.DBP.value: 36. ,
-                     DynamicRiskFactorsType.CREATININE.value: 0.090,
-                     DynamicRiskFactorsType.WAIST.value: 49.95,
-                     DynamicRiskFactorsType.LDL.value: 8.10,
-                     DynamicRiskFactorsType.A1C.value: 1.80,
-                     DynamicRiskFactorsType.TRIG.value: 9.,
-                     DynamicRiskFactorsType.BMI.value: 10.836,
-                     DynamicRiskFactorsType.HDL.value: 5.4,
-                     DynamicRiskFactorsType.AGE.value: 18,
-                     DynamicRiskFactorsType.TOT_CHOL.value: 53.1}
+        DynamicRiskFactorsType.SBP.value: 58.20,
+        DynamicRiskFactorsType.DBP.value: 36.0,
+        DynamicRiskFactorsType.CREATININE.value: 0.090,
+        DynamicRiskFactorsType.WAIST.value: 49.95,
+        DynamicRiskFactorsType.LDL.value: 8.10,
+        DynamicRiskFactorsType.A1C.value: 1.80,
+        DynamicRiskFactorsType.TRIG.value: 9.0,
+        DynamicRiskFactorsType.BMI.value: 10.836,
+        DynamicRiskFactorsType.HDL.value: 5.4,
+        DynamicRiskFactorsType.AGE.value: 18,
+        DynamicRiskFactorsType.TOT_CHOL.value: 53.1,
+    }
     _upperBoundsAdult = {
-                     DynamicRiskFactorsType.SBP.value: 297.,
-                     DynamicRiskFactorsType.DBP.value: 152.53,
-                     DynamicRiskFactorsType.CREATININE.value: 19.58,
-                     DynamicRiskFactorsType.WAIST.value: 196.9,
-                     DynamicRiskFactorsType.LDL.value: 691.9,
-                     DynamicRiskFactorsType.A1C.value: 20.68,
-                     DynamicRiskFactorsType.TRIG.value: 4656.3,
-                     DynamicRiskFactorsType.BMI.value: 143.23,
-                     DynamicRiskFactorsType.HDL.value: 248.6,
-                     DynamicRiskFactorsType.AGE.value: 130,
-                     DynamicRiskFactorsType.TOT_CHOL.value: 894.3}
+        DynamicRiskFactorsType.SBP.value: 297.0,
+        DynamicRiskFactorsType.DBP.value: 152.53,
+        DynamicRiskFactorsType.CREATININE.value: 19.58,
+        DynamicRiskFactorsType.WAIST.value: 196.9,
+        DynamicRiskFactorsType.LDL.value: 691.9,
+        DynamicRiskFactorsType.A1C.value: 20.68,
+        DynamicRiskFactorsType.TRIG.value: 4656.3,
+        DynamicRiskFactorsType.BMI.value: 143.23,
+        DynamicRiskFactorsType.HDL.value: 248.6,
+        DynamicRiskFactorsType.AGE.value: 130,
+        DynamicRiskFactorsType.TOT_CHOL.value: 894.3,
+    }
     _lowerBoundsChild = {
-                     DynamicRiskFactorsType.SBP.value: 66.6,
-                     DynamicRiskFactorsType.DBP.value: 36. ,
-                     DynamicRiskFactorsType.CREATININE.value: 0.126,
-                     DynamicRiskFactorsType.WAIST.value: 34.02,
-                     DynamicRiskFactorsType.LDL.value: 8.10,
-                     DynamicRiskFactorsType.A1C.value: 3.42,
-                     DynamicRiskFactorsType.TRIG.value: 9.,
-                     DynamicRiskFactorsType.BMI.value: 10.35,
-                     DynamicRiskFactorsType.HDL.value: 9.9,
-                     DynamicRiskFactorsType.AGE.value: 0.,
-                     DynamicRiskFactorsType.TOT_CHOL.value: 59.4}
+        DynamicRiskFactorsType.SBP.value: 66.6,
+        DynamicRiskFactorsType.DBP.value: 36.0,
+        DynamicRiskFactorsType.CREATININE.value: 0.126,
+        DynamicRiskFactorsType.WAIST.value: 34.02,
+        DynamicRiskFactorsType.LDL.value: 8.10,
+        DynamicRiskFactorsType.A1C.value: 3.42,
+        DynamicRiskFactorsType.TRIG.value: 9.0,
+        DynamicRiskFactorsType.BMI.value: 10.35,
+        DynamicRiskFactorsType.HDL.value: 9.9,
+        DynamicRiskFactorsType.AGE.value: 0.0,
+        DynamicRiskFactorsType.TOT_CHOL.value: 59.4,
+    }
     _upperBoundsChild = {
-                     DynamicRiskFactorsType.SBP.value: 190.3,
-                     DynamicRiskFactorsType.DBP.value: 114.4,
-                     DynamicRiskFactorsType.CREATININE.value: 13.728,
-                     DynamicRiskFactorsType.WAIST.value: 183.92,
-                     DynamicRiskFactorsType.LDL.value: 282.7,
-                     DynamicRiskFactorsType.A1C.value: 17.16,
-                     DynamicRiskFactorsType.TRIG.value: 1718.2,
-                     DynamicRiskFactorsType.BMI.value: 68.288,
-                     DynamicRiskFactorsType.HDL.value: 196.9,
-                     DynamicRiskFactorsType.AGE.value: 17,
-                     DynamicRiskFactorsType.TOT_CHOL.value: 484.}
-    _upperBounds = {"adult": _upperBoundsAdult,
-                    "child": _upperBoundsChild}
-    _lowerBounds = {"adult": _lowerBoundsAdult,
-                    "child": _lowerBoundsChild}
+        DynamicRiskFactorsType.SBP.value: 190.3,
+        DynamicRiskFactorsType.DBP.value: 114.4,
+        DynamicRiskFactorsType.CREATININE.value: 13.728,
+        DynamicRiskFactorsType.WAIST.value: 183.92,
+        DynamicRiskFactorsType.LDL.value: 282.7,
+        DynamicRiskFactorsType.A1C.value: 17.16,
+        DynamicRiskFactorsType.TRIG.value: 1718.2,
+        DynamicRiskFactorsType.BMI.value: 68.288,
+        DynamicRiskFactorsType.HDL.value: 196.9,
+        DynamicRiskFactorsType.AGE.value: 17,
+        DynamicRiskFactorsType.TOT_CHOL.value: 484.0,
+    }
+    _upperBounds = {"adult": _upperBoundsAdult, "child": _upperBoundsChild}
+    _lowerBounds = {"adult": _lowerBoundsAdult, "child": _lowerBoundsChild}
 
     @classmethod
     def apply(cls, varName, varValue, adult=True):

@@ -1,13 +1,9 @@
 import unittest
-import pandas as pd
-import numpy as np
 
-from microsim.person.person import Person
-from microsim.outcomes.outcome_model_repository import OutcomeModelRepository
-from microsim.outcomes.outcome import Outcome
 from microsim.outcomes.outcome import OutcomeType
 from microsim.population.population_factory import PopulationFactory
-from microsim.test.outcome_models_repositories import AlwaysNonFatalStroke, AlwaysFatalStroke, AlwaysNonFatalMI
+from microsim.test.outcome_models_repositories import AlwaysNonFatalMI
+
 
 class TestPopulationReporting(unittest.TestCase):
     def setUp(self):
@@ -37,9 +33,10 @@ class TestPopulationReporting(unittest.TestCase):
             delta=0.01,
         )
         self.assertAlmostEqual(
-            0, self.pop1.calculate_mean_age_sex_standardized_incidence(OutcomeType.DEATH), delta=0.01
+            0,
+            self.pop1.calculate_mean_age_sex_standardized_incidence(OutcomeType.DEATH),
+            delta=0.01,
         )
-
 
 
 if __name__ == "__main__":

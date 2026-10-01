@@ -14,15 +14,25 @@ def _adults_filter():
 
 def _nhanes_args(n=500):
     """Weighted-sampling args, for refusal tests where we don't care about reproducibility."""
-    return {"n": n, "year": 1999, "personFilters": _adults_filter(),
-            "nhanesWeights": True, "distributions": False}
+    return {
+        "n": n,
+        "year": 1999,
+        "personFilters": _adults_filter(),
+        "nhanesWeights": True,
+        "distributions": False,
+    }
 
 
 def _deterministic_nhanes_args():
     """Use the entire filtered NHANES dataset (no sampling). Deterministic across calls,
-       so the calibrator and any test-side recompute see the exact same persons."""
-    return {"n": None, "year": 1999, "personFilters": _adults_filter(),
-            "nhanesWeights": False, "distributions": False}
+    so the calibrator and any test-side recompute see the exact same persons."""
+    return {
+        "n": None,
+        "year": 1999,
+        "personFilters": _adults_filter(),
+        "nhanesWeights": False,
+        "distributions": False,
+    }
 
 
 class TestAgeScope(unittest.TestCase):
@@ -61,17 +71,24 @@ class TestAgeScope(unittest.TestCase):
         self.assertEqual(AgeScope(75, 75).label, "age_75")
 
 
-def _measure_realized_prev(scaleOutcomeType, targetOutcomeType, scaling, scope, peopleArgs,
-                           baselineRiskScaling=None, rebuilds=5):
+def _measure_realized_prev(
+    scaleOutcomeType,
+    targetOutcomeType,
+    scaling,
+    scope,
+    peopleArgs,
+    baselineRiskScaling=None,
+    rebuilds=5,
+):
     """Build people `rebuilds` times with the chosen scaling and return the mean realized
-       priorToSim prevalence of targetOutcomeType in scope.
-       Deterministic peopleArgs select the same persons every build, but each build gives every
-       Person a fresh unseeded RNG (Person.__init__), and the prevalence models draw from it, so
-       a single build carries about one binomial standard error of seeding noise. Averaging over
-       rebuilds shrinks that by sqrt(rebuilds)."""
+    priorToSim prevalence of targetOutcomeType in scope.
+    Deterministic peopleArgs select the same persons every build, but each build gives every
+    Person a fresh unseeded RNG (Person.__init__), and the prevalence models draw from it, so
+    a single build carries about one binomial standard error of seeding noise. Averaging over
+    rebuilds shrinks that by sqrt(rebuilds)."""
     rs = dict(baselineRiskScaling or {})
     rs[scaleOutcomeType] = scaling
-    #useDefaults=False to mirror calibrate_prevalence, which measures against a pristine baseline
+    # useDefaults=False to mirror calibrate_prevalence, which measures against a pristine baseline
     opmr = OutcomePrevalenceModelRepository(riskScaling=rs, useDefaults=False)
     prevalences = []
     for _ in range(rebuilds):
@@ -79,7 +96,9 @@ def _measure_realized_prev(scaleOutcomeType, targetOutcomeType, scaling, scope, 
             **peopleArgs, outcomePrevalenceModelRepository=opmr
         )
         inScopePeople = [p for p in people if scope.contains(p._current_age)]
-        hits = sum(1 for p in inScopePeople if p.has_outcome_prior_to_simulation(targetOutcomeType))
+        hits = sum(
+            1 for p in inScopePeople if p.has_outcome_prior_to_simulation(targetOutcomeType)
+        )
         prevalences.append(hits / len(inScopePeople))
     return sum(prevalences) / len(prevalences)
 
@@ -90,8 +109,10 @@ class TestCalibratePrevalenceRefusals(unittest.TestCase):
             PopulationFactory.calibrate_prevalence(
                 scaleOutcomeType=OutcomeType.CARDIOVASCULAR,
                 targetOutcomeType=OutcomeType.STROKE,
-                target=0.05, scope=AgeScope(),
-                popType=PopulationType.KAISER, peopleArgs=_nhanes_args(),
+                target=0.05,
+                scope=AgeScope(),
+                popType=PopulationType.KAISER,
+                peopleArgs=_nhanes_args(),
             )
 
     def test_scale_mi_refused(self):
@@ -99,8 +120,10 @@ class TestCalibratePrevalenceRefusals(unittest.TestCase):
             PopulationFactory.calibrate_prevalence(
                 scaleOutcomeType=OutcomeType.MI,
                 targetOutcomeType=OutcomeType.MI,
-                target=0.05, scope=AgeScope(),
-                popType=PopulationType.NHANES, peopleArgs=_nhanes_args(),
+                target=0.05,
+                scope=AgeScope(),
+                popType=PopulationType.NHANES,
+                peopleArgs=_nhanes_args(),
             )
 
     def test_scale_cognition_refused(self):
@@ -108,8 +131,10 @@ class TestCalibratePrevalenceRefusals(unittest.TestCase):
             PopulationFactory.calibrate_prevalence(
                 scaleOutcomeType=OutcomeType.COGNITION,
                 targetOutcomeType=OutcomeType.COGNITION,
-                target=0.05, scope=AgeScope(),
-                popType=PopulationType.NHANES, peopleArgs=_nhanes_args(),
+                target=0.05,
+                scope=AgeScope(),
+                popType=PopulationType.NHANES,
+                peopleArgs=_nhanes_args(),
             )
 
     def test_scale_without_prevalence_model_refused(self):
@@ -117,8 +142,10 @@ class TestCalibratePrevalenceRefusals(unittest.TestCase):
             PopulationFactory.calibrate_prevalence(
                 scaleOutcomeType=OutcomeType.DEATH,
                 targetOutcomeType=OutcomeType.STROKE,
-                target=0.05, scope=AgeScope(),
-                popType=PopulationType.NHANES, peopleArgs=_nhanes_args(),
+                target=0.05,
+                scope=AgeScope(),
+                popType=PopulationType.NHANES,
+                peopleArgs=_nhanes_args(),
             )
 
     def test_target_without_prevalence_model_refused(self):
@@ -126,8 +153,10 @@ class TestCalibratePrevalenceRefusals(unittest.TestCase):
             PopulationFactory.calibrate_prevalence(
                 scaleOutcomeType=OutcomeType.CARDIOVASCULAR,
                 targetOutcomeType=OutcomeType.DEATH,
-                target=0.05, scope=AgeScope(),
-                popType=PopulationType.NHANES, peopleArgs=_nhanes_args(),
+                target=0.05,
+                scope=AgeScope(),
+                popType=PopulationType.NHANES,
+                peopleArgs=_nhanes_args(),
             )
 
     def test_target_before_scale_refused(self):
@@ -137,8 +166,10 @@ class TestCalibratePrevalenceRefusals(unittest.TestCase):
             PopulationFactory.calibrate_prevalence(
                 scaleOutcomeType=OutcomeType.DEMENTIA,
                 targetOutcomeType=OutcomeType.STROKE,
-                target=0.05, scope=AgeScope(),
-                popType=PopulationType.NHANES, peopleArgs=_nhanes_args(),
+                target=0.05,
+                scope=AgeScope(),
+                popType=PopulationType.NHANES,
+                peopleArgs=_nhanes_args(),
             )
 
     def test_target_out_of_range_refused(self):
@@ -147,15 +178,17 @@ class TestCalibratePrevalenceRefusals(unittest.TestCase):
                 PopulationFactory.calibrate_prevalence(
                     scaleOutcomeType=OutcomeType.CARDIOVASCULAR,
                     targetOutcomeType=OutcomeType.STROKE,
-                    target=bad, scope=AgeScope(),
-                    popType=PopulationType.NHANES, peopleArgs=_nhanes_args(),
+                    target=bad,
+                    scope=AgeScope(),
+                    popType=PopulationType.NHANES,
+                    peopleArgs=_nhanes_args(),
                 )
 
 
 class TestCalibratePrevalenceHitsTarget(unittest.TestCase):
     """Cross-outcome calibration: drive realized priorToSim target prevalence to target
-       by scaling a precursor outcome. Stroke and MI both gate on prior CV in their
-       prevalence models, so scaling CV cascades into both."""
+    by scaling a precursor outcome. Stroke and MI both gate on prior CV in their
+    prevalence models, so scaling CV cascades into both."""
 
     def test_cv_scale_stroke_target(self):
         target = 0.05
@@ -164,8 +197,10 @@ class TestCalibratePrevalenceHitsTarget(unittest.TestCase):
         scaling = PopulationFactory.calibrate_prevalence(
             scaleOutcomeType=OutcomeType.CARDIOVASCULAR,
             targetOutcomeType=OutcomeType.STROKE,
-            target=target, scope=scope,
-            popType=PopulationType.NHANES, peopleArgs=peopleArgs,
+            target=target,
+            scope=scope,
+            popType=PopulationType.NHANES,
+            peopleArgs=peopleArgs,
         )
         realized = _measure_realized_prev(
             OutcomeType.CARDIOVASCULAR, OutcomeType.STROKE, scaling, scope, peopleArgs
@@ -179,8 +214,10 @@ class TestCalibratePrevalenceHitsTarget(unittest.TestCase):
         scaling = PopulationFactory.calibrate_prevalence(
             scaleOutcomeType=OutcomeType.CARDIOVASCULAR,
             targetOutcomeType=OutcomeType.MI,
-            target=target, scope=scope,
-            popType=PopulationType.NHANES, peopleArgs=peopleArgs,
+            target=target,
+            scope=scope,
+            popType=PopulationType.NHANES,
+            peopleArgs=peopleArgs,
         )
         realized = _measure_realized_prev(
             OutcomeType.CARDIOVASCULAR, OutcomeType.MI, scaling, scope, peopleArgs
@@ -198,45 +235,52 @@ class TestCalibratePrevalenceSameOutcome(unittest.TestCase):
         scaling = PopulationFactory.calibrate_prevalence(
             scaleOutcomeType=OutcomeType.DEMENTIA,
             targetOutcomeType=OutcomeType.DEMENTIA,
-            target=target, scope=scope,
-            popType=PopulationType.NHANES, peopleArgs=peopleArgs,
+            target=target,
+            scope=scope,
+            popType=PopulationType.NHANES,
+            peopleArgs=peopleArgs,
         )
         realized = _measure_realized_prev(
             OutcomeType.DEMENTIA, OutcomeType.DEMENTIA, scaling, scope, peopleArgs
         )
-        #the 65+ scope holds ~1392 persons, so seeding noise alone is ~0.008 here: the calibrator
-        #solves against one frozen set of draws (see calibrate_prevalence) and this measurement
-        #uses fresh ones. 0.01 would fail about a quarter of the time even when calibration is correct.
+        # the 65+ scope holds ~1392 persons, so seeding noise alone is ~0.008 here: the calibrator
+        # solves against one frozen set of draws (see calibrate_prevalence) and this measurement
+        # uses fresh ones. 0.01 would fail about a quarter of the time even when calibration is
+        # correct.
         self.assertAlmostEqual(realized, target, delta=0.02)
 
 
 class TestCalibratePrevalenceScopeMatters(unittest.TestCase):
     """Use CV — its linear predictor depends on age, so 65+ vs overall have
-       materially different baseline distributions and require different scalings
-       to hit the same target. (Dementia would fail here because its placeholder
-       coefficients are all zero, so lp is constant across age subsets.)"""
+    materially different baseline distributions and require different scalings
+    to hit the same target. (Dementia would fail here because its placeholder
+    coefficients are all zero, so lp is constant across age subsets.)"""
 
     def test_scope_affects_scaling_for_age_dependent_model(self):
         peopleArgs = _deterministic_nhanes_args()
         scaling65 = PopulationFactory.calibrate_prevalence(
             scaleOutcomeType=OutcomeType.CARDIOVASCULAR,
             targetOutcomeType=OutcomeType.CARDIOVASCULAR,
-            target=0.10, scope=AgeScope(lo=65),
-            popType=PopulationType.NHANES, peopleArgs=peopleArgs,
+            target=0.10,
+            scope=AgeScope(lo=65),
+            popType=PopulationType.NHANES,
+            peopleArgs=peopleArgs,
         )
         scalingAll = PopulationFactory.calibrate_prevalence(
             scaleOutcomeType=OutcomeType.CARDIOVASCULAR,
             targetOutcomeType=OutcomeType.CARDIOVASCULAR,
-            target=0.10, scope=AgeScope(),
-            popType=PopulationType.NHANES, peopleArgs=peopleArgs,
+            target=0.10,
+            scope=AgeScope(),
+            popType=PopulationType.NHANES,
+            peopleArgs=peopleArgs,
         )
         self.assertNotAlmostEqual(scaling65, scalingAll, places=2)
 
 
 class TestCalibratePrevalenceMonotone(unittest.TestCase):
     """Higher target should require a larger scaling (for an outcome where the
-       prevalence model is monotone in its riskScaling — true of all expit-based
-       models, which dementia is)."""
+    prevalence model is monotone in its riskScaling — true of all expit-based
+    models, which dementia is)."""
 
     def test_dementia_higher_target_requires_larger_scaling(self):
         peopleArgs = _deterministic_nhanes_args()
@@ -244,22 +288,26 @@ class TestCalibratePrevalenceMonotone(unittest.TestCase):
         scalingLo = PopulationFactory.calibrate_prevalence(
             scaleOutcomeType=OutcomeType.DEMENTIA,
             targetOutcomeType=OutcomeType.DEMENTIA,
-            target=0.05, scope=scope,
-            popType=PopulationType.NHANES, peopleArgs=peopleArgs,
+            target=0.05,
+            scope=scope,
+            popType=PopulationType.NHANES,
+            peopleArgs=peopleArgs,
         )
         scalingHi = PopulationFactory.calibrate_prevalence(
             scaleOutcomeType=OutcomeType.DEMENTIA,
             targetOutcomeType=OutcomeType.DEMENTIA,
-            target=0.20, scope=scope,
-            popType=PopulationType.NHANES, peopleArgs=peopleArgs,
+            target=0.20,
+            scope=scope,
+            popType=PopulationType.NHANES,
+            peopleArgs=peopleArgs,
         )
         self.assertLess(scalingLo, scalingHi)
 
 
 class TestCalibratePrevalenceDropsOpmrFromPeopleArgs(unittest.TestCase):
     """If the caller accidentally passes outcomePrevalenceModelRepository inside
-       peopleArgs (e.g. by reusing a NhanesTrialDescription.peopleArgs dict), the
-       calibrator must drop it rather than crash with a duplicate-kwarg TypeError."""
+    peopleArgs (e.g. by reusing a NhanesTrialDescription.peopleArgs dict), the
+    calibrator must drop it rather than crash with a duplicate-kwarg TypeError."""
 
     def test_opmr_in_peopleargs_is_silently_dropped(self):
         peopleArgs = _deterministic_nhanes_args()
@@ -267,15 +315,17 @@ class TestCalibratePrevalenceDropsOpmrFromPeopleArgs(unittest.TestCase):
         scaling = PopulationFactory.calibrate_prevalence(
             scaleOutcomeType=OutcomeType.DEMENTIA,
             targetOutcomeType=OutcomeType.DEMENTIA,
-            target=0.10, scope=AgeScope(lo=65),
-            popType=PopulationType.NHANES, peopleArgs=peopleArgs,
+            target=0.10,
+            scope=AgeScope(lo=65),
+            popType=PopulationType.NHANES,
+            peopleArgs=peopleArgs,
         )
         self.assertGreater(scaling, 0)
 
 
 class TestCalibratePrevalenceNoCascade(unittest.TestCase):
     """If scaling has no downstream effect on the target, the brentq bracket gap
-       won't change sign and the calibrator must raise rather than return a bogus value."""
+    won't change sign and the calibrator must raise rather than return a bogus value."""
 
     def test_no_cascade_refused(self):
         # DEMENTIA precedes EPILEPSY in OutcomeType order, but EpilepsyPrevalenceModel
@@ -285,7 +335,8 @@ class TestCalibratePrevalenceNoCascade(unittest.TestCase):
             PopulationFactory.calibrate_prevalence(
                 scaleOutcomeType=OutcomeType.DEMENTIA,
                 targetOutcomeType=OutcomeType.EPILEPSY,
-                target=0.10, scope=AgeScope(),
+                target=0.10,
+                scope=AgeScope(),
                 popType=PopulationType.NHANES,
                 peopleArgs=_deterministic_nhanes_args(),
             )
@@ -293,8 +344,8 @@ class TestCalibratePrevalenceNoCascade(unittest.TestCase):
 
 class TestCalibratePrevalenceNhanesWeights(unittest.TestCase):
     """nhanesWeights=True is the user-facing reason this function exists. The inner
-       loop is deterministic in s (rng snapshot/restore) so brentq converges even
-       though the sample itself was drawn stochastically."""
+    loop is deterministic in s (rng snapshot/restore) so brentq converges even
+    though the sample itself was drawn stochastically."""
 
     def test_cv_scale_stroke_target_weighted_sample(self):
         # Target stays well below the racial-mix ceiling baked into the placeholder
@@ -306,8 +357,10 @@ class TestCalibratePrevalenceNhanesWeights(unittest.TestCase):
         scaling = PopulationFactory.calibrate_prevalence(
             scaleOutcomeType=OutcomeType.CARDIOVASCULAR,
             targetOutcomeType=OutcomeType.STROKE,
-            target=target, scope=scope,
-            popType=PopulationType.NHANES, peopleArgs=peopleArgs,
+            target=target,
+            scope=scope,
+            popType=PopulationType.NHANES,
+            peopleArgs=peopleArgs,
         )
         self.assertGreater(scaling, 0)
 

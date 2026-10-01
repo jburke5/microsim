@@ -3,7 +3,6 @@ from microsim.risk_factors.race_ethnicity import RaceEthnicity
 
 
 class NHANESLinearRiskFactorModel:
-
     """
     Predicts next risk factor for a Person by applying a linear regression. Every known risk factor
     on a Person should be included in a risk factor model to ensure that coerrelations between
@@ -33,7 +32,9 @@ class NHANESLinearRiskFactorModel:
 
         self._resids = resids
 
-    def estimate_risk_for_params(self, age, gender, sbp, dbp, a1c, hdl, totChol, bmi, raceEthnicity, smokingStatus, rng=None):
+    def estimate_risk_for_params(
+        self, age, gender, sbp, dbp, a1c, hdl, totChol, bmi, raceEthnicity, smokingStatus, rng=None
+    ):
         linear_pred = 0
         linear_pred += age * self._params["age"]
         linear_pred += gender * self._params["gender"]
@@ -47,7 +48,9 @@ class NHANESLinearRiskFactorModel:
 
         if raceEthnicity == RaceEthnicity.OTHER_HISPANIC:
             linear_pred += self._params["raceEth2"]
-        elif (raceEthnicity == RaceEthnicity.NON_HISPANIC_WHITE) | (raceEthnicity == RaceEthnicity.ASIAN):
+        elif (raceEthnicity == RaceEthnicity.NON_HISPANIC_WHITE) | (
+            raceEthnicity == RaceEthnicity.ASIAN
+        ):
             linear_pred += self._params["raceEth3"]
         elif raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
             linear_pred += self._params["raceEth4"]
@@ -64,10 +67,19 @@ class NHANESLinearRiskFactorModel:
         return self.transform_linear_predictor(linear_pred)
 
     def estimate_next_risk(self, person):
-        return self.estimate_risk_for_params(age=person._age[-1], gender=person._gender, sbp=person._sbp[-1],
-            dbp=person._dbp[-1], a1c=person._a1c[-1], hdl=person._hdl[-1], totChol=person._totChol[-1], bmi=person._bmi[-1],
-            raceEthnicity=person._raceEthnicity, smokingStatus=person._smokingStatus, rng=person._rng)
-
+        return self.estimate_risk_for_params(
+            age=person._age[-1],
+            gender=person._gender,
+            sbp=person._sbp[-1],
+            dbp=person._dbp[-1],
+            a1c=person._a1c[-1],
+            hdl=person._hdl[-1],
+            totChol=person._totChol[-1],
+            bmi=person._bmi[-1],
+            raceEthnicity=person._raceEthnicity,
+            smokingStatus=person._smokingStatus,
+            rng=person._rng,
+        )
 
     """A stub method so that sub-classes can override to transform the risks """
 

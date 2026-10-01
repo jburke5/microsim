@@ -9,10 +9,10 @@ from microsim.risk_factors.modality_model import ModalityPrevalenceModel
 
 class InitializationModelRepository:
     """Holds prevalence models for risk factors that are needed in Microsim simulations
-       but are not provided in the data sources used to construct Person objects.
+    but are not provided in the data sources used to construct Person objects.
 
-       Used by PersonFactory.get_nhanes_person and get_kaiser_person at construction time
-       to seed PVD/AFIB/MODALITY (NHANES) or WAIST/ALCOHOL/EDUCATION (Kaiser)."""
+    Used by PersonFactory.get_nhanes_person and get_kaiser_person at construction time
+    to seed PVD/AFIB/MODALITY (NHANES) or WAIST/ALCOHOL/EDUCATION (Kaiser)."""
 
     def __init__(self):
         self._repository = {

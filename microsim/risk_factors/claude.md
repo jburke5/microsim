@@ -111,12 +111,12 @@ Risk factors are stored in Person instances as:
 ```python
 # In person.py
 _staticRiskFactors: dict
-    # Demographics that don't change (race, education, gender, smoking status, modality)
-    # Set during Person initialization via InitializationRepository
+# Demographics that don't change (race, education, gender, smoking status, modality)
+# Set during Person initialization via InitializationRepository
 
 _dynamicRiskFactors: dict[int, dict]
-    # Time-varying factors (age, blood pressure, BMI, cholesterol, etc.)
-    # Keyed by wave number, updated each simulation advance
+# Time-varying factors (age, blood pressure, BMI, cholesterol, etc.)
+# Keyed by wave number, updated each simulation advance
 ```
 
 When a Person is advanced in time, dynamic risk factors are updated using the models from `RiskModelRepository` (accessed via `PopulationRepositoryType.DYNAMIC_RISK_FACTORS`).
@@ -196,6 +196,7 @@ Risk factor tests are found in `test/test_risk_model_repository.py`, `test/test_
 ```python
 import unittest
 from microsim.population import PopulationFactory
+
 
 class TestRiskFactorModel(unittest.TestCase):
     def setUp(self):

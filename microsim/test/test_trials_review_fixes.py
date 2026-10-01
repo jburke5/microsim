@@ -18,7 +18,10 @@ from microsim.trials.trial import Trial
 from microsim.trials.trial_description import NhanesTrialDescription
 from microsim.trials.trial_outcome_assessor import AnalysisType, TrialOutcomeAssessor
 from microsim.trials.trial_type import TrialType
-from microsim.treatment_strategies.treatment_strategies import TreatmentStrategiesType, TreatmentStrategyStatus
+from microsim.treatment_strategies.treatment_strategies import (
+    TreatmentStrategiesType,
+    TreatmentStrategyStatus,
+)
 
 
 class FakePopulation:
@@ -50,13 +53,16 @@ def make_regression_df(rng, n, categorical=True, continuous=False, binaryOutcome
 
 
 class TestGetTrialOutcomeDf(unittest.TestCase):
-    '''get_trial_outcome_df: all block factors become columns, dynamic block factors are rejected.'''
+    """get_trial_outcome_df: all block factors become columns, dynamic block factors are
+    rejected."""
 
     def test_all_block_factors_become_columns(self):
         treated = FakePopulation(3, {"gender": [1, 2, 1], "raceEthnicity": [3, 4, 3]})
         control = FakePopulation(2, {"gender": [2, 2], "raceEthnicity": [4, 5]})
         trial = FakeTrial(treated, control, blockFactors=["gender", "raceEthnicity"])
-        df = RegressionAnalysis().get_trial_outcome_df(trial, {"outcome": lambda p: [0.] * p._n}, "linear")
+        df = RegressionAnalysis().get_trial_outcome_df(
+            trial, {"outcome": lambda p: [0.0] * p._n}, "linear"
+        )
         self.assertEqual(["treatment", "outcome", "gender", "raceEthnicity"], list(df.columns))
         self.assertEqual([1, 1, 1, 0, 0], list(df["treatment"]))
         self.assertEqual([1, 2, 1, 2, 2], list(df["gender"]))
@@ -67,7 +73,9 @@ class TestGetTrialOutcomeDf(unittest.TestCase):
         control = FakePopulation(2, {"age": [[50, 51], [55, 56]]})
         trial = FakeTrial(treated, control, blockFactors=["age"])
         with self.assertRaises(RuntimeError):
-            RegressionAnalysis().get_trial_outcome_df(trial, {"outcome": lambda p: [0.] * p._n}, "linear")
+            RegressionAnalysis().get_trial_outcome_df(
+                trial, {"outcome": lambda p: [0.0] * p._n}, "linear"
+            )
 
     def test_is_categorical(self):
         self.assertTrue(RegressionAnalysis.is_categorical("raceEthnicity"))
@@ -77,7 +85,7 @@ class TestGetTrialOutcomeDf(unittest.TestCase):
 
 
 class TestLinearRegressionAnalysis(unittest.TestCase):
-    '''Categorical block factors are dummy-encoded via C(), degenerate fits return NaNs.'''
+    """Categorical block factors are dummy-encoded via C(), degenerate fits return NaNs."""
 
     def test_categorical_block_factor_matches_manual_dummy_fit(self):
         rng = np.random.default_rng(7)
@@ -111,7 +119,7 @@ class TestLinearRegressionAnalysis(unittest.TestCase):
 
 
 class TestLogisticRegressionAnalysis(unittest.TestCase):
-    '''Perfect separation returns NaNs, categorical block factors are dummy-encoded.'''
+    """Perfect separation returns NaNs, categorical block factors are dummy-encoded."""
 
     def test_perfect_separation_returns_nans(self):
         df = pd.DataFrame({"treatment": [0, 1] * 20})
@@ -135,7 +143,8 @@ class TestLogisticRegressionAnalysis(unittest.TestCase):
 
 
 class TestCoxRegressionAnalysis(unittest.TestCase):
-    '''Categorical block factors are dummy-encoded, the fitter is fresh per call, 4th element is None.'''
+    """Categorical block factors are dummy-encoded, the fitter is fresh per call, 4th element is
+    None."""
 
     def test_categorical_block_factor_is_dummy_encoded(self):
         rng = np.random.default_rng(7)
@@ -149,7 +158,9 @@ class TestCoxRegressionAnalysis(unittest.TestCase):
         self.assertTrue(math.isfinite(coef))
         self.assertIsNone(fourth)
         dummyCovariates = [c for c in analysis.cph.params_.index if c.startswith("raceEthnicity_")]
-        self.assertGreater(len(dummyCovariates), 1) #a single linear term would be just "raceEthnicity"
+        self.assertGreater(
+            len(dummyCovariates), 1
+        )  # a single linear term would be just "raceEthnicity"
         self.assertNotIn("raceEthnicity", analysis.cph.params_.index)
 
     def test_fresh_fitter_per_analyze_call(self):
@@ -165,7 +176,7 @@ class TestCoxRegressionAnalysis(unittest.TestCase):
 
 
 class TestRelativeRiskAnalysis(unittest.TestCase):
-    '''Each arm uses its own denominator, degenerate inputs give NaN instead of crashing.'''
+    """Each arm uses its own denominator, degenerate inputs give NaN instead of crashing."""
 
     class Pop:
         def __init__(self, n, count, meds):
@@ -178,7 +189,9 @@ class TestRelativeRiskAnalysis(unittest.TestCase):
         treated = self.Pop(120, 30, [True] * 60 + [False] * 40)
         control = self.Pop(80, 20, [])
         trial = FakeTrial(treated, control)
-        result = RelativeRiskAnalysis().analyze(trial, {"outcome": lambda p: p._count}, "relativeRisk")
+        result = RelativeRiskAnalysis().analyze(
+            trial, {"outcome": lambda p: p._count}, "relativeRisk"
+        )
         self.assertEqual(len(RelativeRiskAnalysis.columns), len(result))
         relativeRisk, tRisk, cRisk = result[0], result[3], result[8]
         self.assertAlmostEqual(30 / 120, tRisk)
@@ -186,7 +199,9 @@ class TestRelativeRiskAnalysis(unittest.TestCase):
         self.assertAlmostEqual(1.0, relativeRisk)
 
     def test_zero_denominator_returns_nans_not_crash(self):
-        risk, ciLower, ciUpper, ciLowerWilson, ciUpperWilson = RelativeRiskAnalysis().get_absolute_risk(0, 0)
+        risk, ciLower, ciUpper, ciLowerWilson, ciUpperWilson = (
+            RelativeRiskAnalysis().get_absolute_risk(0, 0)
+        )
         self.assertTrue(math.isnan(risk))
         self.assertIsNone(ciLower)
         self.assertIsNone(ciUpper)
@@ -194,15 +209,16 @@ class TestRelativeRiskAnalysis(unittest.TestCase):
         self.assertTrue(math.isnan(ciUpperWilson))
 
     def test_efficiency_nan_when_no_meds_added(self):
-        treated = self.Pop(120, 30, [None] * 10) #None means not in any treatment strategy
+        treated = self.Pop(120, 30, [None] * 10)  # None means not in any treatment strategy
         control = self.Pop(120, 20, [])
         trial = FakeTrial(treated, control)
-        result = RelativeRiskAnalysis().analyze(trial, {"outcome": lambda p: p._count}, "relativeRisk")
+        result = RelativeRiskAnalysis().analyze(
+            trial, {"outcome": lambda p: p._count}, "relativeRisk"
+        )
         self.assertTrue(math.isnan(result[16]))
 
 
 class TestIncidenceRateZeroPersonYears(unittest.TestCase):
-
     def test_zero_person_years_returns_nan(self):
         class Pop:
             def __init__(self, pairs):
@@ -213,7 +229,10 @@ class TestIncidenceRateZeroPersonYears(unittest.TestCase):
 
         trial = FakeTrial(Pop([(True, 3), (False, 5)]), Pop([(False, 0), (False, 0)]))
         result = IncidenceRateAnalysis().analyze(
-            trial, {"eventAndTime": lambda p: p.get_followup_events_and_person_years([], 0)}, "incidenceRate")
+            trial,
+            {"eventAndTime": lambda p: p.get_followup_events_and_person_years([], 0)},
+            "incidenceRate",
+        )
         self.assertEqual(len(IncidenceRateAnalysis.columns), len(result))
         treatedRate, controlRate = result
         self.assertAlmostEqual(125.0, treatedRate)
@@ -221,7 +240,7 @@ class TestIncidenceRateZeroPersonYears(unittest.TestCase):
 
 
 class TestTrialDescriptionDefaults(unittest.TestCase):
-    '''Mutable-default fixes and single-block-factor validation.'''
+    """Mutable-default fixes and single-block-factor validation."""
 
     def test_fresh_treatment_strategy_repository_per_description(self):
         d1 = NhanesTrialDescription()
@@ -232,20 +251,26 @@ class TestTrialDescriptionDefaults(unittest.TestCase):
         d1 = NhanesTrialDescription()
         self.assertEqual([], d1.blockFactors)
         source = ["gender"]
-        d2 = NhanesTrialDescription(trialType=TrialType.COMPLETELY_RANDOMIZED_IN_BLOCKS, blockFactors=source)
+        d2 = NhanesTrialDescription(
+            trialType=TrialType.COMPLETELY_RANDOMIZED_IN_BLOCKS, blockFactors=source
+        )
         source.append("raceEthnicity")
         self.assertEqual(["gender"], d2.blockFactors)
-        d3 = NhanesTrialDescription(trialType=TrialType.COMPLETELY_RANDOMIZED_IN_BLOCKS, blockFactors=("gender",))
+        d3 = NhanesTrialDescription(
+            trialType=TrialType.COMPLETELY_RANDOMIZED_IN_BLOCKS, blockFactors=("gender",)
+        )
         self.assertEqual(["gender"], d3.blockFactors)
 
     def test_more_than_one_block_factor_raises(self):
         with self.assertRaises(RuntimeError):
-            NhanesTrialDescription(trialType=TrialType.COMPLETELY_RANDOMIZED_IN_BLOCKS,
-                                   blockFactors=["gender", "raceEthnicity"])
+            NhanesTrialDescription(
+                trialType=TrialType.COMPLETELY_RANDOMIZED_IN_BLOCKS,
+                blockFactors=["gender", "raceEthnicity"],
+            )
 
 
 class TestTrialOutcomeAssessorValidation(unittest.TestCase):
-    '''Key-set validation and raise-instead-of-print behavior.'''
+    """Key-set validation and raise-instead-of-print behavior."""
 
     def test_unknown_analysis_raises(self):
         with self.assertRaises(RuntimeError):
@@ -262,9 +287,11 @@ class TestTrialOutcomeAssessorValidation(unittest.TestCase):
         toa.add_outcome_assessment("ok1", {"outcome": lambda x: x}, "logistic")
         toa.add_outcome_assessment("ok2", {"outcome": lambda x: x, "time": lambda x: x}, "cox")
         toa.add_outcome_assessment("ok3", {"eventAndTime": lambda x: x}, "incidenceRate")
-        for name, functionDict, analysis in [("bad1", {"wrongKey": lambda x: x}, "logistic"),
-                                             ("bad2", {"outcome": lambda x: x, "tme": lambda x: x}, "cox"),
-                                             ("bad3", {"outcome": lambda x: x, "time": lambda x: x}, "incidenceRate")]:
+        for name, functionDict, analysis in [
+            ("bad1", {"wrongKey": lambda x: x}, "logistic"),
+            ("bad2", {"outcome": lambda x: x, "tme": lambda x: x}, "cox"),
+            ("bad3", {"outcome": lambda x: x, "time": lambda x: x}, "incidenceRate"),
+        ]:
             with self.assertRaises(RuntimeError):
                 toa.add_outcome_assessment(name, functionDict, analysis)
 
@@ -278,7 +305,7 @@ class TestTrialOutcomeAssessorValidation(unittest.TestCase):
 
 
 class TestTrialGuardsAndFormatting(unittest.TestCase):
-    '''analyze() guards and __str__ result formatting, without building populations.'''
+    """analyze() guards and __str__ result formatting, without building populations."""
 
     def make_bare_trial(self):
         trial = Trial.__new__(Trial)
@@ -315,9 +342,12 @@ class TestTrialGuardsAndFormatting(unittest.TestCase):
         trial = self.make_bare_trial()
         trial.completed = True
         trial.analyzed = True
-        trial.results = {AnalysisType.LINEAR.value:
-                         {"demo": (1.23456, None, float('inf'), float('-inf'), float('nan'))}}
-        line = [l for l in str(trial).splitlines() if "demo" in l][0]
+        trial.results = {
+            AnalysisType.LINEAR.value: {
+                "demo": (1.23456, None, float("inf"), float("-inf"), float("nan"))
+            }
+        }
+        line = [s for s in str(trial).splitlines() if "demo" in s][0]
         self.assertIn("1.235", line)
         self.assertIn("inf", line)
         self.assertIn("-inf", line)
@@ -332,19 +362,40 @@ class TestTrialGuardsAndFormatting(unittest.TestCase):
         trial = self.make_bare_trial()
         trial.completed = True
         trial.analyzed = True
-        trial.results = {AnalysisType.INCIDENCE_RATE.value: {"strokeIR": (5.0, 7.0)},
-                         AnalysisType.COX.value: {"deathCox": (0.1, 0.2, 0.3, None)},
-                         AnalysisType.LINEAR.value: {"demo": (1.23456, float('nan'), float('inf'), float('-inf'))}}
+        trial.results = {
+            AnalysisType.INCIDENCE_RATE.value: {"strokeIR": (5.0, 7.0)},
+            AnalysisType.COX.value: {"deathCox": (0.1, 0.2, 0.3, None)},
+            AnalysisType.LINEAR.value: {
+                "demo": (1.23456, float("nan"), float("inf"), float("-inf"))
+            },
+        }
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "r.csv")
             trial.export_results(path)
             lines = open(path).read().splitlines()
-        #description once at the top, then one block per analysis type in enum order (not dict order)
-        self.assertEqual(["popType,nhanes", "sampleSize,10", "duration,2", "treatmentStrategies,",
-                          "", "analysis,linear", "assessment,coef,se,pValue,intercept", "demo,1.235,nan,inf,-inf",
-                          "", "analysis,cox", "assessment,coef,se,pValue,intercept", "deathCox,0.100,0.200,0.300,",
-                          "", "analysis,incidenceRate", "assessment,treatedRatePer1000PY,controlRatePer1000PY",
-                          "strokeIR,5.000,7.000"], lines)
+        # description once at the top, then one block per analysis type in enum order (not dict
+        # order)
+        self.assertEqual(
+            [
+                "popType,nhanes",
+                "sampleSize,10",
+                "duration,2",
+                "treatmentStrategies,",
+                "",
+                "analysis,linear",
+                "assessment,coef,se,pValue,intercept",
+                "demo,1.235,nan,inf,-inf",
+                "",
+                "analysis,cox",
+                "assessment,coef,se,pValue,intercept",
+                "deathCox,0.100,0.200,0.300,",
+                "",
+                "analysis,incidenceRate",
+                "assessment,treatedRatePer1000PY,controlRatePer1000PY",
+                "strokeIR,5.000,7.000",
+            ],
+            lines,
+        )
 
     def test_results_dfs_rejects_wrong_tuple_length(self):
         trial = self.make_bare_trial()
@@ -367,23 +418,33 @@ class TestTrialGuardsAndFormatting(unittest.TestCase):
 
 
 class TestTrialRunIsolationAndRandomization(unittest.TestCase):
-    '''run() mutates only the trial's own strategy copy; randomization draws from the description rng.'''
+    """run() mutates only the trial's own strategy copy; randomization draws from the description
+    rng."""
 
     @classmethod
     def setUpClass(cls):
-        cls.description = NhanesTrialDescription(sampleSize=20, duration=2, treatmentStrategies="1bpMedsAdded")
+        cls.description = NhanesTrialDescription(
+            sampleSize=20, duration=2, treatmentStrategies="1bpMedsAdded"
+        )
         cls.trial = Trial(cls.description)
         cls.trial.run(notify=False)
 
     def test_description_strategies_not_mutated_by_run(self):
         bp = TreatmentStrategiesType.BP.value
-        self.assertEqual(TreatmentStrategyStatus.BEGIN, self.description.treatmentStrategies._repository[bp].status)
-        self.assertEqual(TreatmentStrategyStatus.MAINTAIN, self.trial.treatmentStrategies._repository[bp].status)
+        self.assertEqual(
+            TreatmentStrategyStatus.BEGIN,
+            self.description.treatmentStrategies._repository[bp].status,
+        )
+        self.assertEqual(
+            TreatmentStrategyStatus.MAINTAIN, self.trial.treatmentStrategies._repository[bp].status
+        )
 
     def test_second_trial_from_same_description_starts_at_begin(self):
         bp = TreatmentStrategiesType.BP.value
         secondTrial = Trial(self.description)
-        self.assertEqual(TreatmentStrategyStatus.BEGIN, secondTrial.treatmentStrategies._repository[bp].status)
+        self.assertEqual(
+            TreatmentStrategyStatus.BEGIN, secondTrial.treatmentStrategies._repository[bp].status
+        )
 
     def test_complete_randomization_uses_description_rng(self):
         people = pd.concat([self.trial.treatedPop._people, self.trial.controlPop._people])
@@ -393,7 +454,9 @@ class TestTrialRunIsolationAndRandomization(unittest.TestCase):
             treated, control = self.trial.randomize_trial_people(people)
             self.assertEqual(len(people) // 2, len(treated))
             splits.append(set(map(lambda p: p._index, treated)))
-        self.assertEqual(splits[0], splits[1]) #same seed, same assignment: the description rng drives the split
+        self.assertEqual(
+            splits[0], splits[1]
+        )  # same seed, same assignment: the description rng drives the split
 
 
 if __name__ == "__main__":

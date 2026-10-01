@@ -4,8 +4,10 @@ from microsim.risk_factors.race_ethnicity import RaceEthnicity
 from microsim.risk_factors.gender import NHANESGender
 from microsim.risk_factors.smoking_status import SmokingStatus
 
+
 class SBIModel:
     """Silent brain infarct."""
+
     def __init__(self):
         pass
 
@@ -28,23 +30,28 @@ class SBIModel:
         hdl,
         ldl,
         trig,
-        creatinine):
-        
-        xb = -8.2055 -0.2554 #original SBI model intercept plus the change found from recalibration
+        creatinine,
+    ):
 
-        if gender==NHANESGender.MALE:
+        xb = (
+            -8.2055 - 0.2554
+        )  # original SBI model intercept plus the change found from recalibration
+
+        if gender == NHANESGender.MALE:
             xb += 0.0677
 
-        if raceEthnicity==RaceEthnicity.OTHER:
+        if raceEthnicity == RaceEthnicity.OTHER:
             xb += -0.00734
-        elif raceEthnicity==RaceEthnicity.NON_HISPANIC_BLACK:
+        elif raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
             xb += 0.1707
-        elif (raceEthnicity==RaceEthnicity.MEXICAN_AMERICAN) | (raceEthnicity==RaceEthnicity.OTHER_HISPANIC):
+        elif (raceEthnicity == RaceEthnicity.MEXICAN_AMERICAN) | (
+            raceEthnicity == RaceEthnicity.OTHER_HISPANIC
+        ):
             xb += -0.1234
-        elif raceEthnicity==RaceEthnicity.ASIAN:
+        elif raceEthnicity == RaceEthnicity.ASIAN:
             xb += -0.0707
 
-        if (smokingStatus!=SmokingStatus.NEVER):
+        if smokingStatus != SmokingStatus.NEVER:
             xb += 0.0501
 
         if statin:
@@ -55,34 +62,33 @@ class SBIModel:
 
         if pvd:
             xb += 0.0843
-  
+
         xb += age * 0.0559
         xb += sbp * 0.00308
         xb += dbp * 0.0126
         xb += bmi * (-0.0184)
 
         if anyPhysicalActivity:
-            xb += (-0.0823)
+            xb += -0.0823
 
-        xb += antiHypertensiveCount*0.1337
+        xb += antiHypertensiveCount * 0.1337
 
+        xb += a1c * 0.0712
+        xb += totChol * 0.00231
+        xb += hdl * (-0.00434)
+        xb += ldl * (-0.00118)
+        xb += trig * (-0.00011)
+        xb += creatinine * 0.0917
 
-        xb += a1c*0.0712
-        xb += totChol*0.00231
-        xb += hdl*(-0.00434)
-        xb += ldl*(-0.00118)
-        xb += trig*(-0.00011)
-        xb += creatinine*0.0917     
-            
         return xb
 
     def inverse_logit(self, lp):
-        if lp<-10:
-            risk = 0.
-        elif lp>10.:
-            risk = 1.
+        if lp < -10:
+            risk = 0.0
+        elif lp > 10.0:
+            risk = 1.0
         else:
-            risk = 1/(1+np.exp(-lp))
+            risk = 1 / (1 + np.exp(-lp))
         return risk
 
     def estimate_next_risk(self, person):
@@ -104,12 +110,7 @@ class SBIModel:
             person._hdl[-1],
             person._ldl[-1],
             person._trig[-1],
-            person._creatinine[-1])
+            person._creatinine[-1],
+        )
 
-        return True if person._rng.uniform()<self.inverse_logit(lp) else False
-
-
-
-
-
-
+        return True if person._rng.uniform() < self.inverse_logit(lp) else False

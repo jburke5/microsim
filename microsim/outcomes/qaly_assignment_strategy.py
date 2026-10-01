@@ -3,10 +3,13 @@ import numpy as np
 from microsim.outcomes.qaly_outcome import QALYOutcome
 from microsim.outcomes.outcome import OutcomeType
 
+
 class QALYAssignmentStrategy:
     def __init__(self):
-        # the first element in the list is the QALY for the first year after the event, the next qaly for the next year...
-        # if the patient is more than the length of hte list out from the last index, the last index is repeated
+        # the first element in the list is the QALY for the first year after the event, the next
+        # qaly for the next year...
+        # if the patient is more than the length of hte list out from the last index, the last
+        # index is repeated
         self._qalysForOutcome = {}
         self._qalysForOutcome[OutcomeType.STROKE] = [0.67, 0.90]
         self._qalysForOutcome[OutcomeType.MI] = [0.88, 0.90]
@@ -22,20 +25,18 @@ class QALYAssignmentStrategy:
         return self.generate_next_outcome(person)
 
     def get_next_qaly(self, person, rng=None, age=-1):
-        if age==-1:
-            age=person._age[-1]
-        
+        if age == -1:
+            age = person._age[-1]
+
         # qaly assignment happens prior to advancing an age, but after condtiions are set...
-        wave = person.get_wave_for_age(age) 
+        wave = person.get_wave_for_age(age)
         conditions = self.get_conditions_for_person(person, wave)
         return self.get_qalys_for_age_and_conditions(age, conditions, person.is_dead)
 
     def get_qalys_for_age_and_conditions(self, age, conditions, dead, x=None):
         base = self.get_base_qaly_for_age(age)
         return (
-            0
-            if dead
-            else base * np.prod(self.get_multipliers_for_conditions(conditions, age, x))
+            0 if dead else base * np.prod(self.get_multipliers_for_conditions(conditions, age, x))
         )
 
     def get_conditions_for_person(self, person, wave):
@@ -48,31 +49,41 @@ class QALYAssignmentStrategy:
                 person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.STROKE),
                 person.get_age_at_first_outcome(OutcomeType.STROKE),
             ),
-            OutcomeType.MI: (person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.MI), person.get_age_at_first_outcome(OutcomeType.MI)),
+            OutcomeType.MI: (
+                person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.MI),
+                person.get_age_at_first_outcome(OutcomeType.MI),
+            ),
         }
 
     # simple age-based approximation that after age 70, you lose about 0.01 QALYs per year
-    # from: Netuveli, G. (2006). Quality of life at older ages: evidence from the English longitudinal study of aging (wave 1).
+    # from: Netuveli, G. (2006). Quality of life at older ages: evidence from the English
+    # longitudinal study of aging (wave 1).
     # Journal of Epidemiology and Community Health, 60(4), 357–363. http://doi.org/10.1136/jech.2005.040071
-    #  i think we can get away with something htat sets QALYS at 1 < 70 and then applies a baseline reduction of
+    # i think we can get away with something htat sets QALYS at 1 < 70 and then applies a baseline
+    # reduction of
     # something like 10% per decade
 
     def get_base_qaly_for_age(self, age):
         yearsOver70 = age - 70 if age > 70 else 0
         return 1 - yearsOver70 * 0.01
 
-    # for  dementia... Jönsson, L., Andreasen, N., Kilander, L., Soininen, H., Waldemar, G., Nygaard, H., et al. (2006).
-    # Patient- and proxy-reported utility in Alzheimer disease using the EuroQoL. Alzheimer Disease and Associated Disorders,
+    # for  dementia... Jönsson, L., Andreasen, N., Kilander, L., Soininen, H., Waldemar, G.,
+    # Nygaard, H., et al. (2006). Patient- and proxy-reported utility in Alzheimer disease using
+    # the EuroQoL. Alzheimer Disease and Associated Disorders,
     # 20(1), 49–55. http://doi.org/10.1097/01.wad.0000201851.52707.c9
-    # it has utilizites at bsaeline and with dementia follow-up...seems like a simple thing  to use...
+    # it has utilizites at bsaeline and with dementia follow-up...seems like a simple thing  to
+    # use...
 
-    # for stroke/MI...Sussman, J., Vijan, S., & Hayward, R. (2013). Using benefit-based tailored treatment to improve the use of
+    # for stroke/MI...Sussman, J., Vijan, S., & Hayward, R. (2013). Using benefit-based tailored
+    # treatment to improve the use of
     # antihypertensive medications. Circulation, 128(21), 2309–2317. http://doi.org/10.1161/CIRCULATIONAHA.113.002290
-    # same idea, has utilities at bsaeline and in sugsequent years...so, it shoudl be relatifely easy to use.
+    # same idea, has utilities at bsaeline and in sugsequent years...so, it shoudl be relatifely
+    # easy to use.
 
     def get_multipliers_for_conditions(self, conditions, age, x=None):
         multipliers = []
-        # each element is a tuple where the first element is age and the second element is the outcome
+        # each element is a tuple where the first element is age and the second element is the
+        # outcome
         for outcomeType, outcomeTuple in conditions.items():
             hasOutcome = outcomeTuple[0]
             ageAtEvent = outcomeTuple[1]
@@ -84,15 +95,21 @@ class QALYAssignmentStrategy:
             if qalyListForOutcome is not None and hasOutcome:
                 if np.isnan(age) or np.isnan(ageAtEvent):
                     print(
-                        f"ABOUT TO BREAK...current age: {age}, age at event: {ageAtEvent}, outcomeTYpe: {outcomeType}, outcomeTuple: {outcomeTuple}"
+                        f"ABOUT TO BREAK...current age: {age}, age at event: {ageAtEvent}, "
+                        f"outcomeTYpe: {outcomeType}, outcomeTuple: {outcomeTuple}"
                     )
                 yearsFromEvent = int(age - ageAtEvent)
-                # print(f"current age: {currentAge}, age at event: {ageAtEvent}, outcome type: {outcomeType}, conditions: {conditions}, x: {x}")
+                # print(
+                #     f"current age: {currentAge}, age at event: {ageAtEvent}, "
+                #     f"outcome type: {outcomeType}, conditions: {conditions}, x: {x}"
+                # )
                 if yearsFromEvent >= len(qalyListForOutcome) and len(qalyListForOutcome) < 1:
                     raise RuntimeError(f"error 1: qalyListForOutcome: {qalyListForOutcome}")
                 elif yearsFromEvent < len(qalyListForOutcome) and yearsFromEvent < 0:
                     raise RuntimeError(
-                        f"error 2 qalyListForOutcome: {qalyListForOutcome} years from event: {yearsFromEvent} currentAge : {age}, age at event: {ageAtEvent}"
+                        f"error 2 qalyListForOutcome: {qalyListForOutcome} "
+                        f"years from event: {yearsFromEvent} currentAge : {age}, "
+                        f"age at event: {ageAtEvent}"
                     )
                 qalys = (
                     qalyListForOutcome[-1]
@@ -102,4 +119,3 @@ class QALYAssignmentStrategy:
                 multipliers.append(qalys)
 
         return multipliers
-

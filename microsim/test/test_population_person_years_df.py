@@ -1,6 +1,5 @@
 import unittest
 import pandas as pd
-import numpy as np
 
 from microsim.outcomes.outcome import OutcomeType, Outcome, EventOutcomeType
 from microsim.population.population import Population
@@ -69,9 +68,7 @@ class TestGetOutcomeFlagsPerWave(unittest.TestCase):
         person._outcomes[OutcomeType.STROKE].append(
             (person._age[1], Outcome(OutcomeType.STROKE, False))
         )
-        person._outcomes[OutcomeType.MI].append(
-            (person._age[2], Outcome(OutcomeType.MI, False))
-        )
+        person._outcomes[OutcomeType.MI].append((person._age[2], Outcome(OutcomeType.MI, False)))
         flags = Population.get_outcome_flags_per_wave(person)
         self.assertEqual(flags[OutcomeType.STROKE][1], 1)
         self.assertEqual(flags[OutcomeType.STROKE][2], 0)
@@ -99,7 +96,8 @@ class TestGetOutcomeFlagsPerWave(unittest.TestCase):
         self.assertEqual(flags[OutcomeType.STROKE][2], 1)
 
     def test_outcome_type_not_in_person_outcomes(self):
-        """If a person's _outcomes dict doesn't have a key for an EventOutcomeType, it should be all zeros."""
+        """If a person's _outcomes dict doesn't have a key for an EventOutcomeType, it should be
+        all zeros."""
         person = self._pop._people.iloc[0]
         if OutcomeType.STROKE in person._outcomes:
             del person._outcomes[OutcomeType.STROKE]
@@ -164,9 +162,7 @@ class TestGetOutcomeHistoryPerWave(unittest.TestCase):
         person._outcomes[OutcomeType.STROKE].append(
             (person._age[1], Outcome(OutcomeType.STROKE, False))
         )
-        person._outcomes[OutcomeType.MI].append(
-            (person._age[3], Outcome(OutcomeType.MI, False))
-        )
+        person._outcomes[OutcomeType.MI].append((person._age[3], Outcome(OutcomeType.MI, False)))
         history = Population.get_outcome_history_per_wave(person)
         # stroke at wave 1: history is 0 at waves 0-1, 1 from wave 2 onward
         self.assertEqual(history[OutcomeType.STROKE][0], 0)

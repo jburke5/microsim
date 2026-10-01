@@ -7,7 +7,9 @@ from microsim.population.population import Population
 from microsim.outcomes.cognition_model import GCPModel
 
 
-def init_vectorized_population_dataframe(person_list: List[Person], *, with_base_gcp=False, rng=None):
+def init_vectorized_population_dataframe(
+    person_list: List[Person], *, with_base_gcp=False, rng=None
+):
     if with_base_gcp:
         gcp_model = GCPModel()
         for p in person_list:

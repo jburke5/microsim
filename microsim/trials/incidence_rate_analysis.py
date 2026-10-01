@@ -4,6 +4,7 @@ class IncidenceRateAnalysis:
     This analysis computes incidence rates for both treated and control trial arms,
     enabling comparison of event rates adjusted for time at risk.
     """
+
     columns = ("treatedRatePer1000PY", "controlRatePer1000PY")
 
     def __init__(self):
@@ -29,6 +30,7 @@ class IncidenceRateAnalysis:
             pairs = eventAndTimeFunc(pop)
             events = sum(int(event) for event, _ in pairs)
             totalPY = sum(personYears for _, personYears in pairs)
-            #nan when an arm has no person-years, so it cannot be mistaken for an observed zero rate
-            rates.append(1000.0 * events / totalPY if totalPY > 0 else float('nan'))
+            # nan when an arm has no person-years, so it cannot be mistaken for an observed zero
+            # rate
+            rates.append(1000.0 * events / totalPY if totalPY > 0 else float("nan"))
         return tuple(rates)

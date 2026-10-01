@@ -68,11 +68,11 @@ This means every priorToSim entry carries `age=None` as a deliberate fail-loud s
 
 ```python
 person.advance(
-    years,                      # int: number of annual waves to advance
+    years,  # int: number of annual waves to advance
     dynamicRiskFactorRepository,
     defaultTreatmentRepository,
     outcomeModelRepository,
-    treatmentStrategies=None    # TreatmentStrategyRepository or None
+    treatmentStrategies=None,  # TreatmentStrategyRepository or None
 )
 ```
 

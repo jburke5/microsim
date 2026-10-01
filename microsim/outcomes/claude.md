@@ -21,20 +21,20 @@ Outcomes integrate with the Person class through:
 From `outcomes/outcome.py`:
 ```python
 class OutcomeType(Enum):
-    WMH = "wmh"                                    # White matter hyperintensities (first)
-    COGNITION = "cognition"                        # Cognitive function
-    CI = "ci"                                      # Cognitive impairment
-    MCI = "mci"                                    # Mild cognitive impairment
-    DIABETES = "diabetes"                          # Diabetes
-    CHRONIC_KIDNEY_DISEASE = "chronicKidneyDisease" # Chronic kidney disease
-    CARDIOVASCULAR = "cv"                          # General CV event
-    STROKE = "stroke"                              # Stroke (partitioned from CV)
-    MI = "mi"                                      # Myocardial infarction (partitioned from CV)
-    NONCARDIOVASCULAR = "noncv"                    # Non-CV outcomes
-    DEMENTIA = "dementia"                          # Dementia (after cognition)
-    EPILEPSY = "epilepsy"                          # Epilepsy
-    DEATH = "death"                                # Death (near end)
-    QUALITYADJUSTED_LIFE_YEARS = "qalys"           # QALYs (last)
+    WMH = "wmh"  # White matter hyperintensities (first)
+    COGNITION = "cognition"  # Cognitive function
+    CI = "ci"  # Cognitive impairment
+    MCI = "mci"  # Mild cognitive impairment
+    DIABETES = "diabetes"  # Diabetes
+    CHRONIC_KIDNEY_DISEASE = "chronicKidneyDisease"  # Chronic kidney disease
+    CARDIOVASCULAR = "cv"  # General CV event
+    STROKE = "stroke"  # Stroke (partitioned from CV)
+    MI = "mi"  # Myocardial infarction (partitioned from CV)
+    NONCARDIOVASCULAR = "noncv"  # Non-CV outcomes
+    DEMENTIA = "dementia"  # Dementia (after cognition)
+    EPILEPSY = "epilepsy"  # Epilepsy
+    DEATH = "death"  # Death (near end)
+    QUALITYADJUSTED_LIFE_YEARS = "qalys"  # QALYs (last)
 ```
 
 `outcome.py` also defines `EventOutcomeType` (same members as `OutcomeType` minus `COGNITION`), used when only discrete events need to be tracked.
@@ -188,8 +188,8 @@ Any outcome flagged `priorToSim=True` is stored with `age=None` instead of a rea
 
 ```python
 person._outcomes[OutcomeType.STROKE] = [
-    (None, StrokeOutcome(..., priorToSim=True)),   # priorToSim entry — age slot is None
-    (65, StrokeOutcome(..., priorToSim=False)),    # in-sim entry — real age
+    (None, StrokeOutcome(..., priorToSim=True)),  # priorToSim entry — age slot is None
+    (65, StrokeOutcome(..., priorToSim=False)),  # in-sim entry — real age
 ]
 ```
 
@@ -226,6 +226,7 @@ From `outcome.py` lines 3-13, the complete workflow is:
    # outcomes/new_outcome_outcome.py
    from microsim.outcomes.outcome import Outcome, OutcomeType
 
+
    class NewOutcome(Outcome):
        def __init__(self, fatal, specific_phenotype_field):
            super().__init__(OutcomeType.NEW_OUTCOME, fatal)
@@ -236,6 +237,7 @@ From `outcome.py` lines 3-13, the complete workflow is:
    ```python
    from microsim.regression_models.linear_risk_factor_model import LinearRiskFactorModel
    from microsim.common.data_loader import load_model_spec
+
 
    class NewOutcomeModel(LinearRiskFactorModel):
        def __init__(self):
@@ -258,6 +260,7 @@ From `outcome.py` lines 3-13, the complete workflow is:
 4. **Create ModelRepository** in `outcomes/new_outcome_model_repository.py`:
    ```python
    from microsim.outcomes.new_outcome_model import NewOutcomeModel
+
 
    class NewOutcomeModelRepository:
        def __init__(self):
@@ -320,8 +323,9 @@ if person.has_outcome_at_current_age(OutcomeType.MI):
 **Population-level aggregation:**
 ```python
 # Count outcomes across population
-stroke_count = sum(1 for p in population._people
-                   if p.has_outcome_during_simulation(OutcomeType.STROKE))
+stroke_count = sum(
+    1 for p in population._people if p.has_outcome_during_simulation(OutcomeType.STROKE)
+)
 
 # Get outcome incidence by year
 outcomes_by_wave = population.get_outcome_incidence_by_wave(OutcomeType.STROKE)
@@ -343,6 +347,7 @@ Test files for outcomes follow standard unittest conventions:
 import unittest
 from microsim.person import Person
 from microsim.outcomes.outcome import OutcomeType
+
 
 class TestStrokeModel(unittest.TestCase):
     def setUp(self):

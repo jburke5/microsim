@@ -1,4 +1,3 @@
-import numpy as np
 from microsim.regression_models.linear_risk_factor_model import LinearRiskFactorModel
 
 

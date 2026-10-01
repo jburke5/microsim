@@ -14,9 +14,9 @@ class TreatmentStrategyRepository:
 
     @classmethod
     def from_string(cls, name):
-        '''Build a repository from a shorthand name for a common BP strategy.
+        """Build a repository from a shorthand name for a common BP strategy.
         Recognized names: "1bpMedsAdded".."4bpMedsAdded", "toGoal120", "sprint",
-        "noTreatment" (empty repository).'''
+        "noTreatment" (empty repository)."""
         repo = cls()
         if name == "1bpMedsAdded":
             repo._repository[TreatmentStrategiesType.BP.value] = AddNBPMedsTreatmentStrategy(1)

@@ -1,7 +1,5 @@
 import unittest
-import numpy as np
 import pandas as pd
-from microsim.person.person import Person
 from microsim.risk_factors.education import Education
 from microsim.risk_factors.gender import NHANESGender
 from microsim.risk_factors.smoking_status import SmokingStatus
@@ -9,108 +7,136 @@ from microsim.risk_factors.alcohol_category import AlcoholCategory
 from microsim.risk_factors.race_ethnicity import RaceEthnicity
 from microsim.risk_factors.a1c import convert_fasting_glucose_to_a1c
 from microsim.risk_factors.risk_factor import StaticRiskFactorsType, DynamicRiskFactorsType
-from microsim.population.population_factory import PopulationFactory
 from microsim.person.person_factory import PersonFactory
 from microsim.risk_factors.initialization_model_repository import InitializationModelRepository
 from microsim.default_treatments.default_treatments import DefaultTreatmentsType
 
+
 class TestCKDEquation(unittest.TestCase):
     def setUp(self):
 
-        self.x_black_female_high_cr = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 52,
-                               StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
-                               DynamicRiskFactorsType.SBP.value: 120,
-                               DynamicRiskFactorsType.DBP.value: 80,
-                               DynamicRiskFactorsType.A1C.value: convert_fasting_glucose_to_a1c(100),
-                               DynamicRiskFactorsType.HDL.value: 50,
-                               DynamicRiskFactorsType.TOT_CHOL.value: 150,
-                               DynamicRiskFactorsType.BMI.value: 26.6,
-                               DynamicRiskFactorsType.LDL.value: 90,
-                               DynamicRiskFactorsType.TRIG.value: 150,
-                               DynamicRiskFactorsType.WAIST.value: 94,
-                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: True,
-                               StaticRiskFactorsType.EDUCATION.value: Education.HIGHSCHOOLGRADUATE.value,
-                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
-                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.ONETOSIX.value,
-                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
-                               DefaultTreatmentsType.STATIN.value: 0,
-                               DynamicRiskFactorsType.CREATININE.value: 0.8,
-                               "name": "black_female_high_cr"}, index=[0])
+        self.x_black_female_high_cr = pd.DataFrame(
+            {
+                DynamicRiskFactorsType.AGE.value: 52,
+                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
+                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_BLACK.value,
+                DynamicRiskFactorsType.SBP.value: 120,
+                DynamicRiskFactorsType.DBP.value: 80,
+                DynamicRiskFactorsType.A1C.value: convert_fasting_glucose_to_a1c(100),
+                DynamicRiskFactorsType.HDL.value: 50,
+                DynamicRiskFactorsType.TOT_CHOL.value: 150,
+                DynamicRiskFactorsType.BMI.value: 26.6,
+                DynamicRiskFactorsType.LDL.value: 90,
+                DynamicRiskFactorsType.TRIG.value: 150,
+                DynamicRiskFactorsType.WAIST.value: 94,
+                DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: True,
+                StaticRiskFactorsType.EDUCATION.value: Education.HIGHSCHOOLGRADUATE.value,
+                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.ONETOSIX.value,
+                DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
+                DefaultTreatmentsType.STATIN.value: 0,
+                DynamicRiskFactorsType.CREATININE.value: 0.8,
+                "name": "black_female_high_cr",
+            },
+            index=[0],
+        )
 
-        self._black_female_high_cr = PersonFactory.get_nhanes_person(self.x_black_female_high_cr.iloc[0], InitializationModelRepository())
+        self._black_female_high_cr = PersonFactory.get_nhanes_person(
+            self.x_black_female_high_cr.iloc[0], InitializationModelRepository()
+        )
         self._black_female_high_cr._afib = [False]
 
-        self.x_black_female_low_cr = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 52,
-                               StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_BLACK.value,
-                               DynamicRiskFactorsType.SBP.value: 120,
-                               DynamicRiskFactorsType.DBP.value: 80,
-                               DynamicRiskFactorsType.A1C.value: convert_fasting_glucose_to_a1c(100),
-                               DynamicRiskFactorsType.HDL.value: 50,
-                               DynamicRiskFactorsType.TOT_CHOL.value: 150,
-                               DynamicRiskFactorsType.BMI.value: 26.6,
-                               DynamicRiskFactorsType.LDL.value: 90,
-                               DynamicRiskFactorsType.TRIG.value: 150,
-                               DynamicRiskFactorsType.WAIST.value: 94,
-                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: True,
-                               StaticRiskFactorsType.EDUCATION.value: Education.HIGHSCHOOLGRADUATE.value,
-                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
-                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.ONETOSIX.value,
-                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
-                               DefaultTreatmentsType.STATIN.value: 0,
-                               DynamicRiskFactorsType.CREATININE.value: 0.4,
-                               "name": "black_female_low_cr"}, index=[0])
+        self.x_black_female_low_cr = pd.DataFrame(
+            {
+                DynamicRiskFactorsType.AGE.value: 52,
+                StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,
+                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_BLACK.value,
+                DynamicRiskFactorsType.SBP.value: 120,
+                DynamicRiskFactorsType.DBP.value: 80,
+                DynamicRiskFactorsType.A1C.value: convert_fasting_glucose_to_a1c(100),
+                DynamicRiskFactorsType.HDL.value: 50,
+                DynamicRiskFactorsType.TOT_CHOL.value: 150,
+                DynamicRiskFactorsType.BMI.value: 26.6,
+                DynamicRiskFactorsType.LDL.value: 90,
+                DynamicRiskFactorsType.TRIG.value: 150,
+                DynamicRiskFactorsType.WAIST.value: 94,
+                DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: True,
+                StaticRiskFactorsType.EDUCATION.value: Education.HIGHSCHOOLGRADUATE.value,
+                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.ONETOSIX.value,
+                DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
+                DefaultTreatmentsType.STATIN.value: 0,
+                DynamicRiskFactorsType.CREATININE.value: 0.4,
+                "name": "black_female_low_cr",
+            },
+            index=[0],
+        )
 
-        self._black_female_low_cr = PersonFactory.get_nhanes_person(self.x_black_female_low_cr.iloc[0], InitializationModelRepository())
+        self._black_female_low_cr = PersonFactory.get_nhanes_person(
+            self.x_black_female_low_cr.iloc[0], InitializationModelRepository()
+        )
         self._black_female_low_cr._afib = [False]
 
-        self.x_white_male_high_cr = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 52,
-                               StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
-                               DynamicRiskFactorsType.SBP.value: 120,
-                               DynamicRiskFactorsType.DBP.value: 80,
-                               DynamicRiskFactorsType.A1C.value: convert_fasting_glucose_to_a1c(100),
-                               DynamicRiskFactorsType.HDL.value: 50,
-                               DynamicRiskFactorsType.TOT_CHOL.value: 150,
-                               DynamicRiskFactorsType.BMI.value: 26.6,
-                               DynamicRiskFactorsType.LDL.value: 90,
-                               DynamicRiskFactorsType.TRIG.value: 150,
-                               DynamicRiskFactorsType.WAIST.value: 94,
-                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: True,
-                               StaticRiskFactorsType.EDUCATION.value: Education.HIGHSCHOOLGRADUATE.value,
-                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
-                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.ONETOSIX.value,
-                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
-                               DefaultTreatmentsType.STATIN.value: 0,
-                               DynamicRiskFactorsType.CREATININE.value: 1.2,
-                               "name": "white_male_high_cr"}, index=[0])
+        self.x_white_male_high_cr = pd.DataFrame(
+            {
+                DynamicRiskFactorsType.AGE.value: 52,
+                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
+                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,
+                DynamicRiskFactorsType.SBP.value: 120,
+                DynamicRiskFactorsType.DBP.value: 80,
+                DynamicRiskFactorsType.A1C.value: convert_fasting_glucose_to_a1c(100),
+                DynamicRiskFactorsType.HDL.value: 50,
+                DynamicRiskFactorsType.TOT_CHOL.value: 150,
+                DynamicRiskFactorsType.BMI.value: 26.6,
+                DynamicRiskFactorsType.LDL.value: 90,
+                DynamicRiskFactorsType.TRIG.value: 150,
+                DynamicRiskFactorsType.WAIST.value: 94,
+                DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: True,
+                StaticRiskFactorsType.EDUCATION.value: Education.HIGHSCHOOLGRADUATE.value,
+                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.ONETOSIX.value,
+                DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
+                DefaultTreatmentsType.STATIN.value: 0,
+                DynamicRiskFactorsType.CREATININE.value: 1.2,
+                "name": "white_male_high_cr",
+            },
+            index=[0],
+        )
 
-        self._white_male_high_cr = PersonFactory.get_nhanes_person(self.x_white_male_high_cr.iloc[0], InitializationModelRepository())
+        self._white_male_high_cr = PersonFactory.get_nhanes_person(
+            self.x_white_male_high_cr.iloc[0], InitializationModelRepository()
+        )
         self._white_male_high_cr._afib = [False]
 
-        self.x_white_male_low_cr = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 52,
-                               StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
-                               DynamicRiskFactorsType.SBP.value: 120,
-                               DynamicRiskFactorsType.DBP.value: 80,
-                               DynamicRiskFactorsType.A1C.value: convert_fasting_glucose_to_a1c(100),
-                               DynamicRiskFactorsType.HDL.value: 50,
-                               DynamicRiskFactorsType.TOT_CHOL.value: 150,
-                               DynamicRiskFactorsType.BMI.value: 26.6,
-                               DynamicRiskFactorsType.LDL.value: 90,
-                               DynamicRiskFactorsType.TRIG.value: 150,
-                               DynamicRiskFactorsType.WAIST.value: 94,
-                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: True,
-                               StaticRiskFactorsType.EDUCATION.value: Education.HIGHSCHOOLGRADUATE.value,
-                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
-                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.ONETOSIX.value,
-                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
-                               DefaultTreatmentsType.STATIN.value: 0,
-                               DynamicRiskFactorsType.CREATININE.value: 0.1,
-                               "name": "white_male_low_cr"}, index=[0])
+        self.x_white_male_low_cr = pd.DataFrame(
+            {
+                DynamicRiskFactorsType.AGE.value: 52,
+                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
+                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,
+                DynamicRiskFactorsType.SBP.value: 120,
+                DynamicRiskFactorsType.DBP.value: 80,
+                DynamicRiskFactorsType.A1C.value: convert_fasting_glucose_to_a1c(100),
+                DynamicRiskFactorsType.HDL.value: 50,
+                DynamicRiskFactorsType.TOT_CHOL.value: 150,
+                DynamicRiskFactorsType.BMI.value: 26.6,
+                DynamicRiskFactorsType.LDL.value: 90,
+                DynamicRiskFactorsType.TRIG.value: 150,
+                DynamicRiskFactorsType.WAIST.value: 94,
+                DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: True,
+                StaticRiskFactorsType.EDUCATION.value: Education.HIGHSCHOOLGRADUATE.value,
+                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.ONETOSIX.value,
+                DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
+                DefaultTreatmentsType.STATIN.value: 0,
+                DynamicRiskFactorsType.CREATININE.value: 0.1,
+                "name": "white_male_low_cr",
+            },
+            index=[0],
+        )
 
-        self._white_male_low_cr = PersonFactory.get_nhanes_person(self.x_white_male_low_cr.iloc[0], InitializationModelRepository())
+        self._white_male_low_cr = PersonFactory.get_nhanes_person(
+            self.x_white_male_low_cr.iloc[0], InitializationModelRepository()
+        )
         self._white_male_low_cr._afib = [False]
 
     def testGFRs(self):

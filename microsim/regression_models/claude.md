@@ -33,10 +33,10 @@ Passive data container for standard regression models.
 
 ```python
 RegressionModel(
-    coefficients,                  # dict: {str: float}
-    coefficient_standard_errors,   # dict: {str: float}
-    residual_mean,                 # float
-    residual_standard_deviation,   # float
+    coefficients,  # dict: {str: float}
+    coefficient_standard_errors,  # dict: {str: float}
+    residual_mean,  # float
+    residual_standard_deviation,  # float
 )
 ```
 
@@ -119,7 +119,7 @@ Extends `LogisticRiskFactorModel` with a person-specific random intercept stored
 RandInterceptLogisticRiskFactorModel(
     regression_model,
     log_transform=False,
-    rand_intercept_name=None,   # key into person._randomEffects
+    rand_intercept_name=None,  # key into person._randomEffects
 )
 ```
 
@@ -189,8 +189,8 @@ Transforms are applied in order (outer prefix first, e.g. `"logMeanSbp"` → `Me
 
 ```python
 from microsim.regression_models.model_argument_transform import (
-    get_argument_transforms,    # single parameter name → (prop_name, [Transform])
-    get_all_argument_transforms,# Iterable[str] → {param_name: (prop_name, [Transform])}
+    get_argument_transforms,  # single parameter name → (prop_name, [Transform])
+    get_all_argument_transforms,  # Iterable[str] → {param_name: (prop_name, [Transform])}
 )
 ```
 

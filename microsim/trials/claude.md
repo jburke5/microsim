@@ -62,8 +62,7 @@ that returns a completed, analyzed `Trial`:
 ```python
 from microsim.trials.trial_factory import TrialFactory
 
-trial = TrialFactory.run_nhanes(sampleSize=1000, duration=5,
-                                treatmentStrategies="1bpMedsAdded")
+trial = TrialFactory.run_nhanes(sampleSize=1000, duration=5, treatmentStrategies="1bpMedsAdded")
 print(trial)  # formatted results table
 ```
 
@@ -96,6 +95,7 @@ TrialDescription — you do not create populations and pass them in.
    yields an empty repository (control-only style usage).
    ```python
    from microsim.treatment_strategies.treatment_strategy_repository import TreatmentStrategyRepository
+
    treatmentStrategies = TreatmentStrategyRepository.from_string("...")
    ```
 
@@ -123,6 +123,7 @@ TrialDescription — you do not create populations and pass them in.
    (`trial.treatedPop`, `trial.controlPop`) via `get_trial_populations()`.
    ```python
    from microsim.trials.trial import Trial
+
    trial = Trial(description)
    ```
 
@@ -141,6 +142,7 @@ TrialDescription — you do not create populations and pass them in.
    `AnalysisType.value` then by assessment name.
    ```python
    from microsim.trials.trial_outcome_assessor_factory import TrialOutcomeAssessorFactory
+
    assessor = TrialOutcomeAssessorFactory.get_trial_outcome_assessor(...)
    trial.analyze(assessor)
    ```

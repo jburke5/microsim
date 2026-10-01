@@ -1,46 +1,49 @@
-from microsim.person.person import Person
 from microsim.risk_factors.education import Education
 from microsim.risk_factors.alcohol_category import AlcoholCategory
 from microsim.test.test_risk_model_repository import TestRiskModelRepository
-from microsim.population.population_factory import PopulationFactory
 from microsim.default_treatments.default_treatments import DefaultTreatmentsType
 from microsim.person.person_factory import PersonFactory
 from microsim.risk_factors.initialization_model_repository import InitializationModelRepository
 from microsim.risk_factors.risk_factor import StaticRiskFactorsType, DynamicRiskFactorsType
-from microsim.risk_factors.education import Education
 from microsim.risk_factors.gender import NHANESGender
 from microsim.risk_factors.smoking_status import SmokingStatus
-from microsim.risk_factors.alcohol_category import AlcoholCategory
 from microsim.risk_factors.race_ethnicity import RaceEthnicity
 
 import unittest
-import numpy as np
 import pandas as pd
+
 
 class TestNHANESLinearRiskFactorModel(unittest.TestCase):
     def setUp(self):
 
-        self.x_test_person = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 75,
-                               StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.MEXICAN_AMERICAN.value,
-                               DynamicRiskFactorsType.SBP.value: 140,
-                               DynamicRiskFactorsType.DBP.value: 80,
-                               DynamicRiskFactorsType.A1C.value: 6.5,
-                               DynamicRiskFactorsType.HDL.value: 50,
-                               DynamicRiskFactorsType.TOT_CHOL.value: 210,
-                               DynamicRiskFactorsType.BMI.value: 22,
-                               DynamicRiskFactorsType.LDL.value: 90,
-                               DynamicRiskFactorsType.TRIG.value: 150,
-                               DynamicRiskFactorsType.WAIST.value: 50,
-                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
-                               StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
-                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.FORMER.value,
-                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
-                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
-                               DefaultTreatmentsType.STATIN.value: 0,
-                               DynamicRiskFactorsType.CREATININE.value: 0,
-                               "name": "test_person"}, index=[0])
-        self._test_person = PersonFactory.get_nhanes_person(self.x_test_person.iloc[0], InitializationModelRepository())
+        self.x_test_person = pd.DataFrame(
+            {
+                DynamicRiskFactorsType.AGE.value: 75,
+                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
+                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.MEXICAN_AMERICAN.value,
+                DynamicRiskFactorsType.SBP.value: 140,
+                DynamicRiskFactorsType.DBP.value: 80,
+                DynamicRiskFactorsType.A1C.value: 6.5,
+                DynamicRiskFactorsType.HDL.value: 50,
+                DynamicRiskFactorsType.TOT_CHOL.value: 210,
+                DynamicRiskFactorsType.BMI.value: 22,
+                DynamicRiskFactorsType.LDL.value: 90,
+                DynamicRiskFactorsType.TRIG.value: 150,
+                DynamicRiskFactorsType.WAIST.value: 50,
+                DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
+                StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
+                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.FORMER.value,
+                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
+                DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
+                DefaultTreatmentsType.STATIN.value: 0,
+                DynamicRiskFactorsType.CREATININE.value: 0,
+                "name": "test_person",
+            },
+            index=[0],
+        )
+        self._test_person = PersonFactory.get_nhanes_person(
+            self.x_test_person.iloc[0], InitializationModelRepository()
+        )
         self._test_person._afib = [False]
 
         self._risk_model_repository = TestRiskModelRepository()
@@ -51,27 +54,34 @@ class TestNHANESLinearRiskFactorModel(unittest.TestCase):
         self.assertEqual(expectedSBP, self._test_person._sbp[-1])
 
     def test_upper_bounds(self):
-        x_highBPPerson = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 75,
-                               StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.MEXICAN_AMERICAN.value,
-                               DynamicRiskFactorsType.SBP.value: 500,
-                               DynamicRiskFactorsType.DBP.value: 80,
-                               DynamicRiskFactorsType.A1C.value: 6.5,
-                               DynamicRiskFactorsType.HDL.value: 50,
-                               DynamicRiskFactorsType.TOT_CHOL.value: 210,
-                               DynamicRiskFactorsType.BMI.value: 22,
-                               DynamicRiskFactorsType.LDL.value: 90,
-                               DynamicRiskFactorsType.TRIG.value: 150,
-                               DynamicRiskFactorsType.WAIST.value: 50,
-                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
-                               StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
-                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.FORMER.value,
-                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
-                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
-                               DefaultTreatmentsType.STATIN.value: 0,
-                               DynamicRiskFactorsType.CREATININE.value: 0,
-                               "name": "highBPPerson"}, index=[0])
-        highBPPerson = PersonFactory.get_nhanes_person(x_highBPPerson.iloc[0], InitializationModelRepository())
+        x_highBPPerson = pd.DataFrame(
+            {
+                DynamicRiskFactorsType.AGE.value: 75,
+                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
+                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.MEXICAN_AMERICAN.value,
+                DynamicRiskFactorsType.SBP.value: 500,
+                DynamicRiskFactorsType.DBP.value: 80,
+                DynamicRiskFactorsType.A1C.value: 6.5,
+                DynamicRiskFactorsType.HDL.value: 50,
+                DynamicRiskFactorsType.TOT_CHOL.value: 210,
+                DynamicRiskFactorsType.BMI.value: 22,
+                DynamicRiskFactorsType.LDL.value: 90,
+                DynamicRiskFactorsType.TRIG.value: 150,
+                DynamicRiskFactorsType.WAIST.value: 50,
+                DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
+                StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
+                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.FORMER.value,
+                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
+                DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
+                DefaultTreatmentsType.STATIN.value: 0,
+                DynamicRiskFactorsType.CREATININE.value: 0,
+                "name": "highBPPerson",
+            },
+            index=[0],
+        )
+        highBPPerson = PersonFactory.get_nhanes_person(
+            x_highBPPerson.iloc[0], InitializationModelRepository()
+        )
         highBPPerson._afib = [False]
 
         highBPPerson.advance_risk_factors(self._risk_model_repository)

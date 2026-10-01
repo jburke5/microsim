@@ -5,13 +5,8 @@ from microsim.risk_factors.smoking_status import SmokingStatus
 from microsim.regression_models.regression_model import RegressionModel
 from microsim.risk_factors.education import Education
 from microsim.risk_factors.alcohol_category import AlcoholCategory
-from microsim.test.helper.init_vectorized_population_dataframe import (
-    init_vectorized_population_dataframe,
-)
-from microsim.population.population_factory import PopulationFactory
 from microsim.risk_factors.risk_factor import StaticRiskFactorsType, DynamicRiskFactorsType
 from microsim.default_treatments.default_treatments import DefaultTreatmentsType
-from microsim.person.person import Person
 from microsim.person.person_factory import PersonFactory
 from microsim.risk_factors.initialization_model_repository import InitializationModelRepository
 
@@ -19,6 +14,7 @@ import unittest
 import pandas as pd
 import numpy as np
 import statsmodels.formula.api as statsmodel
+
 
 class TestLinearRiskFactorModel(unittest.TestCase):
     def setUp(self):
@@ -35,55 +31,70 @@ class TestLinearRiskFactorModel(unittest.TestCase):
             self.simpleModelResultSM.resid.std(),
         )
 
-        x = pd.DataFrame({DynamicRiskFactorsType.AGE.value: 80,
-                               StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
-                               DynamicRiskFactorsType.SBP.value: 120,
-                               DynamicRiskFactorsType.DBP.value: 80,
-                               DynamicRiskFactorsType.A1C.value: 5.5,
-                               DynamicRiskFactorsType.HDL.value: 50,
-                               DynamicRiskFactorsType.TOT_CHOL.value: 200,
-                               DynamicRiskFactorsType.BMI.value: 27,
-                               DynamicRiskFactorsType.LDL.value: 90,
-                               DynamicRiskFactorsType.TRIG.value: 150,
-                               DynamicRiskFactorsType.WAIST.value: 70,
-                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
-                               StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
-                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
-                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
-                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
-                               DefaultTreatmentsType.STATIN.value: 0,
-                               DynamicRiskFactorsType.CREATININE.value: 0,
-                               "name": "0"}, index=[0])
+        x = pd.DataFrame(
+            {
+                DynamicRiskFactorsType.AGE.value: 80,
+                StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
+                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,
+                DynamicRiskFactorsType.SBP.value: 120,
+                DynamicRiskFactorsType.DBP.value: 80,
+                DynamicRiskFactorsType.A1C.value: 5.5,
+                DynamicRiskFactorsType.HDL.value: 50,
+                DynamicRiskFactorsType.TOT_CHOL.value: 200,
+                DynamicRiskFactorsType.BMI.value: 27,
+                DynamicRiskFactorsType.LDL.value: 90,
+                DynamicRiskFactorsType.TRIG.value: 150,
+                DynamicRiskFactorsType.WAIST.value: 70,
+                DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
+                StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
+                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
+                DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
+                DefaultTreatmentsType.STATIN.value: 0,
+                DynamicRiskFactorsType.CREATININE.value: 0,
+                "name": "0",
+            },
+            index=[0],
+        )
         self.person = PersonFactory.get_nhanes_person(x.iloc[0], InitializationModelRepository())
         self.person._afib = [False]
 
-        xList = [pd.DataFrame({DynamicRiskFactorsType.AGE.value: 80,
-                               StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                               StaticRiskFactorsType.RACE_ETHNICITY.value:RaceEthnicity.NON_HISPANIC_WHITE.value,
-                               DynamicRiskFactorsType.SBP.value: bpinstance,
-                               DynamicRiskFactorsType.DBP.value: 80,
-                               DynamicRiskFactorsType.A1C.value: 5.5,
-                               DynamicRiskFactorsType.HDL.value: 50,
-                               DynamicRiskFactorsType.TOT_CHOL.value: 200,
-                               DynamicRiskFactorsType.BMI.value: 27,
-                               DynamicRiskFactorsType.LDL.value: 90,
-                               DynamicRiskFactorsType.TRIG.value: 150,
-                               DynamicRiskFactorsType.WAIST.value: 70,
-                               DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
-                               StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
-                               StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
-                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
-                               DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
-                               DefaultTreatmentsType.STATIN.value: 0,
-                               DynamicRiskFactorsType.CREATININE.value: 0,
-                               "name": "0"}, index=[0]) for bpinstance in sbp]
+        xList = [
+            pd.DataFrame(
+                {
+                    DynamicRiskFactorsType.AGE.value: 80,
+                    StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
+                    StaticRiskFactorsType.RACE_ETHNICITY.value: (
+                        RaceEthnicity.NON_HISPANIC_WHITE.value
+                    ),
+                    DynamicRiskFactorsType.SBP.value: bpinstance,
+                    DynamicRiskFactorsType.DBP.value: 80,
+                    DynamicRiskFactorsType.A1C.value: 5.5,
+                    DynamicRiskFactorsType.HDL.value: 50,
+                    DynamicRiskFactorsType.TOT_CHOL.value: 200,
+                    DynamicRiskFactorsType.BMI.value: 27,
+                    DynamicRiskFactorsType.LDL.value: 90,
+                    DynamicRiskFactorsType.TRIG.value: 150,
+                    DynamicRiskFactorsType.WAIST.value: 70,
+                    DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
+                    StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
+                    StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+                    DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
+                    DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
+                    DefaultTreatmentsType.STATIN.value: 0,
+                    DynamicRiskFactorsType.CREATININE.value: 0,
+                    "name": "0",
+                },
+                index=[0],
+            )
+            for bpinstance in sbp
+        ]
         imr = InitializationModelRepository()
         self.people = list(map(lambda x: PersonFactory.get_nhanes_person(x.iloc[0], imr), xList))
-        
+
         for person in self.people:
             person._afib = [False]
-            #self.advancePerson(person)
+            # self.advancePerson(person)
 
         df2 = pd.DataFrame(
             {
@@ -243,7 +254,7 @@ class TestLinearRiskFactorModel(unittest.TestCase):
         self.assertAlmostEqual(expected_model_result, actual_model_result, 5)
 
     def testInteractionModel(self):
-        testPerson = self.people[32] 
+        testPerson = self.people[32]
         expected_model_result = (
             np.array(testPerson._sbp).mean() * testPerson._age[-1] * self.ageSbpInteractionCoeff
             + np.array(testPerson._sbp).mean() * self.sbpInteractionCoeff
