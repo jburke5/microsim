@@ -63,11 +63,11 @@ class TestEpilepsyPrevalenceDirectMultiply(unittest.TestCase):
 
     def test_default_scaling_is_a_no_op(self):
         model = self._make_model_with_fixed_lp(riskScaling=1.0, lp=2.0)
-        self.assertAlmostEqual(model.get_risk_for_person(person=None), 2.0 / 1000.)
+        self.assertAlmostEqual(model.get_risk_for_person(person=None), 2.0 / 1000.0)
 
     def test_scaling_multiplies_rate_directly(self):
         model = self._make_model_with_fixed_lp(riskScaling=3.0, lp=2.0)
-        self.assertAlmostEqual(model.get_risk_for_person(person=None), 3.0 * 2.0 / 1000.)
+        self.assertAlmostEqual(model.get_risk_for_person(person=None), 3.0 * 2.0 / 1000.0)
 
 
 class TestOutcomePrevalenceModelRepositoryDispatch(unittest.TestCase):
@@ -108,9 +108,7 @@ class TestOutcomePrevalenceModelRepositoryDispatch(unittest.TestCase):
         # Set CV explicitly; verify CV uses the caller's value (overriding any module-level
         # default) while other outcomes inherit whatever DEFAULT_PREVALENCE_RISK_SCALING
         # holds (falling back to 1.0 when not registered).
-        opmr = OutcomePrevalenceModelRepository(
-            riskScaling={OutcomeType.CARDIOVASCULAR: 4.0}
-        )
+        opmr = OutcomePrevalenceModelRepository(riskScaling={OutcomeType.CARDIOVASCULAR: 4.0})
         self.assertEqual(4.0, opmr._repository[OutcomeType.CARDIOVASCULAR]._model._riskScaling)
         self.assertEqual(
             DEFAULT_PREVALENCE_RISK_SCALING.get(OutcomeType.DEMENTIA, 1.0),
@@ -127,8 +125,9 @@ class TestNhanesTrialDescriptionForwardsPrevalenceRiskScaling(unittest.TestCase)
         # When prevalenceRiskScaling is not passed, the trial description's OPMR should
         # reflect whatever calibration is baked into DEFAULT_PREVALENCE_RISK_SCALING for
         # each outcome (1.0 when no default is registered).
-        desc = NhanesTrialDescription(sampleSize=10, duration=1, year=1999,
-                                      personFilters=_adults_filter())
+        desc = NhanesTrialDescription(
+            sampleSize=10, duration=1, year=1999, personFilters=_adults_filter()
+        )
         opmr = desc.peopleArgs["outcomePrevalenceModelRepository"]
         for outcomeType in (
             OutcomeType.CARDIOVASCULAR,
@@ -139,21 +138,27 @@ class TestNhanesTrialDescriptionForwardsPrevalenceRiskScaling(unittest.TestCase)
             OutcomeType.CHRONIC_KIDNEY_DISEASE,
         ):
             expected = DEFAULT_PREVALENCE_RISK_SCALING.get(outcomeType, 1.0)
-            self.assertEqual(expected, opmr._repository[outcomeType]._model._riskScaling,
-                             msg=f"{outcomeType}")
+            self.assertEqual(
+                expected, opmr._repository[outcomeType]._model._riskScaling, msg=f"{outcomeType}"
+            )
 
     def test_dict_reaches_inner_models(self):
         scaling = {OutcomeType.DEMENTIA: 2.5, OutcomeType.EPILEPSY: 1.5}
-        desc = NhanesTrialDescription(sampleSize=10, duration=1, year=1999,
-                                      personFilters=_adults_filter(),
-                                      prevalenceRiskScaling=scaling)
+        desc = NhanesTrialDescription(
+            sampleSize=10,
+            duration=1,
+            year=1999,
+            personFilters=_adults_filter(),
+            prevalenceRiskScaling=scaling,
+        )
         opmr = desc.peopleArgs["outcomePrevalenceModelRepository"]
         self.assertEqual(2.5, opmr._repository[OutcomeType.DEMENTIA]._model._riskScaling)
         self.assertEqual(1.5, opmr._repository[OutcomeType.EPILEPSY]._model._riskScaling)
         # Outcomes the caller didn't specify fall back to the module default (or 1.0).
         cvExpected = DEFAULT_PREVALENCE_RISK_SCALING.get(OutcomeType.CARDIOVASCULAR, 1.0)
-        self.assertEqual(cvExpected,
-                         opmr._repository[OutcomeType.CARDIOVASCULAR]._model._riskScaling)
+        self.assertEqual(
+            cvExpected, opmr._repository[OutcomeType.CARDIOVASCULAR]._model._riskScaling
+        )
 
 
 class TestDefaultPrevalenceRiskScalingHook(unittest.TestCase):
@@ -177,9 +182,7 @@ class TestDefaultPrevalenceRiskScalingHook(unittest.TestCase):
 
     def test_caller_riskScaling_overrides_default_per_key(self):
         with patch.object(opmr_module, "DEFAULT_PREVALENCE_RISK_SCALING", self._FAKE_DEFAULTS):
-            opmr = OutcomePrevalenceModelRepository(
-                riskScaling={OutcomeType.CARDIOVASCULAR: 2.0}
-            )
+            opmr = OutcomePrevalenceModelRepository(riskScaling={OutcomeType.CARDIOVASCULAR: 2.0})
         # Caller-supplied key wins.
         self.assertEqual(2.0, opmr._repository[OutcomeType.CARDIOVASCULAR]._model._riskScaling)
         # Non-overridden default still applies.
@@ -196,8 +199,9 @@ class TestDefaultPrevalenceRiskScalingHook(unittest.TestCase):
             OutcomeType.DIABETES,
             OutcomeType.CHRONIC_KIDNEY_DISEASE,
         ):
-            self.assertEqual(1.0, opmr._repository[outcomeType]._model._riskScaling,
-                             msg=f"{outcomeType}")
+            self.assertEqual(
+                1.0, opmr._repository[outcomeType]._model._riskScaling, msg=f"{outcomeType}"
+            )
 
     def test_useDefaults_false_still_honors_caller_riskScaling(self):
         with patch.object(opmr_module, "DEFAULT_PREVALENCE_RISK_SCALING", self._FAKE_DEFAULTS):

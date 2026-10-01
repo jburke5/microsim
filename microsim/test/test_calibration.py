@@ -24,7 +24,7 @@ class TestCalibrationFits(unittest.TestCase):
                 self.assertAlmostEqual(fitted[gender][name], baked[gender][name], delta=tol)
 
     def test_cv_baked_coefficients_match_fit(self):
-        #baked values are rounded to 4-5 decimals, hence the tolerance
+        # baked values are rounded to 4-5 decimals, hence the tolerance
         self.assert_coefficients_close(fit_cv_prevalence(), CVPrevalenceModel._coefficients, 1e-3)
 
     def test_stroke_baked_coefficients_match_fit(self):
@@ -42,7 +42,7 @@ class TestCalibrationFits(unittest.TestCase):
                 self.assertAlmostEqual(fitted, rate, delta=0.01)
 
     def test_stroke_fit_reproduces_reference_rates(self):
-        #the realized stroke prevalence is the CV probability times the fitted conditional
+        # the realized stroke prevalence is the CV probability times the fitted conditional
         cvCoefficients = fit_cv_prevalence()
         strokeCoefficients = fit_stroke_prevalence(cvCoefficients=cvCoefficients)
         reference = Reference.prevalence[OutcomeType.STROKE.value]
@@ -77,7 +77,7 @@ class TestCalibrationFits(unittest.TestCase):
         scalings = fit_prevalence_scaling_to_stroke_mi(verbose=False)
 
         def squared_error(sCv, sStroke):
-            error = 0.
+            error = 0.0
             for gender in NHANESGender:
                 cv, stroke = CV._coefficients[gender], Stroke._coefficients[gender]
                 strokeRates = Reference.prevalence[OutcomeType.STROKE.value][gender.name.lower()]
@@ -86,21 +86,17 @@ class TestCalibrationFits(unittest.TestCase):
                     mid = _age_group_midpoint(group)
                     pCv = expit(cv["Intercept"] + cv["age"] * mid + math.log(sCv))
                     q = expit(stroke["Intercept"] + stroke["age"] * mid + math.log(sStroke))
-                    self.assertTrue(0. < pCv * q < 1.)
+                    self.assertTrue(0.0 < pCv * q < 1.0)
                     error += (pCv * q - strokeRates[group]) ** 2
-                    error += (pCv * (1. - q) - miRates[group]) ** 2
+                    error += (pCv * (1.0 - q) - miRates[group]) ** 2
             return error
 
-        fitted = squared_error(
-            scalings[OutcomeType.CARDIOVASCULAR], scalings[OutcomeType.STROKE]
-        )
-        self.assertLess(fitted, squared_error(1., 1.))
+        fitted = squared_error(scalings[OutcomeType.CARDIOVASCULAR], scalings[OutcomeType.STROKE])
+        self.assertLess(fitted, squared_error(1.0, 1.0))
 
     def test_stroke_rate_above_cv_prevalence_raises(self):
-        #a conditional probability above 1 is unfittable and must fail loudly
-        impossibleCv = {
-            gender: {"Intercept": -10.0, "age": 0.0} for gender in NHANESGender
-        }
+        # a conditional probability above 1 is unfittable and must fail loudly
+        impossibleCv = {gender: {"Intercept": -10.0, "age": 0.0} for gender in NHANESGender}
         with self.assertRaises(ValueError):
             fit_stroke_prevalence(cvCoefficients=impossibleCv)
 

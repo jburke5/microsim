@@ -7,8 +7,9 @@ from microsim.trials.trial_type import TrialType
 from microsim.treatment_strategies.treatment_strategy_repository import TreatmentStrategyRepository
 from microsim.outcomes.outcome_prevalence_model_repository import OutcomePrevalenceModelRepository
 
+
 class TrialDescription(ABC):
-    '''Abstract base class holding trial setup information common to all population types.
+    """Abstract base class holding trial setup information common to all population types.
     Cannot be instantiated directly: use a population-specific subclass such as
     NhanesTrialDescription or KaiserTrialDescription, which define popType and the
     population-specific peopleArgs/modelRepoArgs needed by Trial.
@@ -17,7 +18,7 @@ class TrialDescription(ABC):
                    must be None or an empty list if block factors will not be used, at most one block factor is supported
     sample size: the approximate size of the populations to be used in the trial, eg both control and treated populations will be of that size
                  if no randomization is used or if complete randomization is used, but the size of the control/treated populations will be
-                 approximately equal to sample size if block randomization is used 
+                 approximately equal to sample size if block randomization is used
                  (because we never know the number of units with a specific block factor)
     duration: for how many years the trial will run, how many years the populations will advance
     treatmentStrategies: holds information on how treatment will be applied on the treated population
@@ -25,16 +26,19 @@ class TrialDescription(ABC):
     personFilters: filters for inclusion/exclusion in the trial population
     _rng: numpy random number generator for randomization of the trial
     popType: the population type to be used in the trial
-    '''
+    """
+
     @abstractmethod
-    def __init__(self,
-                 trialType=TrialType.COMPLETELY_RANDOMIZED,
-                 blockFactors=None,
-                 sampleSize=100,
-                 duration=5,
-                 treatmentStrategies=None,
-                 nWorkers=1,
-                 personFilters=None):
+    def __init__(
+        self,
+        trialType=TrialType.COMPLETELY_RANDOMIZED,
+        blockFactors=None,
+        sampleSize=100,
+        duration=5,
+        treatmentStrategies=None,
+        nWorkers=1,
+        personFilters=None,
+    ):
         self.trialType = trialType
         self.blockFactors = list(blockFactors) if blockFactors is not None else []
         self.sampleSize = sampleSize
@@ -42,14 +46,14 @@ class TrialDescription(ABC):
         self.treatmentStrategies = self.get_treatment_strategy(treatmentStrategies)
         self.nWorkers = nWorkers
         self.personFilters = personFilters
-        self._rng = np.random.default_rng() 
+        self._rng = np.random.default_rng()
         self.popType = None
         self.is_valid_trial()
-        
+
     def get_treatment_strategy(self, treatmentStrategies):
-        '''Coerce the user-supplied treatmentStrategies argument into a TreatmentStrategyRepository.
+        """Coerce the user-supplied treatmentStrategies argument into a TreatmentStrategyRepository.
         Accepts None (empty repository), a shorthand string forwarded to
-        TreatmentStrategyRepository.from_string, or an already-constructed repository.'''
+        TreatmentStrategyRepository.from_string, or an already-constructed repository."""
         if treatmentStrategies is None:
             return TreatmentStrategyRepository()
         elif isinstance(treatmentStrategies, str):
@@ -57,62 +61,70 @@ class TrialDescription(ABC):
         elif isinstance(treatmentStrategies, TreatmentStrategyRepository):
             return treatmentStrategies
         else:
-            raise RuntimeError("Unrecognized treatmentStrategies argument in TrialDescription initialization.")
+            raise RuntimeError(
+                "Unrecognized treatmentStrategies argument in TrialDescription initialization."
+            )
 
     def is_valid_trial(self):
-        '''Assesses if the trial setup is a meaningful one.'''
+        """Assesses if the trial setup is a meaningful one."""
         self.assess_trial_type_and_block_factors()
         self.assess_sample_size()
         self.assess_duration()
-        self.assess_number_of_workers()   
- 
+        self.assess_number_of_workers()
+
     def is_not_randomized(self):
-        return self.trialType==TrialType.NON_RANDOMIZED
-       
+        return self.trialType == TrialType.NON_RANDOMIZED
+
     def is_block_randomized(self):
-        return ((self.trialType==TrialType.COMPLETELY_RANDOMIZED_IN_BLOCKS)|
-                (self.trialType==TrialType.BERNOULLI_RANDOMIZED_IN_BLOCKS))
- 
+        return (self.trialType == TrialType.COMPLETELY_RANDOMIZED_IN_BLOCKS) | (
+            self.trialType == TrialType.BERNOULLI_RANDOMIZED_IN_BLOCKS
+        )
+
     def is_not_block_randomized(self):
-        return ((self.trialType==TrialType.COMPLETELY_RANDOMIZED)|
-                (self.trialType==TrialType.BERNOULLI_RANDOMIZED))
-   
+        return (self.trialType == TrialType.COMPLETELY_RANDOMIZED) | (
+            self.trialType == TrialType.BERNOULLI_RANDOMIZED
+        )
+
     def is_completely_randomized(self):
-         return ((self.trialType==TrialType.COMPLETELY_RANDOMIZED_IN_BLOCKS)|
-                (self.trialType==TrialType.COMPLETELY_RANDOMIZED))
-        
+        return (self.trialType == TrialType.COMPLETELY_RANDOMIZED_IN_BLOCKS) | (
+            self.trialType == TrialType.COMPLETELY_RANDOMIZED
+        )
+
     def is_bernoulli_randomized(self):
-         return ((self.trialType==TrialType.BERNOULLI_RANDOMIZED_IN_BLOCKS)|
-                (self.trialType==TrialType.BERNOULLI_RANDOMIZED))
+        return (self.trialType == TrialType.BERNOULLI_RANDOMIZED_IN_BLOCKS) | (
+            self.trialType == TrialType.BERNOULLI_RANDOMIZED
+        )
 
     def assess_trial_type_and_block_factors(self):
-        if (self.is_block_randomized()) & (len(self.blockFactors)==0):
+        if (self.is_block_randomized()) & (len(self.blockFactors) == 0):
             raise RuntimeError("Trial is setup to use blocks but no block factors were provided.")
-        elif (not self.is_block_randomized()) & (len(self.blockFactors)>0):
+        elif (not self.is_block_randomized()) & (len(self.blockFactors) > 0):
             raise RuntimeError("Trial is not setup to use blocks but block factors were provided.")
-        elif len(self.blockFactors)>1:
-            raise RuntimeError("Randomization blocks only on a single block factor, more than one were provided.")
+        elif len(self.blockFactors) > 1:
+            raise RuntimeError(
+                "Randomization blocks only on a single block factor, more than one were provided."
+            )
 
     def assess_sample_size(self):
-        if (self.sampleSize<=0):
+        if self.sampleSize <= 0:
             raise RuntimeError("Sample size cannot be less than or equal to 0.")
-        elif  (self.sampleSize>10000000):
+        elif self.sampleSize > 10000000:
             raise RuntimeError("Sample size exceeds the maximum bound.")
 
     def assess_duration(self):
-        if (self.duration<=0):
+        if self.duration <= 0:
             raise RuntimeError("Duration cannot be less than or equal to 0.")
-        elif  (self.duration>200):
+        elif self.duration > 200:
             raise RuntimeError("Duration exceeds the maximum bound.")
-            
+
     def assess_number_of_workers(self):
-        if (self.nWorkers<=0):
+        if self.nWorkers <= 0:
             raise RuntimeError("Number of workers cannot be less than or equal to 0.")
-        elif  (self.nWorkers>100):
+        elif self.nWorkers > 100:
             raise RuntimeError("Number of workers exceeds the maximum bound.")
-            
+
     def __str__(self):
-        rep = f"Trial Description\n"
+        rep = "Trial Description\n"
         rep += f"\tTrial type: {self.trialType}\n"
         rep += f"\tBlock factors: {self.blockFactors}\n"
         rep += f"\tSample size: {self.sampleSize}\n"
@@ -125,34 +137,50 @@ class TrialDescription(ABC):
     def __repr__(self):
         return self.__str__()
 
+
 class NhanesTrialDescription(TrialDescription):
-    '''This is a class that can be used to hold setup information for a trial that is using the NHANES population type.
+    """This is a class that can be used to hold setup information for a trial that is using the NHANES population type.
     It holds the information needed for all trials, those are provided to the initialization of the
     superclass TrialDescription, and in addition it holds all information related to the NHANES population.
-    An instance of this class can be used to initialize the Trial class.'''
-    def __init__(self,
-                 trialType=TrialType.COMPLETELY_RANDOMIZED,
-                 blockFactors=None,
-                 sampleSize=100,
-                 duration=5,
-                 treatmentStrategies=None, #None becomes a fresh repository, a default instance would be shared across descriptions
-                 nWorkers=1,
-                 personFilters=None,
-                 year=1999,
-                 nhanesWeights=True,
-                 distributions=False,
-                 prevalenceRiskScaling=None):
-        super().__init__(trialType, blockFactors, sampleSize, duration, treatmentStrategies, nWorkers=nWorkers, personFilters=personFilters)
+    An instance of this class can be used to initialize the Trial class."""
+
+    def __init__(
+        self,
+        trialType=TrialType.COMPLETELY_RANDOMIZED,
+        blockFactors=None,
+        sampleSize=100,
+        duration=5,
+        treatmentStrategies=None,  # None becomes a fresh repository, a default instance would be shared across descriptions
+        nWorkers=1,
+        personFilters=None,
+        year=1999,
+        nhanesWeights=True,
+        distributions=False,
+        prevalenceRiskScaling=None,
+    ):
+        super().__init__(
+            trialType,
+            blockFactors,
+            sampleSize,
+            duration,
+            treatmentStrategies,
+            nWorkers=nWorkers,
+            personFilters=personFilters,
+        )
         self.year = year
-        self.nhanesWeights=nhanesWeights
-        self.distributions=distributions
+        self.nhanesWeights = nhanesWeights
+        self.distributions = distributions
         self.prevalenceRiskScaling = prevalenceRiskScaling
-        self.peopleArgs = {"n":self.sampleSize,
-                           "year":self.year,
-                           "personFilters":self.personFilters,
-                           "nhanesWeights":self.nhanesWeights,
-                           "distributions":self.distributions,
-                           "outcomePrevalenceModelRepository": OutcomePrevalenceModelRepository(riskScaling=prevalenceRiskScaling)}
+        self.peopleArgs = {
+            "n": self.sampleSize,
+            "year": self.year,
+            "personFilters": self.personFilters,
+            "nhanesWeights": self.nhanesWeights,
+            "distributions": self.distributions,
+            "outcomePrevalenceModelRepository": OutcomePrevalenceModelRepository(
+                riskScaling=prevalenceRiskScaling
+            ),
+        }
         self.modelRepoArgs = {}
         self.popType = PopulationType.NHANES
 
@@ -164,28 +192,38 @@ class NhanesTrialDescription(TrialDescription):
         rep += f"\tPopulation type: {self.popType}"
         return rep
 
+
 class KaiserTrialDescription(TrialDescription):
-    '''This is a class that can be used to hold setup information for a trial that is using the KAISER population type.
+    """This is a class that can be used to hold setup information for a trial that is using the KAISER population type.
     It holds the information needed for all trials, those are provided to the initialization of the
     superclass TrialDescription, and in addition it holds all information related to the KAISER population.
-    An instance of this class can be used to initialize the Trial class.'''
-    def __init__(self,
-                 trialType=TrialType.COMPLETELY_RANDOMIZED,
-                 blockFactors=None,
-                 sampleSize=100,
-                 duration=5,
-                 treatmentStrategies=None, #None becomes a fresh repository, a default instance would be shared across descriptions
-                 nWorkers=1,
-                 personFilters=None,
-                 wmhSpecific=True,
-                 riskScaling=None):
-        super().__init__(trialType, blockFactors, sampleSize, duration, treatmentStrategies, nWorkers=nWorkers, personFilters=personFilters)
+    An instance of this class can be used to initialize the Trial class."""
+
+    def __init__(
+        self,
+        trialType=TrialType.COMPLETELY_RANDOMIZED,
+        blockFactors=None,
+        sampleSize=100,
+        duration=5,
+        treatmentStrategies=None,  # None becomes a fresh repository, a default instance would be shared across descriptions
+        nWorkers=1,
+        personFilters=None,
+        wmhSpecific=True,
+        riskScaling=None,
+    ):
+        super().__init__(
+            trialType,
+            blockFactors,
+            sampleSize,
+            duration,
+            treatmentStrategies,
+            nWorkers=nWorkers,
+            personFilters=personFilters,
+        )
         self.wmhSpecific = wmhSpecific
         self.riskScaling = riskScaling
-        self.peopleArgs = {"n":self.sampleSize,
-                           "personFilters":self.personFilters}
-        self.modelRepoArgs = {"wmhSpecific": self.wmhSpecific,
-                              "riskScaling": self.riskScaling}
+        self.peopleArgs = {"n": self.sampleSize, "personFilters": self.personFilters}
+        self.modelRepoArgs = {"wmhSpecific": self.wmhSpecific, "riskScaling": self.riskScaling}
         self.popType = PopulationType.KAISER
 
     def __str__(self):

@@ -27,8 +27,8 @@ python -m unittest microsim.test.test_<module_name>  # Run specific test module
 
 ### Code Quality
 ```bash
-poetry run lint    # Check code with flake8
-poetry run format  # Format code with black (line-length: 99)
+poetry run lint    # Lint with ruff
+poetry run format  # Format with ruff (line-length: 99)
 ```
 
 ## Architecture Overview
@@ -100,8 +100,13 @@ TrialOutcomeAssessor (Cox regression, logistic regression, linear regression, re
 
 **Advancing simulation:**
 ```python
-person.advance(years, dynamicRiskFactorRepository, defaultTreatmentRepository,
-               outcomeModelRepository, treatmentStrategies)
+person.advance(
+    years,
+    dynamicRiskFactorRepository,
+    defaultTreatmentRepository,
+    outcomeModelRepository,
+    treatmentStrategies,
+)
 ```
 
 ### Population Structure
@@ -201,15 +206,13 @@ class TestPopulation(unittest.TestCase):
     def setUp(self):
         # Tests typically create populations directly using PopulationFactory
         self.pop = PopulationFactory.get_nhanes_population(
-            n=100, year=1999, personFilters=None,
-            nhanesWeights=True, distributions=False
+            n=100, year=1999, personFilters=None, nhanesWeights=True, distributions=False
         )
 ```
 
 ## Code Style
 
-- **Formatter:** Black with 99-character line length
-- **Linter:** Flake8
+- **Formatter/Linter:** Ruff with 99-character line length
 - **Naming:** Snake_case for variables/functions, PascalCase for classes
 - **Private attributes:** Prefix with underscore (e.g., `_waveCompleted`)
 

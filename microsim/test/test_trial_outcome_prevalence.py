@@ -15,8 +15,9 @@ def _adults_filter():
 
 class TestNhanesTrialDescriptionPrevalence(unittest.TestCase):
     def test_peopleargs_contains_outcome_prevalence_model_repository(self):
-        desc = NhanesTrialDescription(sampleSize=10, duration=1, year=1999,
-                                      personFilters=_adults_filter())
+        desc = NhanesTrialDescription(
+            sampleSize=10, duration=1, year=1999, personFilters=_adults_filter()
+        )
         opmr = desc.peopleArgs.get("outcomePrevalenceModelRepository")
         self.assertIsInstance(opmr, OutcomePrevalenceModelRepository)
 
@@ -61,7 +62,10 @@ class TestGetNhanesPeoplePassThrough(unittest.TestCase):
         # Strict pass-through: explicit None means no prevalence seeding for the
         # constructed persons.
         people = PopulationFactory.get_nhanes_people(
-            n=10, year=1999, personFilters=_adults_filter(), nhanesWeights=True,
+            n=10,
+            year=1999,
+            personFilters=_adults_filter(),
+            nhanesWeights=True,
             outcomePrevalenceModelRepository=None,
         )
         for person in people:
@@ -70,7 +74,10 @@ class TestGetNhanesPeoplePassThrough(unittest.TestCase):
     def test_provided_instance_seeds_prevalent_outcomes(self):
         opmr = OutcomePrevalenceModelRepository()
         people = PopulationFactory.get_nhanes_people(
-            n=10, year=1999, personFilters=_adults_filter(), nhanesWeights=True,
+            n=10,
+            year=1999,
+            personFilters=_adults_filter(),
+            nhanesWeights=True,
             outcomePrevalenceModelRepository=opmr,
         )
         for person in people:
@@ -115,7 +122,10 @@ class TestGetNhanesPopulationDefaultSeeding(unittest.TestCase):
         # default-seeding behavior, even though get_nhanes_people is now
         # strict pass-through.
         pop = PopulationFactory.get_nhanes_population(
-            n=10, year=1999, personFilters=_adults_filter(), nhanesWeights=True,
+            n=10,
+            year=1999,
+            personFilters=_adults_filter(),
+            nhanesWeights=True,
         )
         for person in pop._people:
             cognition = person._outcomes[OutcomeType.COGNITION]

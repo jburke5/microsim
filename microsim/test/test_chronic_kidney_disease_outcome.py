@@ -16,27 +16,31 @@ from microsim.default_treatments.default_treatments import DefaultTreatmentsType
 
 
 def _build_person(creatinine):
-    x = pd.DataFrame({
-        DynamicRiskFactorsType.AGE.value: 60,
-        StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-        StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,
-        DynamicRiskFactorsType.SBP.value: 120,
-        DynamicRiskFactorsType.DBP.value: 80,
-        DynamicRiskFactorsType.A1C.value: 5.5,
-        DynamicRiskFactorsType.HDL.value: 50,
-        DynamicRiskFactorsType.TOT_CHOL.value: 200,
-        DynamicRiskFactorsType.BMI.value: 25,
-        DynamicRiskFactorsType.LDL.value: 90,
-        DynamicRiskFactorsType.TRIG.value: 150,
-        DynamicRiskFactorsType.WAIST.value: 45,
-        DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
-        StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
-        StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
-        DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
-        DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
-        DefaultTreatmentsType.STATIN.value: 0,
-        DynamicRiskFactorsType.CREATININE.value: creatinine,
-        "name": "testPerson"}, index=[0])
+    x = pd.DataFrame(
+        {
+            DynamicRiskFactorsType.AGE.value: 60,
+            StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
+            StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,
+            DynamicRiskFactorsType.SBP.value: 120,
+            DynamicRiskFactorsType.DBP.value: 80,
+            DynamicRiskFactorsType.A1C.value: 5.5,
+            DynamicRiskFactorsType.HDL.value: 50,
+            DynamicRiskFactorsType.TOT_CHOL.value: 200,
+            DynamicRiskFactorsType.BMI.value: 25,
+            DynamicRiskFactorsType.LDL.value: 90,
+            DynamicRiskFactorsType.TRIG.value: 150,
+            DynamicRiskFactorsType.WAIST.value: 45,
+            DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
+            StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
+            StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+            DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
+            DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
+            DefaultTreatmentsType.STATIN.value: 0,
+            DynamicRiskFactorsType.CREATININE.value: creatinine,
+            "name": "testPerson",
+        },
+        index=[0],
+    )
     return PersonFactory.get_nhanes_person(x.iloc[0], InitializationModelRepository())
 
 
@@ -91,7 +95,8 @@ class TestCKDModel(unittest.TestCase):
         person = _build_person(NON_CKD_CREATININE)
         self.assertFalse(person._current_ckd)
         person._outcomes[OutcomeType.CHRONIC_KIDNEY_DISEASE].append(
-            (60, Outcome(OutcomeType.CHRONIC_KIDNEY_DISEASE, False)))
+            (60, Outcome(OutcomeType.CHRONIC_KIDNEY_DISEASE, False))
+        )
         self.assertIsNotNone(ChronicKidneyDiseaseModel().get_next_outcome(person))
 
 

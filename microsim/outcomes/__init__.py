@@ -1,6 +1,6 @@
 """Outcome models and the core outcome value types.
 
-    from microsim.outcomes import Outcome, OutcomeType
+from microsim.outcomes import Outcome, OutcomeType
 """
 
 from microsim.outcomes.outcome import Outcome, OutcomeType, EventOutcomeType

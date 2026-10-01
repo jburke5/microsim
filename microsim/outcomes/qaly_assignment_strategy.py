@@ -3,6 +3,7 @@ import numpy as np
 from microsim.outcomes.qaly_outcome import QALYOutcome
 from microsim.outcomes.outcome import OutcomeType
 
+
 class QALYAssignmentStrategy:
     def __init__(self):
         # the first element in the list is the QALY for the first year after the event, the next qaly for the next year...
@@ -22,20 +23,18 @@ class QALYAssignmentStrategy:
         return self.generate_next_outcome(person)
 
     def get_next_qaly(self, person, rng=None, age=-1):
-        if age==-1:
-            age=person._age[-1]
-        
+        if age == -1:
+            age = person._age[-1]
+
         # qaly assignment happens prior to advancing an age, but after condtiions are set...
-        wave = person.get_wave_for_age(age) 
+        wave = person.get_wave_for_age(age)
         conditions = self.get_conditions_for_person(person, wave)
         return self.get_qalys_for_age_and_conditions(age, conditions, person.is_dead)
 
     def get_qalys_for_age_and_conditions(self, age, conditions, dead, x=None):
         base = self.get_base_qaly_for_age(age)
         return (
-            0
-            if dead
-            else base * np.prod(self.get_multipliers_for_conditions(conditions, age, x))
+            0 if dead else base * np.prod(self.get_multipliers_for_conditions(conditions, age, x))
         )
 
     def get_conditions_for_person(self, person, wave):
@@ -48,7 +47,10 @@ class QALYAssignmentStrategy:
                 person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.STROKE),
                 person.get_age_at_first_outcome(OutcomeType.STROKE),
             ),
-            OutcomeType.MI: (person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.MI), person.get_age_at_first_outcome(OutcomeType.MI)),
+            OutcomeType.MI: (
+                person.has_outcome_during_or_prior_to_wave(wave, OutcomeType.MI),
+                person.get_age_at_first_outcome(OutcomeType.MI),
+            ),
         }
 
     # simple age-based approximation that after age 70, you lose about 0.01 QALYs per year
@@ -102,4 +104,3 @@ class QALYAssignmentStrategy:
                 multipliers.append(qalys)
 
         return multipliers
-

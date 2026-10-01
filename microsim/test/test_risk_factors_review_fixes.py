@@ -11,12 +11,13 @@ import numpy as np
 import pandas as pd
 
 from microsim.common.data_loader import load_regression_model
-from microsim.person.person import Person
 from microsim.regression_models.linear_risk_factor_model import LinearRiskFactorModel
 from microsim.regression_models.regression_model import RegressionModel
 from microsim.risk_factors.alcohol_category import AlcoholCategory
 from microsim.risk_factors.alcohol_model import AlcoholPrevalenceModel
-from microsim.risk_factors.cohort_risk_model_repository import CohortDynamicRiskFactorModelRepository
+from microsim.risk_factors.cohort_risk_model_repository import (
+    CohortDynamicRiskFactorModelRepository,
+)
 from microsim.risk_factors.gender import NHANESGender
 from microsim.risk_factors.gfr_equation import GFREquation
 from microsim.risk_factors.nhanes_linear_risk_factor_model import NHANESLinearRiskFactorModel
@@ -40,8 +41,8 @@ class _Strategy:
 # Asian race maps to white in every spec-driven model
 # ==========================================================================
 
-class TestAsianRaceHandling(unittest.TestCase):
 
+class TestAsianRaceHandling(unittest.TestCase):
     def test_asian_equals_white_for_indicator_coefficients(self):
         model = LinearRiskFactorModel(load_regression_model("hdlCohortModel"))
         white = _build_person(raceEthnicity=RaceEthnicity.NON_HISPANIC_WHITE)
@@ -51,7 +52,9 @@ class TestAsianRaceHandling(unittest.TestCase):
         self.assertNotEqual(model.estimate_next_risk(white), model.estimate_next_risk(black))
 
     def test_asian_equals_white_for_raw_race_coefficient(self):
-        model = LinearRiskFactorModel(RegressionModel({"Intercept": 0, "raceEthnicity": 1.0}, {}, 0, 0))
+        model = LinearRiskFactorModel(
+            RegressionModel({"Intercept": 0, "raceEthnicity": 1.0}, {}, 0, 0)
+        )
         asian = _build_person(raceEthnicity=RaceEthnicity.ASIAN)
         self.assertEqual(RaceEthnicity.NON_HISPANIC_WHITE.value, model.estimate_next_risk(asian))
 
@@ -62,13 +65,37 @@ class TestAsianRaceHandling(unittest.TestCase):
         self.assertEqual(RaceEthnicity.ASIAN, asian._raceEthnicity)
 
     def test_asian_equals_white_in_legacy_nhanes_model(self):
-        params = {"age": 0, "gender": 0, "raceEthnicity[T.2]": 1, "raceEthnicity[T.3]": 5,
-                  "raceEthnicity[T.4]": 2, "raceEthnicity[T.5]": 3, "smokingStatus[T.1]": 0,
-                  "smokingStatus[T.2]": 0, "sbp": 0, "dbp": 0, "a1c": 0, "hdl": 0,
-                  "totChol": 0, "bmi": 0, "Intercept": 10}
+        params = {
+            "age": 0,
+            "gender": 0,
+            "raceEthnicity[T.2]": 1,
+            "raceEthnicity[T.3]": 5,
+            "raceEthnicity[T.4]": 2,
+            "raceEthnicity[T.5]": 3,
+            "smokingStatus[T.1]": 0,
+            "smokingStatus[T.2]": 0,
+            "sbp": 0,
+            "dbp": 0,
+            "a1c": 0,
+            "hdl": 0,
+            "totChol": 0,
+            "bmi": 0,
+            "Intercept": 10,
+        }
         model = NHANESLinearRiskFactorModel(params=params, resids=pd.Series(np.zeros(10)))
         estimate = lambda race: model.estimate_risk_for_params(
-            60, 1, 120, 80, 5.5, 50, 200, 25, race, SmokingStatus.NEVER, rng=np.random.default_rng(0))
+            60,
+            1,
+            120,
+            80,
+            5.5,
+            50,
+            200,
+            25,
+            race,
+            SmokingStatus.NEVER,
+            rng=np.random.default_rng(0),
+        )
         self.assertEqual(15, estimate(RaceEthnicity.NON_HISPANIC_WHITE))
         self.assertEqual(15, estimate(RaceEthnicity.ASIAN))
         self.assertEqual(10, estimate(RaceEthnicity.MEXICAN_AMERICAN))
@@ -82,19 +109,19 @@ class TestAsianRaceHandling(unittest.TestCase):
         white.advance_risk_factors(repo)
         asian.advance_risk_factors(repo)
         for rf in white._dynamicRiskFactors:
-            self.assertEqual(getattr(white, "_"+rf)[-1], getattr(asian, "_"+rf)[-1], rf)
+            self.assertEqual(getattr(white, "_" + rf)[-1], getattr(asian, "_" + rf)[-1], rf)
 
 
 # ==========================================================================
 # Person-aware risk factor bounds
 # ==========================================================================
 
-class TestPersonAwareBounds(unittest.TestCase):
 
+class TestPersonAwareBounds(unittest.TestCase):
     def test_apply_to_person_uses_person_age(self):
         adult = _build_person(age=60)
         child = _build_person(age=10)
-        self.assertEqual(297., RiskFactorBounds.apply_to_person("sbp", 500, adult))
+        self.assertEqual(297.0, RiskFactorBounds.apply_to_person("sbp", 500, adult))
         self.assertEqual(190.3, RiskFactorBounds.apply_to_person("sbp", 500, child))
 
     def test_age_is_judged_by_its_proposed_next_value(self):
@@ -115,13 +142,21 @@ class TestPersonAwareBounds(unittest.TestCase):
 # PVD is an absorbing state
 # ==========================================================================
 
-class TestPVDIsAbsorbing(unittest.TestCase):
 
+class TestPVDIsAbsorbing(unittest.TestCase):
     def test_lag_pvd_gives_risk_of_exactly_one(self):
         model = PVDIncidenceModel()
         lp = model.calc_linear_predictor_for_patient_characteristics(
-            70, 140, 80, 200, 50, NHANESGender.MALE, SmokingStatus.NEVER,
-            RaceEthnicity.NON_HISPANIC_WHITE, True)
+            70,
+            140,
+            80,
+            200,
+            50,
+            NHANESGender.MALE,
+            SmokingStatus.NEVER,
+            RaceEthnicity.NON_HISPANIC_WHITE,
+            True,
+        )
         self.assertGreater(lp, 10)  # above the clamp, so the risk is exactly 1
 
     def test_person_with_pvd_always_keeps_it(self):
@@ -136,23 +171,28 @@ class TestPVDIsAbsorbing(unittest.TestCase):
 # GFR equation
 # ==========================================================================
 
-class TestGFREquation(unittest.TestCase):
 
+class TestGFREquation(unittest.TestCase):
     def test_wave_argument_selects_the_wave(self):
         person = _build_person(age=60)
         person._age = [60, 61]
         person._creatinine = [0.9, 1.5]
         gfr = GFREquation()
-        self.assertEqual(gfr.get_gfr_for_person_attributes(
-            person._gender, person._raceEthnicity, 0.9, 60), gfr.get_gfr_for_person(person, wave=0))
-        self.assertEqual(gfr.get_gfr_for_person_attributes(
-            person._gender, person._raceEthnicity, 1.5, 61), gfr.get_gfr_for_person(person))
+        self.assertEqual(
+            gfr.get_gfr_for_person_attributes(person._gender, person._raceEthnicity, 0.9, 60),
+            gfr.get_gfr_for_person(person, wave=0),
+        )
+        self.assertEqual(
+            gfr.get_gfr_for_person_attributes(person._gender, person._raceEthnicity, 1.5, 61),
+            gfr.get_gfr_for_person(person),
+        )
 
     def test_diagnostic_path_does_not_raise(self):
         # nan creatinine fires the diagnostic print, which used to raise a NameError
         with contextlib.redirect_stdout(io.StringIO()):
             result = GFREquation().get_gfr_for_person_attributes(
-                NHANESGender.FEMALE, RaceEthnicity.NON_HISPANIC_BLACK, np.nan, 60)
+                NHANESGender.FEMALE, RaceEthnicity.NON_HISPANIC_BLACK, np.nan, 60
+            )
         self.assertTrue(math.isnan(result))
 
 
@@ -160,12 +200,13 @@ class TestGFREquation(unittest.TestCase):
 # Alcohol prevalence model
 # ==========================================================================
 
-class TestAlcoholPrevalenceModel(unittest.TestCase):
 
+class TestAlcoholPrevalenceModel(unittest.TestCase):
     def test_onetosix_has_zero_probability_by_design(self):
         # NHANES has no ONETOSIX rows, so the first two polr intercepts are deliberately equal
         lps = AlcoholPrevalenceModel().calc_linear_predictor_for_patient_characteristics(
-            NHANESGender.MALE, SmokingStatus.NEVER, 60)
+            NHANESGender.MALE, SmokingStatus.NEVER, 60
+        )
         self.assertEqual(lps[0], lps[1])
 
     def test_estimate_never_returns_onetosix(self):

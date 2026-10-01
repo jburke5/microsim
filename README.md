@@ -12,9 +12,9 @@ First, clone this GitHub repository using your method of choice. Then, to create
 poetry install
 ```
 
-This project uses `flake8` for linting, `black` for formatting, and `unittest` for testing. Each of these tools have Poetry scripts for convenience:
+This project uses `ruff` for linting and formatting, and `unittest` for testing. Each of these tools have Poetry scripts for convenience:
 ```
-poetry run lint  # check for flake8 errors
-poetry run format  # format with black
+poetry run lint  # lint with ruff
+poetry run format  # format with ruff
 poetry run test  # run tests
 ```

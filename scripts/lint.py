@@ -2,6 +2,6 @@ import subprocess
 
 
 def main():
-    cmd = ["flake8"]
+    cmd = ["ruff", "check"]
     proc = subprocess.run(cmd)
     exit(proc.returncode)

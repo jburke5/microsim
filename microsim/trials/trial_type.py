@@ -1,5 +1,6 @@
 from enum import IntEnum
 
+
 class TrialType(IntEnum):
     COMPLETELY_RANDOMIZED = 1
     COMPLETELY_RANDOMIZED_IN_BLOCKS = 2

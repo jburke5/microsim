@@ -2,6 +2,6 @@ import subprocess
 
 
 def main():
-    cmd = ["black", "."]
+    cmd = ["ruff", "format"]
     proc = subprocess.run(cmd)
     exit(proc.returncode)

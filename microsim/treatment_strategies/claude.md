@@ -22,11 +22,11 @@ Treatment strategies integrate with:
 From `treatment_strategies/treatment_strategies.py`:
 ```python
 class TreatmentStrategiesType(Enum):
-    BP = "bp"                # Blood pressure management strategies
-    STATIN = "statin"        # Statin therapy strategies
-    WMD15 = "wmd15"         # White matter disease - 15% target
-    WMD20 = "wmd20"         # White matter disease - 20% target
-    WMD25 = "wmd25"         # White matter disease - 25% target
+    BP = "bp"  # Blood pressure management strategies
+    STATIN = "statin"  # Statin therapy strategies
+    WMD15 = "wmd15"  # White matter disease - 15% target
+    WMD20 = "wmd20"  # White matter disease - 20% target
+    WMD25 = "wmd25"  # White matter disease - 25% target
 ```
 
 ### BP Treatment Strategies
@@ -119,6 +119,7 @@ def get_updated_treatments(self, person):
     """Return dictionary of treatment updates to apply"""
     return {}  # e.g., {"bpMedsAdded": 2}
 
+
 def get_updated_risk_factors(self, person):
     """Return dictionary of risk factor updates to apply"""
     return {}  # e.g., {"sbp": 120, "dbp": 65}
@@ -150,7 +151,7 @@ person._treatmentStrategies = {
     "statin": {"status": BEGIN, "statinMedsAdded": 1},
     "wmd15": {"status": None},
     "wmd20": {"status": None},
-    "wmd25": {"status": None}
+    "wmd25": {"status": None},
 }
 ```
 
@@ -191,7 +192,7 @@ _treatmentStrategies = {
     "statin": {"status": None},
     "wmd15": {"status": None},
     "wmd20": {"status": None},
-    "wmd25": {"status": None}
+    "wmd25": {"status": None},
 }
 ```
 
@@ -224,6 +225,7 @@ Complete workflow:
    ```python
    # treatment_strategies/new_treatment_strategies.py
    from microsim.treatment_strategies.treatment_strategies import TreatmentStrategiesType
+
 
    class NewTreatmentStrategy:
        def __init__(self, parameter1, parameter2):
@@ -261,7 +263,9 @@ Complete workflow:
    from microsim.treatment_strategies.new_treatment_strategies import NewTreatmentStrategy
 
    treatment_strategy_repository = TreatmentStrategyRepository()
-   treatment_strategy_repository._repository[TreatmentStrategiesType.NEW_TREATMENT.value] = NewTreatmentStrategy()
+   treatment_strategy_repository._repository[TreatmentStrategiesType.NEW_TREATMENT.value] = (
+       NewTreatmentStrategy()
+   )
 
    # Apply to population
    population.advance(years=10, treatment_strategies=treatment_strategy_repository)
@@ -371,6 +375,7 @@ Test file: `test/test_treatment_strategy.py`
 import unittest
 from microsim.person import Person
 from microsim.treatment_strategies.bp_treatment_strategies import SprintTreatment
+
 
 class TestBPTreatmentStrategy(unittest.TestCase):
     def setUp(self):

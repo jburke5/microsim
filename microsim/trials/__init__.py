@@ -1,6 +1,6 @@
 """Trial framework: experimental design, orchestration, and outcome assessment.
 
-    from microsim.trials import Trial, TrialFactory, NhanesTrialDescription
+from microsim.trials import Trial, TrialFactory, NhanesTrialDescription
 """
 
 from microsim.trials.trial import Trial

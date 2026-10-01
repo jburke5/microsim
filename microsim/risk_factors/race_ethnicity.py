@@ -14,4 +14,3 @@ class RaceEthnicity(IntEnum):
     NON_HISPANIC_BLACK = 4
     OTHER = 5
     ASIAN = 6
-

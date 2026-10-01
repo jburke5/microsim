@@ -11,16 +11,15 @@ class LogisticRiskFactorModel(LinearRiskFactorModel):
         return super().estimate_next_risk(person)
 
     def logit(self, linearRisk):
-        #return np.exp(linearRisk) / (1 + np.exp(linearRisk))
-        if linearRisk<-10:
-            risk = 0.
-        elif linearRisk>10.:
-            risk = 1.
+        # return np.exp(linearRisk) / (1 + np.exp(linearRisk))
+        if linearRisk < -10:
+            risk = 0.0
+        elif linearRisk > 10.0:
+            risk = 1.0
         else:
-            risk = 1/(1+np.exp(-linearRisk))
+            risk = 1 / (1 + np.exp(-linearRisk))
         return risk
 
     # apply inverse logit to the linear predictor
     def estimate_next_risk(self, person):
         return self.logit(self.estimate_linear_predictor(person))
-

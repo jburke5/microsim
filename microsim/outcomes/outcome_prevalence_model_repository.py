@@ -25,33 +25,33 @@ from microsim.outcomes.cognition_model_repository import CognitionPrevalenceMode
 #   OutcomeType.CARDIOVASCULAR: 1.23,  # scale=CV, target_outcome=CV, target=0.18,
 #                                      # AgeScope(65, None), NHANES 1999, 2026-05-15
 DEFAULT_PREVALENCE_RISK_SCALING: dict[OutcomeType, float] = {
-      # CV and STROKE are a pair from calibration.fit_prevalence_scaling_to_stroke_mi: joint
-      # least squares to the GBD stroke and MI rates in Reference.prevalence (ages 50-74, USA,
-      # 1999), 2026-08-28. Under them seeded CV sits at the GBD stroke+MI level (the MI
-      # partition forces stroke + MI = CV), not the GBD all-CVD level the coefficients target.
-      OutcomeType.CARDIOVASCULAR: 0.3474,
-      OutcomeType.STROKE: 2.4466,
-      # calibrate_prevalence: scale=epilepsy target_outcome=epilepsy scope=pooled_65_plus target=0.0110 scaling=1.8845, CMS-based data for >=65
-      OutcomeType.EPILEPSY: 1.88
+    # CV and STROKE are a pair from calibration.fit_prevalence_scaling_to_stroke_mi: joint
+    # least squares to the GBD stroke and MI rates in Reference.prevalence (ages 50-74, USA,
+    # 1999), 2026-08-28. Under them seeded CV sits at the GBD stroke+MI level (the MI
+    # partition forces stroke + MI = CV), not the GBD all-CVD level the coefficients target.
+    OutcomeType.CARDIOVASCULAR: 0.3474,
+    OutcomeType.STROKE: 2.4466,
+    # calibrate_prevalence: scale=epilepsy target_outcome=epilepsy scope=pooled_65_plus target=0.0110 scaling=1.8845, CMS-based data for >=65
+    OutcomeType.EPILEPSY: 1.88,
 }
 
 
 class OutcomePrevalenceModelRepository:
     """Holds the priorToSim (prevalence) rules for outcomes.
-       Mirror image of OutcomeModelRepository: every OutcomeType is registered as a key, but
-       outcomes without a prevalence model resolve to None and are skipped during seeding.
+    Mirror image of OutcomeModelRepository: every OutcomeType is registered as a key, but
+    outcomes without a prevalence model resolve to None and are skipped during seeding.
 
-       riskScaling: optional dict[OutcomeType, float] applied per-outcome inside each
-       prevalence model. For expit-based logistic models the scalar is applied as an odds
-       shift (lp + log(scaling)); for the epilepsy rate model it is a direct rate multiplier.
-       Outcomes without a probabilistic prevalence model (MI partition, cognition GCP) ignore
-       riskScaling regardless of what is passed.
+    riskScaling: optional dict[OutcomeType, float] applied per-outcome inside each
+    prevalence model. For expit-based logistic models the scalar is applied as an odds
+    shift (lp + log(scaling)); for the epilepsy rate model it is a direct rate multiplier.
+    Outcomes without a probabilistic prevalence model (MI partition, cognition GCP) ignore
+    riskScaling regardless of what is passed.
 
-       useDefaults: when True (default), entries from DEFAULT_PREVALENCE_RISK_SCALING are
-       merged with `riskScaling`; per-outcome values in `riskScaling` override defaults.
-       Pass useDefaults=False to bypass the module-level defaults entirely — used by the
-       calibrators to measure against a pristine baseline, and by sensitivity analyses
-       that want to recover pre-calibration behavior."""
+    useDefaults: when True (default), entries from DEFAULT_PREVALENCE_RISK_SCALING are
+    merged with `riskScaling`; per-outcome values in `riskScaling` override defaults.
+    Pass useDefaults=False to bypass the module-level defaults entirely — used by the
+    calibrators to measure against a pristine baseline, and by sensitivity analyses
+    that want to recover pre-calibration behavior."""
 
     def __init__(self, riskScaling=None, useDefaults=True):
         if riskScaling is None:
@@ -67,19 +67,21 @@ class OutcomePrevalenceModelRepository:
         diabetesScaling = effective.get(OutcomeType.DIABETES, 1.0)
         ckdScaling = effective.get(OutcomeType.CHRONIC_KIDNEY_DISEASE, 1.0)
         self._repository = {
-            OutcomeType.WMH:                      None,
-            OutcomeType.COGNITION:                CognitionPrevalenceModelRepository(),
-            OutcomeType.CI:                       None,
-            OutcomeType.MCI:                      None,
-            OutcomeType.DIABETES:                 DiabetesPrevalenceModelRepository(riskScaling=diabetesScaling),
-            OutcomeType.CHRONIC_KIDNEY_DISEASE:   ChronicKidneyDiseasePrevalenceModelRepository(riskScaling=ckdScaling),
-            OutcomeType.CARDIOVASCULAR:           CVPrevalenceModelRepository(riskScaling=cvScaling),
-            OutcomeType.STROKE:                   StrokePrevalenceModelRepository(riskScaling=strokeScaling),
-            OutcomeType.MI:                       MIPrevalenceModelRepository(),
-            OutcomeType.NONCARDIOVASCULAR:        None,
-            OutcomeType.DEMENTIA:                 DementiaPrevalenceModelRepository(riskScaling=dementiaScaling),
-            OutcomeType.EPILEPSY:                 EpilepsyPrevalenceModelRepository(riskScaling=epilepsyScaling),
-            OutcomeType.DEATH:                    None,
+            OutcomeType.WMH: None,
+            OutcomeType.COGNITION: CognitionPrevalenceModelRepository(),
+            OutcomeType.CI: None,
+            OutcomeType.MCI: None,
+            OutcomeType.DIABETES: DiabetesPrevalenceModelRepository(riskScaling=diabetesScaling),
+            OutcomeType.CHRONIC_KIDNEY_DISEASE: ChronicKidneyDiseasePrevalenceModelRepository(
+                riskScaling=ckdScaling
+            ),
+            OutcomeType.CARDIOVASCULAR: CVPrevalenceModelRepository(riskScaling=cvScaling),
+            OutcomeType.STROKE: StrokePrevalenceModelRepository(riskScaling=strokeScaling),
+            OutcomeType.MI: MIPrevalenceModelRepository(),
+            OutcomeType.NONCARDIOVASCULAR: None,
+            OutcomeType.DEMENTIA: DementiaPrevalenceModelRepository(riskScaling=dementiaScaling),
+            OutcomeType.EPILEPSY: EpilepsyPrevalenceModelRepository(riskScaling=epilepsyScaling),
+            OutcomeType.DEATH: None,
             OutcomeType.QUALITYADJUSTED_LIFE_YEARS: None,
         }
         self.check_repository_completeness()

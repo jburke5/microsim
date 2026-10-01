@@ -116,9 +116,13 @@ From person/person.py:147-154:
 def advance_treatments(self, defaultTreatmentRepository):
     """Makes predictions for the default treatments 1 year to the future."""
     for treatment in self._defaultTreatments:
-        setattr(self, "_" + treatment,
-                getattr(self, "_" + treatment) +
-                [self.get_next_treatment(treatment, defaultTreatmentRepository)])
+        setattr(
+            self,
+            "_" + treatment,
+            getattr(self, "_" + treatment)
+            + [self.get_next_treatment(treatment, defaultTreatmentRepository)],
+        )
+
 
 def get_next_treatment(self, treatment, treatmentRepository):
     model = treatmentRepository.get_model(treatment)
@@ -163,7 +167,9 @@ self._repository = {
 ```python
 # Get current (most recent) treatment value (method takes the enum's .value string)
 current_statin = person.get_last_default_treatment(DefaultTreatmentsType.STATIN.value)
-current_bp_meds = person.get_last_default_treatment(DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value)
+current_bp_meds = person.get_last_default_treatment(
+    DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value
+)
 
 # Access full treatment history
 statin_history = person._statin  # Array indexed by wave
@@ -202,7 +208,9 @@ Default treatments are available in outcome model predictions via `model_argumen
        STATIN = "statin"
        NEW_TREATMENT = "newTreatment"  # If categorical
 
+
    # OR
+
 
    class ContinuousDefaultTreatmentsType(Enum):
        ANTI_HYPERTENSIVE_COUNT = "antiHypertensiveCount"
@@ -219,8 +227,7 @@ Default treatments are available in outcome model predictions via `model_argumen
        def __init__(self):
            super().__init__()
            self._initialize_linear_probability_risk_model(
-               DefaultTreatmentsType.NEW_TREATMENT.value,
-               "newTreatmentCohortModel"
+               DefaultTreatmentsType.NEW_TREATMENT.value, "newTreatmentCohortModel"
            )
    ```
 
@@ -269,6 +276,7 @@ Default treatment testing typically involves:
 import unittest
 from microsim.population import PopulationFactory
 from microsim.default_treatments.default_treatments import DefaultTreatmentsType
+
 
 class TestDefaultTreatments(unittest.TestCase):
     def setUp(self):

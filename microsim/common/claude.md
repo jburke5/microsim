@@ -49,7 +49,7 @@ Construction raises `ValueError` if `lo > hi`.
 class PopulationType(Enum):
     NHANES = "nhanes"
     KAISER = "kaiser"
-    STATE  = "state"
+    STATE = "state"
 ```
 
 Identifies the data source for a population. Used by `PersonFactory`, `PopulationFactory`, `TrialDescription`, and the top-level `microsim` package `__init__.py` to dispatch initialization and loading logic to the correct data pipeline.
@@ -58,8 +58,8 @@ Identifies the data source for a population. Used by `PersonFactory`, `Populatio
 
 ```python
 class VariableType(Enum):
-    CONTINUOUS   = "continuous"
-    CATEGORICAL  = "categorical"
+    CONTINUOUS = "continuous"
+    CATEGORICAL = "categorical"
 ```
 
 Classifies risk factor variables for population initialization. Used in `PopulationFactory` to partition variable lists when drawing from NHANES or Kaiser data (e.g., `variable_types(varType=VariableType.CATEGORICAL.value, popType=PopulationType.NHANES.value)`).

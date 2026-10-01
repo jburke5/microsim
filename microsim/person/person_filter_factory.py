@@ -1,15 +1,16 @@
 import pandas as pd
 
 from microsim.person.person_filter import PersonFilter
-from microsim.risk_factors.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
+from microsim.risk_factors.risk_factor import DynamicRiskFactorsType
 from microsim.default_treatments.default_treatments import DefaultTreatmentsType
 from microsim.outcomes.cv_model_repository import CVModelRepository
 
-#shared by the highCVLimit filter so the CV models are not rebuilt for every person tested
+# shared by the highCVLimit filter so the CV models are not rebuilt for every person tested
 _cvModelRepository = CVModelRepository()
 
+
 class PersonFilterFactory:
-    '''Factory that builds a PersonFilter, the object used to include/exclude individuals from a Population.
+    """Factory that builds a PersonFilter, the object used to include/exclude individuals from a Population.
 
     A PersonFilter holds two collections of named, boolean-returning functions (see PersonFilter):
         filters["df"]     functions applied to a dataframe ROW before any Person object is built
@@ -83,31 +84,39 @@ class PersonFilterFactory:
       reflects baseline state rather than simulated events.
     - Prefer "df" filters whenever the criterion can be read from the raw data; reserve "person"
       filters for model-based criteria so Person objects are not built for rows that will be rejected.
-    '''
+    """
 
     # Registry of pre-defined filters: string key -> (filterType, filterFunction).
     # Add an entry here to make a new filter requestable by name via get_person_filter.
     filterMap = {
-        "adult": ("df", lambda x: x[DynamicRiskFactorsType.AGE.value]>=18),
-        "lowSBPLimit": ("df", lambda x: x[DynamicRiskFactorsType.SBP.value]>126),
-        "lowDBPLimit": ("df", lambda x: x[DynamicRiskFactorsType.DBP.value]>85),
-        "highAntiHypertensivesLimit": ("df", lambda x: x[DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value]<=3),
-        "highCVLimit": ("person",
-            lambda x: (_cvModelRepository.select_outcome_model_for_person(x).get_risk_for_person(x)< (0.00477) )),
-        "noMCI": ("person",
-            lambda x: not x.has_mci(inSim=False)),
-        "hasEpilepsy": ("person",
-            lambda x: x.has_epilepsy()),
-        #timeInUS is NHANES DMDYRSUS: duration bands asked only of the foreign-born (5 = 15-<20
-        #years, the band holding an 18-year lookback; 77/99 = refused/don't know), NaN for the
-        #US-born - who must be kept, NaN >= threshold silently drops them all
-        "usBornOrInUs15PlusYears": ("df",
-            lambda x: pd.isna(x["timeInUS"]) or (5 <= x["timeInUS"] <= 9)),
+        "adult": ("df", lambda x: x[DynamicRiskFactorsType.AGE.value] >= 18),
+        "lowSBPLimit": ("df", lambda x: x[DynamicRiskFactorsType.SBP.value] > 126),
+        "lowDBPLimit": ("df", lambda x: x[DynamicRiskFactorsType.DBP.value] > 85),
+        "highAntiHypertensivesLimit": (
+            "df",
+            lambda x: x[DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value] <= 3,
+        ),
+        "highCVLimit": (
+            "person",
+            lambda x: (
+                _cvModelRepository.select_outcome_model_for_person(x).get_risk_for_person(x)
+                < (0.00477)
+            ),
+        ),
+        "noMCI": ("person", lambda x: not x.has_mci(inSim=False)),
+        "hasEpilepsy": ("person", lambda x: x.has_epilepsy()),
+        # timeInUS is NHANES DMDYRSUS: duration bands asked only of the foreign-born (5 = 15-<20
+        # years, the band holding an 18-year lookback; 77/99 = refused/don't know), NaN for the
+        # US-born - who must be kept, NaN >= threshold silently drops them all
+        "usBornOrInUs15PlusYears": (
+            "df",
+            lambda x: pd.isna(x["timeInUS"]) or (5 <= x["timeInUS"] <= 9),
+        ),
     }
 
     @staticmethod
     def get_person_filter(filterNames=None):
-        '''Return a PersonFilter holding the pre-defined filters named in filterNames.
+        """Return a PersonFilter holding the pre-defined filters named in filterNames.
 
         filterNames is a list of keys into filterMap; each named filter is added to the returned
         PersonFilter at its registered level ("df" or "person") under its key as the filter name.
@@ -120,14 +129,16 @@ class PersonFilterFactory:
             pf = PersonFilterFactory.get_person_filter()                          # adult (age >= 18) only
             pf = PersonFilterFactory.get_person_filter(["lowSBPLimit", "highCVLimit"])
             pf = PersonFilterFactory.get_person_filter([])                         # no filters
-        '''
+        """
         if filterNames is None:
             filterNames = ["adult"]
         pf = PersonFilter()
         for filterName in filterNames:
             if filterName not in PersonFilterFactory.filterMap:
-                raise ValueError(f"Unknown person filter '{filterName}'. "
-                                 f"Available filters: {sorted(PersonFilterFactory.filterMap.keys())}")
+                raise ValueError(
+                    f"Unknown person filter '{filterName}'. "
+                    f"Available filters: {sorted(PersonFilterFactory.filterMap.keys())}"
+                )
             filterType, filterFunction = PersonFilterFactory.filterMap[filterName]
             pf.add_filter(filterType, filterName, filterFunction)
         return pf

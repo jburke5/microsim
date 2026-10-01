@@ -13,7 +13,7 @@ import pandas as pd
 
 from microsim.person.person_factory import PersonFactory
 from microsim.risk_factors.initialization_model_repository import InitializationModelRepository
-from microsim.outcomes.outcome import Outcome, OutcomeType
+from microsim.outcomes.outcome import OutcomeType
 from microsim.outcomes.stroke_outcome import StrokeOutcome
 from microsim.risk_factors.risk_factor import StaticRiskFactorsType, DynamicRiskFactorsType
 from microsim.risk_factors.education import Education
@@ -25,41 +25,48 @@ from microsim.default_treatments.default_treatments import DefaultTreatmentsType
 
 
 def _build_person():
-    x = pd.DataFrame({
-        DynamicRiskFactorsType.AGE.value: 60,
-        StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-        StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,
-        DynamicRiskFactorsType.SBP.value: 120,
-        DynamicRiskFactorsType.DBP.value: 80,
-        DynamicRiskFactorsType.A1C.value: 5.5,
-        DynamicRiskFactorsType.HDL.value: 50,
-        DynamicRiskFactorsType.TOT_CHOL.value: 200,
-        DynamicRiskFactorsType.BMI.value: 25,
-        DynamicRiskFactorsType.LDL.value: 90,
-        DynamicRiskFactorsType.TRIG.value: 150,
-        DynamicRiskFactorsType.WAIST.value: 45,
-        DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
-        StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
-        StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
-        DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
-        DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
-        DefaultTreatmentsType.STATIN.value: 0,
-        DynamicRiskFactorsType.CREATININE.value: 0.9,
-        "name": "testPerson"}, index=[0])
+    x = pd.DataFrame(
+        {
+            DynamicRiskFactorsType.AGE.value: 60,
+            StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
+            StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,
+            DynamicRiskFactorsType.SBP.value: 120,
+            DynamicRiskFactorsType.DBP.value: 80,
+            DynamicRiskFactorsType.A1C.value: 5.5,
+            DynamicRiskFactorsType.HDL.value: 50,
+            DynamicRiskFactorsType.TOT_CHOL.value: 200,
+            DynamicRiskFactorsType.BMI.value: 25,
+            DynamicRiskFactorsType.LDL.value: 90,
+            DynamicRiskFactorsType.TRIG.value: 150,
+            DynamicRiskFactorsType.WAIST.value: 45,
+            DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: False,
+            StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
+            StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+            DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,
+            DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: 0,
+            DefaultTreatmentsType.STATIN.value: 0,
+            DynamicRiskFactorsType.CREATININE.value: 0.9,
+            "name": "testPerson",
+        },
+        index=[0],
+    )
     return PersonFactory.get_nhanes_person(x.iloc[0], InitializationModelRepository())
 
 
 def _add_priorToSim_stroke(person):
     person._outcomes[OutcomeType.STROKE].append(
-        (None, StrokeOutcome(False, None, None, None, priorToSim=True)))
+        (None, StrokeOutcome(False, None, None, None, priorToSim=True))
+    )
 
 
 def _add_in_sim_stroke(person, age):
     person._outcomes[OutcomeType.STROKE].append(
-        (age, StrokeOutcome(False, None, None, None, priorToSim=False)))
+        (age, StrokeOutcome(False, None, None, None, priorToSim=False))
+    )
 
 
 # --- A. CRASH SITES ----------------------------------------------------------
+
 
 class TestGetPersonYearsWithOutcome(unittest.TestCase):
     """get_person_years_with_outcome_by_end_of_wave (person.py:802-810)
@@ -71,7 +78,8 @@ class TestGetPersonYearsWithOutcome(unittest.TestCase):
         person = _build_person()
         _add_priorToSim_stroke(person)
         result = person.get_person_years_with_outcome_by_end_of_wave(
-            outcomeType=OutcomeType.STROKE, wave=0)
+            outcomeType=OutcomeType.STROKE, wave=0
+        )
         self.assertEqual(0, result)
 
     def test_counts_only_in_sim_outcomes_when_priorToSim_present(self):
@@ -82,22 +90,25 @@ class TestGetPersonYearsWithOutcome(unittest.TestCase):
         _add_priorToSim_stroke(person)
         _add_in_sim_stroke(person, age=62)
         result = person.get_person_years_with_outcome_by_end_of_wave(
-            outcomeType=OutcomeType.STROKE, wave=3)
+            outcomeType=OutcomeType.STROKE, wave=3
+        )
         self.assertEqual(1, result)
 
     def test_outcome_in_every_wave_reaches_wave_plus_one(self):
-        #waves 0..wave inclusive can contribute wave+1 person-years, the sanity check must allow that
+        # waves 0..wave inclusive can contribute wave+1 person-years, the sanity check must allow that
         person = _build_person()
         person._age = [60, 61]
         person._waveCompleted = 1
         _add_in_sim_stroke(person, age=60)
         _add_in_sim_stroke(person, age=61)
         result = person.get_person_years_with_outcome_by_end_of_wave(
-            outcomeType=OutcomeType.STROKE, wave=1)
+            outcomeType=OutcomeType.STROKE, wave=1
+        )
         self.assertEqual(2, result)
 
 
 # --- B. SILENT LOGIC BUGS ----------------------------------------------------
+
 
 class TestHasIncidentEvent(unittest.TestCase):
     """has_incident_event (person.py:460-467) inspects _outcomes[type][0][0],
@@ -130,6 +141,7 @@ class TestGetAgesWithOutcome(unittest.TestCase):
 
 
 # --- C. CURRENTLY-CORRECT BEHAVIOR (regression guards) -----------------------
+
 
 class TestHasOutcomeAtAge(unittest.TestCase):
     """has_outcome_at_age (person.py:646-650) checks tuple[0] == age. With

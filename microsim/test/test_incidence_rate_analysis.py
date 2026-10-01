@@ -33,18 +33,17 @@ class MockTrial:
 
 
 class TestIncidenceRateAnalysis(unittest.TestCase):
-
     def test_basic_calculation(self):
         """Test that incidence rate is calculated correctly."""
         # Treated: 2 events in 50 person-years = 40 per 1000 PY
         # Control: 4 events in 50 person-years = 80 per 1000 PY
         treated_pop = MockPopulation(
             outcomes=[True, True, False, False, False],  # 2 events
-            person_years=[10, 10, 10, 10, 10]  # 50 person-years
+            person_years=[10, 10, 10, 10, 10],  # 50 person-years
         )
         control_pop = MockPopulation(
             outcomes=[True, True, True, True, False],  # 4 events
-            person_years=[10, 10, 10, 10, 10]  # 50 person-years
+            person_years=[10, 10, 10, 10, 10],  # 50 person-years
         )
         trial = MockTrial(treated_pop, control_pop)
 
@@ -52,9 +51,11 @@ class TestIncidenceRateAnalysis(unittest.TestCase):
         result = analysis.analyze(
             trial,
             {
-                "eventAndTime": lambda x: x.get_followup_events_and_person_years([OutcomeType.STROKE], x._waveCompleted)
+                "eventAndTime": lambda x: x.get_followup_events_and_person_years(
+                    [OutcomeType.STROKE], x._waveCompleted
+                )
             },
-            "incidenceRate"
+            "incidenceRate",
         )
 
         self.assertEqual(len(result), 2)
@@ -63,23 +64,19 @@ class TestIncidenceRateAnalysis(unittest.TestCase):
 
     def test_zero_events(self):
         """Test handling of zero events."""
-        treated_pop = MockPopulation(
-            outcomes=[False, False, False],
-            person_years=[10, 10, 10]
-        )
-        control_pop = MockPopulation(
-            outcomes=[False, False, False],
-            person_years=[10, 10, 10]
-        )
+        treated_pop = MockPopulation(outcomes=[False, False, False], person_years=[10, 10, 10])
+        control_pop = MockPopulation(outcomes=[False, False, False], person_years=[10, 10, 10])
         trial = MockTrial(treated_pop, control_pop)
 
         analysis = IncidenceRateAnalysis()
         result = analysis.analyze(
             trial,
             {
-                "eventAndTime": lambda x: x.get_followup_events_and_person_years([OutcomeType.STROKE], x._waveCompleted)
+                "eventAndTime": lambda x: x.get_followup_events_and_person_years(
+                    [OutcomeType.STROKE], x._waveCompleted
+                )
             },
-            "incidenceRate"
+            "incidenceRate",
         )
 
         self.assertEqual(result[0], 0.0)
@@ -95,9 +92,11 @@ class TestIncidenceRateAnalysis(unittest.TestCase):
         toa.add_outcome_assessment(
             "testIR",
             {
-                "eventAndTime": lambda x: x.get_followup_events_and_person_years([OutcomeType.STROKE], x._waveCompleted)
+                "eventAndTime": lambda x: x.get_followup_events_and_person_years(
+                    [OutcomeType.STROKE], x._waveCompleted
+                )
             },
-            AnalysisType.INCIDENCE_RATE.value
+            AnalysisType.INCIDENCE_RATE.value,
         )
         self.assertIn("testIR", toa._assessments)
 

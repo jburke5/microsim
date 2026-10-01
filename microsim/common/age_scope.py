@@ -12,6 +12,7 @@ class AgeScope:
         AgeScope(70, 74)        -> 70..74 inclusive
         AgeScope(75, 75)        -> exactly 75
     """
+
     lo: Optional[int] = None
     hi: Optional[int] = None
 
@@ -20,8 +21,7 @@ class AgeScope:
             raise ValueError(f"AgeScope lo>hi: {self.lo}>{self.hi}")
 
     def contains(self, age: int) -> bool:
-        return ((self.lo is None or age >= self.lo)
-                and (self.hi is None or age <= self.hi))
+        return (self.lo is None or age >= self.lo) and (self.hi is None or age <= self.hi)
 
     @property
     def label(self) -> str:

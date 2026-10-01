@@ -40,20 +40,22 @@ class LinearRiskFactorModel:
     def draw_from_residual_distribution(self, rng=None):
         if not (hasattr(self, "residual_mean") and hasattr(self, "residual_standard_deviation")):
             raise RuntimeError(
-                "Cannot draw from residual distribution: model does not have"
-                " residual information"
+                "Cannot draw from residual distribution: model does not have residual information"
             )
-        return rng.normal(
-            loc=self.residual_mean, scale=self.residual_standard_deviation, size=1
-        )[0]
+        return rng.normal(loc=self.residual_mean, scale=self.residual_standard_deviation, size=1)[
+            0
+        ]
 
     def get_intercept(self):
         return self.parameters["Intercept"]
 
     def _get_person_attribute(self, prop_name, person):
         prop_value = getattr(person, f"_{prop_name}")
-        #the model specs were trained on NHANES which has no Asian category; Asian maps to white by convention
-        if prop_name == StaticRiskFactorsType.RACE_ETHNICITY.value and prop_value == RaceEthnicity.ASIAN:
+        # the model specs were trained on NHANES which has no Asian category; Asian maps to white by convention
+        if (
+            prop_name == StaticRiskFactorsType.RACE_ETHNICITY.value
+            and prop_value == RaceEthnicity.ASIAN
+        ):
             prop_value = RaceEthnicity.NON_HISPANIC_WHITE
         return prop_value
 
@@ -80,7 +82,7 @@ class LinearRiskFactorModel:
         linear_predictor = self.estimate_next_risk(person)
         return linear_predictor
 
-    #withResidual=False makes continuous risk factor advancement deterministic, shrinking population variance over time
+    # withResidual=False makes continuous risk factor advancement deterministic, shrinking population variance over time
     def estimate_next_risk(self, person, rng=None, withResidual=False):
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
         linearPredictor = self.get_intercept()
@@ -104,5 +106,8 @@ class LinearRiskFactorModel:
         if self.log_transform:
             linearPredictor = np.exp(linearPredictor)
 
-        return linearPredictor+self.draw_from_residual_distribution(rng=rng) if withResidual else linearPredictor
-
+        return (
+            linearPredictor + self.draw_from_residual_distribution(rng=rng)
+            if withResidual
+            else linearPredictor
+        )
