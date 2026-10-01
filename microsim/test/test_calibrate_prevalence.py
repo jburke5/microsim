@@ -9,7 +9,7 @@ from microsim.person.person_filter_factory import PersonFilterFactory
 
 
 def _adults_filter():
-    return PersonFilterFactory.get_person_filter()
+    return PersonFilterFactory.get_person_filter(["adult"])
 
 
 def _nhanes_args(n=500):
@@ -71,7 +71,8 @@ def _measure_realized_prev(scaleOutcomeType, targetOutcomeType, scaling, scope, 
        rebuilds shrinks that by sqrt(rebuilds)."""
     rs = dict(baselineRiskScaling or {})
     rs[scaleOutcomeType] = scaling
-    opmr = OutcomePrevalenceModelRepository(riskScaling=rs)
+    #useDefaults=False to mirror calibrate_prevalence, which measures against a pristine baseline
+    opmr = OutcomePrevalenceModelRepository(riskScaling=rs, useDefaults=False)
     prevalences = []
     for _ in range(rebuilds):
         people = PopulationFactory.get_nhanes_people(

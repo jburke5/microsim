@@ -97,7 +97,7 @@ where the baseline cumulative hazard `H₀` is approximated as a quadratic polyn
 - `linear_predictor(person)`: Returns the raw linear predictor (no intercept).
 - `get_cumulative_hazard_for_interval(intervalStart, intervalEnd)`: Baseline cumulative hazard between two time points.
 - `get_cumulative_hazard_for_years_in_sim(yearsInSim)`: Convenience wrapper for the interval `[yearsInSim-1, yearsInSim]`.
-- `get_risk_for_person(person, years, vectorized=False)`: Returns the annual event probability used by outcome model repositories.
+- `get_risk_for_person(person, years)`: Returns the annual event probability used by outcome model repositories.
 
 ### `LogisticRiskFactorModel`
 
@@ -125,7 +125,6 @@ RandInterceptLogisticRiskFactorModel(
 
 **Key methods:**
 - `estimate_next_risk(person)`: Adds the person's stored random intercept to the linear predictor before applying the sigmoid.
-- `estimate_next_risk_vectorized(x, rng=None)`: Vectorized path; reads the random intercept from `x[rand_intercept_name + "RandomEffect"]`.
 
 Used for outcome models (e.g., dementia) where individuals have persistent unobserved heterogeneity.
 
@@ -133,9 +132,8 @@ Used for outcome models (e.g., dementia) where individuals have persistent unobs
 
 Exponentiates the linear predictor to produce a relative risk (not an odds ratio). Designed for use in multinomial logistic regression implementations.
 
-**Key methods:**
+**Key method:**
 - `estimate_rel_risk(person)`: Returns `exp(linear_predictor)`.
-- `estimate_rel_risk_vectorized(person)`: Vectorized equivalent.
 
 ### `LinearProbabilityRiskFactorModel`
 
@@ -163,28 +161,24 @@ All transforms implement `AbstractBaseTransform` with a single `apply(value)` me
 
 | Class | Effect |
 |---|---|
-| `IndicatorTransform` | Returns `1` if `value == matching_value`, else `0` (person-mode) |
-| `IndicatorTransformVectorized` | Same comparison, but reads the named column from a row dict |
+| `IndicatorTransform` | Returns `1` if `value == matching_value`, else `0` |
 | `LogTransform` | `np.log(value)` |
 | `MeanTransform` | `np.array(value).mean()` |
-| `MeanTransformVectorized` | Reads `"mean" + prop_name.capitalize()` from the row dict |
 | `SquareTransform` | `value ** 2` |
 | `FirstElementTransform` | `value[0]` (baseline/first wave) |
-| `FirstElementTransformVectorized` | Reads `"base" + prop_name.capitalize()` from the row dict |
-| `IdentityTransformVectorized` | Reads `value[prop_name]` from the row dict (no-op transform) |
 
 `Transform` is an alias for `AbstractBaseTransform`.
 
 ### Coefficient-Name Parsing
 
-`get_argument_transforms(parameter_name, vectorized=False)` parses a coefficient key string into `(prop_name, [transforms])` by stripping recognized prefixes left-to-right:
+`get_argument_transforms(parameter_name)` parses a coefficient key string into `(prop_name, [transforms])` by stripping recognized prefixes left-to-right:
 
 | Prefix (case-insensitive) | Transform appended |
 |---|---|
 | `log` | `LogTransform` |
-| `mean` | `MeanTransform` / `MeanTransformVectorized` |
+| `mean` | `MeanTransform` |
 | `square` | `SquareTransform` |
-| `base` | `FirstElementTransform` / `FirstElementTransformVectorized` |
+| `base` | `FirstElementTransform` |
 | `lag` | no-op (identity); stops parsing |
 | `propname[T.val]` pattern | `IndicatorTransform` with integer `val`; stops parsing |
 | anything else | identity; stops parsing |
@@ -200,11 +194,10 @@ from microsim.regression_models.model_argument_transform import (
 )
 ```
 
-**`get_argument_transforms(parameter_name, vectorized=False)`**
+**`get_argument_transforms(parameter_name)`**
 - Returns `(expected_prop_name, transforms)` for one coefficient key.
-- `vectorized=True` switches to vectorized transform variants and calls `reorganize_transforms_vectorized` to ensure exactly one data-extracting transform.
 
-**`get_all_argument_transforms(parameter_names, vectorized=False)`**
+**`get_all_argument_transforms(parameter_names)`**
 - Calls `get_argument_transforms` for each name.
 - Omits names where the lowercased form equals the resolved `prop_name` (i.e., names that need no transformation).
 - Returns a `dict` mapping coefficient names that require transformation to `(prop_name, [transforms])` tuples.

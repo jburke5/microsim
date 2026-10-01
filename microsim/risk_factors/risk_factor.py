@@ -15,7 +15,7 @@ class DynamicRiskFactorsType(Enum):
     ANY_PHYSICAL_ACTIVITY = "anyPhysicalActivity" # boolean
     AFIB = "afib"  # boolean 
     WAIST = "waist"  # int, waist circumference in cm
-    ALCOHOL_PER_WEEK = "alcoholPerWeek"  # AlcoholCategory
+    ALCOHOL_PER_WEEK = "alcoholPerWeek"  # float, drinks per week
     CREATININE = "creatinine" # float
     PVD = "pvd"  # boolean
 
@@ -24,7 +24,7 @@ class StaticRiskFactorsType(Enum):
     EDUCATION = "education"          # Education
     GENDER = "gender"                # NHANESGender
     SMOKING_STATUS = "smokingStatus" # SmokingStatus
-    MODALITY = "modality"  # Modality, originated from the Kaiser WMH work 
+    MODALITY = "modality"  # Modality value string, originated from the Kaiser WMH work
 
 class CategoricalRiskFactorsType(Enum):
     RACE_ETHNICITY = "raceEthnicity" 
@@ -32,7 +32,6 @@ class CategoricalRiskFactorsType(Enum):
     GENDER = "gender"                
     SMOKING_STATUS = "smokingStatus" 
     PVD = "pvd"
-    ALCOHOL_PER_WEEK = "alcoholPerWeek"
     AFIB = "afib"
     ANY_PHYSICAL_ACTIVITY = "anyPhysicalActivity" 
     MODALITY = "modality"
@@ -48,5 +47,6 @@ class ContinuousRiskFactorsType(Enum):
     TOT_CHOL = "totChol"   # int
     BMI = "bmi"   #float
     WAIST = "waist"  # int, waist circumference in cm
+    ALCOHOL_PER_WEEK = "alcoholPerWeek"  # float, drinks per week
     CREATININE = "creatinine" # float
 

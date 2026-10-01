@@ -9,7 +9,11 @@ from microsim.test.test_risk_model_repository import TestRiskModelRepository
 from microsim.treatment_strategies.bp_treatment_strategies import (
     AddBPTreatmentMedsToGoal120,
     AddASingleBPMedTreatmentStrategy,
-    jnc8ForHighRiskLowBpTarget
+    jnc8ForHighRiskLowBpTarget,
+    SprintTreatment,
+    SprintForLowerDbpGoalTreatment,
+    SprintForSbpOnlyTreatment,
+    SprintForSbpRiskThreshold,
 )
 from microsim.population.population_factory import PopulationFactory
 from microsim.population.population import Population
@@ -28,6 +32,18 @@ from microsim.treatment_strategies.treatment_strategy_repository import Treatmen
 from microsim.population.population_model_repository import PopulationRepositoryType
 from microsim.treatment_strategies.treatment_strategies import TreatmentStrategyStatus
 from microsim.risk_factors.modality import Modality
+
+class FixedRiskModelRepository:
+    '''Stub CV model repository returning a fixed 10-year risk, to test risk gating in isolation.'''
+    def __init__(self, risk):
+        self._risk = risk
+
+    def select_outcome_model_for_person(self, person):
+        return self
+
+    def get_risk_for_person(self, person, years=10):
+        return self._risk
+
 
 class TestTreatmentStrategy(unittest.TestCase):
 
@@ -136,6 +152,28 @@ class TestTreatmentStrategy(unittest.TestCase):
         # 110-66/3.1
         self.assertEqual(14, dbpDrives._treatmentStrategies["bp"]["bpMedsAdded"])
         self.assertEqual(66.6, dbpDrives._dbp[-1])
+
+    def advanceWithSprintStrategy(self, strategy, risk):
+        strategy.cvModelRepository = FixedRiskModelRepository(risk)
+        tsr = TreatmentStrategyRepository()
+        tsr._repository["bp"] = strategy
+        person = self.getPerson(190, 120)
+        person.advance(1, self._risk_model_repository, self._risk_model_repository, self._outcome_model_repository, tsr)
+        return person
+
+    def testSprintStrategiesEnforceRiskThreshold(self):
+        '''All Sprint classes treat only when CV risk exceeds their threshold (default 0.075).'''
+        for strategyClass in [SprintTreatment, SprintForLowerDbpGoalTreatment,
+                              SprintForSbpOnlyTreatment, SprintForSbpRiskThreshold]:
+            with self.subTest(strategy=strategyClass.__name__):
+                lowRisk = self.advanceWithSprintStrategy(strategyClass(), risk=0.05)
+                self.assertEqual(0, lowRisk._treatmentStrategies["bp"]["bpMedsAdded"])
+                self.assertEqual(190, lowRisk._sbp[-1])
+                self.assertEqual(120, lowRisk._dbp[-1])
+
+                highRisk = self.advanceWithSprintStrategy(strategyClass(), risk=0.10)
+                self.assertEqual(4, highRisk._treatmentStrategies["bp"]["bpMedsAdded"])
+                self.assertEqual(190 - 4 * AddASingleBPMedTreatmentStrategy.sbpLowering, highRisk._sbp[-1])
 
     def testSprintStrategyAtPopLevelOneWave(self):
         maxMedPerson = self.getPerson(190, 120)

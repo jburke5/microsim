@@ -81,16 +81,10 @@ class TestPersonWaveStatus(unittest.TestCase):
         self.assertEqual(False, self.youngJoe.is_dead)
         self.assertEqual(False, self.youngJoe._stroke)
 
-        self.assertEqual(True, self.youngJoe.alive_at_start_of_wave(0))
-        self.assertEqual(True, self.youngJoe.alive_at_start_of_wave(1))
-        with self.assertRaises(RuntimeError):
-            self.youngJoe.alive_at_start_of_wave(2)
-
-        self.youngJoe.advance(1, CohortDynamicRiskFactorModelRepository(),  
+        self.youngJoe.advance(1, CohortDynamicRiskFactorModelRepository(),
                                    DefaultTreatmentModelRepository(),
                                    AgeOver50CausesFatalStroke(),
                                    None)
-        self.assertEqual(True, self.youngJoe.alive_at_start_of_wave(2))
 
         self.oldJoe.advance(2, CohortDynamicRiskFactorModelRepository(),  
                                    DefaultTreatmentModelRepository(),
@@ -99,13 +93,6 @@ class TestPersonWaveStatus(unittest.TestCase):
         self.assertEqual(60, self.oldJoe._age[-1])
         self.assertEqual(True, self.oldJoe.is_dead)
         self.assertEqual(True, self.oldJoe._stroke)
-
-        self.assertEqual(True, self.oldJoe.alive_at_start_of_wave(0))
-        #self.assertEqual(False, self.oldJoe.alive_at_start_of_wave(1))
-
-        #Q: why? A runtime error can help detect code issues...
-        # this is called to verify that it DOES NOT throw an excepiotn
-        #self.oldJoe.alive_at_start_of_wave(2)
 
     def testNonCVMortalityLeadsToCorrectStatus(self):
         self.youngJoe.advance(2, CohortDynamicRiskFactorModelRepository(),  
@@ -116,16 +103,10 @@ class TestPersonWaveStatus(unittest.TestCase):
         self.assertEqual(False, self.youngJoe.is_dead)
         self.assertEqual(False, self.youngJoe._stroke)
 
-        self.assertEqual(True, self.youngJoe.alive_at_start_of_wave(0))
-        self.assertEqual(True, self.youngJoe.alive_at_start_of_wave(1))
-        with self.assertRaises(RuntimeError):
-            self.youngJoe.alive_at_start_of_wave(2)
-
         self.youngJoe.advance(1, CohortDynamicRiskFactorModelRepository(),
                                    DefaultTreatmentModelRepository(),
                                    AgeOver50CausesNonCVMortality(),
                                    None)
-        self.assertEqual(True, self.youngJoe.alive_at_start_of_wave(2))
 
         self.oldJoe.advance(2, CohortDynamicRiskFactorModelRepository(),
                                    DefaultTreatmentModelRepository(),
@@ -134,12 +115,6 @@ class TestPersonWaveStatus(unittest.TestCase):
         self.assertEqual(60, self.oldJoe._age[-1])
         self.assertEqual(True, self.oldJoe.is_dead)
         self.assertEqual(False, self.oldJoe._stroke)
-
-        self.assertEqual(True, self.oldJoe.alive_at_start_of_wave(0))
-        #self.assertEqual(False, self.oldJoe.alive_at_start_of_wave(1))
-
-        # this is called to verify that it DOES NOT throw an excepiotn
-        #self.oldJoe.alive_at_start_of_wave(2)
 
     def testHasFatalStrokeInWaveIsCaptured(self):
         self.oldJoe.advance(2, CohortDynamicRiskFactorModelRepository(),

@@ -12,11 +12,3 @@ class LinearProbabilityRiskFactorModel(LinearRiskFactorModel):
         )
         riskWithResidual = linearRisk + self.draw_from_residual_distribution(person._rng)
         return riskWithResidual > 0.5
-
-    def estimate_next_risk_vectorized(self, x, rng=None):
-        #rng = np.random.default_rng(rng)
-        linearRisk = super(
-            LinearProbabilityRiskFactorModel, self
-        ).estimate_next_risk_vectorized(x)
-        riskWithResidual = linearRisk + self.draw_from_residual_distribution(rng)
-        return riskWithResidual > 0.5

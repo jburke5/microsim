@@ -23,7 +23,6 @@ class SBIModel:
         bmi,
         anyPhysicalActivity,
         antiHypertensiveCount,
-        #otherLipidLowering,
         a1c,
         totChol,
         hdl,
@@ -67,8 +66,6 @@ class SBIModel:
 
         xb += antiHypertensiveCount*0.1337
 
-        #if otherLipidLowering:
-        #    xb += 0.00221
 
         xb += a1c*0.0712
         xb += totChol*0.00231
@@ -102,7 +99,6 @@ class SBIModel:
             person._bmi[-1],
             person._anyPhysicalActivity[-1],
             person._antiHypertensiveCount[-1],
-            #person._otherLipidLowering,
             person._a1c[-1],
             person._totChol[-1],
             person._hdl[-1],

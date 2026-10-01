@@ -5,9 +5,9 @@ from microsim.default_treatments.default_treatments import DefaultTreatmentsType
 class StatinTreatmentStrategy():
     '''This class does not directly modify any risk factors or default treatments.
     It does indirectly modify the CV event risk.
-    The statinsAdded variable affects the CV risk in cv_model.py.
-    Also, currently, the variable statin in default treatments is not affected in any way by statinsAdded.
-    But statinsAdded is affected by the presence of statin (see below).'''
+    The statinMedsAdded variable affects the CV risk in cv_model.py.
+    Also, currently, the variable statin in default treatments is not affected in any way by statinMedsAdded.
+    But statinMedsAdded is affected by the presence of statin (see below).'''
     def __init__(self, cvRiskCutoff=0.075, wmhSpecific=True):
         self.status = TreatmentStrategyStatus.BEGIN
         self.wmhSpecific = wmhSpecific

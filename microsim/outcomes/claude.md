@@ -357,9 +357,7 @@ class TestStrokeModel(unittest.TestCase):
         pass
 ```
 
-Common test fixtures in `test/fixture/`:
-- VectorizedTestFixture: For testing outcome models
-- Helper functions in `test/helper/`
+Helper functions live in `test/helper/` (e.g., `init_vectorized_population_dataframe`).
 
 ## Cross-References
 

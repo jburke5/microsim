@@ -25,7 +25,6 @@ From `default_treatments/default_treatments.py`:
 class DefaultTreatmentsType(Enum):
     STATIN = "statin"
     ANTI_HYPERTENSIVE_COUNT = "antiHypertensiveCount"
-    OTHER_LIPID_LOWERING_MEDICATION_COUNT = "otherLipidLoweringMedicationCount"
 ```
 
 ### Treatment Categories
@@ -38,7 +37,6 @@ Default treatments are categorized similarly to risk factors:
 **Continuous Treatments** (`ContinuousDefaultTreatmentsType`):
 - `ANTI_HYPERTENSIVE_COUNT`: Number of antihypertensive medications (integer count)
 
-Note: `OTHER_LIPID_LOWERING_MEDICATION_COUNT` is defined in `DefaultTreatmentsType` but is not currently a member of `ContinuousDefaultTreatmentsType` and has no registered model in `DefaultTreatmentModelRepository`.
 
 ## Key Files in This Module
 

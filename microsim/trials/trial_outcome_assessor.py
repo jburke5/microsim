@@ -13,6 +13,12 @@ class AnalysisType(Enum):
     RELATIVE_RISK = "relativeRisk"
     INCIDENCE_RATE = "incidenceRate"
 
+ANALYSIS_CLASSES = {AnalysisType.LINEAR.value: LinearRegressionAnalysis,
+                    AnalysisType.LOGISTIC.value: LogisticRegressionAnalysis,
+                    AnalysisType.COX.value: CoxRegressionAnalysis,
+                    AnalysisType.RELATIVE_RISK.value: RelativeRiskAnalysis,
+                    AnalysisType.INCIDENCE_RATE.value: IncidenceRateAnalysis}
+
 class TrialOutcomeAssessor:
     '''This class will store the specific analyses that will be obtained from a Trial instance.
     This class provides a link between Population-level functions and methodologies used to analyze 
@@ -20,40 +26,37 @@ class TrialOutcomeAssessor:
     _analysis: initializes classes that are needed in order to perform the analysis of the treated and control population outcomes
     _assessments: a dictionary, keys are the name of the assessments
                                 values are dictionaries with two keys, assessmentFunctionDict and assessmentAnalysis
-                  assessmentFunctionDict: a dictionary, two keys, outcome and time
-                         outcome: a Population-level function that will return the outcome for each member of the population
-                         time: a Population-level function that will return the time at which the outcome occured
+                  assessmentFunctionDict: a dictionary of Population-level functions, keys depend on the analysis
+                         outcome: returns the outcome for each member of the population (all analyses except incidenceRate)
+                         time: returns the time at which the outcome occured (cox only)
+                         eventAndTime: returns (event, personYears) pairs (incidenceRate only)
                   assessmentAnalysis: a string, must be one of the keys of the _analysis dictionary (otherwise the class will not
                          know how to analyze the results.'''
     def __init__(self):
         self._assessments = dict()
-        self._analysis = {AnalysisType.LINEAR.value : LinearRegressionAnalysis(),
-                          AnalysisType.LOGISTIC.value : LogisticRegressionAnalysis(),
-                          AnalysisType.COX.value : CoxRegressionAnalysis(),
-                          AnalysisType.RELATIVE_RISK.value : RelativeRiskAnalysis(),
-                          AnalysisType.INCIDENCE_RATE.value : IncidenceRateAnalysis()} 
+        self._analysis = {k: cls() for k, cls in ANALYSIS_CLASSES.items()}
 
     def add_outcome_assessment(self, assessmentName, assessmentFunctionDict, assessmentAnalysis):
-        if assessmentAnalysis in self._analysis.keys():
-            if assessmentName not in self._assessments.keys():
-                requiresTwoFunctions = assessmentAnalysis in ["cox", "incidenceRate"]
-                if ((not requiresTwoFunctions and len(assessmentFunctionDict) == 1) or
-                    (requiresTwoFunctions and len(assessmentFunctionDict) == 2)):
-                    self._assessments[assessmentName] = {"assessmentFunctionDict": assessmentFunctionDict,
-                                                         "assessmentAnalysis": assessmentAnalysis}
-                else:
-                    print(f"Cannot add outcome assessment {assessmentName} because of incorrect assessmentFunctionDict length.")
-            else:
-                print(f"Cannot add outcome assessment {assessmentName} because this assessment name already exists.")
-        else:
-            print(f"Cannot add outcome assessment with analysis {assessmentAnalysis} because this analysis does not exist.")
-            print(f"Available assessment analysis are: {[analysis for analysis in self._analysis.keys()]}")
-        
-    def rm_outcome_assessment(self, assessmentName):
+        if assessmentAnalysis not in self._analysis.keys():
+            raise RuntimeError(f"Cannot add outcome assessment with analysis {assessmentAnalysis} because this analysis does not exist. "
+                               f"Available assessment analyses are: {list(self._analysis.keys())}")
         if assessmentName in self._assessments.keys():
-            del self._assessments[assessmentName]
+            raise RuntimeError(f"Cannot add outcome assessment {assessmentName} because this assessment name already exists.")
+        if assessmentAnalysis == "cox":
+            requiredKeys = {"outcome", "time"}
+        elif assessmentAnalysis == "incidenceRate":
+            requiredKeys = {"eventAndTime"}
         else:
-            print(f"Cannot remove outcome assessment with name {assessmentName} because this assessment name does not exist.")
+            requiredKeys = {"outcome"}
+        if set(assessmentFunctionDict.keys()) != requiredKeys:
+            raise RuntimeError(f"Cannot add outcome assessment {assessmentName} because assessmentFunctionDict keys must be exactly {requiredKeys}.")
+        self._assessments[assessmentName] = {"assessmentFunctionDict": assessmentFunctionDict,
+                                             "assessmentAnalysis": assessmentAnalysis}
+
+    def rm_outcome_assessment(self, assessmentName):
+        if assessmentName not in self._assessments.keys():
+            raise RuntimeError(f"Cannot remove outcome assessment with name {assessmentName} because this assessment name does not exist.")
+        del self._assessments[assessmentName]
             
     def rm_outcome_assessments(self, assessmentNameList):
         for assessmentName in assessmentNameList:

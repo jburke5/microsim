@@ -4,6 +4,7 @@ class IncidenceRateAnalysis:
     This analysis computes incidence rates for both treated and control trial arms,
     enabling comparison of event rates adjusted for time at risk.
     """
+    columns = ("treatedRatePer1000PY", "controlRatePer1000PY")
 
     def __init__(self):
         pass
@@ -13,33 +14,21 @@ class IncidenceRateAnalysis:
 
         Args:
             trial: Trial instance with treatedPop and controlPop
-            assessmentFunctionDict: Dictionary with two required keys:
-                - "outcome": function(population) -> list of booleans (event indicators)
-                - "time": function(population) -> list of integers (person-years at risk)
+            assessmentFunctionDict: Dictionary with one required key:
+                - "eventAndTime": function(population) -> list of (event, personYears) pairs,
+                  one pair per person, so the numerator and denominator cannot be mismatched
             assessmentAnalysis: string identifier for this analysis type
 
         Returns:
-            tuple: (treated_rate, control_rate) - both as events per 1000 person-years
+            tuple: (treated_rate, control_rate) - both as events per 1000 person-years,
+            nan for an arm with no person-years
         """
-        outcomeFunc = assessmentFunctionDict["outcome"]
-        timeFunc = assessmentFunctionDict["time"]
-
-        # Get event indicators (boolean list) for each arm
-        treatedOutcomes = list(map(outcomeFunc, [trial.treatedPop]))[0]
-        controlOutcomes = list(map(outcomeFunc, [trial.controlPop]))[0]
-
-        # Get person-years at risk (integer list) for each arm
-        treatedPersonYears = list(map(timeFunc, [trial.treatedPop]))[0]
-        controlPersonYears = list(map(timeFunc, [trial.controlPop]))[0]
-
-        # Calculate rates: (events / person-years) * 1000
-        treatedEvents = sum(map(int, treatedOutcomes))
-        controlEvents = sum(map(int, controlOutcomes))
-
-        treatedTotalPY = sum(treatedPersonYears)
-        controlTotalPY = sum(controlPersonYears)
-
-        treatedRate = 1000.0 * treatedEvents / treatedTotalPY if treatedTotalPY > 0 else 0.0
-        controlRate = 1000.0 * controlEvents / controlTotalPY if controlTotalPY > 0 else 0.0
-
-        return (treatedRate, controlRate)
+        eventAndTimeFunc = assessmentFunctionDict["eventAndTime"]
+        rates = []
+        for pop in (trial.treatedPop, trial.controlPop):
+            pairs = eventAndTimeFunc(pop)
+            events = sum(int(event) for event, _ in pairs)
+            totalPY = sum(personYears for _, personYears in pairs)
+            #nan when an arm has no person-years, so it cannot be mistaken for an observed zero rate
+            rates.append(1000.0 * events / totalPY if totalPY > 0 else float('nan'))
+        return tuple(rates)

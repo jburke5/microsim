@@ -2,10 +2,12 @@ from microsim.population.population_factory import PopulationFactory
 from microsim.trials.trial_type import TrialType
 from microsim.population.population import Population
 from microsim.treatment_strategies.treatment_strategies import TreatmentStrategiesType, TreatmentStrategyStatus
-from microsim.trials.trial_outcome_assessor import AnalysisType
+from microsim.trials.trial_outcome_assessor import AnalysisType, ANALYSIS_CLASSES
 
+import copy
+import csv
+import math
 import pandas as pd
-import random
 import sys
 
 class Trial:
@@ -24,6 +26,8 @@ class Trial:
             raise RuntimeError(f"popType in trialDescription must belong in the set({[pt for pt in PopulationType]})")
         else:
             self.trialDescription = trialDescription
+        #run() mutates the strategy statuses, so the trial works on its own copy and the description stays reusable
+        self.treatmentStrategies = copy.deepcopy(trialDescription.treatmentStrategies)
         self.treatedPop, self.controlPop = self.get_trial_populations()
         self.completed = False
         self.analyzed = False
@@ -86,7 +90,7 @@ class Trial:
             draws = self.trialDescription._rng.uniform(size=nDraws) 
         elif self.trialDescription.is_completely_randomized():
             draws = [0]*(nDraws//2) + [1]*(nDraws//2) if nDraws%2==0 else [0]*(nDraws//2) + [1]*((nDraws//2)+1)
-            draws = random.sample(draws, len(draws))
+            draws = self.trialDescription._rng.permutation(draws) #the trial rng, not the global one, for consistency with bernoulli
         else:
             raise RuntimeError("Unknown TrialType in Trial randomize_people function.")
         controlPeople = pd.Series([p for i,p in enumerate(people) if draws[i]<0.5])
@@ -118,14 +122,14 @@ class Trial:
                                     treatmentStrategies=None, 
                                     nWorkers=self.trialDescription.nWorkers)
             #advance treated population
-            self.treatedPop.advance(1, 
-                                    treatmentStrategies = self.trialDescription.treatmentStrategies,
+            self.treatedPop.advance(1,
+                                    treatmentStrategies = self.treatmentStrategies,
                                     nWorkers=self.trialDescription.nWorkers)
             for key in TreatmentStrategiesType:
-                if self.trialDescription.treatmentStrategies._repository[key.value] is not None:
-                    self.trialDescription.treatmentStrategies._repository[key.value].status = TreatmentStrategyStatus.MAINTAIN
-            self.treatedPop.advance(self.trialDescription.duration-1, 
-                                    treatmentStrategies = self.trialDescription.treatmentStrategies,
+                if self.treatmentStrategies._repository[key.value] is not None:
+                    self.treatmentStrategies._repository[key.value].status = TreatmentStrategyStatus.MAINTAIN
+            self.treatedPop.advance(self.trialDescription.duration-1,
+                                    treatmentStrategies = self.treatmentStrategies,
                                     nWorkers=self.trialDescription.nWorkers)
 
             self.completed = True
@@ -135,7 +139,8 @@ class Trial:
     def analyze(self, trialOutcomeAssessor):
         '''Trial outcomes need to be defined in an instance of the TrialOutcomeAssessor class and provided in this function
         in order for the Trial to be able to analyze its populations.'''
-        self.analyzed = True
+        if not self.completed:
+            raise RuntimeError("Cannot analyze a trial that has not been run.")
         for assessmentName in trialOutcomeAssessor._assessments.keys():
             assessmentAnalysis = trialOutcomeAssessor._assessments[assessmentName]["assessmentAnalysis"]
             assessmentAnalysisFunction = trialOutcomeAssessor._analysis[assessmentAnalysis]
@@ -146,11 +151,45 @@ class Trial:
                 self.results[assessmentAnalysis][assessmentName] = assessmentResults
             else:
                 self.results[assessmentAnalysis] = {assessmentName: assessmentResults}
+        self.analyzed = True #set only after all assessments completed
     
-    def run_analyze(self, trialOutcomeAssessor, notify=True):
+    def run_analyze(self, trialOutcomeAssessor, notify=True, exportPath=None):
+        '''exportPath: optional CSV file path, results are exported only when it is given.'''
         self.run(notify=notify)
         self.analyze(trialOutcomeAssessor)
-           
+        if exportPath is not None:
+            self.export_results(exportPath)
+
+    def get_results_dfs(self):
+        '''One DataFrame per analysis type, one row per assessment, columns named by the analysis class.'''
+        if not self.analyzed:
+            raise RuntimeError("Cannot export results of a trial that has not been analyzed.")
+        dfs = dict()
+        for analysisType in AnalysisType:
+            if analysisType.value not in self.results:
+                continue
+            columns = ANALYSIS_CLASSES[analysisType.value].columns
+            #strict zip so a tuple/columns mismatch raises instead of silently misaligning
+            rows = {name: dict(zip(columns, values, strict=True))
+                    for name, values in self.results[analysisType.value].items()}
+            dfs[analysisType.value] = pd.DataFrame.from_dict(rows, orient="index", columns=list(columns))
+        return dfs
+
+    def export_results(self, path):
+        '''CSV mirroring the printout: trial description once at the top, then one block per analysis type
+        with a header row and one row per assessment. Numbers are formatted as in the printout.'''
+        dfs = self.get_results_dfs()
+        desc = self.trialDescription
+        strategies = "+".join(k for k, v in desc.treatmentStrategies._repository.items() if v is not None)
+        with open(path, "w", newline="") as f:
+            writer = csv.writer(f, lineterminator="\n")
+            writer.writerows([("popType", desc.popType.value), ("sampleSize", desc.sampleSize),
+                              ("duration", desc.duration), ("treatmentStrategies", strategies)])
+            for analysisType, df in dfs.items():
+                writer.writerows([(), ("analysis", analysisType)])
+                df.map(Trial.format_result).to_csv(f, index_label="assessment", lineterminator="\n")
+        print(f"exported trial results to {path}")
+
     def print_covariate_distributions(self):
         '''This function is provided to help examine the balance of the Trial populations.'''
         if not self.trialDescription.is_block_randomized():
@@ -200,7 +239,17 @@ class Trial:
         wmhSpecific = self.trialDescription.wmhSpecific if hasattr(self.trialDescription, 'wmhSpecific') else True
         self.treatedPop.print_lastyear_treatment_strategy_distributions_by_risk(wmhSpecific=wmhSpecific) 
 
-    def __string__(self):
+    @staticmethod
+    def format_result(result):
+        '''None -> empty, inf/nan -> literal, otherwise 3 decimals; shared by the printout and the CSV export.'''
+        if result is None:
+            return ""
+        elif math.isinf(result) or math.isnan(result):
+            return f"{result}"
+        else:
+            return f"{result:.3f}"
+
+    def __str__(self):
         rep = self.trialDescription.__str__()
         rep += f"\nTrial\n"
         rep += f"\tTrial completed: {self.completed}\n"
@@ -234,15 +283,10 @@ class Trial:
                 for key in self.results[analysisType.value].keys():
                     rep += f"{key:>25}: "
                     for result in self.results[analysisType.value][key]:
-                        if (result is not None) & (result is not float('inf')):
-                            rep += f"{result:>7.3f}"
-                        elif result== float('inf'):
-                            rep += f"{'inf':>7}"
-                        else:
-                            rep += " "*7
+                        rep += f"{Trial.format_result(result):>7}"
                     rep += "\n"
         return rep
 
     def __repr__(self):
-        return self.__string__()
+        return self.__str__()
 

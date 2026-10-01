@@ -39,7 +39,7 @@ class NonCVDeathModel(LogisticRiskFactorModel):
         '''This term, for silent cerebrovascular disease, is based on time-dependent hazard ratios (see Clancy2024 paper).
         The linear models for the time-dependent hazard ratios were obtain by a LLS fit to the values shown in the Clancy2024 paper.
         In addition, because the non cv death model is a logistic model, we scale the hazard ratios.'''
-        if not person._modality == Modality.NO.value: #if there was a brain scan      
+        if person.has_brain_scan():
             if self.wmhSpecific:
                 scdTerm = 0.35 #this modifies the intercept
                 scalingMriSbi = 1.25 #these are the four scaling factors so that I can use the hazard ratios in the logistic non cv death  model

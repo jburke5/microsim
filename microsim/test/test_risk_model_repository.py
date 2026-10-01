@@ -25,25 +25,6 @@ class TestRiskModelRepository(RiskModelRepository):
         "Intercept": 80,
     }
 
-    ses = {
-        "age": 0,
-        "gender": 0,
-        "raceEthnicity[T.2]": 0,
-        "raceEthnicity[T.3]": 0,
-        "raceEthnicity[T.4]": 0,
-        "raceEthnicity[T.5]": 0,
-        "smokingStatus[T.1]": 0,
-        "smokingStatus[T.2]": 0,
-        "sbp": 0,
-        "dbp": 0,
-        "a1c": 0,
-        "hdl": 0,
-        "bmi": 0,
-        "totChol": 0,
-        "Intercept": 0,
-    }
-
-    
     def __init__(self, nullModels = False):
         super(TestRiskModelRepository, self).__init__()
 
@@ -59,7 +40,7 @@ class TestRiskModelRepository(RiskModelRepository):
 
 
     def set_default_model_for_name(self, name):
-        self._repository[name] = NHANESLinearRiskFactorModel(name, params=TestRiskModelRepository.params, ses=TestRiskModelRepository.ses, resids = pd.Series(np.zeros(10)))
+        self._repository[name] = NHANESLinearRiskFactorModel(params=TestRiskModelRepository.params, resids = pd.Series(np.zeros(10)))
 
 
     def set_null_model_for_name(self, name):

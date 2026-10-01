@@ -36,8 +36,9 @@ class StrokeOutcome(Outcome):
     def __eq__(self, other):
         if not isinstance(other, StrokeOutcome):
             return False
-        return ((self.type == other.type) and (self.fatal == other.fatal) and 
-                (self.nihss == other.nihss) and (self.strokeType == other.strokeType) ) #and 
+        return ((self.type == other.type) and (self.fatal == other.fatal) and
+                (self.priorToSim == other.priorToSim) and (self.nihss == other.nihss) and
+                (self.strokeType == other.strokeType) and (self.strokeSubtype == other.strokeSubtype)) #and
                 #(self.location == other.location) and (self.disability ==other.disability ))
     
 class StrokeType(Enum):

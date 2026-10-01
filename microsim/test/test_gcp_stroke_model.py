@@ -62,7 +62,6 @@ class TestCaseOne(Person):
         waistList = [waistMeanPrestroke] * (indexStroke+1) + [waistMeanPrestroke+x for x in range(10,50,10)]
         antiHypertensiveCountList = [0]*7
         statinList = [1]*7
-        otherLipidLoweringMedicationCountList = [0]*7
         creatinineList = [1]*7
         anyPhysicalActivityList=[1]*7
         meanGcpPrestroke = 6.104780222+50.
@@ -83,7 +82,7 @@ class TestCaseOne(Person):
                                DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: anyPhysicalActivityList[0],  #physact
                                StaticRiskFactorsType.EDUCATION.value: Education.SOMEHIGHSCHOOL.value,   #educ2,educ3,educ4
                                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,   #currsmoker
-                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,  #alcperwk
+                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 0.,  #alcperwk, drinks/week -> NONE
                                DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: antiHypertensiveCountList[0],  #htntx
                                DefaultTreatmentsType.STATIN.value: statinList[0],  #choltx
                                DynamicRiskFactorsType.CREATININE.value: creatinineList[0], #same as TestGCPModel
@@ -177,7 +176,6 @@ class TestCaseTwo(Person):
         waistList = [waistMeanPrestroke] * (indexStroke+1) + [waistMeanPrestroke+x for x in range(10,70,10)]
         antiHypertensiveCountList = [0]*9
         statinList = [1]*9
-        otherLipidLoweringMedicationCountList = [0]*9
         creatinineList = [1]*9
         anyPhysicalActivityList=[1]*9
         meanGcpPrestroke = 50. + 5.40984283
@@ -198,7 +196,7 @@ class TestCaseTwo(Person):
                                DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: anyPhysicalActivityList[0],  #physact
                                StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,   #educ2,educ3,educ4
                                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,   #currsmoker
-                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.ONETOSIX.value,  #alcperwk
+                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 3.,  #alcperwk, drinks/week -> ONETOSIX
                                DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: antiHypertensiveCountList[0],  #htntx
                                DefaultTreatmentsType.STATIN.value: statinList[0],  #choltx
                                DynamicRiskFactorsType.CREATININE.value: creatinineList[0], #same as TestGCPModel
@@ -292,7 +290,6 @@ class TestCaseThree(Person):
         waistList = [waistMeanPrestroke] * (indexStroke+1) + [waistMeanPrestroke+x for x in range(10,50,10)]
         antiHypertensiveCountList = [1]*7
         statinList = [0]*7
-        otherLipidLoweringMedicationCountList = [0]*7
         creatinineList = [1]*7
         anyPhysicalActivityList=[1]*7
         meanGcpPrestroke = 50. + 13.656746
@@ -314,7 +311,7 @@ class TestCaseThree(Person):
                                DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: anyPhysicalActivityList[0],  #physact
                                StaticRiskFactorsType.EDUCATION.value: Education.SOMECOLLEGE.value,   #educ2,educ3,educ4
                                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.CURRENT.value,   #currsmoker
-                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.FOURTEENORMORE.value,  #alcperwk
+                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 21.,  #alcperwk, drinks/week -> FOURTEENORMORE
                                DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: antiHypertensiveCountList[0],  #htntx
                                DefaultTreatmentsType.STATIN.value: statinList[0],  #choltx
                                DynamicRiskFactorsType.CREATININE.value: creatinineList[0], #same as TestGCPModel
@@ -409,7 +406,6 @@ class TestCaseFour(Person):
         waistList = [waistMeanPrestroke] * (indexStroke+1) + [waistMeanPrestroke+x for x in range(10,100,10)]
         antiHypertensiveCountList = [1]*12
         statinList = [1]*12
-        otherLipidLoweringMedicationCountList = [0]*12
         creatinineList = [1]*12
         anyPhysicalActivityList=[1]*12
         meanGcpPrestroke = 50. + 2.946463
@@ -431,7 +427,7 @@ class TestCaseFour(Person):
                                DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: anyPhysicalActivityList[0],  #physact
                                StaticRiskFactorsType.EDUCATION.value: Education.HIGHSCHOOLGRADUATE.value,   #educ2,educ3,educ4
                                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,   #currsmoker
-                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: AlcoholCategory.NONE.value,  #alcperwk
+                               DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 0.,  #alcperwk, drinks/week -> NONE
                                DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: antiHypertensiveCountList[0],  #htntx
                                DefaultTreatmentsType.STATIN.value: statinList[0],  #choltx
                                DynamicRiskFactorsType.CREATININE.value: creatinineList[0], #same as TestGCPModel

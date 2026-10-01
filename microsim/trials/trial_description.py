@@ -14,7 +14,7 @@ class TrialDescription(ABC):
     population-specific peopleArgs/modelRepoArgs needed by Trial.
     trialType: indicates what type of trial we want to run
     blockFactors: a list of the block factors, for randomization, to be used in the setup and analysis of the trial
-                   must be an empty list if block factors will not be used
+                   must be None or an empty list if block factors will not be used, at most one block factor is supported
     sample size: the approximate size of the populations to be used in the trial, eg both control and treated populations will be of that size
                  if no randomization is used or if complete randomization is used, but the size of the control/treated populations will be
                  approximately equal to sample size if block randomization is used 
@@ -29,14 +29,14 @@ class TrialDescription(ABC):
     @abstractmethod
     def __init__(self,
                  trialType=TrialType.COMPLETELY_RANDOMIZED,
-                 blockFactors=list(),
+                 blockFactors=None,
                  sampleSize=100,
                  duration=5,
                  treatmentStrategies=None,
                  nWorkers=1,
                  personFilters=None):
         self.trialType = trialType
-        self.blockFactors = blockFactors           
+        self.blockFactors = list(blockFactors) if blockFactors is not None else []
         self.sampleSize = sampleSize
         self.duration = duration
         self.treatmentStrategies = self.get_treatment_strategy(treatmentStrategies)
@@ -90,6 +90,8 @@ class TrialDescription(ABC):
             raise RuntimeError("Trial is setup to use blocks but no block factors were provided.")
         elif (not self.is_block_randomized()) & (len(self.blockFactors)>0):
             raise RuntimeError("Trial is not setup to use blocks but block factors were provided.")
+        elif len(self.blockFactors)>1:
+            raise RuntimeError("Randomization blocks only on a single block factor, more than one were provided.")
 
     def assess_sample_size(self):
         if (self.sampleSize<=0):
@@ -130,10 +132,10 @@ class NhanesTrialDescription(TrialDescription):
     An instance of this class can be used to initialize the Trial class.'''
     def __init__(self,
                  trialType=TrialType.COMPLETELY_RANDOMIZED,
-                 blockFactors=list(),
+                 blockFactors=None,
                  sampleSize=100,
                  duration=5,
-                 treatmentStrategies=TreatmentStrategyRepository(),
+                 treatmentStrategies=None, #None becomes a fresh repository, a default instance would be shared across descriptions
                  nWorkers=1,
                  personFilters=None,
                  year=1999,
@@ -169,10 +171,10 @@ class KaiserTrialDescription(TrialDescription):
     An instance of this class can be used to initialize the Trial class.'''
     def __init__(self,
                  trialType=TrialType.COMPLETELY_RANDOMIZED,
-                 blockFactors=list(),
+                 blockFactors=None,
                  sampleSize=100,
                  duration=5,
-                 treatmentStrategies=TreatmentStrategyRepository(),
+                 treatmentStrategies=None, #None becomes a fresh repository, a default instance would be shared across descriptions
                  nWorkers=1,
                  personFilters=None,
                  wmhSpecific=True,

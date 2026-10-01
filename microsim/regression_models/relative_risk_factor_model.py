@@ -11,6 +11,3 @@ class RelativeRiskFactorModel(LinearRiskFactorModel):
 
     def estimate_rel_risk(self, person):
         return np.exp(super().estimate_next_risk(person))
-    
-    def estimate_rel_risk_vectorized(self, person):
-        return np.exp(super().estimate_next_risk_vectorized(person))

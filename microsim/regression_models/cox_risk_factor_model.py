@@ -16,9 +16,6 @@ class CoxRiskFactorModel(LinearRiskFactorModel):
     def linear_predictor(self, person):
         return super(CoxRiskFactorModel, self).estimate_next_risk(person)
 
-    def linear_predictor_vectorized(self, person):
-        return self.estimate_next_risk_vectorized(person)
-
     def get_cumulative_hazard_for_interval(self, intervalStart, intervalEnd):
         cumHazardAtIntervalStart = (
             intervalStart * self.one_year_linear_cumulative_hazard
@@ -33,11 +30,9 @@ class CoxRiskFactorModel(LinearRiskFactorModel):
     def get_cumulative_hazard_for_years_in_sim(self, yearsInSim):
         return self.get_cumulative_hazard_for_interval(yearsInSim - 1, yearsInSim)
 
-    def get_risk_for_person(self, person, years, vectorized=False):
-        linear_predictor = (
-            self.linear_predictor_vectorized(person)
-            if vectorized
-            else self.linear_predictor(person)
-        )
-        yearsInSim = person.totalYearsInSim if vectorized else len(person._age)
+    def get_risk_for_person(self, person, years=1):
+        if years != 1:
+            raise NotImplementedError("CoxRiskFactorModel computes 1-year risk only")
+        linear_predictor = self.linear_predictor(person)
+        yearsInSim = len(person._age)
         return self.get_cumulative_hazard_for_years_in_sim(yearsInSim) * np.exp(float(linear_predictor))

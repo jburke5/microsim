@@ -83,34 +83,29 @@ class TrialOutcomeAssessorFactory:
             toa.add_outcome_assessment("deathRR",
                                        {"outcome": lambda x: x.get_outcome_count(OutcomeType.DEATH)},
                                         AnalysisType.RELATIVE_RISK.value)
+            #the eventAndTime pair function keeps the rate numerator and denominator on the same convention
             toa.add_outcome_assessment("strokeIR",
-                                       {"outcome": lambda x: x.has_outcome(OutcomeType.STROKE),
-                                        "time": lambda x: x.get_person_years_at_risk_by_end_of_wave(
+                                       {"eventAndTime": lambda x: x.get_followup_events_and_person_years(
                                             [OutcomeType.STROKE], x._waveCompleted)},
                                         AnalysisType.INCIDENCE_RATE.value)
             toa.add_outcome_assessment("miIR",
-                                       {"outcome": lambda x: x.has_outcome(OutcomeType.MI),
-                                        "time": lambda x: x.get_person_years_at_risk_by_end_of_wave(
+                                       {"eventAndTime": lambda x: x.get_followup_events_and_person_years(
                                             [OutcomeType.MI], x._waveCompleted)},
                                         AnalysisType.INCIDENCE_RATE.value)
             toa.add_outcome_assessment("deathIR",
-                                       {"outcome": lambda x: x.has_outcome(OutcomeType.DEATH),
-                                        "time": lambda x: x.get_person_years_at_risk_by_end_of_wave(
+                                       {"eventAndTime": lambda x: x.get_followup_events_and_person_years(
                                             [OutcomeType.DEATH], x._waveCompleted)},
                                         AnalysisType.INCIDENCE_RATE.value)
             toa.add_outcome_assessment("dementiaIR",
-                                       {"outcome": lambda x: x.has_outcome(OutcomeType.DEMENTIA),
-                                        "time": lambda x: x.get_person_years_at_risk_by_end_of_wave(
+                                       {"eventAndTime": lambda x: x.get_followup_events_and_person_years(
                                             [OutcomeType.DEMENTIA], x._waveCompleted)},
                                         AnalysisType.INCIDENCE_RATE.value)
             toa.add_outcome_assessment("mciIR",
-                                       {"outcome": lambda x: x.has_outcome(OutcomeType.MCI),
-                                        "time": lambda x: x.get_person_years_at_risk_by_end_of_wave(
+                                       {"eventAndTime": lambda x: x.get_followup_events_and_person_years(
                                             [OutcomeType.MCI], x._waveCompleted)},
                                         AnalysisType.INCIDENCE_RATE.value)
             toa.add_outcome_assessment("strokeOrDementiaOrMciIR",
-                                       {"outcome": lambda x: x.has_any_outcome([OutcomeType.STROKE, OutcomeType.DEMENTIA, OutcomeType.MCI]),
-                                        "time": lambda x: x.get_person_years_at_risk_by_end_of_wave(
+                                       {"eventAndTime": lambda x: x.get_followup_events_and_person_years(
                                             [OutcomeType.STROKE, OutcomeType.DEMENTIA, OutcomeType.MCI], x._waveCompleted)},
                                         AnalysisType.INCIDENCE_RATE.value)
         return toa

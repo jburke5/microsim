@@ -177,7 +177,7 @@ See `microsim/treatment_strategies/claude.md` for detailed guidance on creating 
 - **See `microsim/risk_factors/claude.md` for detailed risk factor documentation**
 
 **Treatments** (`default_treatments/default_treatments.py`, `treatment_strategies/treatment_strategies.py`):
-- Default: `antiHypertensiveCount`, `statin`, `otherLipidLoweringMedicationCount`
+- Default: `antiHypertensiveCount`, `statin`
 - **See `microsim/default_treatments/claude.md` for detailed default treatment documentation**
 - Strategies: Defined in `treatment_strategies/` directory per protocol
 - **See `microsim/treatment_strategies/claude.md` for detailed treatment strategy documentation**
@@ -192,7 +192,6 @@ See `microsim/treatment_strategies/claude.md` for detailed guidance on creating 
 Tests follow unittest framework conventions:
 - All tests in `test/test_*.py`
 - Use `TestCase` base class
-- Common fixtures in `test/fixture/` (e.g., `VectorizedTestFixture`)
 - Helper utilities in `test/helper/` (e.g., `init_vectorized_population_dataframe.py`)
 - Test coverage includes: outcome models, risk factors, population reporting, and trial operations (see `microsim/trials/claude.md` for trial testing details)
 
@@ -216,7 +215,7 @@ class TestPopulation(unittest.TestCase):
 
 ## Common Gotchas
 
-1. **Path handling:** Data files use `get_absolute_datafile_path()` from `data_loader.py` to resolve paths correctly
+1. **Path handling:** Data files use `get_absolute_datafile_path()` from `data_loader.py` to resolve paths correctly. It anchors on the package location, so it works from any working directory; a literal `"microsim/data/..."` only resolves when the process runs from the repository root
 2. **Wave indexing:** Remember waves are 0-indexed after first advance (-1 before any advance)
 3. **Repository access:** Population repositories accessed via `PopulationRepositoryType` enum, not direct dictionary keys
 4. **Random number generation:** Each Person has its own RNG (`_rng`) for reproducibility in multiprocessing

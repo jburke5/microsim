@@ -1,32 +1,23 @@
 import math
 import copy
-import numpy.random as npRand
 import numpy as np
-import pandas as pd
-import logging
 
-from typing import Callable
-
-from microsim.risk_factors.education import Education
-from microsim.risk_factors.gender import NHANESGender
-from microsim.outcomes.outcome import Outcome, OutcomeType
+from microsim.outcomes.outcome import OutcomeType
 from microsim.risk_factors.race_ethnicity import RaceEthnicity
 from microsim.risk_factors.smoking_status import SmokingStatus
-from microsim.risk_factors.alcohol_category import AlcoholCategory
-from microsim.outcomes.qaly_assignment_strategy import QALYAssignmentStrategy
 from microsim.risk_factors.gfr_equation import GFREquation
-from microsim.risk_factors.pvd_model import PVDPrevalenceModel
 from microsim.risk_factors.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
+from microsim.risk_factors.risk_factor_bounds import RiskFactorBounds
 from microsim.treatment_strategies.treatment_strategies import TreatmentStrategiesType, TreatmentStrategyStatus
 from microsim.default_treatments.default_treatments import DefaultTreatmentsType
-from microsim.risk_factors.a1c import convert_a1c_to_fasting_glucose, convert_fasting_glucose_to_a1c
+from microsim.risk_factors.a1c import convert_a1c_to_fasting_glucose
 from microsim.outcomes.cognition_outcome import (
     MMSE_CEILING, MMSE_LOGISTIC_OFFSET, MMSE_LOGISTIC_GCP_SLOPE, MMSE_LOGISTIC_SHAPE,
     GCP_POPULATION_SD, CI_GCP_CHANGE_SD_FACTOR,
     GCP_MEAN_INTERCEPT, GCP_MEAN_AGE_COEFFICIENT, GCP_MEAN_YEARS_IN_SIM_COEFFICIENT, GCP_MEAN_SD, MCI_GCP_SD_FACTOR,
 )
 from microsim.risk_factors.modality import Modality, modalityGroupMap
-from microsim.outcomes.wmh_severity import WMHSeverity, wmhSeverityGroupMap
+from microsim.outcomes.wmh_severity import wmhSeverityGroupMap
 from microsim.outcomes.wmh_outcome import scdGroupMap
 
 class Person:
@@ -131,7 +122,7 @@ class Person:
     def advance_risk_factors(self, rfdRepository):
         """Makes predictions for the risk factors 1 year to the future."""
         for rf in self._dynamicRiskFactors:
-            nextRiskFactor = rfdRepository.apply_bounds(rf, self.get_next_risk_factor(rf, rfdRepository))
+            nextRiskFactor = self.get_next_risk_factor(rf, rfdRepository) #bounds applied by the repository's BoundedRiskFactorModel
             setattr(self, "_"+rf, getattr(self,"_"+rf)+[nextRiskFactor])
 
     def get_next_risk_factor(self, riskFactor, risk_model_repository):
@@ -177,7 +168,7 @@ class Person:
         updatedRiskFactors = treatmentStrategy.get_updated_risk_factors(self)
         for rf in self._dynamicRiskFactors:
             if rf in updatedRiskFactors.keys():
-                getattr(self, "_"+rf)[-1] = updatedRiskFactors[rf]
+                getattr(self, "_"+rf)[-1] = RiskFactorBounds.apply_to_person(rf, updatedRiskFactors[rf], self)
 
     def update_treatment_strategy_status(self, treatmentStrategy, treatmentStrategyType):
         """The treatment strategy status holds information about whether the strategy is just now being applied on the person
@@ -255,15 +246,15 @@ class Person:
 
     @property
     def is_in_bp_treatment(self):
-        return ( (self._treatmentStrategies[TreatmentStrategiesType.BP.value]["status"]==TreatmentStrategyStatus.BEGIN) |
-                 (self._treatmentStrategies[TreatmentStrategiesType.BP.value]["status"]==TreatmentStrategyStatus.MAINTAIN) )
+        return self.is_in_treatment_strategy(TreatmentStrategiesType.BP.value)
 
     def is_in_treatment_strategy(self, tst=TreatmentStrategiesType.BP.value):
         '''This function checks if a person is part of a treatment strategy but does not check if the person is being assigned
-        additional medications as part of the treatment strategy.'''
-        #TO DO: unclear right now if the status should not be END either (in addition to None)
-        #that means that status should be either BEGIN or MAINTAIN
-        return self._treatmentStrategies[tst]["status"] is not None
+        additional medications as part of the treatment strategy.
+        Status END does not count as being in the strategy: the end effect is applied within the END wave,
+        so the person is already off treatment by the time anything downstream asks.'''
+        return ( (self._treatmentStrategies[tst]["status"]==TreatmentStrategyStatus.BEGIN) |
+                 (self._treatmentStrategies[tst]["status"]==TreatmentStrategyStatus.MAINTAIN) )
 
     def is_in_any_treatment_strategy(self):
         for tst in TreatmentStrategiesType:
@@ -284,7 +275,7 @@ class Person:
         '''This function checks if a person is actively receiving additional medications as part of a treatment strategy,
         ie not just participating in a treatment strategy'''
         if self.is_in_treatment_strategy(tst):
-            medsAdded = self._treatmentStrategies[tst][tst+"MedsAdded"]
+            medsAdded = self._treatmentStrategies[tst].get(tst+"MedsAdded", 0) #key is set by the strategy, may not exist yet
             return True if medsAdded>0 else False
         else:
             return None #because that was a meaningless application of this function
@@ -311,7 +302,7 @@ class Person:
 
     def get_meds_added(self, tst=TreatmentStrategiesType.BP.value):
         '''This function returns the number of meds added through the provided treatment strategy.'''
-        return self._treatmentStrategies[tst][tst+"MedsAdded"]
+        return self._treatmentStrategies[tst].get(tst+"MedsAdded", 0)
 
     def _antiHypertensiveCountPlusBPMedsAdded(self):
         antiHypertensiveCount = getattr(self, "_"+DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value)[-1]
@@ -385,22 +376,23 @@ class Person:
     # ==========================================================================
 
     def is_alive_at_index(self, index):
-        """This function will need to be re-examined as I have doubts that it is working correctly,
-        particularly for the qaly assignment model because it needs to know during the last wave, if a person died or not."""
-        #need to convert a -1 index to a positive number for correct comparison later on...
-        index = self._waveCompleted if index==-1 else index
-        deathAge = self.get_age_at_last_outcome(OutcomeType.DEATH)
-        if deathAge is None:
-            return True
-        else:
-           deathIndex = self.get_wave_for_age(deathAge)
-           return True if deathIndex > index else False
+        """index=-1: True if the person is still alive; only then does their last
+           subscript refer to the latest wave of the simulation.
+           index>=0: True if the person survived wave index, False if they died
+           during or before it. The boundary is exclusive: a person who died during
+           wave index has risk-factor values at that subscript, measured before
+           death, but does not count as alive at it.
+           For a dead person _waveCompleted is the wave of death."""
+        if index < -1:
+            raise RuntimeError(f"Index {index} is invalid in is_alive_at_index, only -1 or non-negative indices are allowed.")
+        if index == -1:
+            return self.is_alive
+        return True if self.is_alive else index < self._waveCompleted
 
     @property
     def is_alive(self):
         """This function needs to return True if a person had died during the current wave updates."""
         return len(self._outcomes[OutcomeType.DEATH])==0
-        #return self.is_alive_at_index(-1)
 
     @property
     def is_dead(self):
@@ -411,19 +403,6 @@ class Person:
             return self._outcomes[OutcomeType.DEATH][0][0]
         else:
             return None
-
-    def dead_by_wave(self, wave):
-        if self.valid_wave(wave):
-            if len(self._outcomes[OutcomeType.DEATH])>0:
-                ageAtWave = self.get_age_for_wave(wave)
-                return ageAtWave > self.get_death_age()
-            else:
-                return False
-        else:
-            raise RuntimeError(f"Invalid wave for person index {self._index} in dead_by_wave function.")
-
-    def alive_at_start_of_wave(self, wave):
-        return not self.dead_by_wave(wave)
 
     # ==========================================================================
     # 6. Outcomes - generic queries
@@ -510,8 +489,8 @@ class Person:
     def has_outcome_during_or_prior_to_wave(self, wave, outcomeType):
         #because this function is looking at the current wave, which is, self._waveCompleted+1, I will check
         #for validity in wave-1 only
-        if (wave!=0) & (not self.valid_wave(wave-1)):
-            #return False
+        #the current wave age exists only mid-advance, so also check the index actually used
+        if ((wave!=0) & (not self.valid_wave(wave-1))) | (wave > len(self._age)-1):
             raise RuntimeError(f"Invalid wave {wave} in person.has_outcome_during_or_prior_to_wave function for person with wave completed {self._waveCompleted}.")
         else:
             return len(self._outcomes[outcomeType]) != 0 and self.has_outcome_by_age(outcomeType, self._age[wave])
@@ -532,10 +511,11 @@ class Person:
         else:
             return None
 
-    def get_at_risk_age_at_first_outcome(self, outcomeType):
-        '''Returns the age of the first in-sim outcome only when the person was at risk for first
-           incidence (no priorToSim outcome). Returns None if the person had a priorToSim outcome
-           or had no in-sim event.'''
+    def get_first_incidence_age(self, outcomeType):
+        '''First-incidence numerator: returns the age of the first in-sim outcome only when the
+           person was at risk for first incidence (no priorToSim outcome). Returns None if the
+           person had a priorToSim outcome or had no in-sim event.
+           Pairs with get_first_incidence_at_risk_ages as the denominator.'''
         if self.has_outcome_prior_to_simulation(outcomeType):
             return None
         return self.get_age_at_first_outcome(outcomeType, inSim=True)
@@ -651,10 +631,12 @@ class Person:
         return self.has_outcome(OutcomeType.EPILEPSY, inSim=False)
 
     def has_diabetes(self):
-        return sorted(self._a1c)[-1] >= 6.5
+        """Sticky diagnosis: True if A1C ever reached 6.5, does not reverse if A1C later drops."""
+        return max(self._a1c) >= 6.5
 
     @property
-    def _current_diabetes(self):
+    def _diabetes(self):
+        """Regression-model hook: 'diabetes' coefficients resolve here via getattr."""
         return self.has_diabetes()
 
     # Q: should we make GFR a dynamic risk factor or outcome or leave it as is?
@@ -732,6 +714,10 @@ class Person:
     # 11. WMH / SCD classification
     # ==========================================================================
 
+    def has_brain_scan(self):
+        '''SCD hazard terms in outcome models must apply only when WMH/SBI findings were observable via a scan'''
+        return self._modality != Modality.NO.value
+
     def has_wmh(self):
         '''a person is defined as having wmh if wmh is set to True in the outcome or if sbi is set to True in the outcome
         For now in the Kaiser population there is only one WMH at most outcome so I am using the first outcome here'''
@@ -786,20 +772,15 @@ class Person:
     # ==========================================================================
 
     def get_wave_at_last_outcome(self, outcomeType):
-        ageAtLastOutcome = self.get_age_at_last_outcome(outcomeType)
-        if (ageAtLastOutcome is None): #never had this outcome
-            return None
-        elif (ageAtLastOutcome<self._age[0]): #had outcome prior to sim and not in sim
-            return None
-        else:
-            return self.get_wave_for_age(ageAtLastOutcome)
+        """Returns the wave of the last in-sim outcome, None if the person never had the
+           outcome in sim (priorToSim outcomes carry age=None and have no wave)."""
+        ageAtLastOutcome = self.get_age_at_last_outcome_in_sim(outcomeType)
+        return None if (ageAtLastOutcome is None) else self.get_wave_for_age(ageAtLastOutcome)
 
     def get_attr_prior_first_outcome_in_sim(self, attr, outcomeType): #assuming that the attribute is a list of floats
         attrList = getattr(self, attr)
-        ageAtFirstOutcome = self.get_age_at_first_outcome(outcomeType)
-        if (ageAtFirstOutcome is None): #never had this outcome
-            return None
-        elif (ageAtFirstOutcome<self._age[0]): #had outcome prior to sim and not in sim
+        ageAtFirstOutcome = self.get_age_at_first_outcome(outcomeType) #inSim by default, priorToSim outcomes are skipped
+        if (ageAtFirstOutcome is None): #never had this outcome in sim
             return None
         else: #had outcome in sim
             waveAtFirstOutcome = self.get_wave_for_age(ageAtFirstOutcome)
@@ -807,10 +788,10 @@ class Person:
 
     def get_attr_prior_last_outcome(self, attr, outcomeType): #assuming that the attribute is a list of floats
         attrList = getattr(self, attr)
-        ageAtLastOutcome = self.get_age_at_last_outcome(outcomeType)
-        if (ageAtLastOutcome is None): #never had this outcome
+        if not self.has_outcome(outcomeType, inSim=False): #never had this outcome
             return None
-        elif (ageAtLastOutcome<self._age[0]): #had outcome prior to sim and not in sim
+        ageAtLastOutcome = self.get_age_at_last_outcome_in_sim(outcomeType)
+        if (ageAtLastOutcome is None): #had outcome prior to sim and not in sim
             return attrList[0] #return the baseline attr as our best estimate of the median pre-event attribute
         else: #had outcome in sim
             waveAtLastOutcome = self.get_wave_for_age(ageAtLastOutcome)
@@ -818,10 +799,10 @@ class Person:
 
     def get_attr_since_last_outcome(self, attr, outcomeType): #assuming that the attribute is a list of floats
         attrList = getattr(self, attr)
-        ageAtLastOutcome = self.get_age_at_last_outcome(outcomeType)
-        if (ageAtLastOutcome is None): #never had this outcome
+        if not self.has_outcome(outcomeType, inSim=False): #never had this outcome
             return None
-        elif (ageAtLastOutcome<self._age[0]): #had outcome prior to sim and not in sim
+        ageAtLastOutcome = self.get_age_at_last_outcome_in_sim(outcomeType)
+        if (ageAtLastOutcome is None): #had outcome prior to sim and not in sim
             return attrList #return the entire list
         else: #had outcome in sim
             waveAtLastOutcome = self.get_wave_for_age(ageAtLastOutcome)
@@ -846,12 +827,6 @@ class Person:
     def get_total_qalys(self):
         return sum(list(map(lambda x: x[1].qaly, self._outcomes[OutcomeType.QUALITYADJUSTED_LIFE_YEARS])))
 
-    def get_qalys_from_wave(self, wave):
-        total = 0
-        for i in range(wave - 1, len(self._qalys)):
-            total += self._qalys[i]
-        return total
-
     def get_outcome_survival_info(self, outcomesTypeList=[OutcomeType.STROKE], personFunctionsList=[lambda x: x.get_scd_group()]):
         '''Returns person information useful for survival analysis.
         Time to event (based on waves), or last time person was still alive, and other person covariates.
@@ -870,26 +845,47 @@ class Person:
         outcomes = self.get_outcomes_during_simulation(outcomeType)
         #keep age of outcome, convert age to waveForAge, check if waveForAge is less than wave, then count how many
         personYearsWithOutcome = len(list(filter(lambda y: y<=wave, map(lambda x: self.get_wave_for_age(x[0]), outcomes))))
-        if (personYearsWithOutcome<0) | (personYearsWithOutcome>wave):
-            raise RuntimeError("{personYearsWithOutcome=} cannot be <0 or >{wave}")
+        if (personYearsWithOutcome<0) | (personYearsWithOutcome>wave+1): #waves 0 to wave inclusive can contribute wave+1 person-years
+            raise RuntimeError(f"{personYearsWithOutcome=} cannot be <0 or >{wave+1}")
         return personYearsWithOutcome
 
-    def get_person_years_at_risk_by_end_of_wave(self, outcomesTypeList=[OutcomeType.STROKE], wave=3):
-        '''Returns the person-years that this object could have had an outcome, any outcome in the outcome list.'''
+    def get_followup_person_years_by_end_of_wave(self, outcomesTypeList=[OutcomeType.STROKE], wave=3):
+        '''Follow-up-style denominator: person-years until the first in-sim outcome or the end of wave,
+           whichever comes first. priorToSim outcomes neither exclude the person nor truncate their time
+           (cohort follow-up convention, eg Kent2021/Kent2022).
+           Pairs with has_outcome / has_any_outcome_by_end_of_wave as the numerator,
+           NOT with the first-incidence functions.'''
         minOrLastWave = self.get_min_wave_of_first_outcomes_or_last_wave(outcomesTypeList) # eg 5
         personYearsAtRisk = min(minOrLastWave, wave) + 1 #with wave=3: 3 + 1
         return personYearsAtRisk
 
-    def get_at_risk_ages(self, outcomeType):
-        '''Returns the person's at-risk ages for first incidence of outcomeType:
+    def get_first_incidence_at_risk_ages(self, outcomeType):
+        '''First-incidence denominator: returns the person's at-risk ages for first incidence of outcomeType:
            - empty list if the person had a priorToSim outcome (never at risk for first incidence)
            - all ages if no in-sim event occurred
            - ages truncated at the first in-sim event age (inclusive) otherwise
-           Used as person-year contribution to the at-risk denominator for first-incidence rates.'''
+           Used as person-year contribution to the at-risk denominator for first-incidence rates.
+           Pairs with get_first_incidence_age as the numerator.'''
         if self.has_outcome_prior_to_simulation(outcomeType):
             return []
         firstAge = self.get_age_at_first_outcome(outcomeType, inSim=True)
         return self.get_ages() if firstAge is None else [a for a in self.get_ages() if a <= firstAge]
+
+    def get_followup_event_and_person_years(self, outcomesTypeList=[OutcomeType.STROKE], wave=3):
+        '''Follow-up convention as one inseparable pair: (event, personYears).
+           event: True if any in-sim outcome in outcomesTypeList occurred by end of wave.
+           personYears: years until the first in-sim outcome or the end of wave, whichever comes first.
+           priorToSim outcomes neither exclude the person nor truncate their time.
+           Use this pair for rates so the numerator and denominator cannot be mismatched.'''
+        return (self.has_any_outcome_by_end_of_wave(outcomesTypeList=outcomesTypeList, wave=wave),
+                self.get_followup_person_years_by_end_of_wave(outcomesTypeList=outcomesTypeList, wave=wave))
+
+    def get_first_incidence_event_age_and_at_risk_ages(self, outcomeType):
+        '''First-incidence convention as one inseparable pair: (eventAge, atRiskAges).
+           A priorToSim outcome yields (None, []): never at risk of first incidence, never an event.
+           Use this pair for rates so the numerator and denominator cannot be mismatched.'''
+        return (self.get_first_incidence_age(outcomeType),
+                self.get_first_incidence_at_risk_ages(outcomeType))
 
     def get_ages_with_outcome(self, outcomeType=OutcomeType.STROKE):
         '''Returns a list with the ages of the person that did have outcome'''
@@ -906,11 +902,10 @@ class Person:
     # 14. Glucose conversions
     # ==========================================================================
 
-    def get_fasting_glucose(self, use_residual=True, rng=None):
-        #rng = np.random.default_rng(rng)
+    def get_fasting_glucose(self, use_residual=True):
         glucose = convert_a1c_to_fasting_glucose(self._a1c[-1])
         if use_residual:
-            glucose += rng.normal(0, 21)
+            glucose += self._rng.normal(0, 21)
         return glucose
 
     # ==========================================================================
@@ -970,14 +965,15 @@ class Person:
     # ==========================================================================
 
     def __hash__(self):
-        return hash(self.__repr__())
+        return hash((self._name, self._index))
 
     def __repr__(self):
         personRepr = f"Person(name = {self._name} index = {self._index} "
         for attr in self._staticRiskFactors:
             personRepr += f" {attr}={getattr(self,'_'+attr)}"
         for attr in self._dynamicRiskFactors:
-            personRepr += f" {attr}={getattr(self,'_'+attr)[-1]:.1f}"
+            value = getattr(self,'_'+attr)[-1]
+            personRepr += f" {attr}=None" if value is None else f" {attr}={value:.1f}"
         for attr in self._defaultTreatments:
             personRepr += f" {attr}={getattr(self,'_'+attr)[-1]}"
         personRepr += ")"
@@ -991,6 +987,8 @@ class Person:
             return NotImplemented
         if (self._name!=other._name) | (self._index!=other._index) | (self._randomEffects!=other._randomEffects):
             return False
+        if (self._waveCompleted!=other._waveCompleted) | (self._treatmentStrategies!=other._treatmentStrategies):
+            return False
         for attr in self._staticRiskFactors:
             if getattr(self, '_'+attr) != getattr(other, '_'+attr):
                 return False
@@ -1000,12 +998,11 @@ class Person:
         for attr in self._defaultTreatments:
             if getattr(self, '_'+attr) != getattr(other, '_'+attr):
                 return False
-        if self._outcomes != other._outcomes:
-            return False
-        else:
-            return True
+        return self._outcomes == other._outcomes
 
     def __deepcopy__(self):
+        if self._waveCompleted > -1:
+            raise RuntimeError("Person __deepcopy__ can only be used at baseline, before any advance.")
         staticRiskFactorsDict = dict()
         for key in self._staticRiskFactors:
             staticRiskFactorsDict[key] = getattr(self, "_"+key)

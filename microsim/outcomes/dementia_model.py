@@ -15,7 +15,7 @@ from microsim.treatment_strategies.treatment_strategies import TreatmentStrategi
 class DementiaModel(CoxRiskFactorModel):
 
     # initial parameters in notebook lookAtSurvivalFunctionForDementiaModel (linearTerm=1.33371239e-05, quadraticTerm=5.64485841e-05)
-    # recalibrated fit to population incidence equation in notebook: identifyOptimalBaselineSurvivalParametersForDementia, linear multiplier = 0.5, quad = 0.05
+    # recalibrated fit to population incidence equation in notebook: identifyOptimalBaselineSurvivalParametersForDementia, linear multiplier = 0.5, quad = 0.175
 
     def __init__(
         self, linearTerm=1.33371239e-05, quadraticTerm=5.64485841e-05, wmhSpecific=True, populationRecalibration=True, riskScaling=1.0
@@ -35,7 +35,7 @@ class DementiaModel(CoxRiskFactorModel):
         return self.generate_next_outcome(person) if person._rng.uniform(size=1)<self.get_risk_for_person(person, years=1) else None
 
     def get_risk_for_person(self, person, years=1):
-        risk = super().get_risk_for_person(person, years=1)
+        risk = super().get_risk_for_person(person, years=years)
 
         risk = risk * self._riskScaling
 
@@ -64,6 +64,7 @@ class DementiaModel(CoxRiskFactorModel):
             education=person._education,
             raceEthnicity=person._raceEthnicity,
             modality=person._modality,
+            hasBrainScan=person.has_brain_scan(),
             sbi=person.get_outcome_item_first(OutcomeType.WMH, "sbi", inSim=True),
             wmh=person.get_outcome_item_first(OutcomeType.WMH, "wmh", inSim=True),
             severityUnknown=person.get_outcome_item_first(OutcomeType.WMH, "wmhSeverityUnknown", inSim=True),
@@ -71,7 +72,7 @@ class DementiaModel(CoxRiskFactorModel):
         )
 
     def linear_predictor_for_patient_characteristics(
-        self, currentAge, baselineGcp, gcpSlope, gender, education, raceEthnicity, modality, sbi, wmh, severityUnknown, severity
+        self, currentAge, baselineGcp, gcpSlope, gender, education, raceEthnicity, modality, hasBrainScan, sbi, wmh, severityUnknown, severity
     ):
         xb = 0
         xb += currentAge * 0.1023685
@@ -95,7 +96,7 @@ class DementiaModel(CoxRiskFactorModel):
         if raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
             xb += 0.1937563
 
-        if self.wmhSpecific: #if we just want a mean increased risk for the kaiser population then the modified linear and quadratic term adjustment did it    
+        if self.wmhSpecific and hasBrainScan: #if we just want a mean increased risk for the kaiser population then the modified linear and quadratic term adjustment did it
             if sbi:
                 if currentAge < 70:
                     xb += np.log(2.02)
@@ -127,12 +128,16 @@ class DementiaModel(CoxRiskFactorModel):
 
 class DementiaPrevalenceModel(OutcomePrevalenceBase):
     """Logistic prevalence model that seeds priorToSim dementia at Person construction.
-       Coefficients below are placeholder zeros — replace with fitted odds ratios."""
+       Coefficients below are placeholder zeros — replace with fitted odds ratios.
+       The placeholder intercept is -12, not 0: an intercept of 0 with all-zero coefficients
+       seeds dementia at expit(0)=50% in every default population. At -12 the default seeding
+       is ~0 (expit(-12)~6e-6) while riskScaling still shifts the odds, so calibrate_prevalence
+       can drive prevalence to a target within its logS bracket of [-15, 15]."""
 
     _outcomeType = OutcomeType.DEMENTIA
 
     def __init__(self, riskScaling=1.0):
-        self._intercept = 0.
+        self._intercept = -12.
         self._riskScaling = riskScaling
 
     def get_linear_predictor_for_person(self, person):

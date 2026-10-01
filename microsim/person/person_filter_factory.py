@@ -1,7 +1,12 @@
+import pandas as pd
+
 from microsim.person.person_filter import PersonFilter
 from microsim.risk_factors.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
 from microsim.default_treatments.default_treatments import DefaultTreatmentsType
 from microsim.outcomes.cv_model_repository import CVModelRepository
+
+#shared by the highCVLimit filter so the CV models are not rebuilt for every person tested
+_cvModelRepository = CVModelRepository()
 
 class PersonFilterFactory:
     '''Factory that builds a PersonFilter, the object used to include/exclude individuals from a Population.
@@ -41,6 +46,7 @@ class PersonFilterFactory:
         "highCVLimit"                person one-year CV risk < 0.00477
         "noMCI"                      person no MCI at baseline
         "hasEpilepsy"                person has epilepsy at baseline
+        "usBornOrInUs15PlusYears"    df     US-born, or foreign-born in the US 15+ years
 
     Pass any subset of these keys to get_person_filter to obtain a PersonFilter holding
     exactly those filters (each is added under its own key as its filter name):
@@ -87,11 +93,16 @@ class PersonFilterFactory:
         "lowDBPLimit": ("df", lambda x: x[DynamicRiskFactorsType.DBP.value]>85),
         "highAntiHypertensivesLimit": ("df", lambda x: x[DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value]<=3),
         "highCVLimit": ("person",
-            lambda x: (CVModelRepository().select_outcome_model_for_person(x).get_risk_for_person(x)< (0.00477) )),
+            lambda x: (_cvModelRepository.select_outcome_model_for_person(x).get_risk_for_person(x)< (0.00477) )),
         "noMCI": ("person",
             lambda x: not x.has_mci(inSim=False)),
         "hasEpilepsy": ("person",
             lambda x: x.has_epilepsy()),
+        #timeInUS is NHANES DMDYRSUS: duration bands asked only of the foreign-born (5 = 15-<20
+        #years, the band holding an 18-year lookback; 77/99 = refused/don't know), NaN for the
+        #US-born - who must be kept, NaN >= threshold silently drops them all
+        "usBornOrInUs15PlusYears": ("df",
+            lambda x: pd.isna(x["timeInUS"]) or (5 <= x["timeInUS"] <= 9)),
     }
 
     @staticmethod

@@ -36,7 +36,6 @@ class WMHSeverityMRModel():
         bmi,
         anyPhysicalActivity,
         antiHypertensiveCount,
-        #otherLipidLowering,
         a1c,
         totChol,
         hdl,
@@ -81,8 +80,6 @@ class WMHSeverityMRModel():
         if anyPhysicalActivity:
             xb += 0.0494
         xb += antiHypertensiveCount*(-0.1311)
-        #if otherLipidLowering:
-        #    xb += 0.0513
         xb += a1c*(-0.0144)
         xb += totChol*0.00166
         xb += hdl*(-0.00344)
@@ -114,7 +111,6 @@ class WMHSeverityMRModel():
             person._bmi[-1],
             person._anyPhysicalActivity[-1],
             person._antiHypertensiveCount[-1],
-            #person._otherLipidLowering,
             person._a1c[-1],
             person._totChol[-1],
             person._hdl[-1],
@@ -163,7 +159,6 @@ class WMHSeverityCTModel():
         bmi,
         anyPhysicalActivity,
         antiHypertensiveCount,
-        #otherLipidLowering,
         a1c,
         totChol,
         hdl,
@@ -208,8 +203,6 @@ class WMHSeverityCTModel():
         if anyPhysicalActivity:
             xb += 0.0618
         xb += antiHypertensiveCount*(-0.0888)
-        #if otherLipidLowering:
-        #    xb += 0.0513
         xb += a1c*(-0.0428)
         xb += totChol*0.00185
         xb += hdl*(-0.00479)
@@ -241,7 +234,6 @@ class WMHSeverityCTModel():
             person._bmi[-1],
             person._anyPhysicalActivity[-1],
             person._antiHypertensiveCount[-1],
-            #person._otherLipidLowering,
             person._a1c[-1],
             person._totChol[-1],
             person._hdl[-1],
@@ -291,7 +283,6 @@ class WMHSeverityModel():
         bmi,
         anyPhysicalActivity,
         antiHypertensiveCount,
-        #otherLipidLowering,
         a1c,
         totChol,
         hdl,
@@ -337,8 +328,6 @@ class WMHSeverityModel():
         if anyPhysicalActivity:
             xb += 0.0695
         xb += antiHypertensiveCount*(-0.1046)
-        #if otherLipidLowering:
-        #    xb += 0.0513
         xb += a1c*(-0.0296)
         xb += totChol*0.00178
         xb += hdl*(-0.00411)
@@ -378,7 +367,6 @@ class WMHSeverityModel():
             person._bmi[-1],
             person._anyPhysicalActivity[-1],
             person._antiHypertensiveCount[-1],
-            #person._otherLipidLowering,
             person._a1c[-1],
             person._totChol[-1],
             person._hdl[-1],

@@ -146,14 +146,14 @@ class GCPModel:
                 gender=person._gender,
                 baseAge=person._age[0],
                 education=person._education,
-                alcohol=person._alcoholPerWeek[-1],
+                alcohol=AlcoholCategory.get_category_for_consumption(person._alcoholPerWeek[-1]),
                 smokingStatus=person._smokingStatus,
                 bmi=person._bmi[-1],
                 waist=person._waist[-1],
                 totChol=person._totChol[-1],
                 meanSBP=np.array(person._sbp).mean(),
                 anyAntiHpertensive=((person._antiHypertensiveCount[-1]>0) | person.is_in_bp_treatment),
-                fastingGlucose=person.get_fasting_glucose(not test, rng),
+                fastingGlucose=person.get_fasting_glucose(not test),
                 physicalActivity=person._anyPhysicalActivity[-1],
                 afib=person._afib[-1],
             )
@@ -315,7 +315,7 @@ class GCPStrokeModel:
                 smokingStatus=person._smokingStatus,
                 #diabetes=person.has_diabetestx(),
                 physicalActivity=person._anyPhysicalActivity[-1],
-                alcoholPerWeek=person._alcoholPerWeek[-1],
+                alcoholPerWeek=AlcoholCategory.get_category_for_consumption(person._alcoholPerWeek[-1]),
                 meanBmiPrestroke=np.mean(np.array(person._bmi[:waveAtLastStroke+1])),
                 meanSBP=np.array(person._sbp[waveAtLastStroke+1:]).mean(),
                 meanSBPPrestroke=np.array(person._sbp[:waveAtLastStroke+1]).mean(),
@@ -329,7 +329,6 @@ class GCPStrokeModel:
                 #Q: how to deal with otherLipidlowering meds? We used to use this attribute but now that I have not
                 #   included a treatment model for this (and I think I do not even bring it in from NHANES)
                 #   is it ok to use just statin for the gcp stroke model, like I do below?
-                #anyLipidLowering= (person._statin[-1] | (person._otherLipidLoweringMedicationCount[-1]>0.)),
                 anyLipidLowering= person._statin[-1],
                 afib=person._afib[-1],
                 mi=person._mi,

@@ -84,7 +84,6 @@ These JSON specifications are loaded by the model repositories and used to param
 - `risk_factor.py`: Core enumerations (DynamicRiskFactorsType, StaticRiskFactorsType, CategoricalRiskFactorsType, ContinuousRiskFactorsType)
 - `risk_model_repository.py`: Base `RiskModelRepository` with bounds enforcement and model initialization helpers
 - `cohort_risk_model_repository.py`: Cohort-specific repositories (`CohortDynamicRiskFactorModelRepository`, `CohortStaticRiskFactorModelRepository`, and the helper `AlcoholCategoryModel`)
-- `nhanes_risk_model_repository.py`: NHANES-specific `NHANESRiskModelRepository` (uses legacy pickle-based models for SBP, DBP, HDL, BMI, totChol, A1C)
 - `initialization_model_repository.py`: `InitializationModelRepository` — seeds PVD, AFIB, WAIST, EDUCATION, ALCOHOL, MODALITY at Person construction
 - Individual model files:
   - `age_model.py`: Age progression
@@ -132,10 +131,6 @@ RiskModelRepository (risk_model_repository.py)  ← base class
 CohortDynamicRiskFactorModelRepository (cohort_risk_model_repository.py)
   ↓ loads from
 data/*CohortModelSpec.json (via load_regression_model)
-
-NHANESRiskModelRepository (nhanes_risk_model_repository.py)
-  ↓ loads from
-data/*.pickle (legacy NHANES OLS models)
 ```
 
 Repositories are accessed through the Population's `PopulationRepositoryType.DYNAMIC_RISK_FACTORS` or `PopulationRepositoryType.STATIC_RISK_FACTORS` enum.

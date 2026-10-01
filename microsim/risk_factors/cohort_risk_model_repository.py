@@ -21,7 +21,7 @@ class CohortDynamicRiskFactorModelRepository(RiskModelRepository):
         self._repository[DynamicRiskFactorsType.AFIB.value] = AFibIncidenceModel()
         self._repository[DynamicRiskFactorsType.PVD.value] = PVDIncidenceModel()
         self._repository[DynamicRiskFactorsType.AGE.value] = AgeModel()
-        self._repository[DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value] = AlcoholCategoryModel(
+        self._repository[DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value] = AlcoholModel(
             load_regression_model("alcoholPerWeekCohortModel")
         )
 
@@ -38,15 +38,10 @@ class CohortDynamicRiskFactorModelRepository(RiskModelRepository):
 
         self._initialize_linear_probability_risk_model(DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value, "anyPhysicalActivityCohortModel")
 
-class AlcoholCategoryModel(RoundedLinearRiskFactorModel):
+class AlcoholModel(RoundedLinearRiskFactorModel):
+    #returns drinks/week; deterministic like the other linear risk factors (residual not drawn)
     def estimate_next_risk(self, person):
         drinks = super(RoundedLinearRiskFactorModel, self).estimate_next_risk(person)
-        return AlcoholCategory.get_category_for_consumption(drinks if drinks > 0 else 0)
-
-    def estimate_next_risk_vectorized(self, x, rng=None):
-        drinks = super(RoundedLinearRiskFactorModel, self).estimate_next_risk_vectorized(
-            x
-        )
-        return AlcoholCategory.get_category_for_consumption(drinks if drinks > 0 else 0)
+        return round(drinks) if drinks > 0 else 0
 
 

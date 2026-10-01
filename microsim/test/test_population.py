@@ -12,11 +12,12 @@ import pandas as pd
 import numpy as np
 from microsim.outcomes.outcome import OutcomeType, Outcome
 from microsim.population.population_factory import PopulationFactory
+from microsim.common.data_loader import get_absolute_datafile_path
 
 class TestPopulation(unittest.TestCase):
     def setUp(self):
         self.test_n = 50000
-        full_nhanes = pd.read_stata("microsim/data/fullyImputedDataset.dta")
+        full_nhanes = pd.read_stata(get_absolute_datafile_path("fullyImputedDataset.dta"))
         test_nhanes = full_nhanes.loc[(full_nhanes.year == 2015) & (full_nhanes.age >= 18)]
         ageMeanList = list()
         for i in range(100):

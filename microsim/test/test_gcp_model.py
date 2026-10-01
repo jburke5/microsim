@@ -9,9 +9,6 @@ from microsim.risk_factors.alcohol_category import AlcoholCategory
 from microsim.risk_factors.race_ethnicity import RaceEthnicity
 from microsim.risk_factors.a1c import convert_fasting_glucose_to_a1c
 from microsim.outcomes.cognition_model import GCPModel
-from microsim.test.do_not_change_risk_factors_model_repository import (
-    DoNotChangeRiskFactorsModelRepository,
-)
 from microsim.outcomes.outcome_model_repository import OutcomeModelRepository
 from microsim.population.population_factory import PopulationFactory
 from microsim.person.person_factory import PersonFactory

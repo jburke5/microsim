@@ -20,11 +20,8 @@ class MockPopulation:
         self._n = len(outcomes)
         self._waveCompleted = 4
 
-    def has_outcome(self, outcome_type):
-        return self._outcomes
-
-    def get_person_years_at_risk_by_end_of_wave(self, outcomes_list, wave):
-        return self._person_years
+    def get_followup_events_and_person_years(self, outcomes_list, wave):
+        return list(zip(self._outcomes, self._person_years))
 
 
 class MockTrial:
@@ -55,8 +52,7 @@ class TestIncidenceRateAnalysis(unittest.TestCase):
         result = analysis.analyze(
             trial,
             {
-                "outcome": lambda x: x.has_outcome(OutcomeType.STROKE),
-                "time": lambda x: x.get_person_years_at_risk_by_end_of_wave([OutcomeType.STROKE], x._waveCompleted)
+                "eventAndTime": lambda x: x.get_followup_events_and_person_years([OutcomeType.STROKE], x._waveCompleted)
             },
             "incidenceRate"
         )
@@ -81,8 +77,7 @@ class TestIncidenceRateAnalysis(unittest.TestCase):
         result = analysis.analyze(
             trial,
             {
-                "outcome": lambda x: x.has_outcome(OutcomeType.STROKE),
-                "time": lambda x: x.get_person_years_at_risk_by_end_of_wave([OutcomeType.STROKE], x._waveCompleted)
+                "eventAndTime": lambda x: x.get_followup_events_and_person_years([OutcomeType.STROKE], x._waveCompleted)
             },
             "incidenceRate"
         )
@@ -100,8 +95,7 @@ class TestIncidenceRateAnalysis(unittest.TestCase):
         toa.add_outcome_assessment(
             "testIR",
             {
-                "outcome": lambda x: x.has_outcome(OutcomeType.STROKE),
-                "time": lambda x: x.get_person_years_at_risk_by_end_of_wave([OutcomeType.STROKE], x._waveCompleted)
+                "eventAndTime": lambda x: x.get_followup_events_and_person_years([OutcomeType.STROKE], x._waveCompleted)
             },
             AnalysisType.INCIDENCE_RATE.value
         )

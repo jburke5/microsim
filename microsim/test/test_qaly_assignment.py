@@ -6,9 +6,6 @@ from microsim.person.person import Person
 #from microsim.test.test_risk_model_repository import TestRiskModelRepository
 from microsim.risk_factors.education import Education
 from microsim.outcomes.outcome import Outcome, OutcomeType
-from microsim.test.do_not_change_risk_factors_model_repository import (
-    DoNotChangeRiskFactorsModelRepository,
-)
 from microsim.outcomes.outcome_model_repository import OutcomeModelRepository
 from microsim.outcomes.outcome import OutcomeType
 from microsim.outcomes.dementia_model import DementiaModel

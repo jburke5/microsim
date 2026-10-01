@@ -7,5 +7,6 @@ class ModalityPrevalenceModel:
         pass
  
     def estimate_next_risk(self, person):
-        return  Modality.NO.value 
+        #modality is stored as the Modality value string, matching the Kaiser data and modalityGroupMap
+        return  Modality.NO.value
 

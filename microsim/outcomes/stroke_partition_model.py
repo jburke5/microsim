@@ -89,12 +89,22 @@ class StrokePrevalenceModel(OutcomePrevalenceBase):
     """Logistic prevalence model that seeds priorToSim stroke at Person construction.
        Conditioned on the presence of a priorToSim CV outcome — relies on CV being seeded first
        (CARDIOVASCULAR precedes STROKE in OutcomeType._order_).
-       Coefficients below are placeholder zeros — replace with fitted odds ratios."""
+       Age and gender are the only inputs, so the realized stroke prevalence per age group and
+       gender is the CV prevalence times the conditional probability modeled here, and matches
+       the GBD stroke rates the coefficients were fit to, with no risk scaling."""
 
     _outcomeType = OutcomeType.STROKE
 
+    # Per-gender OLS fit of logit(q) on age-group midpoints, where q is the GBD stroke rate in
+    # Reference.prevalence[stroke] (ages 50-74, USA, 1999) divided by the CVPrevalenceModel
+    # probability; realized prevalence within 0.0015 of GBD in every cell, 2026-08-28.
+    # Regenerate with calibration.fit_stroke_prevalence; test_calibration enforces agreement.
+    _coefficients = {
+        NHANESGender.MALE: {"Intercept": -2.1429, "age": 0.00303},
+        NHANESGender.FEMALE: {"Intercept": -1.0932, "age": -0.00938},
+    }
+
     def __init__(self, riskScaling=1.0):
-        self._intercept = -0.0283
         self._riskScaling = riskScaling
 
     def get_prevalent_outcome(self, person):
@@ -115,63 +125,8 @@ class StrokePrevalenceModel(OutcomePrevalenceBase):
         return self.calc_linear_predictor_for_patient_characteristics(
             person._age[-1],
             person._gender,
-            person._raceEthnicity,
-            person._education,
-            person._smokingStatus,
-            person._anyPhysicalActivity[-1],
-            person._sbp[-1],
-            person._dbp[-1],
-            person._totChol[-1],
         )
 
-    def calc_linear_predictor_for_patient_characteristics(
-        self,
-        age,
-        gender,
-        raceEthnicity,
-        education,
-        smokingStatus,
-        anyPhysicalActivity,
-        sbp,
-        dbp,
-        totChol,
-    ):
-        xb = self._intercept + ( - 2.94  / 13.44 ) * 72.49
-
-        xb += ( 2.94 / 13.44 ) * age
-
-        if gender == NHANESGender.FEMALE:
-            xb += 1.60
-        elif gender == NHANESGender.MALE:
-            xb += 0.  # reference
-
-        if raceEthnicity == RaceEthnicity.NON_HISPANIC_WHITE:
-            xb += -2.04
-        elif raceEthnicity == RaceEthnicity.ASIAN:
-            xb += 0.
-        elif raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
-            xb += 3.44
-        elif raceEthnicity == RaceEthnicity.OTHER_HISPANIC:
-            xb += 11.5 
-        elif raceEthnicity == RaceEthnicity.OTHER:
-            xb += -0.789
-
-        if education == Education.LESSTHANHIGHSCHOOL:
-            xb += 0.  # reference
-        elif education == Education.SOMEHIGHSCHOOL:
-            xb += -1.81
-        elif education == Education.HIGHSCHOOLGRADUATE:
-            xb += -3.97
-        elif education == Education.SOMECOLLEGE:
-            xb += -0.0640
-        elif education == Education.COLLEGEGRADUATE:
-            xb += -3.18
-
-        if smokingStatus == SmokingStatus.NEVER:
-            xb += 0.  # reference
-        elif smokingStatus == SmokingStatus.FORMER:
-            xb += 0.801
-        elif smokingStatus == SmokingStatus.CURRENT:
-            xb += -0.531
-
-        return xb
+    def calc_linear_predictor_for_patient_characteristics(self, age, gender):
+        coefficients = self._coefficients[gender]
+        return coefficients["Intercept"] + coefficients["age"] * age

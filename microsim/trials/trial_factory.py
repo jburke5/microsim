@@ -10,7 +10,8 @@ class TrialFactory:
     Each helper builds the appropriate population-specific TrialDescription, instantiates
     a Trial (which constructs its treated and control populations), runs both arms, and
     analyzes them with a TrialOutcomeAssessor. The completed Trial is returned so the
-    caller can inspect trial.results or print the formatted summary.
+    caller can inspect trial.results, print the formatted summary, or export them with
+    trial.export_results(path). exportPath=None (default) writes nothing.
 
     If assessor is None, the default assessor from TrialOutcomeAssessorFactory is used.'''
 
@@ -27,12 +28,14 @@ class TrialFactory:
                    distributions=False,
                    prevalenceRiskScaling=None,
                    assessor=None,
-                   notify=True):
+                   notify=True,
+                   exportPath=None):
         '''Build, run, and analyze an NHANES-based Trial in a single call.
 
         Example:
             trial = TrialFactory.run_nhanes(sampleSize=1000, duration=5,
-                                            treatmentStrategies="1bpMedsAdded")
+                                            treatmentStrategies="1bpMedsAdded",
+                                            exportPath="trial-results.csv") #optional
             print(trial)
         '''
         description = NhanesTrialDescription(trialType=trialType,
@@ -46,7 +49,7 @@ class TrialFactory:
                                              nhanesWeights=nhanesWeights,
                                              distributions=distributions,
                                              prevalenceRiskScaling=prevalenceRiskScaling)
-        return TrialFactory._run(description, assessor, notify)
+        return TrialFactory._run(description, assessor, notify, exportPath)
 
     @staticmethod
     def run_kaiser(sampleSize,
@@ -59,12 +62,14 @@ class TrialFactory:
                    wmhSpecific=True,
                    riskScaling=None,
                    assessor=None,
-                   notify=True):
+                   notify=True,
+                   exportPath=None):
         '''Build, run, and analyze a Kaiser-based Trial in a single call.
 
         Example:
             trial = TrialFactory.run_kaiser(sampleSize=1000, duration=5,
-                                            treatmentStrategies="1bpMedsAdded")
+                                            treatmentStrategies="1bpMedsAdded",
+                                            exportPath="trial-results.csv") #optional
             print(trial)
         '''
         description = KaiserTrialDescription(trialType=trialType,
@@ -76,12 +81,12 @@ class TrialFactory:
                                              personFilters=personFilters,
                                              wmhSpecific=wmhSpecific,
                                              riskScaling=riskScaling)
-        return TrialFactory._run(description, assessor, notify)
+        return TrialFactory._run(description, assessor, notify, exportPath)
 
     @staticmethod
-    def _run(description, assessor, notify):
+    def _run(description, assessor, notify, exportPath):
         if assessor is None:
             assessor = TrialOutcomeAssessorFactory.get_trial_outcome_assessor()
         trial = Trial(description)
-        trial.run_analyze(assessor, notify=notify)
+        trial.run_analyze(assessor, notify=notify, exportPath=exportPath)
         return trial

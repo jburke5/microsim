@@ -25,7 +25,7 @@ class AlcoholPrevalenceModel:
         elif gender==NHANESGender.FEMALE:
             xb += -(-0.85537)
         else:
-            raise RuntimeError("Unknown raceEthnicity in EducationPrevalenceModel.")
+            raise RuntimeError("Unknown gender in AlcoholPrevalenceModel.")
 
         if smokingStatus==SmokingStatus.NEVER:
             xb += 0
@@ -34,10 +34,11 @@ class AlcoholPrevalenceModel:
         elif smokingStatus==SmokingStatus.CURRENT:
             xb += -(1.48850)
         else:
-            raise RuntimeError("Unknown smokingStatus in EducationPrevalenceModel.")
+            raise RuntimeError("Unknown smokingStatus in AlcoholPrevalenceModel.")
 
         xb += -(-0.02906)*age
         #intercepts in polr package results are the actual intercepts
+        #first two intercepts equal on purpose: NHANES has no ONETOSIX rows (see microsimNotebooks/initialization-models-01), so P(ONETOSIX)=0
         lps = (xb-3.1956, xb-3.1956, xb-1.5056)
         return lps
 

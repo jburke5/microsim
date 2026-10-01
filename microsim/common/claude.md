@@ -79,7 +79,9 @@ path = get_absolute_datafile_path("fullyImputedDataset.dta")
 # e.g. "/path/to/microsim/data/fullyImputedDataset.dta"
 ```
 
-**Used by:** `population.py`, `standardized_population.py`, and any module that opens raw data files directly.
+**Used by:** `population.py`, `standardized_population.py`, `population_factory.py` (the NHANES `.dta`, the `kaiser/` directory, and the `state/` directory), and any module that opens raw data files directly.
+
+Prefer it over a literal `"microsim/data/..."` string: a relative path only resolves when the process happens to run from the repository root, so it breaks for a notebook in a subdirectory, an installed package, or a scheduled job with its own working directory.
 
 ### `load_datafile(filename) -> str`
 

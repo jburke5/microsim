@@ -87,7 +87,7 @@ class PVDIncidenceModel:
         # this ensures that if someone gets PVD, they will continue having it
         # in the future, we could adjust this to include misdiagnosis etc
         if lagPVD:
-            xb = 10
+            xb = 11  # above the lp>10 clamp, so risk is exactly 1
         else:
             ageS = age/10.
             pulsePressureS = (sbp-dbp)/10.

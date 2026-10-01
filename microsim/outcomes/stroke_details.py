@@ -3,8 +3,16 @@ from microsim.regression_models.linear_risk_factor_model import LinearRiskFactor
 from microsim.regression_models.relative_risk_factor_model import RelativeRiskFactorModel
 from microsim.outcomes.stroke_outcome import StrokeOutcome, StrokeSubtype, StrokeType, Localization
 from microsim.regression_models.regression_model import RegressionModel
+from microsim.risk_factors.alcohol_category import AlcoholCategory
 
-class StrokeNihssModel(LinearRiskFactorModel):
+class AlcoholCategoryInputMixin:
+    #the source fits coded alcohol as a category (alcperwk_sim); persons store drinks/week
+    def get_model_argument_for_coeff_name(self, coeff_name, person):
+        if coeff_name == "alcoholPerWeek":
+            return int(AlcoholCategory.get_category_for_consumption(person._alcoholPerWeek[-1]))
+        return super().get_model_argument_for_coeff_name(coeff_name, person)
+
+class StrokeNihssModel(AlcoholCategoryInputMixin, LinearRiskFactorModel):
 
     def __init__(self):
         self._model = {"coefficients": {
@@ -41,10 +49,6 @@ class StrokeNihssModel(LinearRiskFactorModel):
         self._regressionModel = RegressionModel(**self._model)
         super().__init__(self._regressionModel)
 
-    def estimate_next_risk_vectorized(self, person):
-        #constrain regression results
-        return min( max(0, round(super().estimate_next_risk_vectorized(person, rng=person._rng, withResidual=True))), 42) 
-
     def estimate_next_risk(self, person):
         #constrain regression results
         return min( max(0, round(super().estimate_next_risk(person, rng=person._rng, withResidual=True))), 42)  
@@ -57,18 +61,12 @@ class StrokeTypeModel():
     def estimate_ischemic_risk(self, person):
         return person._rng.uniform()
 
-    def estimate_ischemic_risk_vectorized(self, person):
-        return person._rng.uniform()
-
     def get_stroke_type(self, person):
         return StrokeType.ISCHEMIC if (self.estimate_ischemic_risk(person)<self._ischemicRatio) else StrokeType.ICH
-    
-    def get_stroke_type_vectorized(self, person):
-        return StrokeType.ISCHEMIC if (self.estimate_ischemic_risk_vectorized(person)<self._ischemicRatio) else StrokeType.ICH
 
 #the stroke subtype model produces a lot more than expected cardioembolic strokes
 #this model will need to be adjusted when it is needed
-class StrokeSubtypeCEModel(RelativeRiskFactorModel):
+class StrokeSubtypeCEModel(AlcoholCategoryInputMixin, RelativeRiskFactorModel):
     def __init__(self):
         
         #cardioembolic
@@ -106,7 +104,7 @@ class StrokeSubtypeCEModel(RelativeRiskFactorModel):
         self._regressionModel = RegressionModel(**self._model)
         super().__init__(self._regressionModel)
 
-class StrokeSubtypeLVModel(RelativeRiskFactorModel):
+class StrokeSubtypeLVModel(AlcoholCategoryInputMixin, RelativeRiskFactorModel):
     def __init__(self):
         
         #LA_atherosclerosis
@@ -144,7 +142,7 @@ class StrokeSubtypeLVModel(RelativeRiskFactorModel):
         self._regressionModel = RegressionModel(**self._model)
         super().__init__(self._regressionModel)
 
-class StrokeSubtypeSVModel(RelativeRiskFactorModel):
+class StrokeSubtypeSVModel(AlcoholCategoryInputMixin, RelativeRiskFactorModel):
     def __init__(self):
         
         #SV_occlusion
@@ -192,27 +190,6 @@ class StrokeSubtypeModelRepository:
         ceRelRisk = StrokeSubtypeCEModel().estimate_rel_risk(person)
         lvRelRisk = StrokeSubtypeLVModel().estimate_rel_risk(person)
         svRelRisk = StrokeSubtypeSVModel().estimate_rel_risk(person)
-        otRelRisk = 1 #this was the base subtype on the multinomial logistic regression model
-
-        sumRelRisk = otRelRisk + ceRelRisk + lvRelRisk + svRelRisk
-
-        #probabilities are just rescaled relative risks, no need to calculate them, just draw on the rel risk scale
-        draw = person._rng.uniform(low=0., high=sumRelRisk)
-
-        if (draw<lvRelRisk):
-            return StrokeSubtype.LARGE_VESSEL #most common, so check this first
-        elif (draw<lvRelRisk+svRelRisk):
-            return StrokeSubtype.SMALL_VESSEL
-        elif (draw<lvRelRisk+svRelRisk+otRelRisk):
-            return StrokeSubtype.OTHER
-        else:
-            return StrokeSubtype.CARDIOEMBOLIC
-
-    def get_stroke_subtype_vectorized(self, person):
-        
-        ceRelRisk = StrokeSubtypeCEModel().estimate_rel_risk_vectorized(person)
-        lvRelRisk = StrokeSubtypeLVModel().estimate_rel_risk_vectorized(person)
-        svRelRisk = StrokeSubtypeSVModel().estimate_rel_risk_vectorized(person)
         otRelRisk = 1 #this was the base subtype on the multinomial logistic regression model
 
         sumRelRisk = otRelRisk + ceRelRisk + lvRelRisk + svRelRisk

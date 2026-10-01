@@ -27,7 +27,6 @@ class WMHPresenceCTModel:
         bmi,
         anyPhysicalActivity,
         antiHypertensiveCount,
-        #otherLipidLowering,
         a1c,
         totChol,
         hdl,
@@ -61,8 +60,6 @@ class WMHPresenceCTModel:
         if anyPhysicalActivity:
             xb += (-0.0579)
         xb += antiHypertensiveCount*0.092
-        #if otherLipidLowering:
-        #    xb += 0.00221    
         xb += a1c*0.0438
         xb += totChol*(-0.0015)
         xb += hdl*0.00461
@@ -94,7 +91,6 @@ class WMHPresenceCTModel:
             person._bmi[-1],
             person._anyPhysicalActivity[-1],
             person._antiHypertensiveCount[-1],
-            #person._otherLipidLowering,
             person._a1c[-1],
             person._totChol[-1],
             person._hdl[-1],
@@ -124,7 +120,6 @@ class WMHPresenceMRModel:
         bmi,
         anyPhysicalActivity,
         antiHypertensiveCount,
-        #otherLipidLowering,
         a1c,
         totChol,
         hdl,
@@ -158,8 +153,6 @@ class WMHPresenceMRModel:
         if anyPhysicalActivity:
             xb += (-0.0399)
         xb += antiHypertensiveCount*0.1089
-        #if otherLipidLowering:
-        #    xb += 0.00221
         xb += a1c*0.0199
         xb += totChol*(-0.00166)
         xb += hdl*0.00299
@@ -191,7 +184,6 @@ class WMHPresenceMRModel:
             person._bmi[-1],
             person._anyPhysicalActivity[-1],
             person._antiHypertensiveCount[-1],
-            #person._otherLipidLowering,
             person._a1c[-1],
             person._totChol[-1],
             person._hdl[-1],
@@ -223,7 +215,6 @@ class WMHPresenceModel:
         bmi,
         anyPhysicalActivity,
         antiHypertensiveCount,
-        #otherLipidLowering,
         a1c,
         totChol,
         hdl,
@@ -258,8 +249,6 @@ class WMHPresenceModel:
         if anyPhysicalActivity:
             xb += (-0.0656)
         xb += antiHypertensiveCount*0.1
-        #if otherLipidLowering:
-        #    xb += 0.00221
         xb += a1c*0.0332
         xb += totChol*(-0.00159)
         xb += hdl*0.00402
@@ -293,7 +282,6 @@ class WMHPresenceModel:
             person._bmi[-1],
             person._anyPhysicalActivity[-1],
             person._antiHypertensiveCount[-1],
-            #person._otherLipidLowering,
             person._a1c[-1],
             person._totChol[-1],
             person._hdl[-1],

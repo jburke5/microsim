@@ -104,7 +104,7 @@ class NoBPTreatment(BaseTreatmentStrategy):
 # James, P. A. et al. 2014 Evidence-Based Guideline for the Management of High Blood Pressure in Adults: Report From the Panel Members Appointed to the Eighth Joint National Committee (JNC 8). Jama 311, 507–520 (2014).
 class jnc8Treatment(AddBPTreatmentMedsToGoal120):
     def low_target(self, person):
-        return person._diabetes or person._ckd or getattr(person, "_"+DynamicRiskFactorsType.AGE.value)[-1] < 60
+        return person._diabetes or person._current_ckd or getattr(person, "_"+DynamicRiskFactorsType.AGE.value)[-1] < 60
     
     def get_goal(self, person):
         return {'sbp' : 140, 'dbp' : 90} if self.low_target(person) else {'sbp' : 150, 'dbp' : 90}
@@ -119,6 +119,7 @@ class jnc8Treatment(AddBPTreatmentMedsToGoal120):
 
 class jnc8ForHighRisk(jnc8Treatment):
     def __init__(self, targetRisk, wmhSpecific=True):
+        super().__init__()
         self.targetRisk = targetRisk
         self.cvModelRepository = CVModelRepository(wmhSpecific=wmhSpecific)
     
@@ -130,21 +131,22 @@ class jnc8ForHighRiskLowBpTarget(jnc8ForHighRisk):
     def __init__(self, targetRisk, targetBP, wmhSpecific=True):
         super().__init__(targetRisk, wmhSpecific)
         self.targetBP = targetBP
-        self.status = TreatmentStrategyStatus.BEGIN
     
     def get_goal(self, person):
-        return self.targetBP 
-    
+        return self.targetBP
+
+    def get_meds_needed_for_goal(self, person, goal):
+        '''Treat to goal only if the CV risk is above the threshold.'''
+        return super().get_meds_needed_for_goal(person, goal) if self.low_target(person) else 0
+
 # simplified class to represent SPRINT.
 class SprintTreatment(jnc8ForHighRiskLowBpTarget):
     def __init__(self, wmhSpecific=True):
         super().__init__(0.075, {'sbp' : 126, 'dbp': 85}, wmhSpecific)
-        self.status = TreatmentStrategyStatus.BEGIN
 
 class SprintForLowerDbpGoalTreatment(jnc8ForHighRiskLowBpTarget):
     def __init__(self):
         super().__init__(0.075, {'sbp' : 126, 'dbp': 65})
-        self.status = TreatmentStrategyStatus.BEGIN
 
 class SprintForSbpOnlyTreatment(jnc8ForHighRiskLowBpTarget):
     '''This treatment strategy practically implements an SBP only goal for blood pressure treatment.
@@ -152,13 +154,14 @@ class SprintForSbpOnlyTreatment(jnc8ForHighRiskLowBpTarget):
     will be unlikely ever used.'''
     def __init__(self, cvRiskCutoff=0.075, wmhSpecific=True):
         super().__init__(cvRiskCutoff, {'sbp' : 126, 'dbp': 200}, wmhSpecific)
-        self.status = TreatmentStrategyStatus.BEGIN
 
     def get_meds_needed_for_goal(self, person, goal):
         '''The Sprint-based classes utilize the minimum of the SBP and DBP meds needed to reach the goal...
         essentially I cannot just initialize the super class with an extremely high DBP goal because then the DBP meds needed
         would always be 0 and that is the minimum no matter how many SBP meds are needed to reach the goal.
         So, I actually need to implement this function here based on SBP only.'''
+        if not self.low_target(person):
+            return 0
         sbpMedCount = int((getattr(person, "_"+DynamicRiskFactorsType.SBP.value)[-1] - goal["sbp"])
                           / AddBPTreatmentMedsToGoal120.sbpLowering)
         currentMeds = person._antiHypertensiveCountPlusBPMedsAdded()
@@ -167,13 +170,6 @@ class SprintForSbpOnlyTreatment(jnc8ForHighRiskLowBpTarget):
         return int(medsToReturn) if medsToReturn > 0 else 0
 
 class SprintForSbpRiskThreshold(SprintForSbpOnlyTreatment):
-    '''This strategy will be use an SBP goal only and it will implement the goal only if the CV risk is above 
-    a threshold.'''
-    def __init__(self, cvRiskCutoff=0.075, wmhSpecific=True):
-        super().__init__(cvRiskCutoff, wmhSpecific)
-        self.status = TreatmentStrategyStatus.BEGIN
-
-    def get_meds_needed_for_goal(self, person, goal):
-        '''The low_target function determines if the CV risk is above the threshold.'''
-        return super().get_meds_needed_for_goal(person, goal) if self.low_target(person) else 0
+    '''Kept as an alias: the CV risk threshold is now enforced by all Sprint classes.'''
+    pass
 

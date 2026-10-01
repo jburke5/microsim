@@ -31,7 +31,7 @@ class EpilepsyPrevalenceModel(OutcomePrevalenceBase):
                    person._ldl[-1],
                    person._stroke,
                    person._mi,
-                   person._current_diabetes,
+                   person.has_diabetes(),
                    person._any_antiHypertensive,
                    person._current_ckd)
 
@@ -127,16 +127,9 @@ class EpilepsyIncidenceModel():
         self._cbhfIntercept = 0.
         self._riskScaling = riskScaling
 
-    def get_cumulative_baseline_hazard_function(self, person):
-        '''Returns the cumulative baseline hazard for person at the end of the current wave of updates, 
-        eg time should be 1 for first round of outcome calculations, 2 for second etc.'''
-        #during the first round of outcome risk calculations the waveCompleted is -1 and I need waveCompleted + constant = 1 in order to estimate
-        #the cumulative baseline hazard function at the end of year 1 (the slope should be multiplied by 1 at that point)
-        return self._cbhfIntercept + self._cbhfSlope * (person._waveCompleted+2) 
-
-    def get_survival_function(self, person):
-        '''Returns probability person will not have the outcome in the next year.'''
-        return np.exp( - self.get_cumulative_baseline_hazard_function(person) * np.exp( self.get_linear_predictor_for_person(person) ) )
+    def get_cumulative_baseline_hazard(self, t):
+        '''Returns the cumulative baseline hazard H(0..t), with t in years since simulation start.'''
+        return self._cbhfIntercept + self._cbhfSlope * t
 
     def get_linear_predictor_for_person(self, person):
         return self.calc_linear_predictor_for_patient_characteristics(
@@ -150,7 +143,7 @@ class EpilepsyIncidenceModel():
                    person._ldl[-1],
                    person._stroke,
                    person._mi,
-                   person._current_diabetes,
+                   person.has_diabetes(),
                    person._any_antiHypertensive,
                    person._current_ckd)
 
@@ -244,8 +237,11 @@ class EpilepsyIncidenceModel():
         if person.has_epilepsy(): #if a person had epilepsy in the past they will always have it
             risk = 1.
         else:
-            #risk is essentially the cumulative distribution function P(T<=t) where T is the time of the outcome and t in our case is 1 year
-            risk = 1. - self.get_survival_function(person)
+            #during the first round of outcome risk calculations waveCompleted is -1, which is the end of year 1
+            t = person._waveCompleted + 2
+            #conditional first-onset probability P(T<=t | T>t-1); the unconditional CDF P(T<=t) would recount years already survived
+            hazardIncrement = self.get_cumulative_baseline_hazard(t) - self.get_cumulative_baseline_hazard(t-1)
+            risk = 1. - np.exp( - hazardIncrement * np.exp( self.get_linear_predictor_for_person(person) ) )
             risk = risk * self._riskScaling
         return risk
 

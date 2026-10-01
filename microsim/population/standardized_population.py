@@ -15,6 +15,14 @@ class StandardizedPopulation:
                   key: gender, value: [ [0], [1,2,3,4], [5,6...], ... ]
        populationPercents: a dictionary with information about what percentage that age group represents of the entire population (all genders)
                   key: gender, value: [ 0.01, 0.01,     0.01,... ]'''
+
+    #The standard population file is 388 MB of 14.5 million rows and parsing it takes about 4s, all
+    #of it inside _parse_age_standard, while what a year needs out of it is 38 rows. Every
+    #Population.calculate_mean_age_sex_standardized_incidence builds a StandardizedPopulation, and
+    #get_cv_standardized_rates builds 18 of them (6 outcomes over 3 subgroups), so a single report
+    #used to spend about 150s parsing the same year over and over. Each year is parsed once here.
+    _ageStandardByYear = dict()
+
     def __init__(self, year=2016):
         self.year = year
         self.ageStandard = self.build_age_standard()
@@ -24,14 +32,15 @@ class StandardizedPopulation:
 
     def get_population_weighted_standard(self):
         rows = []
-        for age in range(1, 151):
+        for age in range(1, 86): #NHANES top-codes age at 85, so age 85 stands in for the whole 85+ group
             for gender in range(1, 3):
                 dfRow = self.ageStandard.loc[
                     (age >= self.ageStandard.lowerAgeBound)
                     & (age <= self.ageStandard.upperAgeBound)
                     & (self.ageStandard.gender == gender)
                 ]
-                upperAge = dfRow["upperAgeBound"].values[0]
+                #the 150 bound is a membership sentinel, not a real width: count only sampleable ages
+                upperAge = min(dfRow["upperAgeBound"].values[0], 85)
                 lowerAge = dfRow["lowerAgeBound"].values[0]
                 totalPop = dfRow["standardPopulation"].values[0]
                 rows.append(
@@ -42,19 +51,28 @@ class StandardizedPopulation:
         return df
 
     def build_age_standard(self):
+        '''Returns the standard population of self.year: standardPopulation by age group and
+           gender. Parsed on the first call for that year (see _parse_age_standard) and cached for
+           every later one, and handed out as a copy, so that a caller which adds or edits a column
+           cannot corrupt the cache - the same convention as PopulationFactory.get_nhanesDf.'''
+        if self.year not in StandardizedPopulation._ageStandardByYear:
+            StandardizedPopulation._ageStandardByYear[self.year] = self._parse_age_standard()
+        return StandardizedPopulation._ageStandardByYear[self.year].copy()
 
+    def _parse_age_standard(self):
+        '''Reads the standard population file and reduces it to the age group and gender rows of
+           self.year. Slow, and so called once per year, through build_age_standard.'''
         datafile_path = get_absolute_datafile_path("us.1969_2017.19ages.adjusted.txt")
         ageStandard = pd.read_csv(datafile_path, header=0, names=["raw"])
         # https://seer.cancer.gov/popdata/popdic.html
         ageStandard["year"] = ageStandard["raw"].str[0:4]
         ageStandard["year"] = ageStandard.year.astype(int)
         # format changes in 1990...so, we'll go forward from there...
-        ageStandard = ageStandard.loc[ageStandard.year >= 1990]
-        ageStandard["state"] = ageStandard["raw"].str[4:6]
-        ageStandard["state"] = ageStandard["raw"].str[4:6]
-        # 1 = white, 2 = black, 3 = american indian/alaskan, 4 = asian/pacific islander
-        ageStandard["race"] = ageStandard["raw"].str[13:14]
-        ageStandard["hispanic"] = ageStandard["raw"].str[14:15]
+        # the year is selected here rather than further below so that every column read out of raw
+        # below is read for the ~334,000 rows of one year instead of the 8.3 million rows of all of
+        # them, which is half of the time this function takes
+        ageStandard = ageStandard.loc[(ageStandard.year >= 1990) & (ageStandard.year == self.year)]
+        ageStandard = ageStandard.copy()
         ageStandard["female"] = ageStandard["raw"].str[15:16]
         ageStandard["female"] = ageStandard["female"].astype(int)
         ageStandard["female"] = ageStandard["female"].replace({1: 0, 2: 1})
@@ -66,13 +84,13 @@ class StandardizedPopulation:
         ageStandard["upperAgeBound"] = (ageStandard.ageGroup * 5) - 1
         ageStandard["lowerAgeBound"] = ageStandard["lowerAgeBound"].replace({-5: 0, 0: 1})
         ageStandard["upperAgeBound"] = ageStandard["upperAgeBound"].replace({-1: 0, 89: 150})
-        ageStandardYear = ageStandard.loc[ageStandard.year == self.year]
-        ageStandardGroupby = ageStandardYear[
+        #the rows are those of self.year already, they were selected before any of them was read
+        ageStandardGroupby = ageStandard[
             ["female", "standardPopulation", "lowerAgeBound", "upperAgeBound", "ageGroup"]
         ].groupby(["ageGroup", "female"])
         ageStandardHeaders = ageStandardGroupby.first()[["lowerAgeBound", "upperAgeBound"]]
         ageStandardHeaders["female"] = ageStandardHeaders.index.get_level_values(1)
-        ageStandardPopulation = ageStandardYear[["female", "standardPopulation", "ageGroup"]]
+        ageStandardPopulation = ageStandard[["female", "standardPopulation", "ageGroup"]]
         ageStandardPopulation = ageStandardPopulation.groupby(["ageGroup", "female"]).sum()
         ageStandardPopulation = ageStandardHeaders.join(ageStandardPopulation, how="inner")
 

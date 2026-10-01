@@ -9,7 +9,7 @@ The trial framework enables simulation-based clinical trial comparisons, allowin
 ## Directory Structure
 
 The `trials/` directory contains the experimental design framework:
-- `trial.py`: Main trial orchestration
+- `trial.py`: Main trial orchestration, `__str__` results printout, and CSV export (`export_results`)
 - `trial_description.py`: Configuration for trial setup
 - `trial_type.py`: Trial type enumeration
 - `trial_outcome_assessor.py`: Analysis and results computation
@@ -22,7 +22,6 @@ The `trials/` directory contains the experimental design framework:
   - `relative_risk_analysis.py`: Relative risk calculations
   - `incidence_rate_analysis.py`: Incidence rate analysis (events per 1000 person-years)
   - `regression_analysis.py`: Base regression analysis class
-- `trialset.py`: Management of multiple related trials. **Not functional — needs to be updated before use.**
 
 ## Trial Components
 
@@ -68,11 +67,20 @@ trial = TrialFactory.run_nhanes(sampleSize=1000, duration=5,
 print(trial)  # formatted results table
 ```
 
+Pass `exportPath="trial-results.csv"` to also write the results to a CSV file laid out like the
+printout: the trial description once at the top, then one block per analysis type with a header row
+and one row per assessment. The default `exportPath=None` writes nothing.
+
 `treatmentStrategies` accepts the same forms as `TrialDescription` (None, a shorthand
 string, or a `TreatmentStrategyRepository`). Pass `assessor=` to override the default
 `TrialOutcomeAssessor`. All population-specific kwargs (`year`, `nhanesWeights`,
 `distributions`, `prevalenceRiskScaling` for NHANES; `wmhSpecific`, `riskScaling` for
 Kaiser) are forwarded to the corresponding description subclass.
+
+Note that `NhanesTrialDescription` defaults `nhanesWeights=True`, so an NHANES trial samples
+with the survey weights unless you ask it not to. `year` defaults to 1999. The description
+passes `nhanesWeights` on explicitly, so it does not inherit `PopulationFactory`'s behaviour
+of letting an unset `nhanesWeights` follow `distributions` — a trial is weighted either way.
 
 For finer control — inspecting populations before `run()`, swapping in a custom
 assessor between `run()` and `analyze()`, or skipping analysis entirely — use the
@@ -136,6 +144,9 @@ TrialDescription — you do not create populations and pass them in.
    assessor = TrialOutcomeAssessorFactory.get_trial_outcome_assessor(...)
    trial.analyze(assessor)
    ```
+   `trial.run_analyze(assessor, exportPath=...)` runs, analyzes, and exports in one call;
+   `trial.export_results(path)` writes the CSV for an already-analyzed trial and
+   `trial.get_results_dfs()` returns the same blocks as a dict of DataFrames keyed by analysis type.
 
 ## Testing Trial Components
 
@@ -145,7 +156,7 @@ Trial-related tests are located in `test/test_*.py` and include:
 - Regression analysis verification
 - Population comparison tests
 
-Tests use the standard unittest framework with fixtures from `test/fixture/`.
+Tests use the standard unittest framework.
 
 ## Integration with Core Framework
 
@@ -192,9 +203,9 @@ Choose analysis method based on outcome type:
 
 When adding a new `AnalysisType` to the outcome assessor, **always update all of the following**:
 
-1. `trial_outcome_assessor.py` — add the enum value and register an instance in `_analysis`
-2. `trial_outcome_assessor.py` — update validation in `add_outcome_assessment` if the new type requires a non-standard number of assessment functions (e.g., 2 functions like `cox` and `incidenceRate`, vs 1 for the rest)
-3. `incidence_rate_analysis.py` (or new file) — implement the analysis class with an `analyze(trial, assessmentFunctionDict, assessmentAnalysis)` method
+1. `trial_outcome_assessor.py` — add the enum value and register the class in `ANALYSIS_CLASSES` (`_analysis` is built from it)
+2. `trial_outcome_assessor.py` — update validation in `add_outcome_assessment` if the new type requires a non-standard set of assessment functions (`cox` uses `{"outcome", "time"}`, `incidenceRate` uses `{"eventAndTime"}` pair functions, the rest use `{"outcome"}`)
+3. `incidence_rate_analysis.py` (or new file) — implement the analysis class with an `analyze(trial, assessmentFunctionDict, assessmentAnalysis)` method and a `columns` class attribute naming each element of the returned tuple, in order (`get_results_dfs` zips them strictly, so a mismatch raises)
 4. `trial_outcome_assessor_factory.py` — add default assessments for the new type
-5. **`trial.py` `__string__` method** — add an `elif analysisType == AnalysisType.NEW_TYPE:` branch with an appropriate column header for the results printout
+5. **`trial.py` `__str__` method** — add an `elif analysisType == AnalysisType.NEW_TYPE:` branch with an appropriate column header for the results printout
 6. `claude.md` (this file) — update the statistical methods list and directory structure

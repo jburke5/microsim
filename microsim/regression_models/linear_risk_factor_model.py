@@ -1,6 +1,8 @@
 from functools import reduce
 import numpy as np
 from microsim.regression_models.model_argument_transform import get_all_argument_transforms
+from microsim.risk_factors.risk_factor import StaticRiskFactorsType
+from microsim.risk_factors.race_ethnicity import RaceEthnicity
 
 # conceptually, what this class does is bridge the regression model and the person
 
@@ -20,9 +22,6 @@ class LinearRiskFactorModel:
         self.parameters = {**(regression_model._coefficients)}
         self.non_intercept_params = {k: v for k, v in self.parameters.items() if k != "Intercept"}
         self.argument_transforms = get_all_argument_transforms(self.get_keys_for_transforms())
-        self.argument_transforms_vectorized = get_all_argument_transforms(
-            self.get_keys_for_transforms(), True
-        )
 
     # method to be overriden by models that want to, in addition to the risks estimated by
     # the regression coefficients loaded from a model, also be able to apply some manual parameters.
@@ -39,7 +38,7 @@ class LinearRiskFactorModel:
         return keysForTransforms
 
     def draw_from_residual_distribution(self, rng=None):
-        if not hasattr(self, "residual_mean") and hasattr(self, "residual_standard_deviation"):
+        if not (hasattr(self, "residual_mean") and hasattr(self, "residual_standard_deviation")):
             raise RuntimeError(
                 "Cannot draw from residual distribution: model does not have"
                 " residual information"
@@ -51,12 +50,19 @@ class LinearRiskFactorModel:
     def get_intercept(self):
         return self.parameters["Intercept"]
 
+    def _get_person_attribute(self, prop_name, person):
+        prop_value = getattr(person, f"_{prop_name}")
+        #the model specs were trained on NHANES which has no Asian category; Asian maps to white by convention
+        if prop_name == StaticRiskFactorsType.RACE_ETHNICITY.value and prop_value == RaceEthnicity.ASIAN:
+            prop_value = RaceEthnicity.NON_HISPANIC_WHITE
+        return prop_value
+
     def get_model_argument_for_coeff_name(self, coeff_name, person):
         if coeff_name not in self.argument_transforms:
-            model_argument = getattr(person, f"_{coeff_name}")
+            model_argument = self._get_person_attribute(coeff_name, person)
         else:
             prop_name, transforms = self.argument_transforms[coeff_name]
-            prop_value = getattr(person, f"_{prop_name}")
+            prop_value = self._get_person_attribute(prop_name, person)
             if isinstance(prop_value, list) or isinstance(prop_value, np.ndarray):
                 prop_value = prop_value[-1]
             model_argument = reduce(lambda v, t: t.apply(v), transforms, prop_value)
@@ -74,6 +80,7 @@ class LinearRiskFactorModel:
         linear_predictor = self.estimate_next_risk(person)
         return linear_predictor
 
+    #withResidual=False makes continuous risk factor advancement deterministic, shrinking population variance over time
     def estimate_next_risk(self, person, rng=None, withResidual=False):
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
         linearPredictor = self.get_intercept()

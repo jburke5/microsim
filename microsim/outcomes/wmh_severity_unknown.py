@@ -25,7 +25,6 @@ class WMHSeverityUnknownModel:
         bmi,
         anyPhysicalActivity,
         antiHypertensiveCount,
-        #otherLipidLowering,
         a1c,
         totChol,
         hdl,
@@ -70,8 +69,6 @@ class WMHSeverityUnknownModel:
 
         xb += antiHypertensiveCount*0.0582
 
-        #if otherLipidLowering:
-        #    xb += -0.0133
 
         xb += a1c*0.0264
         xb += totChol*0.000864
@@ -108,7 +105,6 @@ class WMHSeverityUnknownModel:
             person._bmi[-1],
             person._anyPhysicalActivity[-1],
             person._antiHypertensiveCount[-1],
-            #person._otherLipidLowering,
             person._a1c[-1],
             person._totChol[-1],
             person._hdl[-1],

@@ -29,11 +29,6 @@ class GFREquation:
         pass
 
     def get_gfr_for_person(self, person, wave=-1):
-        try:
-            float(person._creatinine[-1])
-            float(person._age[-1])
-        except TypeError:
-            print(f"pop index: {person._populationIndex} dfIndex: {person.dfIndex} cr: {person._creatinine}")
         return self.get_gfr_for_person_attributes(person._gender, person._raceEthnicity,
             person._creatinine[wave], person._age[wave])
 
@@ -60,7 +55,7 @@ class GFREquation:
 
         #Q: creatinine and exponent are both negative and fractional...what do we return in this case?
         if (crThreshold < 0.001) | (creatinine/crThreshold<0) | np.isnan(exponent) | np.isinf(exponent) | np.isnan(creatinine / crThreshold) | np.isinf(creatinine / crThreshold):
-            print(f"thresholds: {crThreshold} constant: {constant} exponent: {exponent} female: {gender==NHANESGender.FEMALE}, black: {raceEthnicity==NHANESRaceEthnicity.NON_HISPANIC_BLACK}, cr: {creatinine}")
+            print(f"thresholds: {crThreshold} constant: {constant} exponent: {exponent} female: {gender==NHANESGender.FEMALE}, black: {raceEthnicity==RaceEthnicity.NON_HISPANIC_BLACK}, cr: {creatinine}")
         return (
             constant
             * (creatinine / crThreshold) ** exponent
