@@ -10,14 +10,17 @@ _cvModelRepository = CVModelRepository()
 
 
 class PersonFilterFactory:
-    """Factory that builds a PersonFilter, the object used to include/exclude individuals from a Population.
+    """Factory that builds a PersonFilter, the object used to include/exclude individuals from a
+    Population.
 
     A PersonFilter holds two collections of named, boolean-returning functions (see PersonFilter):
         filters["df"]     functions applied to a dataframe ROW before any Person object is built
         filters["person"] functions applied to a Person OBJECT after it has been built
-    In both cases a person/row is KEPT when the function returns True and DROPPED when it returns False.
+    In both cases a person/row is KEPT when the function returns True and DROPPED when it returns
+    False.
     The two levels exist for efficiency: building Person objects costs memory and time, so cheap
-    criteria that can be read straight off the source data ("df" filters) are applied first, and only
+    criteria that can be read straight off the source data ("df" filters) are applied first, and
+    only
     criteria that need a fully constructed Person ("person" filters, e.g. anything that runs a risk
     model) are applied afterward.
 
@@ -36,7 +39,8 @@ class PersonFilterFactory:
 
     The named-filter registry
     --------------------------
-    filterMap is a class-level registry that maps a short string key to a (filterType, filterFunction)
+    filterMap is a class-level registry that maps a short string key to a (filterType,
+    filterFunction)
     pair, so that pre-defined filters can be requested by name without writing any lambdas. The
     available keys are:
 
@@ -61,29 +65,38 @@ class PersonFilterFactory:
     --------------------------------
     Start from the default adult filter and add your own:
 
-        pf = PersonFilterFactory.get_person_filter()                  # adult (age >= 18) filter only
+        pf = PersonFilterFactory.get_person_filter()                  # adult (age >= 18) filter
+        only
         pf.add_filter("df", "under80", lambda x: x[DynamicRiskFactorsType.AGE.value] < 80)
 
     or start empty (pass an empty list) and register every filter yourself:
 
         pf = PersonFilterFactory.get_person_filter([])
-        pf.add_filter("df", "men", lambda x: x[StaticRiskFactorsType.GENDER.value] == NHANESGender.MALE.value)
+        pf.add_filter("df", "men", lambda x: x[StaticRiskFactorsType.GENDER.value] ==
+        NHANESGender.MALE.value)
         pf.add_filter("person", "noPriorStroke", lambda x: not x.has_stroke_prior_to_simulation())
-        pf.rm_filter("df", "men")                                     # remove a filter by name if needed
+        pf.rm_filter("df", "men")                                     # remove a filter by name if
+        needed
 
     Guidance for writing filters
     ----------------------------
     - filterType is "df" or "person"; filterName is any string unique within that level (re-using a
       name overwrites the earlier filter).
     - A "df" filter receives a single dataframe row (a pandas Series) and must return True/False.
-      Index it with the source-column key, most conveniently the *.value of a risk-factor or treatment
-      enum (e.g. DynamicRiskFactorsType.SBP.value, DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value).
-    - A "person" filter receives a Person object and must return True/False; use it when the criterion
-      needs a method or model that only a built Person exposes (e.g. person.has_mci(inSim=False) or a
-      risk model from an outcome repository). Pass inSim=False on Person query methods so the filter
+      Index it with the source-column key, most conveniently the *.value of a risk-factor or
+      treatment
+      enum (e.g. DynamicRiskFactorsType.SBP.value,
+      DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value).
+    - A "person" filter receives a Person object and must return True/False; use it when the
+      criterion
+      needs a method or model that only a built Person exposes (e.g. person.has_mci(inSim=False) or
+      a
+      risk model from an outcome repository). Pass inSim=False on Person query methods so the
+      filter
       reflects baseline state rather than simulated events.
     - Prefer "df" filters whenever the criterion can be read from the raw data; reserve "person"
-      filters for model-based criteria so Person objects are not built for rows that will be rejected.
+      filters for model-based criteria so Person objects are not built for rows that will be
+      rejected.
     """
 
     # Registry of pre-defined filters: string key -> (filterType, filterFunction).
@@ -126,7 +139,8 @@ class PersonFilterFactory:
         arguments returns the default adult-only PersonFilter. Pass an explicit list to choose a
         different set, or [] for a PersonFilter with no filters:
 
-            pf = PersonFilterFactory.get_person_filter()                          # adult (age >= 18) only
+            pf = PersonFilterFactory.get_person_filter()                          # adult (age >=
+            18) only
             pf = PersonFilterFactory.get_person_filter(["lowSBPLimit", "highCVLimit"])
             pf = PersonFilterFactory.get_person_filter([])                         # no filters
         """

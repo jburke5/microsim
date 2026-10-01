@@ -11,12 +11,15 @@ class AlcoholPrevalenceModel:
 
     def calc_linear_predictor_for_patient_characteristics(self, gender, smokingStatus, age):
         """Returns 3 linear predictors for the four alcohol levels.
-        These 3 linear predictors correspond to the first 3 cumulative probabilities of the first 3 alcohol levels.
+        These 3 linear predictors correspond to the first 3 cumulative probabilities of the first 3
+        alcohol levels.
         The 4th cumulative probability is exactly 1 since it includes all alcohol levels.
-        Each alcohol level has its own intercept, but the coefficient of each factor is constant across alcohol levels.
+        Each alcohol level has its own intercept, but the coefficient of each factor is constant
+        across alcohol levels.
         This is an ordered logistic regression model.
         Based on NHANES data (1999-2017) and the polr package in r.
-        This model was built in order to initialize person objects when alcohol level is missing."""
+        This model was built in order to initialize person objects when alcohol level is
+        missing."""
         xb = 0
 
         if gender == NHANESGender.MALE:
@@ -37,7 +40,8 @@ class AlcoholPrevalenceModel:
 
         xb += -(-0.02906) * age
         # intercepts in polr package results are the actual intercepts
-        # first two intercepts equal on purpose: NHANES has no ONETOSIX rows (see microsimNotebooks/initialization-models-01), so P(ONETOSIX)=0
+        # first two intercepts equal on purpose: NHANES has no ONETOSIX rows (see
+        # microsimNotebooks/initialization-models-01), so P(ONETOSIX)=0
         lps = (xb - 3.1956, xb - 3.1956, xb - 1.5056)
         return lps
 
@@ -58,7 +62,8 @@ class AlcoholPrevalenceModel:
             return AlcoholCategory.FOURTEENORMORE
         else:
             raise RuntimeError(
-                "Draw not consistent with cumulative probabilities in AlcoholPrevalenceModel.estimate_next_risk."
+                "Draw not consistent with cumulative probabilities in "
+                "AlcoholPrevalenceModel.estimate_next_risk."
             )
 
     def inv_logit(self, lp):

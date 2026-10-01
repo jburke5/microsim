@@ -64,15 +64,18 @@ class ASCVDOutcomeModel(LinearRiskFactorModel):
     # time is accounted for simply...
     # our model gives us a 10 year risk. yet, we want the risk for the next year, on average, which
     # given that a patient ages over time, is lower than the 10 year risk/10
-    # so, we estimate the weighted average of the patient at 5 years younger and older than their current
+    # so, we estimate the weighted average of the patient at 5 years younger and older than their
+    # current
     # age. this doesn't perfectly reproduce the 10 year risk, but its within 10%.
-    # we can be more precise by building an average of the risk over all 10 years (close to within 1%)
+    # we can be more precise by building an average of the risk over all 10 years (close to within
+    # 1%)
     # but, that is computationally intense and this seems like a resonable compromise
     def get_risk_for_person(
         self, person, rng, years, interceptChangeFor1bpMedsAdded=0
     ):  # rng is included here for compatibility with other get_risk_for_person methods
         linearRisk = self.get_one_year_linear_predictor(person, interceptChangeFor1bpMedsAdded)
-        # four years gets us to the middle of hte 10 year window because we're using the 1 year lagged age
+        # four years gets us to the middle of hte 10 year window because we're using the 1 year
+        # lagged age
         # for the baseline..
         fourYearLinearAgeChange = self.parameters["lagAge"] * 4
         linearRiskMinusFourYears = linearRisk - fourYearLinearAgeChange
@@ -82,7 +85,8 @@ class ASCVDOutcomeModel(LinearRiskFactorModel):
     def get_risk_components_for_person(self, person, rng, years, interceptChangeFor1bpMedsAdded=0):
         """This function returns the silent cerebrovascular disease component of the ASCVD risk
         and the ascvd risk without the scd component.
-        This function utilizes the get_risk_for_person functionality and the get_one_year_linear_predictor functionality."""
+        This function utilizes the get_risk_for_person functionality and the
+        get_one_year_linear_predictor functionality."""
         lpMinusScd = super().estimate_next_risk(person) + self.get_intercept_change_for_person(
             person, interceptChangeFor1bpMedsAdded
         )
@@ -101,15 +105,19 @@ class ASCVDOutcomeModel(LinearRiskFactorModel):
         }
 
     def get_scd_term(self, person):
-        """This is the contribution to the one year linear predictor due to the silent cerebrovascular disease (scd).
+        """This is the contribution to the one year linear predictor due to the silent
+        cerebrovascular disease (scd).
         The WMH hazard ratios were taken from the Wang2024 paper.
         The SBI hazard ratios were taken from the Kent2021 paper.
-        Scaling factors were found by optimizing the 4 year microsim stroke rates against the published stroke rates (which have
+        Scaling factors were found by optimizing the 4 year microsim stroke rates against the
+        published stroke rates (which have
         a follow up of around 4 years."""
         if person.has_brain_scan():
             if self.wmhSpecific:
                 scdTerm = 0.645  # intercept change
-                scalingMriSbi = 2.6  # scaling factors to the published hazard ratios so that I can use them in the ascvd logistic model
+                # scaling factors to the published hazard ratios so that I can use them in the
+                # ascvd logistic model
+                scalingMriSbi = 2.6
                 scalingCtSbi = 3.8
                 scalingCtWmh = 1.8
                 window = len(person._age)  # how many years since the brain scan
@@ -162,8 +170,10 @@ class ASCVDOutcomeModel(LinearRiskFactorModel):
                         raise RuntimeError("Person has SBI but no modality")
                 if person._outcomes[OutcomeType.WMH][0][1].wmh:
                     if (
+                        # I did not need to optimize a scaling factor for WMH MRI, rates were close
+                        # to published data
                         person._modality == Modality.MR.value
-                    ):  # I did not need to optimize a scaling factor for WMH MRI, rates were close to published data
+                    ):
                         if severityUnknown:
                             scdTerm += np.log(1.89)
                         elif severity == WMHSeverity.MILD:
@@ -188,7 +198,9 @@ class ASCVDOutcomeModel(LinearRiskFactorModel):
                     else:
                         raise RuntimeError("Person has WMH but no modality")
             else:
-                scdTerm = 1.25  # represents an average increase in the risk of the kaiser population without taking into account the WMH outcome
+                # represents an average increase in the risk of the kaiser population without
+                # taking into account the WMH outcome
+                scdTerm = 1.25
         else:
             scdTerm = 0.0
         return scdTerm

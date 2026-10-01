@@ -43,7 +43,8 @@ class RelativeRiskAnalysis:
                 ciLower = None
                 ciUpper = None
             else:
-                # will use this transformation to ensure that the confidence interval is bounded between 0 and 1
+                # will use this transformation to ensure that the confidence interval is bounded
+                # between 0 and 1
                 logitRisk = np.log(risk / (1.0 - risk))
                 # standard error of logit of R, see chapter 17, Modern Epidemiology
                 seLogitRisk = np.sqrt(1 / nSuccesses + 1.0 / (nTotal - nSuccesses))
@@ -57,7 +58,8 @@ class RelativeRiskAnalysis:
                 ciUpper = self.inverse_logit(
                     ciUpperLogit
                 )  # I need to report both lower and upper points
-            # wilson score is better than the normal approximation to get the CI, fyi the midpoint of the wilson interval might be different from MLE
+            # wilson score is better than the normal approximation to get the CI, fyi the midpoint
+            # of the wilson interval might be different from MLE
             ciLowerWilson, ciUpperWilson = proportion_confint(
                 count=nSuccesses, nobs=nTotal, alpha=0.05, method="wilson"
             )
@@ -97,7 +99,8 @@ class RelativeRiskAnalysis:
         assessmentFunction = assessmentFunctionDict["outcome"]
         treatedCounts = list(map(assessmentFunction, [trial.treatedPop]))[0]  # an integer
         controlCounts = list(map(assessmentFunction, [trial.controlPop]))[0]  # an integer
-        # arm sizes can differ, eg with bernoulli or block randomization, so each arm uses its own denominator
+        # arm sizes can differ, eg with bernoulli or block randomization, so each arm uses its own
+        # denominator
         nTotalTreated = trial.treatedPop._n
         nTotalControl = trial.controlPop._n
         tRisk, tRiskCiLower, tRiskCiUpper, tRiskCiLowerWilson, tRiskCiUpperWilson = (

@@ -5,7 +5,8 @@ from microsim.risk_factors.gender import NHANESGender
 
 
 # based on the publication: https://doi.org/10.1097%2FMD.0000000000003454
-# the models, both prevalence and incidence, produce results quantitatively different from, but qualitatively similar to, the GBD data
+# the models, both prevalence and incidence, produce results quantitatively different from, but
+# qualitatively similar to, the GBD data
 # perhaps a small adjustment may be done in the future
 class PVDPrevalenceModel:
     def __init__(self):
@@ -27,7 +28,8 @@ class PVDPrevalenceModel:
             xb += 0.14
         if (smokingStatus == SmokingStatus.CURRENT) | (smokingStatus == SmokingStatus.FORMER):
             xb += 0.47
-        # it seems that white was the reference, so if we want to map asian to white for the microsim models we should not change this code...
+        # it seems that white was the reference, so if we want to map asian to white for the
+        # microsim models we should not change this code...
         if raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
             xb += 1.23
         elif (raceEthnicity == RaceEthnicity.MEXICAN_AMERICAN) | (

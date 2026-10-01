@@ -15,27 +15,34 @@ from microsim.treatment_strategies.treatment_strategies import TreatmentStrategi
 import scipy.special as scipySpecial
 
 # there are 2 approaches that can be taken with partition models
-# 1: this model asks the CVModel to see if there was an cv outcome for this person, and that outcome is just used without being stored
+# 1: this model asks the CVModel to see if there was an cv outcome for this person, and that
+# outcome is just used without being stored
 #    on the Person-instance
-# 2: the CVModel is asked before StrokePartitionModel is called and the Person-object stores the CV outcome, and the strokeModel
+# 2: the CVModel is asked before StrokePartitionModel is called and the Person-object stores the CV
+# outcome, and the strokeModel
 # .  is just checking on the person object to see if there was a cv outcome in the current year
-#   We now use the 2nd approach, and we will double check that the outcomes are called in the correct order.
+# We now use the 2nd approach, and we will double check that the outcomes are called in the correct
+# order.
 
 
 class StrokePartitionModel(LinearRiskFactorModel):
-    """Fatal stroke probability estimated from our meta-analysis of BASIC, NoMAS, GCNKSS, REGARDS."""
+    """Fatal stroke probability estimated from our meta-analysis of BASIC, NoMAS, GCNKSS,
+    REGARDS."""
 
     def __init__(self, intercept=None):
         model_spec = load_model_spec("StrokeMIPartitionModel")
-        # the assumption for the subclasses of this class is that the intercept with 0 bpMedsAdded is -2.3109730587083006
+        # the assumption for the subclasses of this class is that the intercept with 0 bpMedsAdded
+        # is -2.3109730587083006
         if intercept is not None:
             model_spec["coefficients"]["Intercept"] = intercept
         super().__init__(RegressionModel(**model_spec))
         self._stroke_case_fatality = 0.15
         self._stroke_secondary_case_fatality = 0.15
         # this is the mean change of the intercept for each bpMedAdded
-        # Simulations were performed to obtain the optimized intercept for each bpMedAdded (1,2,3,4)
-        # Then from those 4 intercepts and the baseline intercept, I obtained the average change of the intercept for each bpMedAdded
+        # Simulations were performed to obtain the optimized intercept for each bpMedAdded
+        # (1,2,3,4)
+        # Then from those 4 intercepts and the baseline intercept, I obtained the average change of
+        # the intercept for each bpMedAdded
         # The optimized intercepts for each bpMedAdded are as follows:
         # intercept = -2.4295668  #1bpMedAdded
         # intercept = -2.5334375  #2
@@ -82,7 +89,8 @@ class StrokePartitionModel(LinearRiskFactorModel):
         if person.has_outcome_at_current_age(OutcomeType.CARDIOVASCULAR):
             if person._rng.uniform(size=1) < self.get_next_stroke_probability(person):
                 strokeOutcome = self.generate_next_outcome(person)
-                # if we decide to use different stroke/mi models, double check if fatality needs to be decided in CVModel
+                # if we decide to use different stroke/mi models, double check if fatality needs to
+                # be decided in CVModel
                 self.update_cv_outcome(person, strokeOutcome.fatal)
                 return strokeOutcome
             else:

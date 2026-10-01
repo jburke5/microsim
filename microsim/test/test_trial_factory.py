@@ -52,7 +52,8 @@ class TestTrialFactoryNhanes(unittest.TestCase):
             path = os.path.join(d, "r.csv")
             self.trial.export_results(path)
             lines = open(path).read().splitlines()
-        # 4 description lines, then per analysis type: blank, analysis, header, one line per assessment
+        # 4 description lines, then per analysis type: blank, analysis, header, one line per
+        # assessment
         self.assertEqual(4 + 3 * len(self.trial.results) + nAssessments, len(lines))
 
 

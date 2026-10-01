@@ -5,7 +5,8 @@ import numpy as np
 
 # will use the CKD-EPI equation: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2763564/
 # because it prediicts better in blacks, https://bmcnephrol.biomedcentral.com/articles/10.1186/s12882-017-0788-y
-#  Levey, A. S. et al. A New Equation to Estimate Glomerular Filtration Rate. Ann Intern Med 150, 604 (2009).
+# Levey, A. S. et al. A New Equation to Estimate Glomerular Filtration Rate. Ann Intern Med 150,
+# 604 (2009).
 
 
 class GFREquation:
@@ -48,7 +49,8 @@ class GFREquation:
             & (GFREquation.constantForRaceGender["female"] == (gender == NHANESGender.FEMALE))
         ].iloc[0]["constant"]
 
-        # Q: creatinine and exponent are both negative and fractional...what do we return in this case?
+        # Q: creatinine and exponent are both negative and fractional...what do we return in this
+        # case?
         if (
             (crThreshold < 0.001)
             | (creatinine / crThreshold < 0)
@@ -58,6 +60,8 @@ class GFREquation:
             | np.isinf(creatinine / crThreshold)
         ):
             print(
-                f"thresholds: {crThreshold} constant: {constant} exponent: {exponent} female: {gender == NHANESGender.FEMALE}, black: {raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK}, cr: {creatinine}"
+                f"thresholds: {crThreshold} constant: {constant} exponent: {exponent} "
+                f"female: {gender == NHANESGender.FEMALE}, "
+                f"black: {raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK}, cr: {creatinine}"
             )
         return constant * (creatinine / crThreshold) ** exponent * 0.993**age

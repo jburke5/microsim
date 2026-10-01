@@ -16,25 +16,33 @@ import sys
 
 
 class Trial:
-    """This class stores the trial setup, through the TrialDescription instance, trial populations, and trial results.
+    """This class stores the trial setup, through the TrialDescription instance, trial populations,
+    and trial results.
     treatedPop, controlPop: the two trial populations
-    completed: a flag that indicates if the trial has been run (by running I mean whether the populations have been advanced or not)
-    results: a dictionary that holds all results obtained with the help of TrialOutcomeAssessor instances.
+    completed: a flag that indicates if the trial has been run (by running I mean whether the
+    populations have been advanced or not)
+    results: a dictionary that holds all results obtained with the help of TrialOutcomeAssessor
+    instances.
     A Trial class requires a TrialDescription in order to be initialized.
     Subsequently, a Trial instance can be run.
-    A Trial instance by itself does not know how to analyze the trial results, a definition for the trial results does not exist yet.
-    The TrialOutcomeAssessor class defines the trial outcomes and links the Trial populations with analysis methodologies.
-    An instance of the TrialOutcomeAssessor class is therefore required in order to analyze the results of a Trial instance."""
+    A Trial instance by itself does not know how to analyze the trial results, a definition for the
+    trial results does not exist yet.
+    The TrialOutcomeAssessor class defines the trial outcomes and links the Trial populations with
+    analysis methodologies.
+    An instance of the TrialOutcomeAssessor class is therefore required in order to analyze the
+    results of a Trial instance."""
 
     def __init__(self, trialDescription):
         """During the initialization of the trial, the populations are obtained."""
         if trialDescription.popType is None:
             raise RuntimeError(
-                f"popType in trialDescription must belong in the set({[pt for pt in PopulationType]})"
+                "popType in trialDescription must belong in the "
+                f"set({[pt for pt in PopulationType]})"
             )
         else:
             self.trialDescription = trialDescription
-        # run() mutates the strategy statuses, so the trial works on its own copy and the description stays reusable
+        # run() mutates the strategy statuses, so the trial works on its own copy and the
+        # description stays reusable
         self.treatmentStrategies = copy.deepcopy(trialDescription.treatmentStrategies)
         self.treatedPop, self.controlPop = self.get_trial_populations()
         self.completed = False
@@ -46,8 +54,10 @@ class Trial:
 
     def get_trial_populations(self):
         """A Population needs two things: People, PopulationModelRepository.
-        The People will be obtained according to the TrialType, the PopulationModelRepository is determined
-        based on the PopulationType (eg for NHANES there is only one self-consistent PopulationModelRepository)."""
+        The People will be obtained according to the TrialType, the PopulationModelRepository is
+        determined
+        based on the PopulationType (eg for NHANES there is only one self-consistent
+        PopulationModelRepository)."""
         treatedPeople, controlPeople = self.get_trial_people()
         modelRepoArgs = (
             self.trialDescription.modelRepoArgs
@@ -71,8 +81,10 @@ class Trial:
 
     def get_trial_people(self):
         """Returns treatedPeople and controlPeople based on TrialType.
-        The Person index in treatedPeople and controlPeople is unique for the entire set of treated and control.
-        In other words, in the treated+control set of Person objects, there should be a single Person object with index 0."""
+        The Person index in treatedPeople and controlPeople is unique for the entire set of treated
+        and control.
+        In other words, in the treated+control set of Person objects, there should be a single
+        Person object with index 0."""
         if self.trialDescription.trialType == TrialType.POTENTIAL_OUTCOMES:
             return self.get_trial_people_identical()
         else:
@@ -112,9 +124,11 @@ class Trial:
 
     def randomize_trial_people(self, people):
         """Randomizes people in two groups, treated, control.
-        Bernoulli randomization draws from a uniform distribution for each person in the trial, thus the
+        Bernoulli randomization draws from a uniform distribution for each person in the trial,
+        thus the
         number of treated and control people can and will fluctuate.
-        Complete randomization has a fixed number in treated and control people and then randomly assigns
+        Complete randomization has a fixed number in treated and control people and then randomly
+        assigns
         groups to the people of the trial.
         Complete randomization has less fluctuations than Bernoulli randomization."""
         nDraws = people.shape[0]
@@ -139,7 +153,8 @@ class Trial:
         """Creates blocks and randomizes people within blocks.
         Because the number of treated and control people can vary within each block,
         eg when the total number of people in a block is odd,
-        there may be larger total deviations in the number of Person objects in treated and control people."""
+        there may be larger total deviations in the number of Person objects in treated and
+        control people."""
         blockFactor = self.trialDescription.blockFactors[0]
         blocks = Population.get_people_blocks(people, blockFactor, nBlocks=10)
         categories = blocks.keys()
@@ -183,7 +198,8 @@ class Trial:
                 print("Trial is completed.")
 
     def analyze(self, trialOutcomeAssessor):
-        """Trial outcomes need to be defined in an instance of the TrialOutcomeAssessor class and provided in this function
+        """Trial outcomes need to be defined in an instance of the TrialOutcomeAssessor class and
+        provided in this function
         in order for the Trial to be able to analyze its populations."""
         if not self.completed:
             raise RuntimeError("Cannot analyze a trial that has not been run.")
@@ -213,7 +229,8 @@ class Trial:
             self.export_results(exportPath)
 
     def get_results_dfs(self):
-        """One DataFrame per analysis type, one row per assessment, columns named by the analysis class."""
+        """One DataFrame per analysis type, one row per assessment, columns named by the analysis
+        class."""
         if not self.analyzed:
             raise RuntimeError("Cannot export results of a trial that has not been analyzed.")
         dfs = dict()
@@ -232,7 +249,8 @@ class Trial:
         return dfs
 
     def export_results(self, path):
-        """CSV mirroring the printout: trial description once at the top, then one block per analysis type
+        """CSV mirroring the printout: trial description once at the top, then one block per
+        analysis type
         with a header row and one row per assessment. Numbers are formatted as in the printout."""
         dfs = self.get_results_dfs()
         desc = self.trialDescription
@@ -335,11 +353,13 @@ class Trial:
         self.print_treatment_strategy_variables_distributions_by_risk()
 
     def print_treatment_strategy_variables_distributions(self):
-        """Prints distribution information about each treatment strategy variable, eg bpMedsAdded"""
+        """Prints distribution information about each treatment strategy variable,
+        eg bpMedsAdded"""
         self.treatedPop.print_lastyear_treatment_strategy_distributions()
 
     def print_treatment_strategy_variables_distributions_by_risk(self):
-        """Prints distribution information about each treatment strategy variable for each CV risk quintile."""
+        """Prints distribution information about each treatment strategy variable for each CV risk
+        quintile."""
         wmhSpecific = (
             self.trialDescription.wmhSpecific
             if hasattr(self.trialDescription, "wmhSpecific")
@@ -351,7 +371,8 @@ class Trial:
 
     @staticmethod
     def format_result(result):
-        """None -> empty, inf/nan -> literal, otherwise 3 decimals; shared by the printout and the CSV export."""
+        """None -> empty, inf/nan -> literal, otherwise 3 decimals; shared by the printout and the
+        CSV export."""
         if result is None:
             return ""
         elif math.isinf(result) or math.isnan(result):

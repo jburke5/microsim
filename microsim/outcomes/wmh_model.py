@@ -21,22 +21,29 @@ class WMHModel:
         self.wmhSeverityModel = WMHSeverityModel()
 
     def generate_next_outcome(self, person):
-        """The severity unknown model was derived based on the entire population, which is why this is used first.
-        When the severity was unknown, WMH was present in the population but without the severity known, which is why
+        """The severity unknown model was derived based on the entire population, which is why this
+        is used first.
+        When the severity was unknown, WMH was present in the population but without the severity
+        known, which is why
         wmh is set to True when the severity was unknown.
-        We use the ordinal logistic model WMHSeverity because that is the model that was derived by excluding the
+        We use the ordinal logistic model WMHSeverity because that is the model that was derived by
+        excluding the
         severity unknown part of the population.
-        Also, the WMHSeverity.NO severity predicts the part of the population that did not have WMH.
-        I will not use the WMHPresence model because that was derived by including the WMHSeverity unknown part of the population.
+        Also, the WMHSeverity.NO severity predicts the part of the population that did not have
+        WMH.
+        I will not use the WMHPresence model because that was derived by including the WMHSeverity
+        unknown part of the population.
         For more details, see email on 7/12/2024."""
         fatal = False
         sbi = self.sbiModel.estimate_next_risk(person)
         wmhSeverityUnknown = self.wmhSeverityUnknownModel.estimate_next_risk(person)
-        if wmhSeverityUnknown == False:
+        if not wmhSeverityUnknown:
             # find wmh severity by using one model that includes modality as a coefficient
             wmhSeverity = self.wmhSeverityModel.estimate_next_risk(person)
-            # decided against using two separate models for severity, we used the one above but with recalibrated intercepts
-            # we are not using two separate models because the coefficients for risk factors etc should not depend on modality
+            # decided against using two separate models for severity, we used the one above but
+            # with recalibrated intercepts
+            # we are not using two separate models because the coefficients for risk factors etc
+            # should not depend on modality
             # find wmh severity by using two separate models for severity
             # if person._modality == Modality.CT.value:
             #    wmhSeverity = self.wmhSeverityCTModel.estimate_next_risk(person)

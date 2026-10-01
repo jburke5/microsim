@@ -20,11 +20,14 @@ from microsim.outcomes.epilepsy_model_repository import EpilepsyModelRepository
 class OutcomeModelRepository:
     """Holds the rules for all outcomes.
     Via a dictionary, this object selects the appropriate model repository for an outcome.
-    The model repository will then select the appropriate model for a Person-instance (via a select_outcome_model_for_person function).
+    The model repository will then select the appropriate model for a Person-instance (via a
+    select_outcome_model_for_person function).
     The model then obtains the outcome for the Person-instance (via a get_next_outcome function).
-    Outcomes are Outcome-instances when the only information we want is the occurence of the outcome, age, and fatality.
+    Outcomes are Outcome-instances when the only information we want is the occurence of the
+    outcome, age, and fatality.
     Examples are death outcomes, mi outcomes.
-    Outcomes are Outcome subclasses, eg StrokeOutcome, when more information about the outcome need to be stored, an outcome phenotype.
+    Outcomes are Outcome subclasses, eg StrokeOutcome, when more information about the outcome need
+    to be stored, an outcome phenotype.
     Examples are StrokeOutcome (nihss, type etc), GCPOutcome (gcp), QALYOutcome (qaly)."""
 
     def __init__(self, wmhSpecific=True, riskScaling=None):

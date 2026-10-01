@@ -7,7 +7,8 @@ from microsim.population.population_factory import PopulationFactory
 
 
 def _distributions(distMin, distMax, size=5):
-    """Builds the smallest distributions dict draw_from_distributions accepts: one group, a standard
+    """Builds the smallest distributions dict draw_from_distributions accepts: one group, a
+    standard
     normal over the NHANES continuous variables, and whatever bounds the test wants to impose.
     singular is False so that the group draws from its own distribution and the alt key is never
     read (get_alt_groups is what fills that in for the real dicts)."""
@@ -47,7 +48,8 @@ class TestDrawFromDistributionsStillDraws(unittest.TestCase):
 
     def test_satisfiable_bounds_return_exactly_size_draws(self):
         size = 10
-        # a standard normal essentially always falls inside these, so the first pass is accepted whole
+        # a standard normal essentially always falls inside these, so the first pass is accepted
+        # whole
         distributions, key = _distributions(distMin=-5.0, distMax=5.0, size=size)
         drawsForGroups, namesForGroups = PopulationFactory.draw_from_distributions(distributions)
         self.assertEqual(size, drawsForGroups[key].shape[0])
@@ -58,7 +60,8 @@ class TestDrawFromDistributionsStillDraws(unittest.TestCase):
         distributions, key = _distributions(distMin=-1.0, distMax=1.0, size=size)
         drawsForGroups, _ = PopulationFactory.draw_from_distributions(distributions)
         draws = drawsForGroups[key]
-        # the loop widens the bounds by 10% before rejecting, so that is what the draws have to respect
+        # the loop widens the bounds by 10% before rejecting, so that is what the draws have to
+        # respect
         self.assertTrue(np.all(draws >= 0.9 * (-1.0)))
         self.assertTrue(np.all(draws <= 1.1 * 1.0))
 

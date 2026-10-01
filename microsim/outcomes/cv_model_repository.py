@@ -1,4 +1,4 @@
-from microsim.outcomes.cv_model import *
+from microsim.outcomes.cv_model import CVModelFemale, CVModelMale, CVPrevalenceModel
 from microsim.risk_factors.gender import NHANESGender
 
 

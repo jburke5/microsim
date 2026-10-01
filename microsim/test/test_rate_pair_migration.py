@@ -9,7 +9,8 @@ from microsim.trials.trial_description import NhanesTrialDescription
 from microsim.trials.trial_outcome_assessor_factory import TrialOutcomeAssessorFactory
 
 # characterization tests for the rate-pair (Option C) migration:
-# every expected value is recomputed from Person-level primitives, which the migration does not touch,
+# every expected value is recomputed from Person-level primitives, which the migration does not
+# touch,
 # so these tests must pass unchanged before and after the migration
 
 
@@ -46,7 +47,8 @@ def raw_incidence_from_person_primitives(pop, outcomeType, groups=False):
 
 
 class TestPopulationRateFunctions(unittest.TestCase):
-    """Pins get_outcome_incidence_rates_at_end_of_wave and get_raw_incidence_by_age against Person primitives."""
+    """Pins get_outcome_incidence_rates_at_end_of_wave and get_raw_incidence_by_age against Person
+    primitives."""
 
     @classmethod
     def setUpClass(cls):
@@ -79,7 +81,8 @@ class TestPopulationRateFunctions(unittest.TestCase):
 
 
 class TestKaiserScdModalityRates(unittest.TestCase):
-    """Pins get_outcome_incidence_rates_by_scd_and_modality_at_end_of_wave against Person primitives."""
+    """Pins get_outcome_incidence_rates_by_scd_and_modality_at_end_of_wave against Person
+    primitives."""
 
     @classmethod
     def setUpClass(cls):
@@ -111,7 +114,8 @@ class TestKaiserScdModalityRates(unittest.TestCase):
 
 
 class TestTrialIncidenceRateAssessments(unittest.TestCase):
-    """Pins the six factory IR assessments end-to-end: whatever interface the assessor uses internally,
+    """Pins the six factory IR assessments end-to-end: whatever interface the assessor uses
+    internally,
     the reported rates must equal the Person-primitive computation on each trial arm."""
 
     IR_ASSESSMENTS = {

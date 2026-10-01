@@ -49,7 +49,8 @@ class Burke2024:
         "statin use (%)": 41.0,
     }
 
-    # Fig 2 carries no numbers, but the text describing it quotes the DBP and total cholesterol levels of the NHANES 2017 pseudo-cohort
+    # Fig 2 carries no numbers, but the text describing it quotes the DBP and total cholesterol
+    # levels of the NHANES 2017 pseudo-cohort
     # that the 18-year simulation was compared against.
     nhanes2017 = {
         (DynamicRiskFactorsType.DBP.value, "mean"): 71.6,
@@ -58,7 +59,8 @@ class Burke2024:
         (DynamicRiskFactorsType.TOT_CHOL.value, "sd"): 41.3,
     }
 
-    # Table 3 and the mortality sentence that follows it. Events per 100,000 population per year age-sex standardized. The two all-race estimates are published as ranges.
+    # Table 3 and the mortality sentence that follows it. Events per 100,000 population per year
+    # age-sex standardized. The two all-race estimates are published as ranges.
     cvIncidence = {
         "MI incidence, all (per 100,000)": (208.0, 284.0),
         "MI incidence, white (per 100,000)": 199.0,
@@ -94,7 +96,8 @@ class Validation:
         summary = pop.get_summary_at_index(0)
         continuous = summary["continuous"]
         proportions = summary["proportions"]
-        # anti-hypertensives are a continuous treatment (a count), so the share of people taking any
+        # anti-hypertensives are a continuous treatment (a count), so the share of people taking
+        # any
         # of them is not in the proportions of the summary and is obtained from the counts directly
         antiHypertensiveCounts = pop.get_attr_at_index(
             DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value, 0
@@ -129,7 +132,8 @@ class Validation:
 
     @staticmethod
     def nhanes_baseline_pop():
-        """This function performs the simulation for the validation of the creation of the population (baseline models only).
+        """This function performs the simulation for the validation of the creation of the
+        population (baseline models only).
         Returns {"2007": metrics, "2013Hypertension": metrics}, the Table 2 quantities of each of
         the two populations (see _baseline_metrics), for print_baseline_pop_with_burke2024."""
         print("\nVALIDATION OF BASELINE SIMULATED POPULATION")
@@ -166,15 +170,20 @@ class Validation:
         The advanced 1999 population excludes people with a history of stroke or MI, like the
         Burke2024 cohort; the immigration/age filters apply only to the NHANES 2017 comparison
         population.
-        People that died prior to 2017 are not removed from the simulation population, if the simulation population is large enough
-        and the death models work well, the resulting simulated population from an advancement of 18 years should be close to the
+        People that died prior to 2017 are not removed from the simulation population, if the
+        simulation population is large enough
+        and the death models work well, the resulting simulated population from an advancement of
+        18 years should be close to the
         NHANES comparison population.
         nWorkers determines the number of cores used
-        path=None will result in displaying the figures whereas an actual path will export them to that path
-        distributions applies to both the simulated 1999 population and the NHANES 2017 comparison population
+        path=None will result in displaying the figures whereas an actual path will export them to
+        that path
+        distributions applies to both the simulated 1999 population and the NHANES 2017 comparison
+        population
         Returns {"simSummary", "nhanesSummary", "cvRates", "dementiaIncidence"}: the last-wave
         distribution summary of the advanced population and of the NHANES comparison population,
-        the standardized CV rates and the dementia incidence, for print_over_time_with_burke2024."""
+        the standardized CV rates and the dementia incidence, for
+        print_over_time_with_burke2024."""
         nYears = 18
         popSize = 100000
         # like the Burke2024 cohort, the advanced population excludes people with a history of
@@ -227,7 +236,8 @@ class Validation:
 
     @staticmethod
     def nhanes_treatment_effects(sampleSize=2000000, nWorkers=1):
-        """This function creates and advances a control and a treated population in order to estimate the
+        """This function creates and advances a control and a treated population in order to
+        estimate the
         BP medication treatment effect on the MI relative risk and the stroke relative risk.
         Returns {bpMedsAdded: {"strokeRR", "miRR", "strokeRRs", "miRRs"}}, the mean relative risk
         of each arm over its simulations and the individual simulation results, for
@@ -236,7 +246,8 @@ class Validation:
         nYears = 5
         nSimulations = 4
         results = dict()
-        # NHANES includes children, so the adult filter is what keeps this an adult treatment effect
+        # NHANES includes children, so the adult filter is what keeps this an adult treatment
+        # effect
         pf = PersonFilterFactory.get_person_filter(["adult"])
         for bpMedsAdded in [1, 2, 3, 4]:
             miRRList = list()
@@ -265,10 +276,12 @@ class Validation:
                 strokeRRList += [strokeRR]
                 print(f"\t\tsimulation={i}, strokeRR= {strokeRR:<8.2f}, miRR= {miRR:<8.2f}")
             print(
-                f"    average of {nSimulations} simulations: strokeRR= {np.mean(strokeRRList):<8.2f}, miRR= {np.mean(miRRList):<8.2f}"
+                f"    average of {nSimulations} simulations: "
+                f"strokeRR= {np.mean(strokeRRList):<8.2f}, miRR= {np.mean(miRRList):<8.2f}"
             )
             print(
-                f"         sd of {nSimulations} simulations: strokeRR= {np.std(strokeRRList):<8.2f}, miRR= {np.std(miRRList):<8.2f}"
+                f"         sd of {nSimulations} simulations: "
+                f"strokeRR= {np.std(strokeRRList):<8.2f}, miRR= {np.std(miRRList):<8.2f}"
             )
             results[bpMedsAdded] = {
                 "strokeRR": float(np.mean(strokeRRList)),
@@ -298,7 +311,7 @@ class Validation:
         for quantity, published, values in rows:
             publishedString = (
                 f"{fmt.format(published[0])}-{fmt.format(published[1])}"
-                if type(published) == tuple
+                if type(published) is tuple
                 else fmt.format(published)
             )
             print(
@@ -468,7 +481,8 @@ class Validation:
         Returns the prevalence dictionary keyed by age group (by gender then age group when the
         reference is gender-stratified)."""
         print(
-            f"\n{outcomeType.value.upper()} PREVALENCE BY AGE GROUP AT BASELINE (NHANES {year}, survey-weighted)"
+            f"\n{outcomeType.value.upper()} PREVALENCE BY AGE GROUP AT BASELINE "
+            f"(NHANES {year}, survey-weighted)"
         )
         pop = PopulationFactory.get_nhanes_population(
             n=popSize, year=year, personFilters=None, nhanesWeights=True, distributions=False
@@ -519,7 +533,8 @@ class Validation:
     def kaiser_over_time(wmhSpecific=True, nWorkers=1):
         print("\nVALIDATION OF SIMULATED POPULATION OVER TIME\n")
         print(
-            "Note: this function will return a dictionary of Pandas dataframes with the information needed to do a proportional hazards analysis..."
+            "Note: this function will return a dictionary of Pandas dataframes with the "
+            "information needed to do a proportional hazards analysis..."
         )
         print("Note: so ensure you will capture the return variable from this function call...")
         print("Note: because this might take a while...")
@@ -577,7 +592,8 @@ class Validation:
         )
         print(
             " " * 12,
-            "References: Stroke-Kent2021, Wang2024, Mortality-Clancy2025, Dementia-Kent2022, MI-no available publication.\n",
+            "References: Stroke-Kent2021, Wang2024, Mortality-Clancy2025, Dementia-Kent2022, "
+            "MI-no available publication.\n",
         )
         print(" " * 12, "Mortality rates")
         print(" " * 12, "-" * 40)
@@ -593,13 +609,14 @@ class Validation:
             deathRatesList += [
                 [
                     f"{groupStrings[group]:>10} ",
-                    f"{deathRatesRef[group]:>10.1f} ({deathMinCiRef[group]:>5.1f} - {deathMaxCiRef[group]:>4.1f} ) ",
+                    f"{deathRatesRef[group]:>10.1f} "
+                    f"({deathMinCiRef[group]:>5.1f} - {deathMaxCiRef[group]:>4.1f} ) ",
                     f"{deathRates[group]:>14.1f}",
                 ]
             ]
             print(
-                f"{groupStrings[group]:>10} "
-                + f"{deathRatesRef[group]:>10.1f} ({deathMinCiRef[group]:>5.1f} - {deathMaxCiRef[group]:>4.1f} ) "
+                f"{groupStrings[group]:>10} " + f"{deathRatesRef[group]:>10.1f} "
+                f"({deathMinCiRef[group]:>5.1f} - {deathMaxCiRef[group]:>4.1f} ) "
                 + f"{deathRates[group]:>14.1f}"
             )
         print("\n")
@@ -617,13 +634,14 @@ class Validation:
             strokeRatesList += [
                 [
                     f"{groupStrings[group]:10} ",
-                    f"{strokeRatesRef[group]:>4.1f} ({strokeMinCiRef[group]:>5.1f} - {strokeMaxCiRef[group]:>4.1f} ) ",
+                    f"{strokeRatesRef[group]:>4.1f} "
+                    f"({strokeMinCiRef[group]:>5.1f} - {strokeMaxCiRef[group]:>4.1f} ) ",
                     f"{strokeRates[group]:<4.1f}",
                 ]
             ]
             print(
-                f"{groupStrings[group]:>10} "
-                + f"{strokeRatesRef[group]:>10.1f} ({strokeMinCiRef[group]:>5.1f} - {strokeMaxCiRef[group]:>4.1f} ) "
+                f"{groupStrings[group]:>10} " + f"{strokeRatesRef[group]:>10.1f} "
+                f"({strokeMinCiRef[group]:>5.1f} - {strokeMaxCiRef[group]:>4.1f} ) "
                 + f"{strokeRates[group]:>14.1f}"
             )
         print("\n")
@@ -652,13 +670,14 @@ class Validation:
             dementiaRatesList += [
                 [
                     f"{groupStrings[group]:>10} ",
-                    f"{dementiaRatesRef[group]:>10.1f} ({dementiaMinCiRef[group]:>5.1f} - {dementiaMaxCiRef[group]:>4.1f} ) ",
+                    f"{dementiaRatesRef[group]:>10.1f} "
+                    f"({dementiaMinCiRef[group]:>5.1f} - {dementiaMaxCiRef[group]:>4.1f} ) ",
                     f"{dementiaRates[group]:>14.1f}",
                 ]
             ]
             print(
-                f"{groupStrings[group]:>10} "
-                + f"{dementiaRatesRef[group]:>10.1f} ({dementiaMinCiRef[group]:>5.1f} - {dementiaMaxCiRef[group]:>4.1f} ) "
+                f"{groupStrings[group]:>10} " + f"{dementiaRatesRef[group]:>10.1f} "
+                f"({dementiaMinCiRef[group]:>5.1f} - {dementiaMaxCiRef[group]:>4.1f} ) "
                 + f"{dementiaRates[group]:>14.1f}"
             )
 

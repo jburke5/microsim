@@ -11,7 +11,14 @@ from microsim.risk_factors.cohort_risk_model_repository import (
 from microsim.default_treatments.default_treatment_model_repository import (
     DefaultTreatmentModelRepository,
 )
-from microsim.test.outcome_models_repositories import *
+from microsim.test.outcome_models_repositories import (
+    AlwaysFatalMIThroughRate,
+    AlwaysFatalStrokeThroughRate,
+    AlwaysNonFatalMIThroughRate,
+    AlwaysNonFatalStrokeThroughRate,
+)
+from microsim.outcomes.mi_partition_model import MIPartitionModel
+from microsim.outcomes.stroke_partition_model import StrokePartitionModel
 from microsim.default_treatments.default_treatments import DefaultTreatmentsType
 from microsim.risk_factors.risk_factor import StaticRiskFactorsType, DynamicRiskFactorsType
 from microsim.person.person_factory import PersonFactory
@@ -75,9 +82,11 @@ class TestPersonAdvanceOutcomes(unittest.TestCase):
         self.miPartitionModel = MIPartitionModel()
 
     # Q: the person advance method does not predict a future if person.is_dead
-    # I do not see a usefulness for raise an error, you should be able to attempt to advance a dead person
+    # I do not see a usefulness for raise an error, you should be able to attempt to advance a dead
+    # person
     # but it should not do anything
-    # Q: also, the user should not advance just risk factors or treatments, the code is designed for use
+    # Q: also, the user should not advance just risk factors or treatments, the code is designed
+    # for use
     # with the advance method
 
     # def test_dead_is_dead_advance_year(self):

@@ -240,7 +240,7 @@ class TestOutcomeRepository(unittest.TestCase):
         )
         self.assertAlmostEqual(0.069810753, actual_ten_year_risk, delta=0.00001)
 
-    def test_approximate_one_year_risk_for_person(self):
+    def test_approximate_one_year_risk_for_treated_person(self):
         model = self._outcome_model_repository._repository[
             OutcomeType.CARDIOVASCULAR
         ].select_outcome_model_for_person(self._treated_black_male)

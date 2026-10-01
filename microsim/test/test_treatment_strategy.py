@@ -29,7 +29,8 @@ from microsim.treatment_strategies.treatment_strategies import TreatmentStrategy
 
 
 class FixedRiskModelRepository:
-    """Stub CV model repository returning a fixed 10-year risk, to test risk gating in isolation."""
+    """Stub CV model repository returning a fixed 10-year risk, to test risk gating in
+    isolation."""
 
     def __init__(self, risk):
         self._risk = risk

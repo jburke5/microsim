@@ -1,7 +1,8 @@
 from enum import Enum
 
 # Q: should treatments be defined using their disease (eg hypertension),
-#   their effect (eg antihypertension), their drug class (eg statin), or what risk factors they affect (eg bp)?
+# their effect (eg antihypertension), their drug class (eg statin), or what risk factors they
+# affect (eg bp)?
 #   treatment class, can affect outcome or risk factors
 #   Do we have enough treatments in mind for how to organize these?
 

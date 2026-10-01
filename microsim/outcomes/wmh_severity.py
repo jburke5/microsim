@@ -53,9 +53,12 @@ class WMHSeverityMRModel:
         trig,
         creatinine,
     ):
-        """Returns the linear predictor (without the intercept) that corresponds to the cumulative probability.
-        In ordered logistic regression the coefficient of each parameter is the same for all covariates (an assumption).
-        So, I can calculate the linear predictor without the intercepts, because these are different for each ordered class."""
+        """Returns the linear predictor (without the intercept) that corresponds to the cumulative
+        probability.
+        In ordered logistic regression the coefficient of each parameter is the same for all
+        covariates (an assumption).
+        So, I can calculate the linear predictor without the intercepts, because these are
+        different for each ordered class."""
 
         xb = 0.0
         if gender == NHANESGender.MALE:
@@ -136,7 +139,8 @@ class WMHSeverityMRModel:
         lpNoWMH = lpWithoutIntercept + 5.4914
         lpMildWMH = lpWithoutIntercept + 7.5405
         lpModerateWMH = lpWithoutIntercept + 9.1338
-        # obtain the first three cumulative probabilities for the first three classes, last cumulative probability is 1.
+        # obtain the first three cumulative probabilities for the first three classes, last
+        # cumulative probability is 1.
         noWMHCumulative = self.inverse_logit(lpNoWMH)
         mildWMHCumulative = self.inverse_logit(lpMildWMH)
         moderateWMHCumulative = self.inverse_logit(lpModerateWMH)
@@ -184,9 +188,12 @@ class WMHSeverityCTModel:
         trig,
         creatinine,
     ):
-        """Returns the linear predictor (without the intercept) that corresponds to the cumulative probability.
-        In ordered logistic regression the coefficient of each parameter is the same for all covariates (an assumption).
-        So, I can calculate the linear predictor without the intercepts, because these are different for each ordered class."""
+        """Returns the linear predictor (without the intercept) that corresponds to the cumulative
+        probability.
+        In ordered logistic regression the coefficient of each parameter is the same for all
+        covariates (an assumption).
+        So, I can calculate the linear predictor without the intercepts, because these are
+        different for each ordered class."""
 
         xb = 0.0
         if gender == NHANESGender.MALE:
@@ -267,7 +274,8 @@ class WMHSeverityCTModel:
         lpNoWMH = lpWithoutIntercept + 10.6378
         lpMildWMH = lpWithoutIntercept + 12.5635
         lpModerateWMH = lpWithoutIntercept + 13.7202
-        # obtain the first three cumulative probabilities for the first three classes, last cumulative probability is 1.
+        # obtain the first three cumulative probabilities for the first three classes, last
+        # cumulative probability is 1.
         noWMHCumulative = self.inverse_logit(lpNoWMH)
         mildWMHCumulative = self.inverse_logit(lpMildWMH)
         moderateWMHCumulative = self.inverse_logit(lpModerateWMH)
@@ -290,7 +298,8 @@ class WMHSeverityCTModel:
 class WMHSeverityModel:
     """This is the WMH severity model for all persons, independently of their modality.
     Modality is a term in this model. This is an ordered logistic model.
-    This model was found to classify WMH outcomes a bit worse than the WMHSeverityCTModel and WMHSeverityMRModel on the Kaiser population."""
+    This model was found to classify WMH outcomes a bit worse than the WMHSeverityCTModel and
+    WMHSeverityMRModel on the Kaiser population."""
 
     def __init__(self):
         pass
@@ -317,9 +326,12 @@ class WMHSeverityModel:
         creatinine,
         modality,
     ):
-        """Returns the linear predictor (without the intercept) that corresponds to the cumulative probability.
-        In ordered logistic regression the coefficient of each parameter is the same for all covariates (an assumption).
-        So, I can calculate the linear predictor without the intercepts, because these are different for each ordered class."""
+        """Returns the linear predictor (without the intercept) that corresponds to the cumulative
+        probability.
+        In ordered logistic regression the coefficient of each parameter is the same for all
+        covariates (an assumption).
+        So, I can calculate the linear predictor without the intercepts, because these are
+        different for each ordered class."""
 
         xb = 0.0
         if gender == NHANESGender.MALE:
@@ -406,11 +418,13 @@ class WMHSeverityModel:
         )
 
         # obtain the linear predictors
-        # these are the sum of two terms, the intercept as obtained from the original fit, and one obtained from our own recalibration
+        # these are the sum of two terms, the intercept as obtained from the original fit, and one
+        # obtained from our own recalibration
         lpNoWMH = lpWithoutIntercept + 8.2116 - 0.26733
         lpMildWMH = lpWithoutIntercept + 10.2237 - 0.43271
         lpModerateWMH = lpWithoutIntercept + 11.6124 - 0.49049
-        # obtain the first three cumulative probabilities for the first three classes, last cumulative probability is 1.
+        # obtain the first three cumulative probabilities for the first three classes, last
+        # cumulative probability is 1.
         noWMHCumulative = self.inverse_logit(lpNoWMH)
         mildWMHCumulative = self.inverse_logit(lpMildWMH)
         moderateWMHCumulative = self.inverse_logit(lpModerateWMH)

@@ -26,14 +26,16 @@ class RegressionAnalysis:
             dfDict["outcomeTime"] = assessmentFunction(trial.treatedPop) + assessmentFunction(
                 trial.controlPop
             )
-        # the analyses adjust for all block factors, but note that randomization blocks only on blockFactors[0]
+        # the analyses adjust for all block factors, but note that randomization blocks only on
+        # blockFactors[0]
         for blockFactor in trial.trialDescription.blockFactors:
             blockValues = trial.treatedPop.get_attr(blockFactor) + trial.controlPop.get_attr(
                 blockFactor
             )
             if any(isinstance(v, list) for v in blockValues):
                 raise RuntimeError(
-                    f"Block factor {blockFactor} must be a static attribute, not a dynamic risk factor."
+                    f"Block factor {blockFactor} must be a static attribute, "
+                    "not a dynamic risk factor."
                 )
             dfDict[blockFactor] = blockValues
         return pd.DataFrame(dfDict)

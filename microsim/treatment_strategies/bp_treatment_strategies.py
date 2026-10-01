@@ -11,11 +11,13 @@ from microsim.treatment_strategies.treatment_strategies import (
 # the total number of BP medications are the number added at baseline (antiHypertensiveCount)
 # combined with the number added, additionalliy, via treatment algorithms
 
-# bpMedsAdded is the total number of bp medications that have been added so far over all completed waves
+# bpMedsAdded is the total number of bp medications that have been added so far over all completed
+# waves
 
 # some of these treatment strategies are purely theoretical due to their assumptions
 # for example the assumption that the 10th bpMed will lower SBP by the same amount as the 1st bpMed
-# even though all of these classes may be used in a simulation, some are more practical, some are more theoretical
+# even though all of these classes may be used in a simulation, some are more practical, some are
+# more theoretical
 
 
 class BaseTreatmentStrategy:
@@ -149,7 +151,8 @@ class AddBPTreatmentMedsToGoal120(BaseTreatmentStrategy):
             }
         else:
             raise RuntimeError(
-                "Unrecognized TreatmentStrategiesType status for person in AddBPTreatmentMedsToGoal120."
+                "Unrecognized TreatmentStrategiesType status for person in "
+                "AddBPTreatmentMedsToGoal120."
             )
 
     def get_meds_needed_for_goal(self, person, goal):
@@ -176,7 +179,9 @@ class NoBPTreatment(BaseTreatmentStrategy):
         return dict()
 
 
-# James, P. A. et al. 2014 Evidence-Based Guideline for the Management of High Blood Pressure in Adults: Report From the Panel Members Appointed to the Eighth Joint National Committee (JNC 8). Jama 311, 507–520 (2014).
+# James, P. A. et al. 2014 Evidence-Based Guideline for the Management of High Blood Pressure in
+# Adults: Report From the Panel Members Appointed to the Eighth Joint National Committee (JNC 8).
+# Jama 311, 507–520 (2014).
 class jnc8Treatment(AddBPTreatmentMedsToGoal120):
     def low_target(self, person):
         return (
@@ -199,7 +204,10 @@ class jnc8Treatment(AddBPTreatmentMedsToGoal120):
             if cappedMeds + currentMeds > BaseTreatmentStrategy.MAX_BP_MEDS
             else cappedMeds
         )
-        # print(f"meds: {meds} sbp: {sbp} dbp: {dbp} goal: {goal} currentMeds: {currentMeds}, cappedMeds: {cappedMeds}, medsToReturn: {medsToReturn}")
+        # print(
+        #     f"meds: {meds} sbp: {sbp} dbp: {dbp} goal: {goal} currentMeds: {currentMeds}, "
+        #     f"cappedMeds: {cappedMeds}, medsToReturn: {medsToReturn}"
+        # )
         return int(medsToReturn) if medsToReturn > 0 else 0
 
 
@@ -241,7 +249,8 @@ class SprintForLowerDbpGoalTreatment(jnc8ForHighRiskLowBpTarget):
 
 
 class SprintForSbpOnlyTreatment(jnc8ForHighRiskLowBpTarget):
-    """This treatment strategy practically implements an SBP only goal for blood pressure treatment.
+    """This treatment strategy practically implements an SBP only goal for blood pressure
+    treatment.
     There are formally two goals for both SBP and DBP but the DBP goal is set so high that it
     will be unlikely ever used."""
 
@@ -249,9 +258,12 @@ class SprintForSbpOnlyTreatment(jnc8ForHighRiskLowBpTarget):
         super().__init__(cvRiskCutoff, {"sbp": 126, "dbp": 200}, wmhSpecific)
 
     def get_meds_needed_for_goal(self, person, goal):
-        """The Sprint-based classes utilize the minimum of the SBP and DBP meds needed to reach the goal...
-        essentially I cannot just initialize the super class with an extremely high DBP goal because then the DBP meds needed
-        would always be 0 and that is the minimum no matter how many SBP meds are needed to reach the goal.
+        """The Sprint-based classes utilize the minimum of the SBP and DBP meds needed to reach the
+        goal...
+        essentially I cannot just initialize the super class with an extremely high DBP goal
+        because then the DBP meds needed
+        would always be 0 and that is the minimum no matter how many SBP meds are needed to reach
+        the goal.
         So, I actually need to implement this function here based on SBP only."""
         if not self.low_target(person):
             return 0

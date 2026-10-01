@@ -14,14 +14,19 @@ class TrialDescription(ABC):
     NhanesTrialDescription or KaiserTrialDescription, which define popType and the
     population-specific peopleArgs/modelRepoArgs needed by Trial.
     trialType: indicates what type of trial we want to run
-    blockFactors: a list of the block factors, for randomization, to be used in the setup and analysis of the trial
-                   must be None or an empty list if block factors will not be used, at most one block factor is supported
-    sample size: the approximate size of the populations to be used in the trial, eg both control and treated populations will be of that size
-                 if no randomization is used or if complete randomization is used, but the size of the control/treated populations will be
+    blockFactors: a list of the block factors, for randomization, to be used in the setup and
+    analysis of the trial
+                   must be None or an empty list if block factors will not be used, at most one
+                   block factor is supported
+    sample size: the approximate size of the populations to be used in the trial, eg both control
+    and treated populations will be of that size
+                 if no randomization is used or if complete randomization is used, but the size of
+                 the control/treated populations will be
                  approximately equal to sample size if block randomization is used
                  (because we never know the number of units with a specific block factor)
     duration: for how many years the trial will run, how many years the populations will advance
-    treatmentStrategies: holds information on how treatment will be applied on the treated population
+    treatmentStrategies: holds information on how treatment will be applied on the treated
+    population
     nWorkers: number of cores to use when a population advances
     personFilters: filters for inclusion/exclusion in the trial population
     _rng: numpy random number generator for randomization of the trial
@@ -51,7 +56,8 @@ class TrialDescription(ABC):
         self.is_valid_trial()
 
     def get_treatment_strategy(self, treatmentStrategies):
-        """Coerce the user-supplied treatmentStrategies argument into a TreatmentStrategyRepository.
+        """Coerce the user-supplied treatmentStrategies argument into a
+        TreatmentStrategyRepository.
         Accepts None (empty repository), a shorthand string forwarded to
         TreatmentStrategyRepository.from_string, or an already-constructed repository."""
         if treatmentStrategies is None:
@@ -129,7 +135,10 @@ class TrialDescription(ABC):
         rep += f"\tBlock factors: {self.blockFactors}\n"
         rep += f"\tSample size: {self.sampleSize}\n"
         rep += f"\tDuration: {self.duration}\n"
-        rep += f"\tTreatment strategies: {[key for key, value in self.treatmentStrategies._repository.items() if value is not None]}\n"
+        strategyNames = [
+            key for key, value in self.treatmentStrategies._repository.items() if value is not None
+        ]
+        rep += f"\tTreatment strategies: {strategyNames}\n"
         rep += f"\tNumber of workers: {self.nWorkers}\n"
         rep += f"\tPerson filters: \n\t {self.personFilters}"
         return rep
@@ -139,9 +148,11 @@ class TrialDescription(ABC):
 
 
 class NhanesTrialDescription(TrialDescription):
-    """This is a class that can be used to hold setup information for a trial that is using the NHANES population type.
+    """This is a class that can be used to hold setup information for a trial that is using the
+    NHANES population type.
     It holds the information needed for all trials, those are provided to the initialization of the
-    superclass TrialDescription, and in addition it holds all information related to the NHANES population.
+    superclass TrialDescription, and in addition it holds all information related to the NHANES
+    population.
     An instance of this class can be used to initialize the Trial class."""
 
     def __init__(
@@ -150,7 +161,8 @@ class NhanesTrialDescription(TrialDescription):
         blockFactors=None,
         sampleSize=100,
         duration=5,
-        treatmentStrategies=None,  # None becomes a fresh repository, a default instance would be shared across descriptions
+        # None becomes a fresh repository, a default instance would be shared across descriptions
+        treatmentStrategies=None,
         nWorkers=1,
         personFilters=None,
         year=1999,
@@ -194,9 +206,11 @@ class NhanesTrialDescription(TrialDescription):
 
 
 class KaiserTrialDescription(TrialDescription):
-    """This is a class that can be used to hold setup information for a trial that is using the KAISER population type.
+    """This is a class that can be used to hold setup information for a trial that is using the
+    KAISER population type.
     It holds the information needed for all trials, those are provided to the initialization of the
-    superclass TrialDescription, and in addition it holds all information related to the KAISER population.
+    superclass TrialDescription, and in addition it holds all information related to the KAISER
+    population.
     An instance of this class can be used to initialize the Trial class."""
 
     def __init__(
@@ -205,7 +219,8 @@ class KaiserTrialDescription(TrialDescription):
         blockFactors=None,
         sampleSize=100,
         duration=5,
-        treatmentStrategies=None,  # None becomes a fresh repository, a default instance would be shared across descriptions
+        # None becomes a fresh repository, a default instance would be shared across descriptions
+        treatmentStrategies=None,
         nWorkers=1,
         personFilters=None,
         wmhSpecific=True,

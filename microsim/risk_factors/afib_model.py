@@ -3,7 +3,8 @@ from microsim.regression_models.logistic_risk_factor_model import LogisticRiskFa
 from microsim.regression_models.linear_risk_factor_model import LinearRiskFactorModel
 
 
-# the intercept of this model was modified in order to have agreement with the 2019 global burden of disease data
+# the intercept of this model was modified in order to have agreement with the 2019 global burden
+# of disease data
 # optimization of the intercept was performed on the afibModelRecalibrations notebook
 class AFibPrevalenceModel(LogisticRiskFactorModel):
     def __init__(self):
@@ -13,7 +14,8 @@ class AFibPrevalenceModel(LogisticRiskFactorModel):
         return person._rng.uniform() < super().estimate_next_risk(person)
 
 
-# moved away from linear probability risk factor model because this approach gives the least absolute deviations in afib versus the
+# moved away from linear probability risk factor model because this approach gives the least
+# absolute deviations in afib versus the
 # global burden of disease data
 # the intercept and age coefficient of the cohort afib model were modified to fit the gbd data
 # note that the riskWithResidual is not bounded by 0, 1 but the rng.uniform is

@@ -27,15 +27,21 @@ ANALYSIS_CLASSES = {
 class TrialOutcomeAssessor:
     """This class will store the specific analyses that will be obtained from a Trial instance.
     This class provides a link between Population-level functions and methodologies used to analyze
-    the results when those Population-level functions are applied to the treated and control trial populations.
-    _analysis: initializes classes that are needed in order to perform the analysis of the treated and control population outcomes
+    the results when those Population-level functions are applied to the treated and control trial
+    populations.
+    _analysis: initializes classes that are needed in order to perform the analysis of the treated
+    and control population outcomes
     _assessments: a dictionary, keys are the name of the assessments
-                                values are dictionaries with two keys, assessmentFunctionDict and assessmentAnalysis
-                  assessmentFunctionDict: a dictionary of Population-level functions, keys depend on the analysis
-                         outcome: returns the outcome for each member of the population (all analyses except incidenceRate)
+                                values are dictionaries with two keys, assessmentFunctionDict and
+                                assessmentAnalysis
+                  assessmentFunctionDict: a dictionary of Population-level functions, keys depend
+                  on the analysis
+                         outcome: returns the outcome for each member of the population (all
+                         analyses except incidenceRate)
                          time: returns the time at which the outcome occured (cox only)
                          eventAndTime: returns (event, personYears) pairs (incidenceRate only)
-                  assessmentAnalysis: a string, must be one of the keys of the _analysis dictionary (otherwise the class will not
+                  assessmentAnalysis: a string, must be one of the keys of the _analysis dictionary
+                  (otherwise the class will not
                          know how to analyze the results."""
 
     def __init__(self):
@@ -45,12 +51,14 @@ class TrialOutcomeAssessor:
     def add_outcome_assessment(self, assessmentName, assessmentFunctionDict, assessmentAnalysis):
         if assessmentAnalysis not in self._analysis.keys():
             raise RuntimeError(
-                f"Cannot add outcome assessment with analysis {assessmentAnalysis} because this analysis does not exist. "
+                f"Cannot add outcome assessment with analysis {assessmentAnalysis} "
+                "because this analysis does not exist. "
                 f"Available assessment analyses are: {list(self._analysis.keys())}"
             )
         if assessmentName in self._assessments.keys():
             raise RuntimeError(
-                f"Cannot add outcome assessment {assessmentName} because this assessment name already exists."
+                f"Cannot add outcome assessment {assessmentName} "
+                "because this assessment name already exists."
             )
         if assessmentAnalysis == "cox":
             requiredKeys = {"outcome", "time"}
@@ -60,7 +68,8 @@ class TrialOutcomeAssessor:
             requiredKeys = {"outcome"}
         if set(assessmentFunctionDict.keys()) != requiredKeys:
             raise RuntimeError(
-                f"Cannot add outcome assessment {assessmentName} because assessmentFunctionDict keys must be exactly {requiredKeys}."
+                f"Cannot add outcome assessment {assessmentName} "
+                f"because assessmentFunctionDict keys must be exactly {requiredKeys}."
             )
         self._assessments[assessmentName] = {
             "assessmentFunctionDict": assessmentFunctionDict,
@@ -70,7 +79,8 @@ class TrialOutcomeAssessor:
     def rm_outcome_assessment(self, assessmentName):
         if assessmentName not in self._assessments.keys():
             raise RuntimeError(
-                f"Cannot remove outcome assessment with name {assessmentName} because this assessment name does not exist."
+                f"Cannot remove outcome assessment with name {assessmentName} "
+                "because this assessment name does not exist."
             )
         del self._assessments[assessmentName]
 

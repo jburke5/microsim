@@ -25,5 +25,8 @@ class WMHOutcome(Outcome):
         self.wmhSeverity = wmhSeverity
 
     def __repr__(self):
-        return f"""WMH Outcome: {self.type}, fatal: {self.fatal}, sbi: {self.sbi}, wmh: {self.wmh},
-                   wmhSeverityUnknown: {self.wmhSeverityUnknown}, wmhSeverity: {self.wmhSeverity}"""
+        return (
+            f"WMH Outcome: {self.type}, fatal: {self.fatal}, sbi: {self.sbi}, wmh: {self.wmh},\n"
+            f"                   wmhSeverityUnknown: {self.wmhSeverityUnknown}, "
+            f"wmhSeverity: {self.wmhSeverity}"
+        )

@@ -14,8 +14,10 @@ from microsim.treatment_strategies.treatment_strategies import TreatmentStrategi
 
 
 class DementiaModel(CoxRiskFactorModel):
-    # initial parameters in notebook lookAtSurvivalFunctionForDementiaModel (linearTerm=1.33371239e-05, quadraticTerm=5.64485841e-05)
-    # recalibrated fit to population incidence equation in notebook: identifyOptimalBaselineSurvivalParametersForDementia, linear multiplier = 0.5, quad = 0.175
+    # initial parameters in notebook lookAtSurvivalFunctionForDementiaModel
+    # (linearTerm=1.33371239e-05, quadraticTerm=5.64485841e-05)
+    # recalibrated fit to population incidence equation in notebook:
+    # identifyOptimalBaselineSurvivalParametersForDementia, linear multiplier = 0.5, quad = 0.175
 
     def __init__(
         self,
@@ -120,8 +122,10 @@ class DementiaModel(CoxRiskFactorModel):
             xb += 0.1937563
 
         if (
+            # if we just want a mean increased risk for the kaiser population then the modified
+            # linear and quadratic term adjustment did it
             self.wmhSpecific and hasBrainScan
-        ):  # if we just want a mean increased risk for the kaiser population then the modified linear and quadratic term adjustment did it
+        ):
             if sbi:
                 if currentAge < 70:
                     xb += np.log(2.02)

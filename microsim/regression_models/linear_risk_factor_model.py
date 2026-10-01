@@ -24,7 +24,8 @@ class LinearRiskFactorModel:
         self.argument_transforms = get_all_argument_transforms(self.get_keys_for_transforms())
 
     # method to be overriden by models that want to, in addition to the risks estimated by
-    # the regression coefficients loaded from a model, also be able to apply some manual parameters.
+    # the regression coefficients loaded from a model, also be able to apply some manual
+    # parameters.
     def get_manual_parameters(self):
         return {}
 
@@ -51,7 +52,8 @@ class LinearRiskFactorModel:
 
     def _get_person_attribute(self, prop_name, person):
         prop_value = getattr(person, f"_{prop_name}")
-        # the model specs were trained on NHANES which has no Asian category; Asian maps to white by convention
+        # the model specs were trained on NHANES which has no Asian category; Asian maps to white
+        # by convention
         if (
             prop_name == StaticRiskFactorsType.RACE_ETHNICITY.value
             and prop_value == RaceEthnicity.ASIAN
@@ -82,7 +84,8 @@ class LinearRiskFactorModel:
         linear_predictor = self.estimate_next_risk(person)
         return linear_predictor
 
-    # withResidual=False makes continuous risk factor advancement deterministic, shrinking population variance over time
+    # withResidual=False makes continuous risk factor advancement deterministic, shrinking
+    # population variance over time
     def estimate_next_risk(self, person, rng=None, withResidual=False):
         # TODO: think about what to do with teh hard-coded strings for parameters and prefixes
         linearPredictor = self.get_intercept()

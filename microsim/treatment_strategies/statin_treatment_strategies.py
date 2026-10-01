@@ -10,7 +10,8 @@ class StatinTreatmentStrategy:
     """This class does not directly modify any risk factors or default treatments.
     It does indirectly modify the CV event risk.
     The statinMedsAdded variable affects the CV risk in cv_model.py.
-    Also, currently, the variable statin in default treatments is not affected in any way by statinMedsAdded.
+    Also, currently, the variable statin in default treatments is not affected in any way by
+    statinMedsAdded.
     But statinMedsAdded is affected by the presence of statin (see below)."""
 
     def __init__(self, cvRiskCutoff=0.075, wmhSpecific=True):
@@ -21,7 +22,8 @@ class StatinTreatmentStrategy:
             self.cvRiskCutoff = cvRiskCutoff
         else:
             raise RuntimeError(
-                f"Cannot create StatinTreatmentStrategy with invalid risk cutoff {cvRiskCutoff}. Risk must not be <0 or >1."
+                f"Cannot create StatinTreatmentStrategy with invalid risk cutoff {cvRiskCutoff}. "
+                "Risk must not be <0 or >1."
             )
 
     def get_updated_treatments(self, person):

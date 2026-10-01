@@ -14,10 +14,12 @@ class CoxRegressionAnalysis(RegressionAnalysis):
 
     def analyze(self, trial, assessmentFunctionDict, assessmentAnalysis):
         df = self.get_trial_outcome_df(trial, assessmentFunctionDict, assessmentAnalysis)
-        # the analysis adjusts for all block factors, but randomization blocks only on blockFactors[0]
+        # the analysis adjusts for all block factors, but randomization blocks only on
+        # blockFactors[0]
         blockFactors = trial.trialDescription.blockFactors
         df = df.loc[:, ["outcome", "outcomeTime", "treatment", *blockFactors]]
-        # categorical block factors are dummy-encoded, otherwise lifelines would fit them as a single linear term
+        # categorical block factors are dummy-encoded, otherwise lifelines would fit them as a
+        # single linear term
         categoricalFactors = [bf for bf in blockFactors if self.is_categorical(bf)]
         if len(categoricalFactors) > 0:
             df = pd.get_dummies(df, columns=categoricalFactors, drop_first=True, dtype=float)

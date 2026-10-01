@@ -25,8 +25,10 @@ class GCPModel:
         return self.generate_next_outcome(person)
 
     # Q: I am not sure what the issue is here...
-    # TODO — what do we need to do with the random intercept? shouls we take a draw per person and assign it?
-    # if we don't do that there is going to be mroe change in cognitive trajectory per person that we'd expect...
+    # TODO — what do we need to do with the random intercept? shouls we take a draw per person and
+    # assign it?
+    # if we don't do that there is going to be mroe change in cognitive trajectory per person that
+    # we'd expect...
     def calc_linear_predictor_for_patient_characteristics(
         self,
         yearsInSim,
@@ -98,7 +100,8 @@ class GCPModel:
         xb += anyAntiHpertensive * yearsInSim * 0.01984
         # reportingDict['antiHypertensiveYears'] = xb - pd.Series(reportingDict.values()).sum()
 
-        # need to turn off the residual for hte simulation...also need to make sure that we're correctly centered...
+        # need to turn off the residual for hte simulation...also need to make sure that we're
+        # correctly centered...
         xb += (fastingGlucose - 100) / 10 * -0.09362
         # reportingDict['glucose'] = xb - pd.Series(reportingDict.values()).sum()
         if physicalActivity:
@@ -164,7 +167,8 @@ class GCPModel:
         # tst = TreatmentStrategiesType.WMD20.value
         # if "wmd20MedsAdded" in person._treatmentStrategies[tst]:
         #    wmd20MedsAdded = person._treatmentStrategies[tst]['wmd20MedsAdded']
-        #    linPred  = linPred * (1+0.0356) if wmd20MedsAdded>0 else linPred # solve x^4 = 1.2-0.05 for x
+        #    # solve x^4 = 1.2-0.05 for x
+        #    linPred  = linPred * (1+0.0356) if wmd20MedsAdded>0 else linPred
 
         # tst = TreatmentStrategiesType.WMD25.value
         # if "wmd25MedsAdded" in person._treatmentStrategies[tst]:
@@ -177,7 +181,8 @@ class GCPModel:
 
 # based on https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2805003, Model M2
 # the gcp stroke model will need to be adjusted, there seems to be a difference between
-# the stroke population in the paper and the microsim stroke population, which leads to an increase in gcp after a stroke in microsim....
+# the stroke population in the paper and the microsim stroke population, which leads to an increase
+# in gcp after a stroke in microsim....
 class GCPStrokeModel:
     def __init__(self, outcomeModelRepository=None):
         # Q why are we passing an outcome model repo here?
@@ -219,8 +224,10 @@ class GCPStrokeModel:
         meanGCPPrestroke,
     ):
 
-        # standardize some variables first, if a variable is ending on "med10" that meant it was centered and standardized by 10
-        # initially I thought the centers were the actual means as described in the original publication, that was wrong
+        # standardize some variables first, if a variable is ending on "med10" that meant it was
+        # centered and standardized by 10
+        # initially I thought the centers were the actual means as described in the original
+        # publication, that was wrong
         # the centers used were included in an excel file that the group sent us via email
         ageAtLastStrokeS = (ageAtLastStroke - 65.0) / 10.0
         meanBmiPrestrokeS = meanBmiPrestroke - 25.0
@@ -274,7 +281,8 @@ class GCPStrokeModel:
             xb += -1.5329  # Hxafib
         if mi:
             xb += 0.4470  # HxMI
-        # if diabetestx:                                                #currently simulation does not include diabetes medication
+        # currently simulation does not include diabetes medication
+        # if diabetestx:
         #    xb += -1.4601                                           #diabetestx
         #    xb += (-0.03788) * yearsSinceStroke                     #t_gcp_stk*diabetestx
         xb += 0.01751 * gfr  # gfr
@@ -334,8 +342,9 @@ class GCPStrokeModel:
                 np.array(person._a1c[: waveAtLastStroke + 1]).mean()
             ),
             anyAntiHypertensive=person._any_antiHypertensive,
-            # Q: how to deal with otherLipidlowering meds? We used to use this attribute but now that I have not
-            #   included a treatment model for this (and I think I do not even bring it in from NHANES)
+            # Q: how to deal with otherLipidlowering meds? We used to use this attribute but now
+            # that I have not included a treatment model for this (and I think I do not even bring
+            # it in from NHANES)
             #   is it ok to use just statin for the gcp stroke model, like I do below?
             anyLipidLowering=person._statin[-1],
             afib=person._afib[-1],

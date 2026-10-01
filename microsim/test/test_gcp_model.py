@@ -135,21 +135,24 @@ class TestGCPModel(unittest.TestCase):
             GCPModel().get_risk_for_person(person=self._test_case_one, test=True),
         )
 
-        # this is for the first person in teh spreadsheet (1569nomas)...comparator is GCP + backing out the cohort effect (NOMAS)
+        # this is for the first person in teh spreadsheet (1569nomas)...comparator is GCP + backing
+        # out the cohort effect (NOMAS)
         self.assertAlmostEqual(
             64.45419405 - 2.7905,
             GCPModel().get_risk_for_person(person=self._test_case_one, test=True),
             places=1,
         )
 
-        # this is for the 2nd person in the spreadhsheet (204180409594cardia)...comparabor is GCP margin + backing out the cohort effect (cardia)
+        # this is for the 2nd person in the spreadhsheet (204180409594cardia)...comparabor is GCP
+        # margin + backing out the cohort effect (cardia)
         self.assertAlmostEqual(
             50.01645213 + 1.3320,
             GCPModel().get_risk_for_person(person=self._test_case_two, test=True),
             places=1,
         )
 
-        # this is for the the first black person in the spreadsheet (J150483aric)...comparator is GCP + no cohort effect (ARIC)
+        # this is for the the first black person in the spreadsheet (J150483aric)...comparator is
+        # GCP + no cohort effect (ARIC)
         self.assertAlmostEqual(
             42.99471241,
             GCPModel().get_risk_for_person(person=self._test_case_three, test=True),

@@ -7,8 +7,10 @@ from microsim.treatment_strategies.treatment_strategies import TreatmentStrategi
 
 
 class CVModelBase(ASCVDOutcomeModel):
-    """CV is an outcome type that we need to use with some outcome type model implementations (stroke and mi).
-    The male and female cv models share the same functions so this base class includes all common elements."""
+    """CV is an outcome type that we need to use with some outcome type model implementations
+    (stroke and mi).
+    The male and female cv models share the same functions so this base class includes all
+    common elements."""
 
     def __init__(
         self,
@@ -25,8 +27,9 @@ class CVModelBase(ASCVDOutcomeModel):
         self._stroke_case_fatality = 0.15
         self._secondary_stroke_case_fatality = 0.15
         self._statinAdded_relative_risk = 0.72  # doi:10.1001/jama.2022.12138
-        # This is the average change of the intercept, see the models for male and female below for more details of
-        # the optimized intercepts I found from simulations (and then obtained this average I use here)
+        # This is the average change of the intercept, see the models for male and female below for
+        # more details of the optimized intercepts I found from simulations (and then obtained this
+        # average I use here)
         self.interceptChangeFor1bpMedsAdded = -0.1103125
         super().__init__(
             RegressionModel(
@@ -78,7 +81,8 @@ class CVModelBase(ASCVDOutcomeModel):
 
     def generate_next_outcome(self, person):
         # for now assume it is not a fatal event, and update later at the stroke or mi outcomes
-        # if in the future we chose different stroke/mi models that do not update cv outcome fatality, then cv fatality will need to be decided here
+        # if in the future we chose different stroke/mi models that do not update cv outcome
+        # fatality, then cv fatality will need to be decided here
         fatal = False
         return Outcome(OutcomeType.CARDIOVASCULAR, fatal)
 
@@ -89,7 +93,8 @@ class CVModelBase(ASCVDOutcomeModel):
             return None
 
     def get_risk_components_for_person(self, person, years=1):
-        """Returns the risk without taking into account silent cerebrovascular disease and the risk just due to scd.
+        """Returns the risk without taking into account silent cerebrovascular disease and the risk
+        just due to scd.
         Does not make adjustments for secondary prevention as get_risk_for_person does."""
         riskComponents = super().get_risk_components_for_person(
             person,
@@ -105,7 +110,8 @@ class CVModelMale(CVModelBase):
 
     # Some information about intercepts and bpMedsAdded...
     # interceptChangeFor1bpMedsAdded = -0.10537 #this is the mean from all bpMedsAdded 1,2,3,4
-    # the optimal intercepts follow...these were found independently from each other from simulations...
+    # the optimal intercepts follow...these were found independently from each other from
+    # simulations...
     # intercept = -11.7902925  #1bpMedsAdded
     # intercept = -11.91125    #2
     # intercept = -12.00771437 #3

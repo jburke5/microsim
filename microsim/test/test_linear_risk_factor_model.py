@@ -64,7 +64,9 @@ class TestLinearRiskFactorModel(unittest.TestCase):
                 {
                     DynamicRiskFactorsType.AGE.value: 80,
                     StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,
-                    StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,
+                    StaticRiskFactorsType.RACE_ETHNICITY.value: (
+                        RaceEthnicity.NON_HISPANIC_WHITE.value
+                    ),
                     DynamicRiskFactorsType.SBP.value: bpinstance,
                     DynamicRiskFactorsType.DBP.value: 80,
                     DynamicRiskFactorsType.A1C.value: 5.5,

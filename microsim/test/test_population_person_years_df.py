@@ -96,7 +96,8 @@ class TestGetOutcomeFlagsPerWave(unittest.TestCase):
         self.assertEqual(flags[OutcomeType.STROKE][2], 1)
 
     def test_outcome_type_not_in_person_outcomes(self):
-        """If a person's _outcomes dict doesn't have a key for an EventOutcomeType, it should be all zeros."""
+        """If a person's _outcomes dict doesn't have a key for an EventOutcomeType, it should be
+        all zeros."""
         person = self._pop._people.iloc[0]
         if OutcomeType.STROKE in person._outcomes:
             del person._outcomes[OutcomeType.STROKE]

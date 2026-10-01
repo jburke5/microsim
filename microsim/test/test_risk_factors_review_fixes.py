@@ -83,19 +83,22 @@ class TestAsianRaceHandling(unittest.TestCase):
             "Intercept": 10,
         }
         model = NHANESLinearRiskFactorModel(params=params, resids=pd.Series(np.zeros(10)))
-        estimate = lambda race: model.estimate_risk_for_params(
-            60,
-            1,
-            120,
-            80,
-            5.5,
-            50,
-            200,
-            25,
-            race,
-            SmokingStatus.NEVER,
-            rng=np.random.default_rng(0),
-        )
+
+        def estimate(race):
+            return model.estimate_risk_for_params(
+                60,
+                1,
+                120,
+                80,
+                5.5,
+                50,
+                200,
+                25,
+                race,
+                SmokingStatus.NEVER,
+                rng=np.random.default_rng(0),
+            )
+
         self.assertEqual(15, estimate(RaceEthnicity.NON_HISPANIC_WHITE))
         self.assertEqual(15, estimate(RaceEthnicity.ASIAN))
         self.assertEqual(10, estimate(RaceEthnicity.MEXICAN_AMERICAN))

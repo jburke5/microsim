@@ -7,17 +7,23 @@ from microsim.risk_factors.risk_factor import StaticRiskFactorsType
 
 class StandardizedPopulation:
     """This class will represent distributions of standardized populations.
-    These distributions are useful in estimating expected standardized outcomes from the simulation population
+    These distributions are useful in estimating expected standardized outcomes from the simulation
+    population
     which in general may have a different distribution than a standardized population.
     The benefit of using such a class is that you can swap different standardized populations
-    on a single simulation population to estimate expected standardized outcomes for more than one standardized population.
-    ageStandard: a Pandas dataframe with information about the standardized population for several years
-    ageGroups: a dictionary with information about how ages are distributed in age groups for each gender
+    on a single simulation population to estimate expected standardized outcomes for more than one
+    standardized population.
+    ageStandard: a Pandas dataframe with information about the standardized population for several
+    years
+    ageGroups: a dictionary with information about how ages are distributed in age groups for each
+    gender
                key: gender, value: [ [0], [1,2,3,4], [5,6...], ... ]
-    populationPercents: a dictionary with information about what percentage that age group represents of the entire population (all genders)
+    populationPercents: a dictionary with information about what percentage that age group
+    represents of the entire population (all genders)
                key: gender, value: [ 0.01, 0.01,     0.01,... ]"""
 
-    # The standard population file is 388 MB of 14.5 million rows and parsing it takes about 4s, all
+    # The standard population file is 388 MB of 14.5 million rows and parsing it takes about 4s,
+    # all
     # of it inside _parse_age_standard, while what a year needs out of it is 38 rows. Every
     # Population.calculate_mean_age_sex_standardized_incidence builds a StandardizedPopulation, and
     # get_cv_standardized_rates builds 18 of them (6 outcomes over 3 subgroups), so a single report
@@ -42,7 +48,8 @@ class StandardizedPopulation:
                     & (age <= self.ageStandard.upperAgeBound)
                     & (self.ageStandard.gender == gender)
                 ]
-                # the 150 bound is a membership sentinel, not a real width: count only sampleable ages
+                # the 150 bound is a membership sentinel, not a real width: count only sampleable
+                # ages
                 upperAge = min(dfRow["upperAgeBound"].values[0], 85)
                 lowerAge = dfRow["lowerAgeBound"].values[0]
                 totalPop = dfRow["standardPopulation"].values[0]

@@ -15,19 +15,27 @@ from microsim.person.person_factory import PersonFactory
 from microsim.outcomes.cognition_outcome import CognitionOutcome
 
 # main idea: construct persons that at some point in their simulation history had a stroke outcome
-# we want to test the GCP stroke model with persons that resemble simulation persons as much as possible
+# we want to test the GCP stroke model with persons that resemble simulation persons as much as
+# possible
 # for every person, lists are created, these lists define the person's history in the simulation
-# these lists have the form [prestroke value, ..., prestroke value, after stroke value, ... after stroke value]
+# these lists have the form [prestroke value, ..., prestroke value, after stroke value, ... after
+# stroke value]
 # with the stroke outcome taking place at the wave of the last prestroke value
 # prestroke values and after stroke values were taken from data used to develop this model
 # for variables where only prestroke values contributed to the model the lists had the form
-# [prestroke value, ..., prestroke value, prestroke value + a number, prestroke value + another number...]
-# so that we could see if any after stroke value was accidentally included in our implementation of the model
-# also, the current GCP stroke model implementation does not take every model factor into account so at the end for each
-# test case presented here we need to adjust for the cohort (remove the weighted average our implementation includes and add
-# the correct cohort), income, diabetes treatment (2 terms), random effects (2 terms), remove the average alcohol per week
+# [prestroke value, ..., prestroke value, prestroke value + a number, prestroke value + another
+# number...]
+# so that we could see if any after stroke value was accidentally included in our implementation of
+# the model
+# also, the current GCP stroke model implementation does not take every model factor into account
+# so at the end for each
+# test case presented here we need to adjust for the cohort (remove the weighted average our
+# implementation includes and add
+# the correct cohort), income, diabetes treatment (2 terms), random effects (2 terms), remove the
+# average alcohol per week
 # term our implementation includes and add the correct one
-# tried to include test cases with diverse histories so that we can test as many model components as possible (I think no test case had afib though)
+# tried to include test cases with diverse histories so that we can test as many model components
+# as possible (I think no test case had afib though)
 
 
 # row 2 in excel file
@@ -71,7 +79,8 @@ class TestCaseOne(Person):
             {
                 DynamicRiskFactorsType.AGE.value: ageList[0],  # agemed10
                 StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,  # female0
-                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,  # black
+                # black
+                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,
                 DynamicRiskFactorsType.SBP.value: sbpList[0],  # bs_sbpstkcog
                 DynamicRiskFactorsType.DBP.value: dbpList[0],  # same as TestGCPModel
                 DynamicRiskFactorsType.A1C.value: a1cList[0],  # bs_glucosefmed10
@@ -84,9 +93,12 @@ class TestCaseOne(Person):
                 DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: anyPhysicalActivityList[
                     0
                 ],  # physact
-                StaticRiskFactorsType.EDUCATION.value: Education.SOMEHIGHSCHOOL.value,  # educ2,educ3,educ4
-                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,  # currsmoker
-                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 0.0,  # alcperwk, drinks/week -> NONE
+                # educ2,educ3,educ4
+                StaticRiskFactorsType.EDUCATION.value: Education.SOMEHIGHSCHOOL.value,
+                # currsmoker
+                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+                # alcperwk, drinks/week -> NONE
+                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 0.0,
                 DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: antiHypertensiveCountList[
                     0
                 ],  # htntx
@@ -203,7 +215,8 @@ class TestCaseTwo(Person):
             {
                 DynamicRiskFactorsType.AGE.value: ageList[0],  # agemed10
                 StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,  # female0
-                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_BLACK.value,  # black
+                # black
+                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_BLACK.value,
                 DynamicRiskFactorsType.SBP.value: sbpList[0],  # bs_sbpstkcog
                 DynamicRiskFactorsType.DBP.value: dbpList[0],  # same as TestGCPModel
                 DynamicRiskFactorsType.A1C.value: a1cList[0],  # bs_glucosefmed10
@@ -216,9 +229,12 @@ class TestCaseTwo(Person):
                 DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: anyPhysicalActivityList[
                     0
                 ],  # physact
-                StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,  # educ2,educ3,educ4
-                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,  # currsmoker
-                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 3.0,  # alcperwk, drinks/week -> ONETOSIX
+                # educ2,educ3,educ4
+                StaticRiskFactorsType.EDUCATION.value: Education.COLLEGEGRADUATE.value,
+                # currsmoker
+                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+                # alcperwk, drinks/week -> ONETOSIX
+                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 3.0,
                 DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: antiHypertensiveCountList[
                     0
                 ],  # htntx
@@ -336,7 +352,8 @@ class TestCaseThree(Person):
             {
                 DynamicRiskFactorsType.AGE.value: ageList[0],  # agemed10
                 StaticRiskFactorsType.GENDER.value: NHANESGender.FEMALE.value,  # female0
-                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,  # black
+                # black
+                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,
                 DynamicRiskFactorsType.SBP.value: sbpList[0],  # bs_sbpstkcog
                 DynamicRiskFactorsType.DBP.value: dbpList[0],  # same as TestGCPModel
                 DynamicRiskFactorsType.A1C.value: a1cList[0],  # bs_glucosefmed10
@@ -349,9 +366,12 @@ class TestCaseThree(Person):
                 DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: anyPhysicalActivityList[
                     0
                 ],  # physact
-                StaticRiskFactorsType.EDUCATION.value: Education.SOMECOLLEGE.value,  # educ2,educ3,educ4
-                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.CURRENT.value,  # currsmoker
-                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 21.0,  # alcperwk, drinks/week -> FOURTEENORMORE
+                # educ2,educ3,educ4
+                StaticRiskFactorsType.EDUCATION.value: Education.SOMECOLLEGE.value,
+                # currsmoker
+                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.CURRENT.value,
+                # alcperwk, drinks/week -> FOURTEENORMORE
+                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 21.0,
                 DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: antiHypertensiveCountList[
                     0
                 ],  # htntx
@@ -470,7 +490,8 @@ class TestCaseFour(Person):
             {
                 DynamicRiskFactorsType.AGE.value: ageList[0],  # agemed10
                 StaticRiskFactorsType.GENDER.value: NHANESGender.MALE.value,  # female0
-                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,  # black
+                # black
+                StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity.NON_HISPANIC_WHITE.value,
                 DynamicRiskFactorsType.SBP.value: sbpList[0],  # bs_sbpstkcog
                 DynamicRiskFactorsType.DBP.value: dbpList[0],  # same as TestGCPModel
                 DynamicRiskFactorsType.A1C.value: a1cList[0],  # bs_glucosefmed10
@@ -483,9 +504,12 @@ class TestCaseFour(Person):
                 DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: anyPhysicalActivityList[
                     0
                 ],  # physact
-                StaticRiskFactorsType.EDUCATION.value: Education.HIGHSCHOOLGRADUATE.value,  # educ2,educ3,educ4
-                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,  # currsmoker
-                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 0.0,  # alcperwk, drinks/week -> NONE
+                # educ2,educ3,educ4
+                StaticRiskFactorsType.EDUCATION.value: Education.HIGHSCHOOLGRADUATE.value,
+                # currsmoker
+                StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus.NEVER.value,
+                # alcperwk, drinks/week -> NONE
+                DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value: 0.0,
                 DefaultTreatmentsType.ANTI_HYPERTENSIVE_COUNT.value: antiHypertensiveCountList[
                     0
                 ],  # htntx
@@ -604,7 +628,8 @@ class TestGCPStrokeModel(unittest.TestCase):
             places=2,
         )
 
-    # with the random effects now part of get_risk_for_person method I think this test is no longer possible
+    # with the random effects now part of get_risk_for_person method I think this test is no longer
+    # possible
     def test_random_effect(self):
 
         self._test_case_one._randomEffects["gcpStroke"] = (

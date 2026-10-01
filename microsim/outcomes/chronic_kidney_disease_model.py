@@ -7,7 +7,8 @@ from microsim.risk_factors.smoking_status import SmokingStatus
 
 
 class ChronicKidneyDiseaseModel:
-    """Chronic kidney disease outcome model. First detection is gated on GFR < 60; once a CKD outcome
+    """Chronic kidney disease outcome model. First detection is gated on GFR < 60; once a CKD
+    outcome
     has been recorded, a new outcome is emitted every wave thereafter regardless of current GFR."""
 
     def __init__(self):

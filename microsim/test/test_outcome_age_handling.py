@@ -95,7 +95,8 @@ class TestGetPersonYearsWithOutcome(unittest.TestCase):
         self.assertEqual(1, result)
 
     def test_outcome_in_every_wave_reaches_wave_plus_one(self):
-        # waves 0..wave inclusive can contribute wave+1 person-years, the sanity check must allow that
+        # waves 0..wave inclusive can contribute wave+1 person-years, the sanity check must allow
+        # that
         person = _build_person()
         person._age = [60, 61]
         person._waveCompleted = 1

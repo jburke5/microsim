@@ -9,7 +9,8 @@ from microsim.risk_factors.age_model import AgeModel
 class StaticRiskFactorOverTimeRepository(RiskModelRepository):
     def __init__(self):
         super().__init__()
-        # self._repository["antiHypertensiveCount"] = CohortRiskModelRepository()._repository["antiHypertensiveCount"]
+        # self._repository["antiHypertensiveCount"] =
+        # CohortRiskModelRepository()._repository["antiHypertensiveCount"]
         self._repository["age"] = AgeModel()
 
     def get_model(self, name):

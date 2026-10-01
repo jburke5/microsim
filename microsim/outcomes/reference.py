@@ -4,7 +4,8 @@ from microsim.outcomes.outcome import OutcomeType
 class Reference:
     incidence = {
         # https://vizhub.healthdata.org/gbd-compare/
-        # advanced settings, choose idiopathic epilepsy as the cause and measure the incidence (new cases), choose USA as location, 2023
+        # advanced settings, choose idiopathic epilepsy as the cause and measure the incidence (new
+        # cases), choose USA as location, 2023
         OutcomeType.EPILEPSY.value: {
             "15-19": 36.47 / 100000,  # new cases per 100,000
             "20-24": 32.39 / 100000,

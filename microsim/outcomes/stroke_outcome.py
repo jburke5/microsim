@@ -29,7 +29,7 @@ class StrokeOutcome(Outcome):
         return outcomeDict
 
     def __repr__(self):
-        return f"""Stroke Outcome: {self.type}, fatal: {self.fatal}, nihss: {self.nihss}, 
+        return f"""Stroke Outcome: {self.type}, fatal: {self.fatal}, nihss: {self.nihss},
                 stroke subtype: {self.strokeSubtype}, stroke type: {self.strokeType},"""
         # stroke location: {self.location}, disability: {self.disability}"""
 

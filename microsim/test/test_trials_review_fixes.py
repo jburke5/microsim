@@ -53,7 +53,8 @@ def make_regression_df(rng, n, categorical=True, continuous=False, binaryOutcome
 
 
 class TestGetTrialOutcomeDf(unittest.TestCase):
-    """get_trial_outcome_df: all block factors become columns, dynamic block factors are rejected."""
+    """get_trial_outcome_df: all block factors become columns, dynamic block factors are
+    rejected."""
 
     def test_all_block_factors_become_columns(self):
         treated = FakePopulation(3, {"gender": [1, 2, 1], "raceEthnicity": [3, 4, 3]})
@@ -142,7 +143,8 @@ class TestLogisticRegressionAnalysis(unittest.TestCase):
 
 
 class TestCoxRegressionAnalysis(unittest.TestCase):
-    """Categorical block factors are dummy-encoded, the fitter is fresh per call, 4th element is None."""
+    """Categorical block factors are dummy-encoded, the fitter is fresh per call, 4th element is
+    None."""
 
     def test_categorical_block_factor_is_dummy_encoded(self):
         rng = np.random.default_rng(7)
@@ -345,7 +347,7 @@ class TestTrialGuardsAndFormatting(unittest.TestCase):
                 "demo": (1.23456, None, float("inf"), float("-inf"), float("nan"))
             }
         }
-        line = [l for l in str(trial).splitlines() if "demo" in l][0]
+        line = [s for s in str(trial).splitlines() if "demo" in s][0]
         self.assertIn("1.235", line)
         self.assertIn("inf", line)
         self.assertIn("-inf", line)
@@ -371,7 +373,8 @@ class TestTrialGuardsAndFormatting(unittest.TestCase):
             path = os.path.join(d, "r.csv")
             trial.export_results(path)
             lines = open(path).read().splitlines()
-        # description once at the top, then one block per analysis type in enum order (not dict order)
+        # description once at the top, then one block per analysis type in enum order (not dict
+        # order)
         self.assertEqual(
             [
                 "popType,nhanes",
@@ -415,7 +418,8 @@ class TestTrialGuardsAndFormatting(unittest.TestCase):
 
 
 class TestTrialRunIsolationAndRandomization(unittest.TestCase):
-    """run() mutates only the trial's own strategy copy; randomization draws from the description rng."""
+    """run() mutates only the trial's own strategy copy; randomization draws from the description
+    rng."""
 
     @classmethod
     def setUpClass(cls):

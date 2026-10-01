@@ -22,7 +22,10 @@ class TestPersonFilter(unittest.TestCase):
 
     def test_add_filter(self):
         pf = PersonFilter()
-        fn = lambda x: x[DynamicRiskFactorsType.AGE.value] >= 18
+
+        def fn(x):
+            return x[DynamicRiskFactorsType.AGE.value] >= 18
+
         pf.add_filter("df", "adult", fn)
         self.assertIs(pf.filters["df"]["adult"], fn)
         self.assertEqual(pf.filters["person"], {})
@@ -35,7 +38,10 @@ class TestPersonFilter(unittest.TestCase):
     def test_add_filter_overwrites_same_name(self):
         pf = PersonFilter()
         pf.add_filter("df", "adult", lambda x: True)
-        replacement = lambda x: False
+
+        def replacement(x):
+            return False
+
         pf.add_filter("df", "adult", replacement)
         self.assertIs(pf.filters["df"]["adult"], replacement)
 

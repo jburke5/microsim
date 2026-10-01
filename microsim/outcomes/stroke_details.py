@@ -212,7 +212,8 @@ class StrokeSubtypeModelRepository:
 
         sumRelRisk = otRelRisk + ceRelRisk + lvRelRisk + svRelRisk
 
-        # probabilities are just rescaled relative risks, no need to calculate them, just draw on the rel risk scale
+        # probabilities are just rescaled relative risks, no need to calculate them, just draw on
+        # the rel risk scale
         draw = person._rng.uniform(low=0.0, high=sumRelRisk)
 
         if draw < lvRelRisk:

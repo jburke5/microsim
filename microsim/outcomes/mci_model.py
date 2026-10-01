@@ -23,7 +23,8 @@ class MCIModel:
             )
 
         # if mci: #need to test this
-        #    mci = mci if person._rng.uniform(size=1)>0.75 else False # 0.90727 = (2/3)^(1/4), because I want the risk to be 2/3 over a 4 year simulation
+        #    # 0.90727 = (2/3)^(1/4), because I want the risk to be 2/3 over a 4 year simulation
+        #    mci = mci if person._rng.uniform(size=1)>0.75 else False
 
         if mci:
             tst = TreatmentStrategiesType.WMD15.value

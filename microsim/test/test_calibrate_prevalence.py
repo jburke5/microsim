@@ -245,7 +245,8 @@ class TestCalibratePrevalenceSameOutcome(unittest.TestCase):
         )
         # the 65+ scope holds ~1392 persons, so seeding noise alone is ~0.008 here: the calibrator
         # solves against one frozen set of draws (see calibrate_prevalence) and this measurement
-        # uses fresh ones. 0.01 would fail about a quarter of the time even when calibration is correct.
+        # uses fresh ones. 0.01 would fail about a quarter of the time even when calibration is
+        # correct.
         self.assertAlmostEqual(realized, target, delta=0.02)
 
 

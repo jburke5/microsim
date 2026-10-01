@@ -9,7 +9,8 @@ from microsim.risk_factors.modality import Modality
 class WMHPresenceCTModel:
     """White matter hypodensity model for persons with modality CT.
     This is a logistic model.
-    This model, in combination with WMHPresenceMRModel, perform better at classifying persons than the
+    This model, in combination with WMHPresenceMRModel, perform better at classifying persons than
+    the
     overall WMHPresenceModel that includes modality as an extra term."""
 
     def __init__(self):
@@ -210,7 +211,8 @@ class WMHPresenceModel:
     """White matter hypodensity model for all persons, independently of their modality
     Modality is a term in this logistic model.
     This model predicts essentially the WMHSeverity.NO portion of the WMHSeverityModel.
-    A WMHPresenceModel result as True includes the unknown WMH severity portion of the population."""
+    A WMHPresenceModel result as True includes the unknown WMH severity portion of the
+    population."""
 
     def __init__(self):
         pass

@@ -3,8 +3,10 @@ from microsim.outcomes.outcome_prevalence_base import OutcomePrevalenceBase
 
 
 class MIPartitionModel:
-    """Fatal mi probability from: Wadhera, R. K., Joynt Maddox, K. E., Wang, Y., Shen, C., Bhatt, D. L., & Yeh, R. W. (2018).
-    Association Between 30-Day Episode Payments and Acute Myocardial Infarction Outcomes Among Medicare Beneficiaries.
+    """Fatal mi probability from: Wadhera, R. K., Joynt Maddox, K. E., Wang, Y., Shen, C., Bhatt,
+    D. L., & Yeh, R. W. (2018).
+    Association Between 30-Day Episode Payments and Acute Myocardial Infarction Outcomes Among
+    Medicare Beneficiaries.
     Circ. Cardiovasc. Qual. Outcomes, 11(3), e46–9. http://doi.org/10.1161/CIRCOUTCOMES.117.004397"""
 
     def __init__(self):

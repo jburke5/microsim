@@ -5,9 +5,11 @@ from microsim.outcomes.outcome import OutcomeType
 class TrialOutcomeAssessorFactory:
     @staticmethod
     def get_trial_outcome_assessor(addDefaultAssessments=True):
-        """This function adds some trial outcome assessments that are likely to be interesting from a trial.
+        """This function adds some trial outcome assessments that are likely to be interesting from
+        a trial.
         It also serves as an example of how trial outcome assessments can be added.
-        To maintain output format quality keep the name of the assessments to 20 or less characters."""
+        To maintain output format quality keep the name of the assessments to 20 or less
+        characters."""
         toa = TrialOutcomeAssessor()
         if addDefaultAssessments:
             toa.add_outcome_assessment(
@@ -180,7 +182,8 @@ class TrialOutcomeAssessorFactory:
                 {"outcome": lambda x: x.get_outcome_count(OutcomeType.DEATH)},
                 AnalysisType.RELATIVE_RISK.value,
             )
-            # the eventAndTime pair function keeps the rate numerator and denominator on the same convention
+            # the eventAndTime pair function keeps the rate numerator and denominator on the same
+            # convention
             toa.add_outcome_assessment(
                 "strokeIR",
                 {

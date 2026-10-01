@@ -27,7 +27,8 @@ class PersonFactory:
     # This maps microsim standardized person attributes to the non-standardized NHANES dataframe.
     # Useful to convert column names from the NHANES data to the names Microsim uses.
     # We could avoid the use of this dictionary if we could standardize all inputs coming from
-    # dataframes but this could be impossible since some dataframes are created by others, with their own codebooks, column names etc.
+    # dataframes but this could be impossible since some dataframes are created by others, with
+    # their own codebooks, column names etc.
     # Q: this probably belongs somewhere else...but I also need to avoid circular imports...
     microsimToNhanes = {
         DynamicRiskFactorsType.SBP.value: "meanSBP",
@@ -91,9 +92,10 @@ class PersonFactory:
     def get_nhanes_person_init_information(x):
         """Takes all Person-instance-related data via x and and organizes it."""
 
-        # x["name"], not x.name: x is a row of a dataframe, ie a Series, and a Series carries a name
-        # attribute of its own -- its index label -- which shadows the column of that name. Read as an
-        # attribute this silently returned the row's position in the frame rather than its NHANES identifier
+        # x["name"], not x.name: x is a row of a dataframe, ie a Series, and a Series carries a
+        # name attribute of its own -- its index label -- which shadows the column of that name.
+        # Read as an attribute this silently returned the row's position in the frame rather than
+        # its NHANES identifier
         name = x["name"]
 
         adult = x.age >= 18.0  # need to know for applying the right RiskFactorBounds below
@@ -107,9 +109,12 @@ class PersonFactory:
         }
 
         # TO DO: find a way to include everything here, including the rfs that need initialization
-        # the PVD model would be easy to implement, eg with an estimate_next_risk_for_patient_characteristics function
-        # but the AFIB model would be more difficult because it relies on the logistic_risk_factor_model file
-        # for now include None, in order to create the risk factor lists correctly at the Person instance
+        # the PVD model would be easy to implement, eg with an
+        # estimate_next_risk_for_patient_characteristics function
+        # but the AFIB model would be more difficult because it relies on the
+        # logistic_risk_factor_model file
+        # for now include None, in order to create the risk factor lists correctly at the Person
+        # instance
         personDynamicRiskFactors = dict()
         for rfd in DynamicRiskFactorsType:
             if rfd == DynamicRiskFactorsType.ALCOHOL_PER_WEEK:
@@ -125,7 +130,8 @@ class PersonFactory:
         personDynamicRiskFactors[DynamicRiskFactorsType.PVD.value] = None
 
         # Q: do we need otherLipid treatment? I am not bringing it to the Person objects for now.
-        # A: it is ok to leave it out as we do not have a model to update this. It is also very rarely taking place in the population anyway.
+        # A: it is ok to leave it out as we do not have a model to update this. It is also very
+        # rarely taking place in the population anyway.
         # bool: NHANES includes statin=2 but models expect a 0/1 indicator; matches the Kaiser path
         personDefaultTreatments = {
             DefaultTreatmentsType.STATIN.value: bool(x.statin),
@@ -150,21 +156,31 @@ class PersonFactory:
         # priorToSim outcome seeding via selfReport columns is retired in favor of logistic
         # prevalence models registered in OutcomePrevalenceModelRepository, applied in
         # get_nhanes_person via Person.seed_prevalent_outcomes after construction.
-        ##If df originates from the NHANES df these columns will exist, but if drawing from the NHANES distributions, these will not be in the df
+        ##If df originates from the NHANES df these columns will exist, but if drawing from the
+        ##NHANES distributions, these will not be in the df
         # if "selfReportStrokeAge" in x.index:
         #    #add pre-simulation stroke outcomes
         #    selfReportStrokeAge=x.selfReportStrokeAge
-        #    #Q: we should not add the stroke outcome in case of "else"? A: No, this is the way it should be
+        #    #Q: we should not add the stroke outcome in case of "else"?
+        #    #A: No, this is the way it should be
         #    if selfReportStrokeAge is not None and selfReportStrokeAge > 1:
-        #        personOutcomes[OutcomeType.STROKE].append((None, StrokeOutcome(False, None, None, None, priorToSim=True)))
+        #        personOutcomes[OutcomeType.STROKE].append(
+        #            (None, StrokeOutcome(False, None, None, None, priorToSim=True))
+        #        )
         # if "selfReportMIAge" in x.index:
         #    #add pre-simulation mi outcomes
-        #    selfReportMIAge=rng.integers(18, x.age) if x.selfReportMIAge == 99999 else x.selfReportMIAge
+        #    selfReportMIAge=(
+        #        rng.integers(18, x.age) if x.selfReportMIAge == 99999 else x.selfReportMIAge
+        #    )
         #    if selfReportMIAge is not None and selfReportMIAge > 1:
-        #        personOutcomes[OutcomeType.MI].append((None, Outcome(OutcomeType.MI, False, priorToSim=True)))
+        #        personOutcomes[OutcomeType.MI].append(
+        #            (None, Outcome(OutcomeType.MI, False, priorToSim=True))
+        #        )
 
         # if personDynamicRiskFactors[DynamicRiskFactorsType.A1C.value] >= 6.5:
-        #    personOutcomes[OutcomeType.DIABETES].append((None, Outcome(OutcomeType.DIABETES, False, priorToSim=True)))
+        #    personOutcomes[OutcomeType.DIABETES].append(
+        #        (None, Outcome(OutcomeType.DIABETES, False, priorToSim=True))
+        #    )
 
         return (
             name,
@@ -177,7 +193,8 @@ class PersonFactory:
 
     @staticmethod
     def get_nhanes_person(x, initializationModelRepository, outcomePrevalenceModelRepository=None):
-        """Takes all Person-instance-related data via x and initializationModelRepository and organizes it,
+        """Takes all Person-instance-related data via x and initializationModelRepository and
+        organizes it,
         passes the organized data to the Person class and returns a Person instance.
         initializationModelRepository: required. Pass a shared instance when constructing many
         persons (see PopulationFactory.get_nhanes_people); build it via
@@ -307,8 +324,10 @@ class PersonFactory:
         ]
         person._education = imr[StaticRiskFactorsType.EDUCATION.value].estimate_next_risk(person)
 
-        # originally this outcome was obtained along with the rest of the outcomes, however treatment strategies need the CV risk, some of them at least,
-        # the CV risks requires knowledge of wmh severity and the rest of the wmh parameters, so I am adding this outcome here...
+        # originally this outcome was obtained along with the rest of the outcomes, however
+        # treatment strategies need the CV risk, some of them at least, the CV risks requires
+        # knowledge of wmh severity and the rest of the wmh parameters, so I am adding this outcome
+        # here...
         outcome = _kaiserWMHModelRepository.select_outcome_model_for_person(
             person
         ).get_next_outcome(person)

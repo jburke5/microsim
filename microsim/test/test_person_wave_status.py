@@ -5,7 +5,11 @@ from microsim.risk_factors.education import Education
 from microsim.person.person_factory import PersonFactory
 from microsim.risk_factors.initialization_model_repository import InitializationModelRepository
 from microsim.risk_factors.smoking_status import SmokingStatus
-from microsim.test.outcome_models_repositories import *
+from microsim.test.outcome_models_repositories import (
+    AgeOver50CausesFatalStroke,
+    AgeOver50CausesNonCVMortality,
+    NonFatalStrokeAndNonCVMortality,
+)
 from microsim.default_treatments.default_treatments import DefaultTreatmentsType
 from microsim.risk_factors.risk_factor import StaticRiskFactorsType, DynamicRiskFactorsType
 from microsim.risk_factors.cohort_risk_model_repository import (

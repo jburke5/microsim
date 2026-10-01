@@ -16,7 +16,8 @@ class EpilepsyPrevalenceModel(OutcomePrevalenceBase):
 
     def get_risk_for_person(self, person):
         # Coefficients below are calibrated to a linear-predictor / 1000 scaling, not expit(lp).
-        # Override exists to preserve that scaling; the base class default would apply expit instead.
+        # Override exists to preserve that scaling; the base class default would apply expit
+        # instead.
         # Risk scaling applied as a direct rate multiplier (not odds-shift) for the same reason.
         return self.get_linear_predictor_for_person(person) / 1000.0 * self._riskScaling
 
@@ -132,7 +133,8 @@ class EpilepsyIncidenceModel:
         self._riskScaling = riskScaling
 
     def get_cumulative_baseline_hazard(self, t):
-        """Returns the cumulative baseline hazard H(0..t), with t in years since simulation start."""
+        """Returns the cumulative baseline hazard H(0..t), with t in years since simulation
+        start."""
         return self._cbhfIntercept + self._cbhfSlope * t
 
     def get_linear_predictor_for_person(self, person):
@@ -243,9 +245,11 @@ class EpilepsyIncidenceModel:
         if person.has_epilepsy():  # if a person had epilepsy in the past they will always have it
             risk = 1.0
         else:
-            # during the first round of outcome risk calculations waveCompleted is -1, which is the end of year 1
+            # during the first round of outcome risk calculations waveCompleted is -1, which is the
+            # end of year 1
             t = person._waveCompleted + 2
-            # conditional first-onset probability P(T<=t | T>t-1); the unconditional CDF P(T<=t) would recount years already survived
+            # conditional first-onset probability P(T<=t | T>t-1); the unconditional CDF P(T<=t)
+            # would recount years already survived
             hazardIncrement = self.get_cumulative_baseline_hazard(
                 t
             ) - self.get_cumulative_baseline_hazard(t - 1)

@@ -10,7 +10,8 @@ from microsim.risk_factors.risk_factor_bounds import RiskFactorBounds
 
 
 class BoundedRiskFactorModel:
-    """Applies RiskFactorBounds to the wrapped model's prediction, adult/child chosen by person age."""
+    """Applies RiskFactorBounds to the wrapped model's prediction, adult/child chosen by person
+    age."""
 
     def __init__(self, name, model):
         self._name = name

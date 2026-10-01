@@ -1,4 +1,4 @@
-from microsim.outcomes.stroke_partition_model import *
+from microsim.outcomes.stroke_partition_model import StrokePartitionModel, StrokePrevalenceModel
 
 
 class StrokePartitionModelRepository:

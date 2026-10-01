@@ -11,12 +11,15 @@ class EducationPrevalenceModel:
 
     def calc_linear_predictor_for_patient_characteristics(self, raceEthnicity, smokingStatus, age):
         """Returns 4 linear predictors for the five education levels.
-        These 4 linear predictors correspond to the first 4 cumulative probabilities of the first 4 education levels.
+        These 4 linear predictors correspond to the first 4 cumulative probabilities of the first 4
+        education levels.
         The 5th cumulative probability is exactly 1 since it includes all education levels.
-        Each education level has its own intercept, but the coefficient of each factor is constant across education levels.
+        Each education level has its own intercept, but the coefficient of each factor is constant
+        across education levels.
         This is an ordered logistic regression model.
         Based on NHANES data (1999-2017) and the polr package in r.
-        This model was built in order to initialize person objects when education level is missing."""
+        This model was built in order to initialize person objects when education level is
+        missing."""
         xb = 0
 
         if raceEthnicity == RaceEthnicity.MEXICAN_AMERICAN:
@@ -67,7 +70,8 @@ class EducationPrevalenceModel:
             return Education.COLLEGEGRADUATE
         else:
             raise RuntimeError(
-                "Draw not consistent with cumulative probabilities in EducationPrevalenceModel.estimate_next_risk."
+                "Draw not consistent with cumulative probabilities in "
+                "EducationPrevalenceModel.estimate_next_risk."
             )
 
     def inv_logit(self, lp):

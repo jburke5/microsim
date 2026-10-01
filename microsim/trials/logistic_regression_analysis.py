@@ -18,7 +18,8 @@ class LogisticRegressionAnalysis(RegressionAnalysis):
         blockFactors = trial.trialDescription.blockFactors
         formula = "outcome ~ treatment"
         for blockFactor in blockFactors:
-            # categorical block factors are dummy-encoded by patsy, otherwise they would be fit as a single linear term
+            # categorical block factors are dummy-encoded by patsy, otherwise they would be fit as
+            # a single linear term
             formula += (
                 f" + C({blockFactor})" if self.is_categorical(blockFactor) else f" + {blockFactor}"
             )
@@ -36,7 +37,8 @@ class LogisticRegressionAnalysis(RegressionAnalysis):
             )
         except (
             LinAlgError,
-            statsmodels.tools.sm_exceptions.PerfectSeparationError,  # some statsmodels code paths raise the error directly
+            # some statsmodels code paths raise the error directly
+            statsmodels.tools.sm_exceptions.PerfectSeparationError,
             statsmodels.tools.sm_exceptions.PerfectSeparationWarning,
         ):
             print(

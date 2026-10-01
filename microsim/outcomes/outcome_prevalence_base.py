@@ -34,7 +34,8 @@ class OutcomePrevalenceBase:
 
     def calc_linear_predictor_for_patient_characteristics(self, *args, **kwargs):
         raise NotImplementedError(
-            f"{type(self).__name__} must implement calc_linear_predictor_for_patient_characteristics"
+            f"{type(self).__name__} must implement "
+            "calc_linear_predictor_for_patient_characteristics"
         )
 
     def generate_prevalent_outcome(self, person):

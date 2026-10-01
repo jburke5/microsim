@@ -11,7 +11,8 @@ import numpy as np
 class NonCVDeathModel(LogisticRiskFactorModel):
     def __init__(self, wmhSpecific=True, riskScaling=1.0):
         modelSpec = load_model_spec("nhanesMortalityModelLogit")
-        # Recalibrate mortalitly model to align with life table data, as explored in notebook buildNHANESMortalityModel
+        # Recalibrate mortalitly model to align with life table data, as explored in notebook
+        # buildNHANESMortalityModel
         modelSpec["coefficients"]["age"] = modelSpec["coefficients"]["age"] * (-1)
         modelSpec["coefficients"]["squareAge"] = modelSpec["coefficients"]["squareAge"] * 4
         super().__init__(RegressionModel(**modelSpec), False)
@@ -37,13 +38,18 @@ class NonCVDeathModel(LogisticRiskFactorModel):
                 return None
 
     def get_scd_term(self, person):
-        """This term, for silent cerebrovascular disease, is based on time-dependent hazard ratios (see Clancy2024 paper).
-        The linear models for the time-dependent hazard ratios were obtain by a LLS fit to the values shown in the Clancy2024 paper.
-        In addition, because the non cv death model is a logistic model, we scale the hazard ratios."""
+        """This term, for silent cerebrovascular disease, is based on time-dependent hazard ratios
+        (see Clancy2024 paper).
+        The linear models for the time-dependent hazard ratios were obtain by a LLS fit to the
+        values shown in the Clancy2024 paper.
+        In addition, because the non cv death model is a logistic model, we scale the hazard
+        ratios."""
         if person.has_brain_scan():
             if self.wmhSpecific:
                 scdTerm = 0.35  # this modifies the intercept
-                scalingMriSbi = 1.25  # these are the four scaling factors so that I can use the hazard ratios in the logistic non cv death  model
+                # these are the four scaling factors so that I can use the hazard ratios in the
+                # logistic non cv death  model
+                scalingMriSbi = 1.25
                 scalingMriWmh = 0.16667
                 scalingCtSbi = 0.64
                 scalingCtWmh = 0.01
@@ -63,7 +69,9 @@ class NonCVDeathModel(LogisticRiskFactorModel):
                     else:
                         raise RuntimeError("Person has WMH but no modality")
             else:
-                scdTerm = 0.35  # represents average risk of the kaiser population, obtained through a different optimization than the one above
+                # represents average risk of the kaiser population, obtained through a different
+                # optimization than the one above
+                scdTerm = 0.35
         else:
             scdTerm = 0.0
         return scdTerm

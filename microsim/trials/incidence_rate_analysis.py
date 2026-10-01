@@ -30,6 +30,7 @@ class IncidenceRateAnalysis:
             pairs = eventAndTimeFunc(pop)
             events = sum(int(event) for event, _ in pairs)
             totalPY = sum(personYears for _, personYears in pairs)
-            # nan when an arm has no person-years, so it cannot be mistaken for an observed zero rate
+            # nan when an arm has no person-years, so it cannot be mistaken for an observed zero
+            # rate
             rates.append(1000.0 * events / totalPY if totalPY > 0 else float("nan"))
         return tuple(rates)

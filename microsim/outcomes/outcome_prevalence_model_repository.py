@@ -31,7 +31,8 @@ DEFAULT_PREVALENCE_RISK_SCALING: dict[OutcomeType, float] = {
     # partition forces stroke + MI = CV), not the GBD all-CVD level the coefficients target.
     OutcomeType.CARDIOVASCULAR: 0.3474,
     OutcomeType.STROKE: 2.4466,
-    # calibrate_prevalence: scale=epilepsy target_outcome=epilepsy scope=pooled_65_plus target=0.0110 scaling=1.8845, CMS-based data for >=65
+    # calibrate_prevalence: scale=epilepsy target_outcome=epilepsy scope=pooled_65_plus
+    # target=0.0110 scaling=1.8845, CMS-based data for >=65
     OutcomeType.EPILEPSY: 1.88,
 }
 
