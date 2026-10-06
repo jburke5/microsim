@@ -95,6 +95,6 @@ class TrialFactory:
     def _run(description, assessor, notify, exportPath):
         if assessor is None:
             assessor = TrialOutcomeAssessorFactory.get_trial_outcome_assessor()
-        trial = Trial(description)
+        trial = Trial(description, notify=notify)
         trial.run_analyze(assessor, notify=notify, exportPath=exportPath)
         return trial

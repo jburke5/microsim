@@ -13,6 +13,7 @@ import csv
 import math
 import pandas as pd
 import sys
+import time
 
 
 class Trial:
@@ -32,7 +33,7 @@ class Trial:
     An instance of the TrialOutcomeAssessor class is therefore required in order to analyze the
     results of a Trial instance."""
 
-    def __init__(self, trialDescription):
+    def __init__(self, trialDescription, notify=True):
         """During the initialization of the trial, the populations are obtained."""
         if trialDescription.popType is None:
             raise RuntimeError(
@@ -44,7 +45,13 @@ class Trial:
         # run() mutates the strategy statuses, so the trial works on its own copy and the
         # description stays reusable
         self.treatmentStrategies = copy.deepcopy(trialDescription.treatmentStrategies)
+        start = time.perf_counter()
         self.treatedPop, self.controlPop = self.get_trial_populations()
+        if notify:
+            print(
+                f"Trial populations created in {time.perf_counter() - start:.1f} s "
+                f"(treated={self.treatedPop._n}, control={self.controlPop._n})."
+            )
         self.completed = False
         self.analyzed = False
         self.results = dict()
@@ -170,6 +177,7 @@ class Trial:
         if self.completed:
             print("Cannot run a trial that has already been completed.")
         else:
+            start = time.perf_counter()
             # advance control population
             self.controlPop.advance(
                 self.trialDescription.duration,
@@ -195,7 +203,7 @@ class Trial:
 
             self.completed = True
             if notify:
-                print("Trial is completed.")
+                print(f"Trial is completed (run took {time.perf_counter() - start:.1f} s).")
 
     def analyze(self, trialOutcomeAssessor):
         """Trial outcomes need to be defined in an instance of the TrialOutcomeAssessor class and
