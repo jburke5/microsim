@@ -417,6 +417,9 @@ internally; callers rarely need to instantiate it directly.
     passed, since the rate carries nothing but zero and asking for a larger `maxDraws` would mislead.
     Note the rate covers both filter levels once `distributions` is passed, since the df-level
     filters run inside this loop too.
+    Before either error, a slow build is announced: if the first pass accepts under 25% of its
+    draws, `print_draw_estimate` prints the rate and an estimate of the remaining time and draws
+    (flagged rough under 10 accepted, and when it would exceed `maxDraws`). A trial pays it twice.
 
 11. **`get_nhanesDf` is cached and hands out copies.** Building the frame — reading the `.dta`
     and converting the columns — takes about 14 seconds, and every population build needs it,

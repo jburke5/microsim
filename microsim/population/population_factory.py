@@ -5,6 +5,7 @@ from itertools import product
 from scipy.stats import multivariate_normal
 from scipy.optimize import brentq
 import math
+import time
 
 from microsim.person.person_factory import PersonFactory
 from microsim.person.person_filter_factory import PersonFilterFactory
@@ -1216,7 +1217,14 @@ class PopulationFactory:
         accepted = 0
         nRemaining = n - people.shape[0]
         batch = nRemaining
+        start = time.perf_counter()
+        passes = 0
         while nRemaining > 0:
+            # top of the second pass: the first one sets the rate and cost the estimate needs
+            if passes == 1:
+                PopulationFactory.print_draw_estimate(
+                    drawn, accepted, nRemaining, maxDraws, time.perf_counter() - start
+                )
             if drawn >= maxDraws:
                 # nothing passed at all, so no budget is large enough and asking for a larger one
                 # misleads
@@ -1241,6 +1249,7 @@ class PopulationFactory:
             batch = min(batch, maxDraws - drawn)
             dfForPeople = df.sample(batch, replace=True, weights=weights)
             drawn += batch
+            passes += 1
             if distributions is not None:
                 # each sampled row is redrawn on its own, so the people that came from one NHANES
                 # row differ
@@ -1271,6 +1280,31 @@ class PopulationFactory:
         # the draws are iid so keeping the first n of an overshooting batch does not bias the
         # sample
         return people.iloc[:n]
+
+    @staticmethod
+    def print_draw_estimate(drawn, accepted, nRemaining, maxDraws, seconds, warnBelow=0.25):
+        """Warns when the first pass of bring_people_to_target_n accepted less than warnBelow of
+        its draws, with an estimate of the time the remaining draws will take."""
+        rate = accepted / drawn
+        if rate >= warnBelow:
+            return
+        if accepted == 0:
+            print(
+                f"Warning: none of the {drawn} rows of the first draw passed personFilters "
+                f"(acceptance rate < {1 / drawn:.4f}) in {seconds:.2f} s; no time estimate."
+            )
+            return
+        drawsNeeded = math.ceil(nRemaining / rate)
+        message = (
+            f"Warning: personFilters accepted {accepted} of {drawn} rows ({rate:.1%}) "
+            f"in {seconds:.2f} s; estimated ~{drawsNeeded * seconds / drawn / 3600:.2f} h more "
+            f"(~{drawsNeeded} more draws)"
+        )
+        if accepted < 10:
+            message += f", rough: only {accepted} accepted"
+        if drawn + drawsNeeded > maxDraws:
+            message += f"; likely to exceed maxDraws={maxDraws}"
+        print(message + ".")
 
     @staticmethod
     def get_kaiser_people(n=1000, personFilters=None, wmhSpecific=None):
