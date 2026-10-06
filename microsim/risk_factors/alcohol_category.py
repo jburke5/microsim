@@ -1,6 +1,4 @@
 from enum import IntEnum
-import pandas as pd
-import numpy as np
 
 
 class AlcoholCategory(IntEnum):
@@ -13,4 +11,13 @@ class AlcoholCategory(IntEnum):
 
     @staticmethod
     def get_category_for_consumption(drinks_per_week):
-        return AlcoholCategory(pd.cut([drinks_per_week], [-1, 0, 6, 13, np.inf]).codes[0])
+        # same bins as pd.cut([-1, 0, 6, 13, inf]), right-inclusive, without its per-call cost
+        if not drinks_per_week > -1:  # NaN or <= -1, which pd.cut left without a category
+            raise ValueError(f"{drinks_per_week} drinks per week has no AlcoholCategory")
+        if drinks_per_week <= 0:
+            return AlcoholCategory.NONE
+        if drinks_per_week <= 6:
+            return AlcoholCategory.ONETOSIX
+        if drinks_per_week <= 13:
+            return AlcoholCategory.SEVENTOTHIRTEEN
+        return AlcoholCategory.FOURTEENORMORE
