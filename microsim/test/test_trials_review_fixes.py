@@ -314,6 +314,7 @@ class TestTrialGuardsAndFormatting(unittest.TestCase):
         trial.analyzed = False
         trial.results = dict()
         trial.pythonVersion = "x"
+        trial.machineInfo = Trial.get_machine_info()
         return trial
 
     def test_analyze_before_run_raises(self):

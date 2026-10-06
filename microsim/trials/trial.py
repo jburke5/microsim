@@ -11,7 +11,9 @@ from microsim.trials.trial_outcome_assessor import AnalysisType, ANALYSIS_CLASSE
 import copy
 import csv
 import math
+import os
 import pandas as pd
+import platform
 import sys
 import time
 
@@ -58,6 +60,37 @@ class Trial:
         self.pythonVersion = (
             f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
         )
+        self.machineInfo = Trial.get_machine_info()
+
+    @staticmethod
+    def get_machine_info():
+        """Host, CPU and core counts plus the Slurm job settings, to explain run time differences
+        between runs."""
+        cpu = platform.processor()
+        try:  # on Linux platform.processor() is often empty or just the architecture
+            with open("/proc/cpuinfo") as f:
+                cpu = next(line.split(":", 1)[1].strip() for line in f if "model name" in line)
+        except (OSError, StopIteration):
+            pass
+        info = {
+            "host": platform.node(),
+            "cpu": cpu,
+            "cores on machine": os.cpu_count(),
+            # smaller than the machine's on a shared node: the cores this job may actually use
+            "cores usable": (
+                len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else None
+            ),
+        }
+        for var in [
+            "SLURM_CLUSTER_NAME",
+            "SLURM_JOB_ID",
+            "SLURM_JOB_NODELIST",
+            "SLURM_CPUS_ON_NODE",
+            "SLURM_MEM_PER_NODE",
+            "OMP_NUM_THREADS",
+        ]:
+            info[var] = os.environ.get(var)
+        return info
 
     def get_trial_populations(self):
         """A Population needs two things: People, PopulationModelRepository.
@@ -393,6 +426,8 @@ class Trial:
         rep += "\nTrial\n"
         rep += f"\tTrial completed: {self.completed}\n"
         rep += f"\tTrial python version: {self.pythonVersion}\n"
+        for key, value in self.machineInfo.items():
+            rep += f"\tTrial {key}: {value}\n"
         if self.analyzed:
             rep += "Trial results:\n"
             for analysisType in AnalysisType:
