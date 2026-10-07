@@ -28,7 +28,8 @@ class TrialDescription(ABC):
     treatmentStrategies: holds information on how treatment will be applied on the treated
     population
     nWorkers: number of cores to use when a population advances, and for NHANES also when its
-    people are created
+    people are created. NHANES copies it into peopleArgs at construction, so changing it later
+    changes only advancing
     personFilters: filters for inclusion/exclusion in the trial population
     _rng: numpy random number generator for randomization of the trial
     popType: the population type to be used in the trial
