@@ -66,6 +66,10 @@ class PopulationFactory:
     # year's level
     _yearCorrections = None
 
+    # rows one draw pass turns into Person-objects: the filters run only after a whole pass is
+    # built, so without a cap a 1%-acceptance filter built ~100 Persons per person kept at once
+    MAX_DRAW_BATCH = 20_000
+
     nhanes_pop_attributes = {
         PopulationRepositoryType.STATIC_RISK_FACTORS.value: [
             StaticRiskFactorsType.GENDER.value,
@@ -1326,6 +1330,8 @@ class PopulationFactory:
         batch = nRemaining
         start = time.perf_counter()
         passes = 0
+        # collected and concatenated once, a concat per pass would recopy the kept people each pass
+        kept = [people]
         while nRemaining > 0:
             # top of the second pass: the first one sets the rate and cost the estimate needs
             # estimateScale: with k workers, worker 0 prints for all of them by scaling its counts
@@ -1352,7 +1358,7 @@ class PopulationFactory:
                 batch = int(np.ceil(nRemaining / (accepted / drawn) * 1.2))
             elif drawn > 0:
                 batch = 2 * batch
-            batch = min(batch, maxDraws - drawn)
+            batch = min(batch, maxDraws - drawn, PopulationFactory.MAX_DRAW_BATCH)
             dfForPeople = df.sample(batch, replace=True, weights=weights)
             drawn += batch
             passes += 1
@@ -1381,11 +1387,11 @@ class PopulationFactory:
                 personFilters, peopleRemaining
             )
             accepted += peopleRemaining.shape[0]
-            people = pd.concat([people, peopleRemaining])
-            nRemaining = n - people.shape[0]
+            kept.append(peopleRemaining)
+            nRemaining -= peopleRemaining.shape[0]
         # the draws are iid so keeping the first n of an overshooting batch does not bias the
         # sample
-        return people.iloc[:n], drawn, accepted
+        return pd.concat(kept).iloc[:n], drawn, accepted
 
     @staticmethod
     def raise_for_shortfall(n, reached, drawn, accepted):

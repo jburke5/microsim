@@ -416,6 +416,10 @@ internally; callers rarely need to instantiate it directly.
    scale by the observed rate with a 20% margin. While nothing at all has been accepted there is still
    no rate to size with, and the batch doubles rather than repeating the shortfall, so filters that
    accept nobody spend the budget in ~log2 passes instead of one pass per shortfall.
+   Every pass is capped at `MAX_DRAW_BATCH` rows (20,000), because a pass builds a `Person` for every
+   row before the person-level filters run: uncapped, a 1.3%-acceptance epilepsy filter built
+   ~shortfall/rate Persons at once and took a 500,000-person trial to 363 GB at OSC, against ~22 GB
+   for the people kept. The cap bounds a worker to its kept people plus one pass (~180 MB).
 
 10. **Over-restrictive filters raise instead of hanging.** `bring_people_to_target_n` stops after
     sampling `maxDraws` rows (default `max(100*n, 500)`) and raises a `RuntimeError`, of one of two
