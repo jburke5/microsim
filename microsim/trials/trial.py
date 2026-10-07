@@ -423,13 +423,29 @@ class Trial:
         else:
             return f"{result:.3f}"
 
+    @staticmethod
+    def format_table(info):
+        """Header row and value row, each column as wide as its longer entry."""
+        if not info:
+            return ""
+        widths = [max(len(str(k)), len(str(v))) for k, v in info.items()]
+        header = "  ".join(f"{k:<{w}}" for k, w in zip(info, widths))
+        values = "  ".join(f"{str(v):<{w}}" for v, w in zip(info.values(), widths))
+        return f"\t{header.rstrip()}\n\t{values.rstrip()}\n"
+
     def __str__(self):
         rep = self.trialDescription.__str__()
         rep += "\nTrial\n"
         rep += f"\tTrial completed: {self.completed}\n"
-        rep += f"\tTrial python version: {self.pythonVersion}\n"
+        machine = {"python": self.pythonVersion}
+        env = {}
         for key, value in self.machineInfo.items():
-            rep += f"\tTrial {key}: {value}\n"
+            if key.isupper():
+                if value is not None:  # unset, eg not run under Slurm
+                    env[key.removeprefix("SLURM_")] = value
+            else:
+                machine[key] = value
+        rep += Trial.format_table(machine) + Trial.format_table(env)
         if self.analyzed:
             rep += "Trial results:\n"
             for analysisType in AnalysisType:
