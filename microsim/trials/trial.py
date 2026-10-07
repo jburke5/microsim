@@ -51,7 +51,7 @@ class Trial:
         self.treatedPop, self.controlPop = self.get_trial_populations()
         if notify:
             print(
-                f"Trial populations created in {time.perf_counter() - start:.1f} s "
+                f"Trial populations created in {(time.perf_counter() - start) / 3600:.2f} h "
                 f"(treated={self.treatedPop._n}, control={self.controlPop._n})."
             )
         self.completed = False
@@ -236,7 +236,9 @@ class Trial:
 
             self.completed = True
             if notify:
-                print(f"Trial is completed (run took {time.perf_counter() - start:.1f} s).")
+                print(
+                    f"Trial is completed (run took {(time.perf_counter() - start) / 3600:.2f} h)."
+                )
 
     def analyze(self, trialOutcomeAssessor):
         """Trial outcomes need to be defined in an instance of the TrialOutcomeAssessor class and
