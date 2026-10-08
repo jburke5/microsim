@@ -11,8 +11,11 @@ from microsim.trials.trial_outcome_assessor import AnalysisType, ANALYSIS_CLASSE
 import copy
 import csv
 import math
+import os
 import pandas as pd
+import platform
 import sys
+import time
 
 
 class Trial:
@@ -32,7 +35,7 @@ class Trial:
     An instance of the TrialOutcomeAssessor class is therefore required in order to analyze the
     results of a Trial instance."""
 
-    def __init__(self, trialDescription):
+    def __init__(self, trialDescription, notify=True):
         """During the initialization of the trial, the populations are obtained."""
         if trialDescription.popType is None:
             raise RuntimeError(
@@ -44,13 +47,50 @@ class Trial:
         # run() mutates the strategy statuses, so the trial works on its own copy and the
         # description stays reusable
         self.treatmentStrategies = copy.deepcopy(trialDescription.treatmentStrategies)
+        start = time.perf_counter()
         self.treatedPop, self.controlPop = self.get_trial_populations()
+        if notify:
+            print(
+                f"Trial populations created in {(time.perf_counter() - start) / 3600:.2f} h "
+                f"(treated={self.treatedPop._n}, control={self.controlPop._n})."
+            )
         self.completed = False
         self.analyzed = False
         self.results = dict()
         self.pythonVersion = (
             f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
         )
+        self.machineInfo = Trial.get_machine_info()
+
+    @staticmethod
+    def get_machine_info():
+        """Host, CPU and core counts plus the Slurm job settings, to explain run time differences
+        between runs."""
+        cpu = platform.processor()
+        try:  # on Linux platform.processor() is often empty or just the architecture
+            with open("/proc/cpuinfo") as f:
+                cpu = next(line.split(":", 1)[1].strip() for line in f if "model name" in line)
+        except (OSError, StopIteration):
+            pass
+        info = {
+            "host": platform.node(),
+            "cpu": cpu,
+            "cores on machine": os.cpu_count(),
+            # smaller than the machine's on a shared node: the cores this job may actually use
+            "cores usable": (
+                len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else None
+            ),
+        }
+        for var in [
+            "SLURM_CLUSTER_NAME",
+            "SLURM_JOB_ID",
+            "SLURM_JOB_NODELIST",
+            "SLURM_CPUS_ON_NODE",
+            "SLURM_MEM_PER_NODE",
+            "OMP_NUM_THREADS",
+        ]:
+            info[var] = os.environ.get(var)
+        return info
 
     def get_trial_populations(self):
         """A Population needs two things: People, PopulationModelRepository.
@@ -170,6 +210,7 @@ class Trial:
         if self.completed:
             print("Cannot run a trial that has already been completed.")
         else:
+            start = time.perf_counter()
             # advance control population
             self.controlPop.advance(
                 self.trialDescription.duration,
@@ -195,7 +236,9 @@ class Trial:
 
             self.completed = True
             if notify:
-                print("Trial is completed.")
+                print(
+                    f"Trial is completed (run took {(time.perf_counter() - start) / 3600:.2f} h)."
+                )
 
     def analyze(self, trialOutcomeAssessor):
         """Trial outcomes need to be defined in an instance of the TrialOutcomeAssessor class and
@@ -380,11 +423,29 @@ class Trial:
         else:
             return f"{result:.3f}"
 
+    @staticmethod
+    def format_table(info):
+        """Header row and value row, each column as wide as its longer entry."""
+        if not info:
+            return ""
+        widths = [max(len(str(k)), len(str(v))) for k, v in info.items()]
+        header = "  ".join(f"{k:<{w}}" for k, w in zip(info, widths))
+        values = "  ".join(f"{str(v):<{w}}" for v, w in zip(info.values(), widths))
+        return f"\t{header.rstrip()}\n\t{values.rstrip()}\n"
+
     def __str__(self):
         rep = self.trialDescription.__str__()
         rep += "\nTrial\n"
         rep += f"\tTrial completed: {self.completed}\n"
-        rep += f"\tTrial python version: {self.pythonVersion}\n"
+        machine = {"python": self.pythonVersion}
+        env = {}
+        for key, value in self.machineInfo.items():
+            if key.isupper():
+                if value is not None:  # unset, eg not run under Slurm
+                    env[key.removeprefix("SLURM_")] = value
+            else:
+                machine[key] = value
+        rep += Trial.format_table(machine) + Trial.format_table(env)
         if self.analyzed:
             rep += "Trial results:\n"
             for analysisType in AnalysisType:

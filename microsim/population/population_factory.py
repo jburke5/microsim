@@ -1,10 +1,15 @@
 import copy
+import multiprocessing as mp
+
+import cloudpickle
 import pandas as pd
 import numpy as np
 from itertools import product
 from scipy.stats import multivariate_normal
 from scipy.optimize import brentq
 import math
+import sys
+import time
 
 from microsim.person.person_factory import PersonFactory
 from microsim.person.person_filter_factory import PersonFilterFactory
@@ -51,15 +56,19 @@ class PopulationFactory:
     _groupMeans = None
 
     # a survey-weight bootstrap of the NHANES df, what the crude fits and the group means are
-    # computed on so that they reflect the WTINT2YR weights the person-row sampling uses. Fixed
-    # seed: the cached distributions and means must be the same in every process.
+    # computed on so that they reflect the WTINT2YR weights the person-row sampling uses.
+    # Unseeded, so the fits vary between runs; parallel workers get the parent's, so they agree
+    # within one. Future: compute weighted statistics directly instead of bootstrapping
     _nhanesDfResampled = None
-    RESAMPLE_SEED = 0
 
     # per-(year, gender, ageGroup) mean minus the same cell's pooled mean, for every drawn
     # continuous variable: the Gaussians are fit on all years pooled, this moves each row to its
     # year's level
     _yearCorrections = None
+
+    # rows one draw pass turns into Person-objects: the filters run only after a whole pass is
+    # built, so without a cap a 1%-acceptance filter built ~100 Persons per person kept at once
+    MAX_DRAW_BATCH = 20_000
 
     nhanes_pop_attributes = {
         PopulationRepositoryType.STATIC_RISK_FACTORS.value: [
@@ -195,6 +204,9 @@ class PopulationFactory:
 
     @staticmethod
     def get_population(popType, **kwargs):
+        # only NHANES people are drawn in parallel, and the other builders do not take nWorkers
+        if (popType != PopulationType.NHANES) and (kwargs.pop("nWorkers", 1) != 1):
+            raise RuntimeError(f"nWorkers > 1 is supported for NHANES only, not {popType}.")
         if popType == PopulationType.NHANES:
             return PopulationFactory.get_nhanes_population(**kwargs)
         elif popType == PopulationType.KAISER:
@@ -206,6 +218,9 @@ class PopulationFactory:
 
     @staticmethod
     def get_people(popType, **kwargs):
+        # only NHANES people are drawn in parallel, and the other builders do not take nWorkers
+        if (popType != PopulationType.NHANES) and (kwargs.pop("nWorkers", 1) != 1):
+            raise RuntimeError(f"nWorkers > 1 is supported for NHANES only, not {popType}.")
         if popType == PopulationType.NHANES:
             return PopulationFactory.get_nhanes_people(**kwargs)
         elif popType == PopulationType.KAISER:
@@ -283,19 +298,22 @@ class PopulationFactory:
     @staticmethod
     def get_nhanesDf_resampled():
         """A survey-weight bootstrap of the NHANES df: rows drawn with replacement, probability
-        proportional to WTINT2YR, same total size. The crude Gaussian fits and the group means are
-        computed on this df so they reflect the same weights the person-row sampling uses.
-        The seed is fixed because the fits and means built from this df are cached and must be
-        identical in every process. Trade-offs of a bootstrap: duplicated rows add Monte Carlo
-        noise, and an extreme low-weight row can drop out and tighten a group's observed min/max,
-        which draw_within_bounds mitigates by widening the bounds to 0.9*min-1.1*max."""
+        proportional to WTINT2YR, 5 times the size of the df. The crude Gaussian fits and the
+        group means are computed on this df so they reflect the same weights the person-row
+        sampling uses.
+        Unseeded: drawn once per process, so the fits differ between runs but not within one
+        (parallel workers receive the parent's fits rather than building their own).
+        Trade-offs of a bootstrap: duplicated rows add Monte Carlo noise, cut by drawing 5 times
+        the rows (a same-size draw left out ~49% of the people), and an extreme low-weight row
+        can drop out and tighten a group's observed min/max, which draw_within_bounds mitigates
+        by widening the bounds to 0.9*min-1.1*max.
+        Future: replace the bootstrap with weighted statistics computed directly (weighted means,
+        np.cov with aweights), which is exact, uses every row and has no randomness."""
         if PopulationFactory._nhanesDfResampled is None:
             df = PopulationFactory.get_nhanesDf()
+            # 5x the rows: less bootstrap noise in the fits, and fewer people left out entirely
             PopulationFactory._nhanesDfResampled = df.sample(
-                n=df.shape[0],
-                replace=True,
-                weights=df.WTINT2YR,
-                random_state=PopulationFactory.RESAMPLE_SEED,
+                n=5 * df.shape[0], replace=True, weights=df.WTINT2YR
             )
         return PopulationFactory._nhanesDfResampled.copy()
 
@@ -363,6 +381,7 @@ class PopulationFactory:
         distributions=False,
         customWeights=None,
         maxDraws=None,
+        nWorkers=1,
     ):
         """Raises RuntimeError for any argument of get_nhanes_people that cannot be honored, see
         its docstring for what each one means. Called before any of the work, so a call that cannot
@@ -474,6 +493,23 @@ class PopulationFactory:
                 "takes place at all."
             )
 
+        # same rule as n: bool excluded, it is far more likely a flag typed into the wrong argument
+        if (
+            isinstance(nWorkers, bool)
+            or not isinstance(nWorkers, (int, np.integer))
+            or nWorkers < 1
+        ):
+            raise RuntimeError(
+                f"nWorkers must be an integer of at least 1, not {nWorkers!r} "
+                f"({type(nWorkers).__name__})."
+            )
+
+        if (nWorkers > 1) and (n is None):
+            raise RuntimeError(
+                "Cannot use nWorkers > 1 without specifying n. The workers split the "
+                "sampling of n people, and without an n no sampling takes place at all."
+            )
+
     @staticmethod
     def get_nhanes_people(
         n=None,
@@ -484,6 +520,7 @@ class PopulationFactory:
         customWeights=None,
         outcomePrevalenceModelRepository=None,
         maxDraws=None,
+        nWorkers=1,
     ):
         """Returns a Pandas Series of Person-objects built from NHANES, with or without sampling.
         year: NHANES survey year, 1999 to 2017 in steps of 2. year=None uses every year at once,
@@ -506,6 +543,9 @@ class PopulationFactory:
            bring_people_to_target_n. Filters reject a row only after it is drawn, so a selective
            set needs many more than n draws (0.3% acceptance is ~330 draws per person against a
            budget of 100) and raises asking for this argument. Requires an n.
+        nWorkers: processes the draw is split over, each drawing its share of n and of maxDraws
+           (see get_nhanes_draw_tasks). Requires an n. Scripts must guard their body with
+           if __name__ == "__main__": since spawned workers re-import the script.
         Sampling is always with replacement and returns exactly n people: filters run after a row
         is drawn and whatever they drop is drawn again with the same weights (see
         bring_people_to_target_n). Without distributions the df-level filters run before the
@@ -520,8 +560,86 @@ class PopulationFactory:
             distributions=distributions,
             customWeights=customWeights,
             maxDraws=maxDraws,
+            nWorkers=nWorkers,
         )
 
+        if nWorkers > 1:
+            tasks = PopulationFactory.get_nhanes_draw_tasks(
+                nWorkers,
+                n=n,
+                year=year,
+                personFilters=personFilters,
+                nhanesWeights=nhanesWeights,
+                distributions=distributions,
+                customWeights=customWeights,
+                outcomePrevalenceModelRepository=outcomePrevalenceModelRepository,
+                maxDraws=maxDraws,
+            )
+            with mp.Pool(len(tasks)) as pool:
+                results = pool.map(PopulationFactory.draw_people_worker, tasks)
+            # in worker order, so worker 0's people come first
+            people = pd.concat([r[0] for r in results])
+            if people.shape[0] < n:
+                PopulationFactory.raise_for_shortfall(
+                    n, people.shape[0], sum(r[1] for r in results), sum(r[2] for r in results)
+                )
+            people = people.reset_index(drop=True)
+            PopulationFactory.set_index_in_people(people)
+            return people
+
+        nhanesDf, personFilters, weights, crudeDistributions = (
+            PopulationFactory.prepare_nhanes_draw(
+                n, year, personFilters, nhanesWeights, distributions, customWeights
+            )
+        )
+
+        imr = InitializationModelRepository()
+        if (
+            n is None
+        ):  # no sampling: every row that passed the df-level filters above becomes a person
+            people = pd.DataFrame.apply(
+                nhanesDf,
+                PersonFactory.get_person,
+                popType=PopulationType.NHANES.value,
+                initializationModelRepository=imr,
+                outcomePrevalenceModelRepository=outcomePrevalenceModelRepository,
+                axis="columns",
+            )
+            people = PopulationFactory.apply_person_filters_on_people(personFilters, people)
+            if people.shape[0] == 0:  # if person-filters are too restrictive stop here
+                raise RuntimeError(
+                    "The person-level filters of personFilters "
+                    f"({sorted(personFilters.filters['person'].keys())}) rejected all "
+                    f"{nhanesDf.shape[0]} of the "
+                    "Person-objects built, so the population would be empty."
+                )
+        else:
+            # draw, redraw and filtering all happen in the one loop, which keeps drawing until n
+            # people have passed
+            people = PopulationFactory.bring_people_to_target_n(
+                n,
+                pd.Series([], dtype=object),
+                nhanesDf,
+                personFilters,
+                popType=PopulationType.NHANES.value,
+                initializationModelRepository=imr,
+                outcomePrevalenceModelRepository=outcomePrevalenceModelRepository,
+                weights=weights,
+                maxDraws=maxDraws,
+                distributions=crudeDistributions,
+            )
+
+        # what identifies a person is _index, set right below, and _name is the NHANES row they
+        # came from
+        people = people.reset_index(drop=True)
+        PopulationFactory.set_index_in_people(people)
+        return people
+
+    @staticmethod
+    def prepare_nhanes_draw(n, year, personFilters, nhanesWeights, distributions, customWeights):
+        """The rows, filters, weights and distributions get_nhanes_people draws people with, shared
+        by its serial and parallel paths. Returns (nhanesDf, personFilters, weights,
+        crudeDistributions); the arguments are assumed checked."""
         nhanesDf = PopulationFactory.get_nhanesDf()
 
         if year is not None:  # if year is None, then use the entire dataframe
@@ -573,48 +691,7 @@ class PopulationFactory:
             weights = customWeights
         else:
             weights = None
-
-        imr = InitializationModelRepository()
-        if (
-            n is None
-        ):  # no sampling: every row that passed the df-level filters above becomes a person
-            people = pd.DataFrame.apply(
-                nhanesDf,
-                PersonFactory.get_person,
-                popType=PopulationType.NHANES.value,
-                initializationModelRepository=imr,
-                outcomePrevalenceModelRepository=outcomePrevalenceModelRepository,
-                axis="columns",
-            )
-            people = PopulationFactory.apply_person_filters_on_people(personFilters, people)
-            if people.shape[0] == 0:  # if person-filters are too restrictive stop here
-                raise RuntimeError(
-                    "The person-level filters of personFilters "
-                    f"({sorted(personFilters.filters['person'].keys())}) rejected all "
-                    f"{nhanesDf.shape[0]} of the "
-                    "Person-objects built, so the population would be empty."
-                )
-        else:
-            # draw, redraw and filtering all happen in the one loop, which keeps drawing until n
-            # people have passed
-            people = PopulationFactory.bring_people_to_target_n(
-                n,
-                pd.Series([], dtype=object),
-                nhanesDf,
-                personFilters,
-                popType=PopulationType.NHANES.value,
-                initializationModelRepository=imr,
-                outcomePrevalenceModelRepository=outcomePrevalenceModelRepository,
-                weights=weights,
-                maxDraws=maxDraws,
-                distributions=crudeDistributions,
-            )
-
-        # what identifies a person is _index, set right below, and _name is the NHANES row they
-        # came from
-        people = people.reset_index(drop=True)
-        PopulationFactory.set_index_in_people(people)
-        return people
+        return nhanesDf, personFilters, weights, crudeDistributions
 
     @staticmethod
     def get_nhanes_population_model_repo(riskScaling=None):
@@ -647,6 +724,7 @@ class PopulationFactory:
         riskScaling=None,
         prevalenceRiskScaling=None,
         maxDraws=None,
+        nWorkers=1,
     ):
         """Returns a Population-object with Person-objects being all NHANES persons with or without
         sampling. Person attributes can originate either from the NHANES dataset directly or from
@@ -658,7 +736,8 @@ class PopulationFactory:
         prevalenceRiskScaling: optional dict[OutcomeType, float] applied to per-outcome priorToSim
            risk inside the OutcomePrevalenceModelRepository.
         maxDraws: budget on the NHANES rows sampled to reach n people, raise it for restrictive
-           personFilters, see get_nhanes_people."""
+           personFilters, see get_nhanes_people.
+        nWorkers: processes the people are drawn with, see get_nhanes_people."""
         people = PopulationFactory.get_nhanes_people(
             n=n,
             year=year,
@@ -670,6 +749,7 @@ class PopulationFactory:
                 riskScaling=prevalenceRiskScaling
             ),
             maxDraws=maxDraws,
+            nWorkers=nWorkers,
         )
         popModelRepository = PopulationFactory.get_nhanes_population_model_repo(
             riskScaling=riskScaling
@@ -1203,7 +1283,42 @@ class PopulationFactory:
                   Filters that accept (almost) nothing would otherwise loop forever, so exhausting
                   the budget raises a RuntimeError: with the observed acceptance rate when some
                   rows did pass and the budget is what ran out, and without it when none did, since
-                  then no budget is large enough and the rate carries nothing but zero."""
+                  then no budget is large enough and the rate carries nothing but zero.
+        The loop itself is draw_people."""
+        people, drawn, accepted = PopulationFactory.draw_people(
+            n,
+            people,
+            df,
+            personFilters,
+            popType=popType,
+            initializationModelRepository=initializationModelRepository,
+            outcomePrevalenceModelRepository=outcomePrevalenceModelRepository,
+            weights=weights,
+            maxDraws=maxDraws,
+            distributions=distributions,
+        )
+        if people.shape[0] < n:
+            PopulationFactory.raise_for_shortfall(n, people.shape[0], drawn, accepted)
+        return people
+
+    @staticmethod
+    def draw_people(
+        n,
+        people,
+        df,
+        personFilters,
+        popType=PopulationType.NHANES.value,
+        initializationModelRepository=None,
+        outcomePrevalenceModelRepository=None,
+        weights=None,
+        maxDraws=None,
+        distributions=None,
+        estimateScale=1,
+    ):
+        """The draw loop of bring_people_to_target_n, which documents the arguments. Stops at n
+        people or at maxDraws rows sampled and returns (people, drawn, accepted) either way, so a
+        worker can hand its counts to the parent that adds them up. estimateScale=0 prints no
+        estimate."""
         if df.shape[0] == 0:
             raise RuntimeError(
                 f"Cannot bring people to the target n={n}: the dataframe to sample from is "
@@ -1216,17 +1331,25 @@ class PopulationFactory:
         accepted = 0
         nRemaining = n - people.shape[0]
         batch = nRemaining
+        start = time.perf_counter()
+        passes = 0
+        # collected and concatenated once, a concat per pass would recopy the kept people each pass
+        kept = [people]
         while nRemaining > 0:
-            if drawn >= maxDraws:
-                # nothing passed at all, so no budget is large enough and asking for a larger one
-                # misleads
-                if accepted == 0:
-                    raise RuntimeError(f"None of the {drawn} rows sampled passed personFilters.")
-                raise RuntimeError(
-                    f"Reached {people.shape[0]} of n={n} people in {drawn} draws "
-                    "(acceptance rate "
-                    f"{accepted / drawn:.4f}). Raise maxDraws."
+            # top of the second pass: the first one sets the rate and cost the estimate needs
+            # estimateScale: with k workers, worker 0 prints for all of them by scaling its counts
+            # by k, which keeps the rate and makes its seconds per draw the wall time per draw
+            if (passes == 1) and (estimateScale > 0):
+                PopulationFactory.print_draw_estimate(
+                    drawn * estimateScale,
+                    accepted * estimateScale,
+                    nRemaining * estimateScale,
+                    maxDraws * estimateScale,
+                    time.perf_counter() - start,
                 )
+                sys.stdout.flush()  # a pool worker can be terminated before its buffer is written
+            if drawn >= maxDraws:  # the caller decides whether a shortfall is an error
+                break
             # the first pass has no information about how many draws survive the filters and so
             # draws exactly the shortfall, later passes size the draw with the acceptance rate
             # observed so far (with a 20% margin) so that restrictive filters converge in a few
@@ -1238,9 +1361,10 @@ class PopulationFactory:
                 batch = int(np.ceil(nRemaining / (accepted / drawn) * 1.2))
             elif drawn > 0:
                 batch = 2 * batch
-            batch = min(batch, maxDraws - drawn)
+            batch = min(batch, maxDraws - drawn, PopulationFactory.MAX_DRAW_BATCH)
             dfForPeople = df.sample(batch, replace=True, weights=weights)
             drawn += batch
+            passes += 1
             if distributions is not None:
                 # each sampled row is redrawn on its own, so the people that came from one NHANES
                 # row differ
@@ -1266,11 +1390,126 @@ class PopulationFactory:
                 personFilters, peopleRemaining
             )
             accepted += peopleRemaining.shape[0]
-            people = pd.concat([people, peopleRemaining])
-            nRemaining = n - people.shape[0]
+            kept.append(peopleRemaining)
+            nRemaining -= peopleRemaining.shape[0]
         # the draws are iid so keeping the first n of an overshooting batch does not bias the
         # sample
-        return people.iloc[:n]
+        return pd.concat(kept).iloc[:n], drawn, accepted
+
+    @staticmethod
+    def raise_for_shortfall(n, reached, drawn, accepted):
+        """Raises the RuntimeError of a draw that ran out of budget at reached of n people."""
+        # nothing passed at all, so no budget is large enough and asking for a larger one misleads
+        if accepted == 0:
+            raise RuntimeError(f"None of the {drawn} rows sampled passed personFilters.")
+        raise RuntimeError(
+            f"Reached {reached} of n={n} people in {drawn} draws "
+            f"(acceptance rate {accepted / drawn:.4f}). Raise maxDraws."
+        )
+
+    @staticmethod
+    def split_draws(n, maxDraws, nWorkers):
+        """One (n, maxDraws) share per worker, summing exactly to n and maxDraws. No more workers
+        than people, so every share is at least 1 of each (maxDraws >= n is assumed)."""
+        maxDraws = max(100 * n, 500) if maxDraws is None else maxDraws
+        k = min(nWorkers, n)
+        return list(
+            zip(
+                (n // k + (i < n % k) for i in range(k)),
+                (maxDraws // k + (i < maxDraws % k) for i in range(k)),
+            )
+        )
+
+    @staticmethod
+    def get_nhanes_draw_tasks(
+        nWorkers,
+        n=None,
+        year=None,
+        personFilters=None,
+        nhanesWeights=False,
+        distributions=False,
+        customWeights=None,
+        outcomePrevalenceModelRepository=None,
+        maxDraws=None,
+    ):
+        """One task per worker for draw_people_worker, see get_nhanes_people for the arguments.
+        Everything a worker needs is in its task, so a spawned worker builds no cache: the
+        filters are lambdas, which only cloudpickle can serialise, and the caches the redraw reads
+        travel with them. Each worker gets its own seed, since forked workers would otherwise
+        all start from the parent's global RNG state and draw the same rows."""
+        df, personFilters, weights, crudeDistributions = PopulationFactory.prepare_nhanes_draw(
+            n, year, personFilters, nhanesWeights, distributions, customWeights
+        )
+        payload = cloudpickle.dumps(
+            {
+                "df": df,
+                "personFilters": personFilters,
+                # customWeights arrives indexed on the whole NHANES df
+                "weights": None if weights is None else weights.reindex(df.index),
+                "distributions": crudeDistributions,
+                "imr": InitializationModelRepository(),
+                "opmr": outcomePrevalenceModelRepository,
+                "groupMeans": PopulationFactory.get_group_means() if distributions else None,
+                "yearCorrections": (
+                    PopulationFactory.get_year_corrections() if distributions else None
+                ),
+            }
+        )
+        shares = PopulationFactory.split_draws(n, maxDraws, nWorkers)
+        seeds = np.random.SeedSequence().spawn(len(shares))
+        return [
+            (payload, nShare, drawsShare, seed, len(shares) if i == 0 else 0)
+            for i, ((nShare, drawsShare), seed) in enumerate(zip(shares, seeds))
+        ]
+
+    @staticmethod
+    def draw_people_worker(task):
+        """Draws one task of get_nhanes_draw_tasks, returns (people, drawn, accepted)."""
+        payload, n, maxDraws, seed, estimateScale = task
+        # df.sample and the scipy draws use the global RNG
+        np.random.seed(seed.generate_state(4))
+        p = cloudpickle.loads(payload)
+        if p["groupMeans"] is not None:
+            PopulationFactory._groupMeans = p["groupMeans"]
+            PopulationFactory._yearCorrections = p["yearCorrections"]
+        return PopulationFactory.draw_people(
+            n,
+            pd.Series([], dtype=object),
+            p["df"],
+            p["personFilters"],
+            popType=PopulationType.NHANES.value,
+            initializationModelRepository=p["imr"],
+            outcomePrevalenceModelRepository=p["opmr"],
+            weights=p["weights"],
+            maxDraws=maxDraws,
+            distributions=p["distributions"],
+            estimateScale=estimateScale,
+        )
+
+    @staticmethod
+    def print_draw_estimate(drawn, accepted, nRemaining, maxDraws, seconds, warnBelow=0.25):
+        """Warns when the first pass of bring_people_to_target_n accepted less than warnBelow of
+        its draws, with an estimate of the time the remaining draws will take."""
+        rate = accepted / drawn
+        if rate >= warnBelow:
+            return
+        if accepted == 0:
+            print(
+                f"Warning: none of the {drawn} rows of the first draw passed personFilters "
+                f"(acceptance rate < {1 / drawn:.4f}) in {seconds:.2f} s; no time estimate."
+            )
+            return
+        drawsNeeded = math.ceil(nRemaining / rate)
+        message = (
+            f"Warning: personFilters accepted {accepted} of {drawn} rows ({rate:.1%}) "
+            f"in {seconds:.2f} s; estimated ~{drawsNeeded * seconds / drawn / 3600:.2f} h more "
+            f"(~{drawsNeeded} more draws)"
+        )
+        if accepted < 10:
+            message += f", rough: only {accepted} accepted"
+        if drawn + drawsNeeded > maxDraws:
+            message += f"; likely to exceed maxDraws={maxDraws}"
+        print(message + ".")
 
     @staticmethod
     def get_kaiser_people(n=1000, personFilters=None, wmhSpecific=None):

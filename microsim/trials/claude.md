@@ -126,6 +126,8 @@ TrialDescription — you do not create populations and pass them in.
 
    trial = Trial(description)
    ```
+   With `notify=True` (default) this prints how long population creation took; `run()` likewise
+   prints its run time.
 
 4. **Run the simulation**: `trial.run()` advances both arms — control for the full
    duration with no treatment strategies, treated for 1 wave with the strategy's

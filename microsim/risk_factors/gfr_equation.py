@@ -1,4 +1,3 @@
-import pandas as pd
 from microsim.risk_factors.gender import NHANESGender
 from microsim.risk_factors.race_ethnicity import RaceEthnicity
 import numpy as np
@@ -10,22 +9,6 @@ import numpy as np
 
 
 class GFREquation:
-    exponentForGenderCr = pd.DataFrame(
-        {
-            "female": [True, True, False, False],
-            "underThreshold": [True, False, True, False],
-            "exponent": [-0.329, -1.209, -0.411, -1.209],
-        }
-    )
-
-    constantForRaceGender = pd.DataFrame(
-        {
-            "black": [True, True, False, False],
-            "female": [True, False, True, False],
-            "constant": [166, 163, 144, 141],
-        }
-    )
-
     def __init__(self):
         pass
 
@@ -35,19 +18,18 @@ class GFREquation:
         )
 
     def get_gfr_for_person_attributes(self, gender, raceEthnicity, creatinine, age):
-        crThreshold = 0.7 if gender == NHANESGender.FEMALE else 0.9
-
-        exponent = GFREquation.exponentForGenderCr.loc[
-            (GFREquation.exponentForGenderCr["female"] == (gender == NHANESGender.FEMALE))
-            & (GFREquation.exponentForGenderCr["underThreshold"] == (creatinine <= crThreshold))
-        ].iloc[0]["exponent"]
-        constant = GFREquation.constantForRaceGender.loc[
-            (
-                GFREquation.constantForRaceGender["black"]
-                == (raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK)
-            )
-            & (GFREquation.constantForRaceGender["female"] == (gender == NHANESGender.FEMALE))
-        ].iloc[0]["constant"]
+        female = gender == NHANESGender.FEMALE
+        crThreshold = 0.7 if female else 0.9
+        # CKD-EPI exponent by gender and creatinine at or below the threshold
+        if creatinine <= crThreshold:
+            exponent = -0.329 if female else -0.411
+        else:
+            exponent = -1.209
+        # CKD-EPI constant by race and gender
+        if raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK:
+            constant = 166 if female else 163
+        else:
+            constant = 144 if female else 141
 
         # Q: creatinine and exponent are both negative and fractional...what do we return in this
         # case?
@@ -61,7 +43,7 @@ class GFREquation:
         ):
             print(
                 f"thresholds: {crThreshold} constant: {constant} exponent: {exponent} "
-                f"female: {gender == NHANESGender.FEMALE}, "
+                f"female: {female}, "
                 f"black: {raceEthnicity == RaceEthnicity.NON_HISPANIC_BLACK}, cr: {creatinine}"
             )
         return constant * (creatinine / crThreshold) ** exponent * 0.993**age

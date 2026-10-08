@@ -90,6 +90,7 @@ def get_nhanes_population(
     riskScaling=None,
     prevalenceRiskScaling=None,
     maxDraws=None,
+    nWorkers=1,
 ) -> Population:
 ```
 
@@ -131,6 +132,10 @@ Parameters:
   who the population is made of.
 - `customWeights`: alternative Pandas Series of sampling weights; mutually exclusive with
   `nhanesWeights`; requires `n`.
+- `nWorkers`: processes the people are drawn with, default 1 (serial, no pool). An integer of at
+  least 1 (`bool` refused); `nWorkers>1` requires an `n` and is NHANES-only — `get_people` /
+  `get_population` refuse it for Kaiser and state. `NhanesTrialDescription` passes its `nWorkers`
+  here, so a trial builds its people with the workers it advances with. See gotcha 17.
 - `riskScaling`: optional `dict[OutcomeType, float]` applied to per-outcome risk inside
   `OutcomeModelRepository`.
 - `prevalenceRiskScaling`: optional `dict[OutcomeType, float]` applied to per-outcome
@@ -359,8 +364,8 @@ internally; callers rarely need to instantiate it directly.
 
 7. **`distributions=True` costs almost nothing once the caches are warm.** It partitions every NHANES
    year on gender, race ethnicity, education and a 5-year age window and fits a Gaussian per group.
-   The first call in a process costs roughly 19s — about 14s of it reading the `.dta` and about 5s
-   fitting — and every later call is dominated by building the `Person` objects, not by the draw:
+   The first call in a process costs roughly 36s — about 14s of it reading the `.dta` and about 22s
+   bootstrapping and fitting — and every later call is dominated by building the `Person` objects, not by the draw:
 
    | n | `distributions=True` | `distributions=False` |
    |---|---|---|
@@ -373,8 +378,13 @@ internally; callers rarely need to instantiate it directly.
    population to be, not on cost.
 
    The Gaussians and the fine group means are computed on a survey-weight bootstrap of the
-   NHANES rows (`get_nhanesDf_resampled`, fixed seed, cached), so the fitted statistics
-   reflect the same `WTINT2YR` weights the person-row sampling uses.
+   NHANES rows (`get_nhanesDf_resampled`, unseeded, cached per process), so the fitted statistics
+   reflect the same `WTINT2YR` weights the person-row sampling uses. It draws 5 times the rows
+   (506,580, ~120 MB): a same-size draw left ~49% of the people out of the fits, 5x leaves ~12%
+   out, at ~22 s instead of ~6 s to build. Unseeded means the fits
+   differ between runs but not within one: parallel workers receive the parent's fits. A future
+   change should compute weighted statistics directly instead of bootstrapping — exact, every row
+   used, nothing random.
 
    The fits pool all NHANES years, so each draw's shift also adds a per-(year, gender,
    ageGroup) correction (`get_year_corrections`, cells coarse on purpose — the fine groups
@@ -398,7 +408,10 @@ internally; callers rarely need to instantiate it directly.
    NHANES but reaches for a `kaiser_pop_attributes` that is defined nowhere, so its Kaiser
    branch raises `AttributeError`. Nothing calls `get_pop_attributes` today.
 
-9. **`bring_people_to_target_n` is the draw loop, not just a top-up.** Filters drop a row only after
+9. **`bring_people_to_target_n` is the draw loop, not just a top-up.** The loop itself is
+   `draw_people`, which stops at `n` people or at `maxDraws` and returns `(people, drawn, accepted)`;
+   `bring_people_to_target_n` calls it and raises through `raise_for_shortfall` when short, which is
+   what lets parallel workers return their counts instead of raising. Filters drop a row only after
    it has been drawn — the person-level ones only after a whole `Person` has been built from it — so
    the loop keeps drawing until `n` people have passed. Called with an empty `people` it is the whole
    draw (what `get_nhanes_people` does when `n` is given); called with the people of an earlier draw
@@ -408,6 +421,10 @@ internally; callers rarely need to instantiate it directly.
    scale by the observed rate with a 20% margin. While nothing at all has been accepted there is still
    no rate to size with, and the batch doubles rather than repeating the shortfall, so filters that
    accept nobody spend the budget in ~log2 passes instead of one pass per shortfall.
+   Every pass is capped at `MAX_DRAW_BATCH` rows (20,000), because a pass builds a `Person` for every
+   row before the person-level filters run: uncapped, a 1.3%-acceptance epilepsy filter built
+   ~shortfall/rate Persons at once and took a 500,000-person trial to 363 GB at OSC, against ~22 GB
+   for the people kept. The cap bounds a worker to its kept people plus one pass (~180 MB).
 
 10. **Over-restrictive filters raise instead of hanging.** `bring_people_to_target_n` stops after
     sampling `maxDraws` rows (default `max(100*n, 500)`) and raises a `RuntimeError`, of one of two
@@ -417,6 +434,12 @@ internally; callers rarely need to instantiate it directly.
     passed, since the rate carries nothing but zero and asking for a larger `maxDraws` would mislead.
     Note the rate covers both filter levels once `distributions` is passed, since the df-level
     filters run inside this loop too.
+    Before either error, a slow build is announced: if the first pass accepts under 25% of its
+    draws, `print_draw_estimate` prints the rate and an estimate of the remaining time and draws
+    (flagged rough under 10 accepted, and when it would exceed `maxDraws`). A trial pays it twice.
+    With `nWorkers>1` both errors and the estimate are for the whole build: the parent sums the
+    workers' counts before raising, and only worker 0 prints, scaling its counts by the number of
+    workers so the rate is its own and the time is the wall time of all of them.
 
 11. **`get_nhanesDf` is cached and hands out copies.** Building the frame — reading the `.dta`
     and converting the columns — takes about 14 seconds, and every population build needs it,
@@ -474,6 +497,26 @@ internally; callers rarely need to instantiate it directly.
     keeps its last draw clipped into them — the shift of such a row comes from a group of very few
     people (see gotcha 14 and `get_group_means_for_dataframe`), and it is about 0.02% of them. The
     count is printed as a warning.
+
+17. **Parallel creation (`nWorkers>1`) ships everything to the workers.** `get_nhanes_draw_tasks`
+    runs the serial preparation (`prepare_nhanes_draw`, shared with the serial path so the two
+    cannot drift), then builds one task per worker; `draw_people_worker` runs one, and the parent
+    concatenates the chunks in worker order and sets `_index` once. Four things make it correct:
+    - **cloudpickle.** Every `PersonFilter` function is a lambda, which stdlib pickle cannot send to
+      a process. The payload (rows, filters, weights, distributions, repositories) is cloudpickled
+      once and shared by all tasks.
+    - **A seed per worker.** `df.sample` and the scipy draws use NumPy's global RNG, which forked
+      workers (Linux/Slurm) inherit identically — every worker would draw the same people. Each task
+      carries a `SeedSequence` child spawned in the parent.
+    - **No cache rebuilds.** A spawned worker (macOS) starts with empty caches, ~19 s to rebuild.
+      The payload carries the crude distributions, `_groupMeans` and `_yearCorrections`, which are
+      all the draw path reads.
+    - **The budget is split.** `split_draws` gives each worker an equal share of `n` and of
+      `maxDraws` (at most `n` workers). A worker that runs out cannot borrow from another, so a build
+      right at the edge of `maxDraws` can fail in parallel where the serial one just succeeds.
+    Spawned workers re-import the calling script, so scripts must guard their body with
+    `if __name__ == "__main__":`. Each worker also pays ~1 s importing microsim, so parallel creation
+    only pays off for builds that take several seconds serially — restrictive filters, large `n`.
 
 ## Integration with the Core Framework
 

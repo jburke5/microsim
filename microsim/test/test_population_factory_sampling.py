@@ -1,3 +1,5 @@
+import contextlib
+import io
 import unittest
 
 import numpy as np
@@ -163,6 +165,33 @@ class TestTopUpTerminates(unittest.TestCase):
                 popType=PopulationType.NHANES.value,
                 initializationModelRepository=self.imr,
             )
+
+
+class TestPrintDrawEstimate(unittest.TestCase):
+    def _output(self, *args, **kwargs):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            PopulationFactory.print_draw_estimate(*args, **kwargs)
+        return buf.getvalue()
+
+    def test_silent_above_threshold(self):
+        self.assertEqual("", self._output(100, 30, 70, 10000, 1.0))
+
+    def test_estimate_scales_with_rate_and_cost(self):
+        # 10% rate, 3.6 s per draw: 90 remaining need 900 draws, 0.9 h
+        out = self._output(100, 10, 90, 10000, 360.0)
+        self.assertIn("(10.0%)", out)
+        self.assertIn("~0.90 h more", out)
+        self.assertIn("~900 more draws", out)
+        self.assertNotIn("maxDraws", out)
+
+    def test_flags_budget_and_few_accepted(self):
+        out = self._output(100, 2, 98, 1000, 1.0)
+        self.assertIn("only 2 accepted", out)
+        self.assertIn("maxDraws=1000", out)
+
+    def test_none_accepted(self):
+        self.assertIn("no time estimate", self._output(100, 0, 100, 10000, 1.0))
 
 
 if __name__ == "__main__":

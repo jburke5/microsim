@@ -45,6 +45,7 @@ class Burke2024:
         "BMI, kg/m2 (mean)": 31.0,
         "SBP, mm Hg (mean)": 133.4,
         "DBP, mm Hg (mean)": 71.6,
+        # copying error: duplicates statin use; not the paper's anti-hypertensive value
         "anti-hypertensive use (%)": 41.0,
         "statin use (%)": 41.0,
     }

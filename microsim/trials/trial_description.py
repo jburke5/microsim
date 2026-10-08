@@ -27,7 +27,9 @@ class TrialDescription(ABC):
     duration: for how many years the trial will run, how many years the populations will advance
     treatmentStrategies: holds information on how treatment will be applied on the treated
     population
-    nWorkers: number of cores to use when a population advances
+    nWorkers: number of cores to use when a population advances, and for NHANES also when its
+    people are created. NHANES copies it into peopleArgs at construction, so changing it later
+    changes only advancing
     personFilters: filters for inclusion/exclusion in the trial population
     _rng: numpy random number generator for randomization of the trial
     popType: the population type to be used in the trial
@@ -189,6 +191,7 @@ class NhanesTrialDescription(TrialDescription):
             "personFilters": self.personFilters,
             "nhanesWeights": self.nhanesWeights,
             "distributions": self.distributions,
+            "nWorkers": self.nWorkers,
             "outcomePrevalenceModelRepository": OutcomePrevalenceModelRepository(
                 riskScaling=prevalenceRiskScaling
             ),
