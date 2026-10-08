@@ -56,10 +56,10 @@ class PopulationFactory:
     _groupMeans = None
 
     # a survey-weight bootstrap of the NHANES df, what the crude fits and the group means are
-    # computed on so that they reflect the WTINT2YR weights the person-row sampling uses. Fixed
-    # seed: the cached distributions and means must be the same in every process.
+    # computed on so that they reflect the WTINT2YR weights the person-row sampling uses.
+    # Unseeded, so the fits vary between runs; parallel workers get the parent's, so they agree
+    # within one. Future: compute weighted statistics directly instead of bootstrapping
     _nhanesDfResampled = None
-    RESAMPLE_SEED = 0
 
     # per-(year, gender, ageGroup) mean minus the same cell's pooled mean, for every drawn
     # continuous variable: the Gaussians are fit on all years pooled, this moves each row to its
@@ -298,19 +298,22 @@ class PopulationFactory:
     @staticmethod
     def get_nhanesDf_resampled():
         """A survey-weight bootstrap of the NHANES df: rows drawn with replacement, probability
-        proportional to WTINT2YR, same total size. The crude Gaussian fits and the group means are
-        computed on this df so they reflect the same weights the person-row sampling uses.
-        The seed is fixed because the fits and means built from this df are cached and must be
-        identical in every process. Trade-offs of a bootstrap: duplicated rows add Monte Carlo
-        noise, and an extreme low-weight row can drop out and tighten a group's observed min/max,
-        which draw_within_bounds mitigates by widening the bounds to 0.9*min-1.1*max."""
+        proportional to WTINT2YR, 5 times the size of the df. The crude Gaussian fits and the
+        group means are computed on this df so they reflect the same weights the person-row
+        sampling uses.
+        Unseeded: drawn once per process, so the fits differ between runs but not within one
+        (parallel workers receive the parent's fits rather than building their own).
+        Trade-offs of a bootstrap: duplicated rows add Monte Carlo noise, cut by drawing 5 times
+        the rows (a same-size draw left out ~49% of the people), and an extreme low-weight row
+        can drop out and tighten a group's observed min/max, which draw_within_bounds mitigates
+        by widening the bounds to 0.9*min-1.1*max.
+        Future: replace the bootstrap with weighted statistics computed directly (weighted means,
+        np.cov with aweights), which is exact, uses every row and has no randomness."""
         if PopulationFactory._nhanesDfResampled is None:
             df = PopulationFactory.get_nhanesDf()
+            # 5x the rows: less bootstrap noise in the fits, and fewer people left out entirely
             PopulationFactory._nhanesDfResampled = df.sample(
-                n=df.shape[0],
-                replace=True,
-                weights=df.WTINT2YR,
-                random_state=PopulationFactory.RESAMPLE_SEED,
+                n=5 * df.shape[0], replace=True, weights=df.WTINT2YR
             )
         return PopulationFactory._nhanesDfResampled.copy()
 

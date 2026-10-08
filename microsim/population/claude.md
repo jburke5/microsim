@@ -364,8 +364,8 @@ internally; callers rarely need to instantiate it directly.
 
 7. **`distributions=True` costs almost nothing once the caches are warm.** It partitions every NHANES
    year on gender, race ethnicity, education and a 5-year age window and fits a Gaussian per group.
-   The first call in a process costs roughly 19s — about 14s of it reading the `.dta` and about 5s
-   fitting — and every later call is dominated by building the `Person` objects, not by the draw:
+   The first call in a process costs roughly 36s — about 14s of it reading the `.dta` and about 22s
+   bootstrapping and fitting — and every later call is dominated by building the `Person` objects, not by the draw:
 
    | n | `distributions=True` | `distributions=False` |
    |---|---|---|
@@ -378,8 +378,13 @@ internally; callers rarely need to instantiate it directly.
    population to be, not on cost.
 
    The Gaussians and the fine group means are computed on a survey-weight bootstrap of the
-   NHANES rows (`get_nhanesDf_resampled`, fixed seed, cached), so the fitted statistics
-   reflect the same `WTINT2YR` weights the person-row sampling uses.
+   NHANES rows (`get_nhanesDf_resampled`, unseeded, cached per process), so the fitted statistics
+   reflect the same `WTINT2YR` weights the person-row sampling uses. It draws 5 times the rows
+   (506,580, ~120 MB): a same-size draw left ~49% of the people out of the fits, 5x leaves ~12%
+   out, at ~22 s instead of ~6 s to build. Unseeded means the fits
+   differ between runs but not within one: parallel workers receive the parent's fits. A future
+   change should compute weighted statistics directly instead of bootstrapping — exact, every row
+   used, nothing random.
 
    The fits pool all NHANES years, so each draw's shift also adds a per-(year, gender,
    ageGroup) correction (`get_year_corrections`, cells coarse on purpose — the fine groups
