@@ -75,9 +75,9 @@ class TestStatePopulationCounts(unittest.TestCase):
         self.assertLessEqual(abs(results["n"] - results["expectedN"]), 1)
         self.assertLessEqual(results["maxCellError"], 1)
         # not bounded by the rounding like the cells: across 500 seeds at this size the worst
-        # was 0.46 pp (smokingStatus), under the ~0.7 pp sd of a simple random sample
+        # was 0.0046 (smokingStatus), under the ~0.007 sd of a simple random sample
         for marginal in results["marginals"].values():
-            self.assertLess(marginal["difference"].abs().max(), 1.0)
+            self.assertLess(marginal["difference"].abs().max(), 0.01)
 
     def test_report_prints_every_category(self):
         out = io.StringIO()
@@ -88,7 +88,7 @@ class TestStatePopulationCounts(unittest.TestCase):
             Validation.print_states_baseline_pop({"WY": result})
         report = out.getvalue()
         for variable, marginal in result["marginals"].items():
-            self.assertIn(f"\n  {variable}\n", report)
+            self.assertIn(f"\n  {Validation._stateVariableLabels[variable]}\n", report)
             for code in marginal.index:
                 self.assertIn(f"    {Validation._state_category_label(variable, code)} ", report)
 

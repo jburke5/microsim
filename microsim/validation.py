@@ -774,6 +774,15 @@ class Validation:
         )
         return cells.astype(int)
 
+    _stateVariableLabels = {
+        "ageGroup": "age group",
+        StaticRiskFactorsType.RACE_ETHNICITY.value: "race/ethnicity",
+        StaticRiskFactorsType.GENDER.value: "gender",
+        StaticRiskFactorsType.EDUCATION.value: "education",
+        StaticRiskFactorsType.SMOKING_STATUS.value: "smoking",
+        DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: "physical activity",
+    }
+
     # the enum names of education do not read well, eg LESSTHANHIGHSCHOOL
     _educationLabels = {
         Education.LESSTHANHIGHSCHOOL: "less than high school",
@@ -803,13 +812,13 @@ class Validation:
     def state_baseline_pop(state="OH", year=2025, samplingRate=0.01, verbose=True):
         """Builds the population of a state and compares its make-up at baseline with the
         projection CSV it was built from, over the variables the projection is broken down by.
-        Each variable is compared on its own, as the percent of people per category, and all of
+        Each variable is compared on its own, as the proportion of people per category, and all of
         them jointly, cell by cell: the total variation distance between the two cell
         distributions and the largest difference between a cell's people and its n*samplingRate.
         verbose=True prints the comparison, see print_states_baseline_pop.
         Returns {"state", "year", "samplingRate", "expectedN", "n", "nCells", "tvd",
-        "maxCellError", "marginals": {variable: DataFrame of projection %, population % and their
-        difference}}."""
+        "maxCellError", "marginals": {variable: DataFrame of the projection proportion, the
+        population proportion and their difference}}."""
         projection = pd.read_csv(
             get_absolute_datafile_path("state") + f"/pop_projection_{state.lower()}_{year}.csv"
         )
@@ -839,8 +848,8 @@ class Validation:
             counts = joint.groupby(level=variable).sum()
             marginal = pd.DataFrame(
                 {
-                    "projection": 100.0 * counts["expected"] / counts["expected"].sum(),
-                    "population": 100.0 * counts["population"] / counts["population"].sum(),
+                    "projection": counts["expected"] / counts["expected"].sum(),
+                    "population": counts["population"] / counts["population"].sum(),
                 }
             )
             marginal["difference"] = marginal["population"] - marginal["projection"]
@@ -897,8 +906,8 @@ class Validation:
 
     @staticmethod
     def _largest_difference(marginal):
-        """Returns the category code of a marginal with the largest |population % - projection %|
-        and that difference."""
+        """Returns the category code of a marginal with the largest |population proportion -
+        projection proportion| and that difference."""
         code = marginal["difference"].abs().idxmax()
         return code, abs(marginal.loc[code, "difference"])
 
@@ -912,15 +921,24 @@ class Validation:
         print(f"\n{title}")
         print("=" * len(title))
         print("Each population at baseline vs its projection CSV.\n")
-        print("  expected      the projection's n*samplingRate summed over its cells")
-        print("  cell error    the largest |people - n*samplingRate| of a cell, in people")
-        print("  TVD           the total variation distance between the two cell distributions")
-        print("  largest diff  the largest |population % - projection %| of any category, in")
-        print("                percentage points (pp)")
-        header = (
-            f"{'state':<7}{'samplingRate':>13}{'expected':>11}{'built':>9}{'cell error':>12}"
-            f"{'TVD':>9}   largest diff"
+        print(
+            "  worst row       largest |built - target| over all rows of the state projection CSV"
         )
+        print(
+            "                  (target is usually a float so ideally worst row should be less "
+            "than 1.)"
+        )
+        print(
+            "  worst category  largest |population proportion - projection proportion| over all "
+            "categories"
+        )
+        people = "(# of people)"
+        header = [
+            f"{'':<5}{'sampling':>12}{'target':>16}{'built':>16}{'worst row':>16}   "
+            "worst category",
+            f"{'state':<5}{'rate':>12}{people:>16}{people:>16}{people:>16}   "
+            "(greatest difference of proportions)",
+        ]
         rows = list()
         for state, result in results.items():
             variable = max(
@@ -929,28 +947,30 @@ class Validation:
             )
             code, difference = Validation._largest_difference(result["marginals"][variable])
             rows.append(
-                f"{state:<7}{result['samplingRate']:>13.5f}{result['expectedN']:>11,.1f}"
-                f"{result['n']:>9,}{result['maxCellError']:>12.2f}{result['tvd']:>9.4f}"
-                f"   {difference:.3f} pp, {variable}: "
+                f"{state:<5}{result['samplingRate']:>12.5f}{result['expectedN']:>16,.0f}"
+                f"{result['n']:>16,}{result['maxCellError']:>16.2f}   {difference:.5f}  "
+                f"{Validation._stateVariableLabels[variable]}: "
                 f"{Validation._state_category_label(variable, code)}"
             )
-        print(f"\n{header}")
-        print("-" * max(len(row) for row in [header] + rows))
+        print()
+        for line in header:
+            print(line)
+        print("-" * max(len(line) for line in header + rows))
         for row in rows:
             print(row)
         for state, result in results.items():
             heading = (
-                f"{state}: {result['n']:,} people, samplingRate {result['samplingRate']:.5f}, "
-                f"{result['nCells']} projection cells"
+                f"{state}: {result['n']:,} people, sampling rate {result['samplingRate']:.5f}, "
+                f"{result['nCells']} projection rows"
             )
             print(f"\n{heading}")
             print("-" * len(heading))
-            print(f"  {'':<26}{'projection %':>14}{'population %':>14}{'diff (pp)':>11}")
+            print(f"  {'':<26}{'projection':>14}{'population':>14}{'difference':>14}")
             for variable, marginal in result["marginals"].items():
-                print(f"  {variable}")
+                print(f"  {Validation._stateVariableLabels[variable]}")
                 for code, row in marginal.iterrows():
                     print(
                         f"    {Validation._state_category_label(variable, code):<24}"
-                        f"{row['projection']:>14.2f}{row['population']:>14.2f}"
-                        f"{row['difference']:>+11.3f}"
+                        f"{row['projection']:>14.4f}{row['population']:>14.4f}"
+                        f"{row['difference']:>+14.5f}"
                     )
