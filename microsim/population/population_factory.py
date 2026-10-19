@@ -918,7 +918,7 @@ class PopulationFactory:
         return scaling
 
     @staticmethod
-    def get_state_population(year=2030, personFilters=None, state="OH", samplingRate=0.025):
+    def get_state_population(year=2025, personFilters=None, state="OH", samplingRate=0.025):
         people = PopulationFactory.get_state_people(
             year=year, personFilters=personFilters, state=state, samplingRate=samplingRate
         )
@@ -1559,7 +1559,7 @@ class PopulationFactory:
         return people
 
     @staticmethod
-    def get_state_people(year=2030, personFilters=None, state="OH", samplingRate=0.025):
+    def get_state_people(year=2025, personFilters=None, state="OH", samplingRate=0.025):
         """Creates people as a representative part of a state's population a given year.
         The argument samplingRate indicates what proportion of the state's population we will
         simulate. Note that due to rounding by using sampling the increase in the size of the
@@ -1745,7 +1745,7 @@ class PopulationFactory:
         return distributions
 
     @staticmethod
-    def get_dataframe_with_categoricals(year=2030, state="OH", samplingRate=0.01):
+    def get_dataframe_with_categoricals(year=2025, state="OH", samplingRate=0.01):
         """Returns dataframe with complete categorical variables but no continuous variables, with
         each row corresponding to a single person.
         Because state population projections do not include information on default treatments, we
@@ -1782,7 +1782,7 @@ class PopulationFactory:
         return df
 
     @staticmethod
-    def get_stateDf(year=2030, state="OH"):
+    def get_stateDf(year=2025, state="OH"):
         """Reads the CSV file that includes some categorical variables for each state and year and
         performs a bit of initial processing. Returns a dataframe that includes a portion of the
         microsim categorical variables and the number of people in that state by age."""
@@ -1814,10 +1814,6 @@ class PopulationFactory:
         data[DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value] = data[
             DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value
         ].astype(bool)
-        # the projection carries alcohol as a 0-3 category; persons store drinks/week and the
-        # distributions draw it as a continuous variable, so the projection's alcohol composition
-        # is no longer used
-        data = data.drop(columns=[DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value])
         ageList5Years = [x for x in range(0, 5)]
         ageList10Years = [x for x in range(0, 10)]  # this is for the last age group, the oldest
         data["age"] = data["ageGroup"].apply(

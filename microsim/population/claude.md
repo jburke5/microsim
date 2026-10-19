@@ -166,7 +166,7 @@ Parameters:
 ```python
 @staticmethod
 def get_state_population(
-    year=2030,
+    year=2025,
     personFilters=None,
     state="OH",
     samplingRate=0.025,
@@ -175,7 +175,7 @@ def get_state_population(
 
 Builds a representative sample of a state's projected population and advances it with the
 NHANES model repository. The projection CSV (`data/state/pop_projection_{state}_{year}.csv`,
-currently OH 2030 and OH 2035 exist — `year` selects the filename only) supplies the categorical
+currently all 50 states + DC for 2025 — `year` selects the filename only) supplies the categorical
 variables and a head count per demographic cell; everything the projection does not carry is
 filled in from NHANES:
 
@@ -395,9 +395,8 @@ internally; callers rarely need to instantiate it directly.
    so keys below `ALCOHOL_MIN_KEY_AGE` (18) fit their Gaussian without the alcohol dimension and
    everyone drawn from them gets exactly 0; keys at 18 and above include it (fits verified
    non-singular after education pooling). `continuous_variables_for_key_age` is the single source
-   of the per-key column set for both the fit and the draw. The state projection CSVs still carry a
-   0-3 alcohol category column, but `get_stateDf` drops it: state persons draw alcohol from the
-   NHANES Gaussians like everyone else.
+   of the per-key column set for both the fit and the draw. State persons draw alcohol from the NHANES
+   Gaussians like everyone else; the state projection CSVs carry no alcohol column.
 
 8. **Kaiser population attribute set differs from NHANES.** Kaiser includes `afib` and
    `pvd` as categorical variables that NHANES does not; Kaiser omits `education` and
