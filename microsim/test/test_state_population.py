@@ -89,8 +89,6 @@ class TestStatePopulationCounts(unittest.TestCase):
             lengths.append(len(out.getvalue().splitlines()))
         self.assertEqual(lengths[0], 0)
         self.assertTrue(lengths[0] < lengths[1] < lengths[2] < lengths[3])
-        table = Validation.states_baseline_pop_table(results)
-        self.assertEqual(len(table), sum(len(m) for m in results["WY"]["marginals"].values()))
 
 
 if __name__ == "__main__":

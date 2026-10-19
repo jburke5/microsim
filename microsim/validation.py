@@ -965,24 +965,3 @@ class Validation:
                             f"{row['projection']:>14.2f}{row['population']:>14.2f}"
                             f"{row['difference']:>+11.3f}"
                         )
-
-    @staticmethod
-    def states_baseline_pop_table(results):
-        """Returns the comparison as one row per state, variable and category, holding the
-        percent of people in the projection and in the population and their difference, eg for
-        writing to a CSV file.
-        results: what states_baseline_pop returns, or {state: what state_baseline_pop returns}"""
-        rows = list()
-        for state, result in results.items():
-            for variable, marginal in result["marginals"].items():
-                for code, row in marginal.iterrows():
-                    rows.append(
-                        {
-                            "state": state,
-                            "variable": variable,
-                            "code": int(code),
-                            "category": Validation._state_category_label(variable, code),
-                            **row.to_dict(),
-                        }
-                    )
-        return pd.DataFrame(rows)
