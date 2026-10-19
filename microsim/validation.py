@@ -911,9 +911,10 @@ class Validation:
         title = f"VALIDATION OF {year} STATE POPULATIONS AGAINST THEIR PROJECTIONS"
         print(f"\n{title}")
         print("=" * len(title))
-        print("Each population is compared, at baseline, with the projection CSV it was built")
-        print("from, over the variables the projection is broken down by:")
-        print("  " + ", ".join(Validation.stateProjectionVariables) + "\n")
+        print(
+            "Each population is compared, at baseline, with the projection CSV it was built "
+            "from.\n"
+        )
         print("  expected      the projection's n*samplingRate summed over its cells")
         print("  cell error    the largest |people - n*samplingRate| of a cell, in people")
         print("  TVD           the total variation distance between the two cell distributions")
