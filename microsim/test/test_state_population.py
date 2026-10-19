@@ -71,7 +71,7 @@ class TestStatePopulationCounts(unittest.TestCase):
 
     def test_built_population_matches_projection(self):
         # the built Persons, not just the dataframe they are built from
-        results = Validation.state_baseline_pop("WY", samplingRate=0.005, verbose=0)
+        results = Validation.state_baseline_pop("WY", samplingRate=0.005, verbose=False)
         self.assertLessEqual(abs(results["n"] - results["expectedN"]), 1)
         self.assertLessEqual(results["maxCellError"], 1)
         # not bounded by the rounding like the cells: across 500 seeds at this size the worst
@@ -79,16 +79,18 @@ class TestStatePopulationCounts(unittest.TestCase):
         for marginal in results["marginals"].values():
             self.assertLess(marginal["difference"].abs().max(), 1.0)
 
-    def test_report_prints_at_every_verbosity(self):
-        results = {"WY": Validation.state_baseline_pop("WY", samplingRate=0.002, verbose=0)}
-        lengths = list()
-        for verbose in [0, 1, 2, 3]:
-            out = io.StringIO()
-            with contextlib.redirect_stdout(out):
-                Validation.print_states_baseline_pop(results, verbose=verbose)
-            lengths.append(len(out.getvalue().splitlines()))
-        self.assertEqual(lengths[0], 0)
-        self.assertTrue(lengths[0] < lengths[1] < lengths[2] < lengths[3])
+    def test_report_prints_every_category(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            result = Validation.state_baseline_pop("WY", samplingRate=0.002, verbose=False)
+        self.assertEqual(out.getvalue(), "")
+        with contextlib.redirect_stdout(out):
+            Validation.print_states_baseline_pop({"WY": result})
+        report = out.getvalue()
+        for variable, marginal in result["marginals"].items():
+            self.assertIn(f"\n  {variable}\n", report)
+            for code in marginal.index:
+                self.assertIn(f"    {Validation._state_category_label(variable, code)} ", report)
 
 
 if __name__ == "__main__":

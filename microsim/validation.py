@@ -800,13 +800,13 @@ class Validation:
         return "yes" if code else "no"
 
     @staticmethod
-    def state_baseline_pop(state="OH", year=2025, samplingRate=0.01, verbose=3):
+    def state_baseline_pop(state="OH", year=2025, samplingRate=0.01, verbose=True):
         """Builds the population of a state and compares its make-up at baseline with the
         projection CSV it was built from, over the variables the projection is broken down by.
         Each variable is compared on its own, as the percent of people per category, and all of
         them jointly, cell by cell: the total variation distance between the two cell
         distributions and the largest difference between a cell's people and its n*samplingRate.
-        verbose: what to print, see print_states_baseline_pop.
+        verbose=True prints the comparison, see print_states_baseline_pop.
         Returns {"state", "year", "samplingRate", "expectedN", "n", "nCells", "tvd",
         "maxCellError", "marginals": {variable: DataFrame of projection %, population % and their
         difference}}."""
@@ -856,16 +856,19 @@ class Validation:
             "maxCellError": float((joint["population"] - joint["expected"]).abs().max()),
             "marginals": marginals,
         }
-        Validation.print_states_baseline_pop({state: results}, verbose=verbose)
+        if verbose:
+            Validation.print_states_baseline_pop({state: results})
         return results
 
     @staticmethod
-    def states_baseline_pop(year=2025, peoplePerState=20000, states=("VT", "KY", "CA"), verbose=1):
+    def states_baseline_pop(
+        year=2025, peoplePerState=20000, states=("VT", "KY", "CA"), verbose=True
+    ):
         """Runs state_baseline_pop on several states. Each state is built at the rate that gives
         it about peoplePerState people, so every state is checked with the same precision. The
         default states are the smallest (VT), the median (KY) and the largest (CA) of the 2025
         projections; states=None runs every projection of the year.
-        verbose: what to print, see print_states_baseline_pop.
+        verbose=True prints the comparison, see print_states_baseline_pop.
         Returns {state: what state_baseline_pop returns}."""
         dataDir = get_absolute_datafile_path("state")
         if states is None:
@@ -873,7 +876,7 @@ class Validation:
                 os.path.basename(f).split("_")[2].upper()
                 for f in glob.glob(dataDir + f"/pop_projection_*_{year}.csv")
             )
-        if verbose >= 1:
+        if verbose:
             populations = "population" if len(states) == 1 else "populations"
             print(
                 f"\nBuilding {len(states)} state {populations} of about {peoplePerState:,} people "
@@ -883,9 +886,13 @@ class Validation:
         for state in states:
             total = pd.read_csv(dataDir + f"/pop_projection_{state.lower()}_{year}.csv")["n"].sum()
             results[state] = Validation.state_baseline_pop(
-                state=state, year=year, samplingRate=min(1.0, peoplePerState / total), verbose=0
+                state=state,
+                year=year,
+                samplingRate=min(1.0, peoplePerState / total),
+                verbose=False,
             )
-        Validation.print_states_baseline_pop(results, verbose=verbose)
+        if verbose:
+            Validation.print_states_baseline_pop(results)
         return results
 
     @staticmethod
@@ -896,15 +903,10 @@ class Validation:
         return code, abs(marginal.loc[code, "difference"])
 
     @staticmethod
-    def print_states_baseline_pop(results, verbose=1):
-        """Prints how the make-up of state populations compares with their projections.
-        results: what states_baseline_pop returns, or {state: what state_baseline_pop returns}
-        verbose: 0 prints nothing
-                 1 prints one summary row per state
-                 2 also prints, for every state, the largest difference of every variable
-                 3 also prints, for every state, every category of every variable"""
-        if verbose < 1:
-            return
+    def print_states_baseline_pop(results):
+        """Prints how the make-up of state populations compares with their projections: one
+        summary row per state, then, for every state, every category of every variable.
+        results: what states_baseline_pop returns, or {state: what state_baseline_pop returns}"""
         year = next(iter(results.values()))["year"]
         title = f"VALIDATION OF {year} STATE POPULATIONS AGAINST THEIR PROJECTIONS"
         print(f"\n{title}")
@@ -938,8 +940,6 @@ class Validation:
         print("-" * max(len(row) for row in [header] + rows))
         for row in rows:
             print(row)
-        if verbose < 2:
-            return
         for state, result in results.items():
             heading = (
                 f"{state}: {result['n']:,} people, samplingRate {result['samplingRate']:.5f}, "
@@ -947,21 +947,12 @@ class Validation:
             )
             print(f"\n{heading}")
             print("-" * len(heading))
-            if verbose == 2:
-                print(f"  {'variable':<22}{'categories':>11}{'largest diff (pp)':>20}   category")
-                for variable, marginal in result["marginals"].items():
-                    code, difference = Validation._largest_difference(marginal)
+            print(f"  {'':<26}{'projection %':>14}{'population %':>14}{'diff (pp)':>11}")
+            for variable, marginal in result["marginals"].items():
+                print(f"  {variable}")
+                for code, row in marginal.iterrows():
                     print(
-                        f"  {variable:<22}{len(marginal):>11}{difference:>20.3f}   "
-                        f"{Validation._state_category_label(variable, code)}"
+                        f"    {Validation._state_category_label(variable, code):<24}"
+                        f"{row['projection']:>14.2f}{row['population']:>14.2f}"
+                        f"{row['difference']:>+11.3f}"
                     )
-            else:
-                print(f"  {'':<26}{'projection %':>14}{'population %':>14}{'diff (pp)':>11}")
-                for variable, marginal in result["marginals"].items():
-                    print(f"  {variable}")
-                    for code, row in marginal.iterrows():
-                        print(
-                            f"    {Validation._state_category_label(variable, code):<24}"
-                            f"{row['projection']:>14.2f}{row['population']:>14.2f}"
-                            f"{row['difference']:>+11.3f}"
-                        )
