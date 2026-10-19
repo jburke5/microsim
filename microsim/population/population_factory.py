@@ -918,7 +918,7 @@ class PopulationFactory:
         return scaling
 
     @staticmethod
-    def get_state_population(year=2030, personFilters=None, state="OH", samplingRate=0.025):
+    def get_state_population(year=2025, personFilters=None, state="OH", samplingRate=0.025):
         people = PopulationFactory.get_state_people(
             year=year, personFilters=personFilters, state=state, samplingRate=samplingRate
         )
@@ -1559,11 +1559,10 @@ class PopulationFactory:
         return people
 
     @staticmethod
-    def get_state_people(year=2030, personFilters=None, state="OH", samplingRate=0.025):
+    def get_state_people(year=2025, personFilters=None, state="OH", samplingRate=0.025):
         """Creates people as a representative part of a state's population a given year.
         The argument samplingRate indicates what proportion of the state's population we will
-        simulate. Note that due to rounding by using sampling the increase in the size of the
-        people creates is not proportional to the increase in the samplingRate."""
+        simulate; the size is samplingRate times the state population to within 1 person."""
         # df with only categorical variables completed
         dfWithCategoricals = PopulationFactory.get_dataframe_with_categoricals(
             year=year, state=state, samplingRate=samplingRate
@@ -1663,12 +1662,10 @@ class PopulationFactory:
     def get_distributions_crude(dfForCategoricals):
         """dfForCategoricals: a dictionary with keys gender, raceEthnicity, education, age and
         values a dataframe based on NHANES dataframe
-        This function will attempt to fit Gaussian distributions for the continuous variables
-        using this key and value
-        But if a singular Gaussian is created then the education level is removed from the key and
-        the Gaussian is created by combining the values with all education levels
-        If removing the education from the key does not provide a non-singular Gaussian we will
-        need to fix it..."""
+        Fits a Gaussian of the continuous variables for every key, and for every (gender,
+        raceEthnicity, age) a Gaussian pooled over all education levels. A key whose own fit is
+        singular is dropped, and it and any key NHANES holds nobody of draw from the pooled fit
+        (see get_dist_keys_for_dataframe). A singular pooled fit raises."""
         meanForCategoricals = dict()
         covForCategoricals = dict()
         singularForCategoricals = dict()
@@ -1688,49 +1685,36 @@ class PopulationFactory:
             maxForCategoricals[key] = np.max(
                 np.array(dfForCategoricals[key][nhanesContinuousVariables]), axis=0
             )
-        # keysToRemove = list() #these are the distributions that are singular
         keysSingular = list(
             filter(lambda x: singularForCategoricals[x], singularForCategoricals.keys())
         )
-        for key in keysSingular:
-            keyMinusEducation = tuple(
-                list(key[0:2]) + [key[3]]
-            )  # key includes gender, race ethnicity, education, age
-            if (
-                keyMinusEducation not in meanForCategoricals.keys()
-            ):  # I might have done the fit on a prior pass
-                allEducationKeys = [list(key[0:2]) + [ed.value, key[3]] for ed in Education]
-                allEducationKeys = list(
-                    filter(lambda x: tuple(x) in list(dfForCategoricals.keys()), allEducationKeys)
+        # every (gender, raceEthnicity, age) gets a fit pooled over education: it serves the keys
+        # whose own fit is singular and the keys NHANES holds nobody of, which state projections
+        # ask for (eg men of race other with less than high school aged 25-29)
+        keysMinusEducation = dict.fromkeys((key[0], key[1], key[3]) for key in dfForCategoricals)
+        for keyMinusEducation in keysMinusEducation:
+            gender, raceEthnicity, age = keyMinusEducation
+            allEducationKeys = [(gender, raceEthnicity, ed.value, age) for ed in Education]
+            dfForAllEducationKeys = pd.concat(
+                [dfForCategoricals[key] for key in allEducationKeys if key in dfForCategoricals],
+                ignore_index=True,
+            )
+            nhanesContinuousVariables = PopulationFactory.continuous_variables_for_key_age(age)
+            values = np.array(dfForAllEducationKeys[nhanesContinuousVariables])
+            meanForCategoricals[keyMinusEducation], covForCategoricals[keyMinusEducation] = (
+                multivariate_normal.fit(values)
+            )
+            singularForCategoricals[keyMinusEducation] = PopulationFactory.is_singular(
+                covForCategoricals[keyMinusEducation]
+            )
+            minForCategoricals[keyMinusEducation] = np.min(values, axis=0)
+            maxForCategoricals[keyMinusEducation] = np.max(values, axis=0)
+            # if removing education does not create a non-singular Gaussian the process failed
+            if singularForCategoricals[keyMinusEducation]:
+                raise RuntimeError(
+                    "Process of creating non-singular Gaussian distributions has failed: the "
+                    f"fit pooled over education of {keyMinusEducation} is singular."
                 )
-                dfForAllEducationKeys = pd.concat(
-                    [dfForCategoricals[tuple(edKey)] for edKey in allEducationKeys],
-                    ignore_index=True,
-                )
-                nhanesContinuousVariables = PopulationFactory.continuous_variables_for_key_age(
-                    key[3]
-                )
-                meanForCategoricals[keyMinusEducation], covForCategoricals[keyMinusEducation] = (
-                    multivariate_normal.fit(
-                        np.array(dfForAllEducationKeys[nhanesContinuousVariables])
-                    )
-                )
-                singularForCategoricals[keyMinusEducation] = PopulationFactory.is_singular(
-                    covForCategoricals[keyMinusEducation]
-                )
-                minForCategoricals[keyMinusEducation] = np.min(
-                    np.array(dfForAllEducationKeys[nhanesContinuousVariables]), axis=0
-                )
-                maxForCategoricals[keyMinusEducation] = np.max(
-                    np.array(dfForAllEducationKeys[nhanesContinuousVariables]), axis=0
-                )
-                # if removing education does not create a non-singular Gaussian the process failed
-                if singularForCategoricals[keyMinusEducation]:
-                    raise RuntimeError(
-                        "Process of creating non-singular Gaussian distributions has failed."
-                    )
-            # keysToRemove.append(key)
-        # for key in keysToRemove:
         for key in keysSingular:
             del singularForCategoricals[key]
             del meanForCategoricals[key]
@@ -1745,7 +1729,7 @@ class PopulationFactory:
         return distributions
 
     @staticmethod
-    def get_dataframe_with_categoricals(year=2030, state="OH", samplingRate=0.01):
+    def get_dataframe_with_categoricals(year=2025, state="OH", samplingRate=0.01):
         """Returns dataframe with complete categorical variables but no continuous variables, with
         each row corresponding to a single person.
         Because state population projections do not include information on default treatments, we
@@ -1771,18 +1755,27 @@ class PopulationFactory:
         df["name"] = np.arange(
             len(df)
         )  # people with the same categorical variables will have the same name
-        df["nForSampling"] = df["nForAgeAndDefaultTreatments"].apply(
-            lambda x: range(math.floor(x * samplingRate + 0.5))
-        )  # this is how samplingRate influences the number of people created
-        df = df.explode("nForSampling")
-        # explode turns an empty range into a NaN row, which would create a person from every group
-        # whose sampled count rounded to 0
-        df = df.dropna(subset=["nForSampling"])
+        # Expected counts are fractional (e.g. 0.3 people), and rounding each row on its own
+        # sends most small rows to 0. Instead, lay the rows end to end on a line, each as long as
+        # its expected count, and drop markers 1 apart from a random start; a row gets one person
+        # per marker inside it. E.g. rows of 0.3, 0.3, 0.3, 1.4, 0.2 (total 2.5):
+        #     0 |-A-| 0.3 |-B-| 0.6 |-C-| 0.9 |-------D-------| 2.3 |-E-| 2.5
+        # markers at 0.55, 1.55 give B 1 and D 1 (2 people); markers at 0.2, 1.2, 2.2 give A 1
+        # and D 2 (3 people). A row of 0.3 catches a marker 30% of the time, so every row gets its
+        # expected count on average, and the adjacent rows of a projection cell always come within
+        # 1 person of n*samplingRate.
+        expected = df["nForAgeAndDefaultTreatments"].to_numpy() * samplingRate
+        # where each row starts and ends on the line
+        cumulative = np.concatenate([[0.0], np.cumsum(expected)])
+        # floor(cumulative + u) counts the markers up to each boundary, diff those inside a row
+        counts = np.diff(np.floor(cumulative + np.random.uniform())).astype(int)
+        # one row per person; iloc as the explodes in get_stateDf leave duplicate index labels
+        df = df.iloc[np.repeat(np.arange(len(df)), counts)].copy()
         df["modality"] = Modality.NO.value  # all NHANES people will have the same modality
         return df
 
     @staticmethod
-    def get_stateDf(year=2030, state="OH"):
+    def get_stateDf(year=2025, state="OH"):
         """Reads the CSV file that includes some categorical variables for each state and year and
         performs a bit of initial processing. Returns a dataframe that includes a portion of the
         microsim categorical variables and the number of people in that state by age."""
@@ -1814,10 +1807,6 @@ class PopulationFactory:
         data[DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value] = data[
             DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value
         ].astype(bool)
-        # the projection carries alcohol as a 0-3 category; persons store drinks/week and the
-        # distributions draw it as a continuous variable, so the projection's alcohol composition
-        # is no longer used
-        data = data.drop(columns=[DynamicRiskFactorsType.ALCOHOL_PER_WEEK.value])
         ageList5Years = [x for x in range(0, 5)]
         ageList10Years = [x for x in range(0, 10)]  # this is for the last age group, the oldest
         data["age"] = data["ageGroup"].apply(
@@ -1842,13 +1831,11 @@ class PopulationFactory:
 
     @staticmethod
     def get_nForAge_from_nForAgeGroup(age, nForAgeGroup):
-        """Returns the number of people we would reasonably expect to find with given age and
-        number of people in age group. Uniform distribution over ages for ages less than 80 years
-        old and a decreasing distribution after that."""
+        """Returns the expected number of people with given age, fractional, from the number of
+        people in age group. Uniform distribution over ages for ages less than 80 years old and a
+        decreasing distribution after that."""
         if age < 80:
-            return round(
-                nForAgeGroup / 5
-            )  # divides the number of people to equal parts for all ages in ageGroup
+            return nForAgeGroup / 5  # divides the number of people to equal parts for all ages
         elif age < 90:
             # the coefficients are np.linspace(10, 1, 10) normalized: the taper ends above zero so
             # that age 89 exists at baseline (linspace(9, 0, 10) gave it exactly 0 people). Ages
@@ -1866,9 +1853,8 @@ class PopulationFactory:
                 88: 2 / 55,
                 89: 1 / 55,
             }
-            return round(
-                nForAgeGroup * proportionsForAgeDict[age]
-            )  # divides the number of people to decreasing parts as age increases
+            # divides the number of people to decreasing parts as age increases
+            return nForAgeGroup * proportionsForAgeDict[age]
         else:
             raise RuntimeError(
                 f"Age {age} is not covered: the state pipeline generates baseline ages up to 89."
@@ -1894,16 +1880,14 @@ class PopulationFactory:
         proportionForDefaultTreatments,
         nForAge,
     ):
-        """Returns the number of people we expect to find with given statin  and
+        """Returns the expected number of people, fractional, with given statin and
         antiHypertensiveCount from the number of people with that age, the ageGroup, gender and
         raceEthnicity"""
-        return int(
-            round(
-                proportionForDefaultTreatments[ageGroup, gender, raceEthnicity][
-                    statin, antiHypertensiveCount
-                ]
-                * nForAge
-            )
+        return (
+            proportionForDefaultTreatments[ageGroup, gender, raceEthnicity][
+                statin, antiHypertensiveCount
+            ]
+            * nForAge
         )
 
     @staticmethod
@@ -2082,8 +2066,8 @@ class PopulationFactory:
         for key, rowsOfKey in keyFrame.groupby(
             list(keyFrame.columns), observed=True
         ).indices.items():
-            # a group whose own distribution was singular was fit without education, see
-            # get_distributions_crude
+            # a group whose own fit is singular, or that NHANES holds nobody of, draws from the
+            # fit pooled over education, see get_distributions_crude
             distKey = key if key in distributions["mean"].keys() else (key[0], key[1], key[3])
             distKeysForRows.append((distKey, rowsOfKey))
         return distKeysForRows
@@ -2125,12 +2109,8 @@ class PopulationFactory:
             clipped += clippedForKey
         if clipped > 0:
             print(
-                f"Warning: {clipped} of {draws.shape[0]} people had a group mean too far from the "
-                "distribution "
-                "they were drawn from for the bounds of that distribution "
-                "to be met, and were clipped to "
-                "those bounds. Their group holds too few people for its "
-                "mean to be a reliable one."
+                f"Warning: {clipped} of {draws.shape[0]} people clipped to the bounds of their "
+                "distribution (group mean from too few people)."
             )
         return draws
 

@@ -166,7 +166,7 @@ Parameters:
 ```python
 @staticmethod
 def get_state_population(
-    year=2030,
+    year=2025,
     personFilters=None,
     state="OH",
     samplingRate=0.025,
@@ -175,9 +175,9 @@ def get_state_population(
 
 Builds a representative sample of a state's projected population and advances it with the
 NHANES model repository. The projection CSV (`data/state/pop_projection_{state}_{year}.csv`,
-currently OH 2030 and OH 2035 exist — `year` selects the filename only) supplies the categorical
-variables and a head count per demographic cell; everything the projection does not carry is
-filled in from NHANES:
+currently all 50 states + DC for 2025 and 2030 — `year` selects the filename only) supplies the
+categorical variables and a head count per demographic cell; everything the projection does not
+carry is filled in from NHANES:
 
 - **Ages** are split out of the 5-year age groups uniformly; group 17 (80+) is split over
   80-89 by a decreasing taper (`10/55` down to `1/55`), so nobody is 90+ at baseline —
@@ -188,14 +188,21 @@ filled in from NHANES:
   values NHANES holds), used by both the cross product and the proportions so the two
   cannot drift and no observed count is left out of the denominators.
 - **Continuous variables** are drawn from the same NHANES Gaussians the
-  `distributions=True` path uses (crude fit + group-mean shift, see gotchas 14-16).
+  `distributions=True` path uses (crude fit + group-mean shift, see gotchas 14-16). A row
+  whose (gender, race, education, age window) NHANES holds nobody of — e.g. men of race other
+  with less than high school aged 25-29 — draws from the education-pooled fit of its gender,
+  race and age, which every (gender, race, age) has. Until 2026-10-19 only singular groups had
+  one, so such rows raised a `KeyError` and IA, NY and KY could not be built at 0.01.
 
 Parameters:
-- `samplingRate`: the fraction of the state population simulated. Each cell contributes
-  `floor(n*samplingRate + 0.5)` people; cells that round to 0 contribute nobody (pandas
-  `explode` turns an empty range into a NaN row, which is dropped — without that, every
-  small cell yielded one spurious person, inflating OH 2030 by 8.7% and biased toward rare
-  cells).
+- `samplingRate`: the fraction of the state population simulated. Each (cell, age, statin,
+  antiHypertensiveCount) row keeps a fractional expected count, `n*samplingRate` split by the
+  age and treatment shares, and all rows are rounded once, together, by systematic rounding
+  (see the comment in `get_dataframe_with_categoricals`). Every row gets its expected count on
+  average, and the total and every projection cell come within 1 person of `n*samplingRate`.
+  Rounding each row on its own, as the code used to, sent most rows of small states to 0: WY
+  2025 at 0.01 got 75% of its people, 58% of its rarest race group and 6% of its 80+, and
+  some small states got nobody 80+.
 - `personFilters`: honored at both levels. The df-level filters run after the continuous
   draw, since the drawn values are what they must hold for; person-level filters run after
   construction. There is no redraw of rejected rows: each row is a fixed slice of the state
@@ -395,9 +402,8 @@ internally; callers rarely need to instantiate it directly.
    so keys below `ALCOHOL_MIN_KEY_AGE` (18) fit their Gaussian without the alcohol dimension and
    everyone drawn from them gets exactly 0; keys at 18 and above include it (fits verified
    non-singular after education pooling). `continuous_variables_for_key_age` is the single source
-   of the per-key column set for both the fit and the draw. The state projection CSVs still carry a
-   0-3 alcohol category column, but `get_stateDf` drops it: state persons draw alcohol from the
-   NHANES Gaussians like everyone else.
+   of the per-key column set for both the fit and the draw. State persons draw alcohol from the NHANES
+   Gaussians like everyone else; the state projection CSVs carry no alcohol column.
 
 8. **Kaiser population attribute set differs from NHANES.** Kaiser includes `afib` and
    `pvd` as categorical variables that NHANES does not; Kaiser omits `education` and
