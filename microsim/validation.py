@@ -931,9 +931,8 @@ class Validation:
         )
         people = "(# of people)"
         header = [
-            f"{'':<5}{'sampling':>12}{'target':>16}{'built':>16}{'worst row':>16}   "
-            "worst category",
-            f"{'state':<5}{'rate':>12}{people:>16}{people:>16}{people:>16}   "
+            f"{'':<5}{'target':>16}{'built':>16}{'worst row':>16}   worst category",
+            f"{'state':<5}{people:>16}{people:>16}{people:>16}   "
             "(largest difference of proportions)",
         ]
         rows = list()
@@ -944,7 +943,7 @@ class Validation:
             )
             code, difference = Validation._largest_difference(result["marginals"][variable])
             rows.append(
-                f"{state:<5}{result['samplingRate']:>12.5f}{result['expectedN']:>16,.0f}"
+                f"{state:<5}{result['expectedN']:>16,.0f}"
                 f"{result['n']:>16,}{result['maxCellError']:>16.2f}   {difference:.5f}  "
                 f"{Validation._stateVariableLabels[variable]}: "
                 f"{Validation._state_category_label(variable, code)}"
@@ -956,10 +955,7 @@ class Validation:
         for row in rows:
             print(row)
         for state, result in results.items():
-            heading = (
-                f"{state}: {result['n']:,} people, sampling rate {result['samplingRate']:.5f}, "
-                f"{result['nCells']} projection rows"
-            )
+            heading = f"{state}: {result['n']:,} people, {result['nCells']} projection rows"
             print(f"\n{heading}")
             print("-" * len(heading))
             print(f"  {'':<26}{'projection':>14}{'population':>14}{'difference':>14}")
