@@ -191,11 +191,14 @@ filled in from NHANES:
   `distributions=True` path uses (crude fit + group-mean shift, see gotchas 14-16).
 
 Parameters:
-- `samplingRate`: the fraction of the state population simulated. Each cell contributes
-  `floor(n*samplingRate + 0.5)` people; cells that round to 0 contribute nobody (pandas
-  `explode` turns an empty range into a NaN row, which is dropped — without that, every
-  small cell yielded one spurious person, inflating OH 2030 by 8.7% and biased toward rare
-  cells).
+- `samplingRate`: the fraction of the state population simulated. Each (cell, age, statin,
+  antiHypertensiveCount) row keeps a fractional expected count, `n*samplingRate` split by the
+  age and treatment shares, and all rows are rounded once, together, by systematic rounding
+  (see the comment in `get_dataframe_with_categoricals`). Every row gets its expected count on
+  average, and the total and every projection cell come within 1 person of `n*samplingRate`.
+  Rounding each row on its own, as the code used to, sent most rows of small states to 0: WY
+  2025 at 0.01 got 75% of its people, 58% of its rarest race group and 6% of its 80+, and
+  some small states got nobody 80+.
 - `personFilters`: honored at both levels. The df-level filters run after the continuous
   draw, since the drawn values are what they must hold for; person-level filters run after
   construction. There is no redraw of rejected rows: each row is a fixed slice of the state

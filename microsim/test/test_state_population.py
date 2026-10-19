@@ -1,0 +1,53 @@
+"""Tests for the head counts of state populations (get_dataframe_with_categoricals).
+
+Rows hold fractional expected counts that are rounded once, together, by systematic rounding, so
+the total and every projection cell must come within 1 person of n*samplingRate. WY is the
+smallest-cell case the old per-row rounding failed on (4,784 people instead of 6,363 at 0.01)."""
+
+import unittest
+
+import numpy as np
+import pandas as pd
+
+from microsim.common.data_loader import get_absolute_datafile_path
+from microsim.population.population_factory import PopulationFactory
+
+CELL = [
+    "ageGroup",
+    "raceEthnicity",
+    "gender",
+    "education",
+    "smokingStatus",
+    "anyPhysicalActivity",
+]
+
+
+class TestStatePopulationCounts(unittest.TestCase):
+    def setUp(self):
+        np.random.seed(0)
+        projection = pd.read_csv(
+            get_absolute_datafile_path("state") + "/pop_projection_wy_2025.csv"
+        )
+        self.nForCell = projection.groupby(CELL)["n"].sum()
+
+    def counts_for_cell(self, samplingRate):
+        df = PopulationFactory.get_dataframe_with_categoricals(
+            year=2025, state="WY", samplingRate=samplingRate
+        )
+        return df.groupby(CELL).size().reindex(self.nForCell.index, fill_value=0)
+
+    def test_total_is_within_one_person(self):
+        counts = self.counts_for_cell(0.01)
+        self.assertLessEqual(abs(counts.sum() - self.nForCell.sum() * 0.01), 1)
+
+    def test_every_cell_is_within_one_person(self):
+        counts = self.counts_for_cell(0.01)
+        self.assertLessEqual((counts - self.nForCell * 0.01).abs().max(), 1)
+
+    def test_full_rate_keeps_the_whole_state(self):
+        counts = self.counts_for_cell(1.0)
+        self.assertLessEqual(abs(counts.sum() - self.nForCell.sum()), 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

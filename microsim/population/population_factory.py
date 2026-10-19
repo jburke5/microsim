@@ -1562,8 +1562,7 @@ class PopulationFactory:
     def get_state_people(year=2025, personFilters=None, state="OH", samplingRate=0.025):
         """Creates people as a representative part of a state's population a given year.
         The argument samplingRate indicates what proportion of the state's population we will
-        simulate. Note that due to rounding by using sampling the increase in the size of the
-        people creates is not proportional to the increase in the samplingRate."""
+        simulate; the size is samplingRate times the state population to within 1 person."""
         # df with only categorical variables completed
         dfWithCategoricals = PopulationFactory.get_dataframe_with_categoricals(
             year=year, state=state, samplingRate=samplingRate
@@ -1771,13 +1770,22 @@ class PopulationFactory:
         df["name"] = np.arange(
             len(df)
         )  # people with the same categorical variables will have the same name
-        df["nForSampling"] = df["nForAgeAndDefaultTreatments"].apply(
-            lambda x: range(math.floor(x * samplingRate + 0.5))
-        )  # this is how samplingRate influences the number of people created
-        df = df.explode("nForSampling")
-        # explode turns an empty range into a NaN row, which would create a person from every group
-        # whose sampled count rounded to 0
-        df = df.dropna(subset=["nForSampling"])
+        # Expected counts are fractional (e.g. 0.3 people), and rounding each row on its own
+        # sends most small rows to 0. Instead, lay the rows end to end on a line, each as long as
+        # its expected count, and drop markers 1 apart from a random start; a row gets one person
+        # per marker inside it. E.g. rows of 0.3, 0.3, 0.3, 1.4, 0.2 (total 2.5):
+        #     0 |-A-| 0.3 |-B-| 0.6 |-C-| 0.9 |-------D-------| 2.3 |-E-| 2.5
+        # markers at 0.55, 1.55 give B 1 and D 1 (2 people); markers at 0.2, 1.2, 2.2 give A 1
+        # and D 2 (3 people). A row of 0.3 catches a marker 30% of the time, so every row gets its
+        # expected count on average, and the adjacent rows of a projection cell always come within
+        # 1 person of n*samplingRate.
+        expected = df["nForAgeAndDefaultTreatments"].to_numpy() * samplingRate
+        # where each row starts and ends on the line
+        cumulative = np.concatenate([[0.0], np.cumsum(expected)])
+        # floor(cumulative + u) counts the markers up to each boundary, diff those inside a row
+        counts = np.diff(np.floor(cumulative + np.random.uniform())).astype(int)
+        # one row per person; iloc as the explodes in get_stateDf leave duplicate index labels
+        df = df.iloc[np.repeat(np.arange(len(df)), counts)].copy()
         df["modality"] = Modality.NO.value  # all NHANES people will have the same modality
         return df
 
@@ -1838,13 +1846,11 @@ class PopulationFactory:
 
     @staticmethod
     def get_nForAge_from_nForAgeGroup(age, nForAgeGroup):
-        """Returns the number of people we would reasonably expect to find with given age and
-        number of people in age group. Uniform distribution over ages for ages less than 80 years
-        old and a decreasing distribution after that."""
+        """Returns the expected number of people with given age, fractional, from the number of
+        people in age group. Uniform distribution over ages for ages less than 80 years old and a
+        decreasing distribution after that."""
         if age < 80:
-            return round(
-                nForAgeGroup / 5
-            )  # divides the number of people to equal parts for all ages in ageGroup
+            return nForAgeGroup / 5  # divides the number of people to equal parts for all ages
         elif age < 90:
             # the coefficients are np.linspace(10, 1, 10) normalized: the taper ends above zero so
             # that age 89 exists at baseline (linspace(9, 0, 10) gave it exactly 0 people). Ages
@@ -1862,9 +1868,8 @@ class PopulationFactory:
                 88: 2 / 55,
                 89: 1 / 55,
             }
-            return round(
-                nForAgeGroup * proportionsForAgeDict[age]
-            )  # divides the number of people to decreasing parts as age increases
+            # divides the number of people to decreasing parts as age increases
+            return nForAgeGroup * proportionsForAgeDict[age]
         else:
             raise RuntimeError(
                 f"Age {age} is not covered: the state pipeline generates baseline ages up to 89."
@@ -1890,16 +1895,14 @@ class PopulationFactory:
         proportionForDefaultTreatments,
         nForAge,
     ):
-        """Returns the number of people we expect to find with given statin  and
+        """Returns the expected number of people, fractional, with given statin and
         antiHypertensiveCount from the number of people with that age, the ageGroup, gender and
         raceEthnicity"""
-        return int(
-            round(
-                proportionForDefaultTreatments[ageGroup, gender, raceEthnicity][
-                    statin, antiHypertensiveCount
-                ]
-                * nForAge
-            )
+        return (
+            proportionForDefaultTreatments[ageGroup, gender, raceEthnicity][
+                statin, antiHypertensiveCount
+            ]
+            * nForAge
         )
 
     @staticmethod
