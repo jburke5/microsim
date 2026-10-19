@@ -49,6 +49,24 @@ class TestStatePopulationCounts(unittest.TestCase):
         counts = self.counts_for_cell(1.0)
         self.assertLessEqual(abs(counts.sum() - self.nForCell.sum()), 1)
 
+    def test_every_gender_race_age_has_a_pooled_fit(self):
+        keys = PopulationFactory.get_crude_distributions()["mean"].keys()
+        for gender in [1, 2]:
+            for raceEthnicity in [1, 2, 3, 4, 5]:
+                for age in range(82):
+                    self.assertIn((gender, raceEthnicity, age), keys)
+
+    def test_state_with_groups_nhanes_lacks_draws(self):
+        # IA holds men of race other with less than high school aged 25-29, whom NHANES lacks
+        df = PopulationFactory.get_dataframe_with_categoricals(
+            year=2025, state="IA", samplingRate=0.01
+        )
+        df = PopulationFactory.append_dataframe_with_continuous(
+            df, PopulationFactory.get_crude_distributions()
+        )
+        drawn = PopulationFactory.continuous_variables_drawn()
+        self.assertFalse(df[drawn].isna().any().any())
+
     def test_built_population_matches_projection(self):
         # the built Persons, not just the dataframe they are built from
         results = Validation.state_baseline_pop("WY", samplingRate=0.005, verbose=False)

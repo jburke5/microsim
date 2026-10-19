@@ -1662,12 +1662,10 @@ class PopulationFactory:
     def get_distributions_crude(dfForCategoricals):
         """dfForCategoricals: a dictionary with keys gender, raceEthnicity, education, age and
         values a dataframe based on NHANES dataframe
-        This function will attempt to fit Gaussian distributions for the continuous variables
-        using this key and value
-        But if a singular Gaussian is created then the education level is removed from the key and
-        the Gaussian is created by combining the values with all education levels
-        If removing the education from the key does not provide a non-singular Gaussian we will
-        need to fix it..."""
+        Fits a Gaussian of the continuous variables for every key, and for every (gender,
+        raceEthnicity, age) a Gaussian pooled over all education levels. A key whose own fit is
+        singular is dropped, and it and any key NHANES holds nobody of draw from the pooled fit
+        (see get_dist_keys_for_dataframe). A singular pooled fit raises."""
         meanForCategoricals = dict()
         covForCategoricals = dict()
         singularForCategoricals = dict()
@@ -1687,49 +1685,36 @@ class PopulationFactory:
             maxForCategoricals[key] = np.max(
                 np.array(dfForCategoricals[key][nhanesContinuousVariables]), axis=0
             )
-        # keysToRemove = list() #these are the distributions that are singular
         keysSingular = list(
             filter(lambda x: singularForCategoricals[x], singularForCategoricals.keys())
         )
-        for key in keysSingular:
-            keyMinusEducation = tuple(
-                list(key[0:2]) + [key[3]]
-            )  # key includes gender, race ethnicity, education, age
-            if (
-                keyMinusEducation not in meanForCategoricals.keys()
-            ):  # I might have done the fit on a prior pass
-                allEducationKeys = [list(key[0:2]) + [ed.value, key[3]] for ed in Education]
-                allEducationKeys = list(
-                    filter(lambda x: tuple(x) in list(dfForCategoricals.keys()), allEducationKeys)
+        # every (gender, raceEthnicity, age) gets a fit pooled over education: it serves the keys
+        # whose own fit is singular and the keys NHANES holds nobody of, which state projections
+        # ask for (eg men of race other with less than high school aged 25-29)
+        keysMinusEducation = dict.fromkeys((key[0], key[1], key[3]) for key in dfForCategoricals)
+        for keyMinusEducation in keysMinusEducation:
+            gender, raceEthnicity, age = keyMinusEducation
+            allEducationKeys = [(gender, raceEthnicity, ed.value, age) for ed in Education]
+            dfForAllEducationKeys = pd.concat(
+                [dfForCategoricals[key] for key in allEducationKeys if key in dfForCategoricals],
+                ignore_index=True,
+            )
+            nhanesContinuousVariables = PopulationFactory.continuous_variables_for_key_age(age)
+            values = np.array(dfForAllEducationKeys[nhanesContinuousVariables])
+            meanForCategoricals[keyMinusEducation], covForCategoricals[keyMinusEducation] = (
+                multivariate_normal.fit(values)
+            )
+            singularForCategoricals[keyMinusEducation] = PopulationFactory.is_singular(
+                covForCategoricals[keyMinusEducation]
+            )
+            minForCategoricals[keyMinusEducation] = np.min(values, axis=0)
+            maxForCategoricals[keyMinusEducation] = np.max(values, axis=0)
+            # if removing education does not create a non-singular Gaussian the process failed
+            if singularForCategoricals[keyMinusEducation]:
+                raise RuntimeError(
+                    "Process of creating non-singular Gaussian distributions has failed: the "
+                    f"fit pooled over education of {keyMinusEducation} is singular."
                 )
-                dfForAllEducationKeys = pd.concat(
-                    [dfForCategoricals[tuple(edKey)] for edKey in allEducationKeys],
-                    ignore_index=True,
-                )
-                nhanesContinuousVariables = PopulationFactory.continuous_variables_for_key_age(
-                    key[3]
-                )
-                meanForCategoricals[keyMinusEducation], covForCategoricals[keyMinusEducation] = (
-                    multivariate_normal.fit(
-                        np.array(dfForAllEducationKeys[nhanesContinuousVariables])
-                    )
-                )
-                singularForCategoricals[keyMinusEducation] = PopulationFactory.is_singular(
-                    covForCategoricals[keyMinusEducation]
-                )
-                minForCategoricals[keyMinusEducation] = np.min(
-                    np.array(dfForAllEducationKeys[nhanesContinuousVariables]), axis=0
-                )
-                maxForCategoricals[keyMinusEducation] = np.max(
-                    np.array(dfForAllEducationKeys[nhanesContinuousVariables]), axis=0
-                )
-                # if removing education does not create a non-singular Gaussian the process failed
-                if singularForCategoricals[keyMinusEducation]:
-                    raise RuntimeError(
-                        "Process of creating non-singular Gaussian distributions has failed."
-                    )
-            # keysToRemove.append(key)
-        # for key in keysToRemove:
         for key in keysSingular:
             del singularForCategoricals[key]
             del meanForCategoricals[key]
@@ -2081,8 +2066,8 @@ class PopulationFactory:
         for key, rowsOfKey in keyFrame.groupby(
             list(keyFrame.columns), observed=True
         ).indices.items():
-            # a group whose own distribution was singular was fit without education, see
-            # get_distributions_crude
+            # a group whose own fit is singular, or that NHANES holds nobody of, draws from the
+            # fit pooled over education, see get_distributions_crude
             distKey = key if key in distributions["mean"].keys() else (key[0], key[1], key[3])
             distKeysForRows.append((distKey, rowsOfKey))
         return distKeysForRows

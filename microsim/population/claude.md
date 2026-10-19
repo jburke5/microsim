@@ -188,7 +188,11 @@ filled in from NHANES:
   values NHANES holds), used by both the cross product and the proportions so the two
   cannot drift and no observed count is left out of the denominators.
 - **Continuous variables** are drawn from the same NHANES Gaussians the
-  `distributions=True` path uses (crude fit + group-mean shift, see gotchas 14-16).
+  `distributions=True` path uses (crude fit + group-mean shift, see gotchas 14-16). A row
+  whose (gender, race, education, age window) NHANES holds nobody of — e.g. men of race other
+  with less than high school aged 25-29 — draws from the education-pooled fit of its gender,
+  race and age, which every (gender, race, age) has. Until 2026-10-19 only singular groups had
+  one, so such rows raised a `KeyError` and IA, NY and KY could not be built at 0.01.
 
 Parameters:
 - `samplingRate`: the fraction of the state population simulated. Each (cell, age, statin,
