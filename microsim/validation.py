@@ -1,11 +1,17 @@
+import glob
+import os
+
 import numpy as np
 import pandas as pd
 
+from microsim.common.data_loader import get_absolute_datafile_path
 from microsim.population.population_factory import PopulationFactory
 from microsim.person.person_filter_factory import PersonFilterFactory
 from microsim.risk_factors.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
+from microsim.risk_factors.education import Education
 from microsim.risk_factors.gender import NHANESGender
 from microsim.risk_factors.race_ethnicity import RaceEthnicity
+from microsim.risk_factors.smoking_status import SmokingStatus
 from microsim.default_treatments.default_treatments import DefaultTreatmentsType
 from microsim.trials.trial_description import NhanesTrialDescription
 from microsim.trials.trial import Trial
@@ -297,17 +303,19 @@ class Validation:
     # ==========================================================================
 
     @staticmethod
-    def _print_side_by_side(title, columns, rows, fmt="{:.1f}"):
+    def _print_side_by_side(title, columns, rows, fmt="{:.1f}", referenceHeader="published"):
         """Prints one section of the report: a row per quantity, the value Burke2024 publishes for
         it next to the value this run obtained.
         columns: the headers of the columns of this run, one per value of a row
         rows: (quantity, published value, [values of this run]); a published value given as a
               (low, high) tuple is one the paper publishes as a range
-        fmt: the format of every number of the section"""
+        fmt: the format of every number of the section
+        referenceHeader: the header of the reference column, for references other than a paper"""
         print(f"\n{title}")
         print("-" * len(title))
         print(
-            f"{'quantity':<44}{'published':>14}" + "".join([f"{column:>14}" for column in columns])
+            f"{'quantity':<44}{referenceHeader:>14}"
+            + "".join([f"{column:>14}" for column in columns])
         )
         for quantity, published, values in rows:
             publishedString = (
@@ -733,3 +741,177 @@ class Validation:
         Validation.kaiser_baseline_pop(wmhSpecific=wmhSpecific)
         dfs = Validation.kaiser_over_time(wmhSpecific=wmhSpecific, nWorkers=nWorkers)
         return dfs
+
+    # ==========================================================================
+    # State populations against the projection CSVs they are built from
+    # ==========================================================================
+
+    # the variables a state projection is broken down by
+    stateProjectionVariables = [
+        "ageGroup",
+        StaticRiskFactorsType.RACE_ETHNICITY.value,
+        StaticRiskFactorsType.GENDER.value,
+        StaticRiskFactorsType.EDUCATION.value,
+        StaticRiskFactorsType.SMOKING_STATUS.value,
+        DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value,
+    ]
+
+    @staticmethod
+    def _state_cells(pop):
+        """Returns one row per person of a state population at baseline, with the variables its
+        projection is broken down by as ints and age as the projection's age group."""
+        ages = pop.get_attr_baseline(DynamicRiskFactorsType.AGE.value)
+        cells = pd.DataFrame(
+            {"ageGroup": [PopulationFactory.get_ageGroup_from_age(age) for age in ages]}
+        )
+        for rf in [
+            StaticRiskFactorsType.RACE_ETHNICITY.value,
+            StaticRiskFactorsType.GENDER.value,
+            StaticRiskFactorsType.EDUCATION.value,
+            StaticRiskFactorsType.SMOKING_STATUS.value,
+        ]:
+            cells[rf] = pop.get_attr(rf)
+        cells[DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value] = pop.get_attr_baseline(
+            DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value
+        )
+        return cells.astype(int)
+
+    @staticmethod
+    def _state_category_label(variable, code):
+        """Returns a readable name for a category of a state projection variable."""
+        if variable == "ageGroup":
+            return "80+" if code == 17 else f"{5 * (code - 1)}-{5 * code - 1}"
+        enums = {
+            StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity,
+            StaticRiskFactorsType.GENDER.value: NHANESGender,
+            StaticRiskFactorsType.EDUCATION.value: Education,
+            StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus,
+        }
+        if variable in enums:
+            return enums[variable](code).name.lower()
+        return "yes" if code else "no"
+
+    @staticmethod
+    def state_baseline_pop(state="OH", year=2025, samplingRate=0.01, verbose=True):
+        """Builds the population of a state and compares its make-up at baseline with the
+        projection CSV it was built from, over the variables the projection is broken down by.
+        Each variable is compared on its own, as the percent of people per category, and all of
+        them jointly, cell by cell: the total variation distance between the two cell
+        distributions and the largest difference between a cell's people and its n*samplingRate.
+        verbose=False prints nothing, which is how states_baseline_pop calls it.
+        Returns {"state", "year", "samplingRate", "expectedN", "n", "tvd", "maxCellError",
+        "marginals": {variable: DataFrame of projection %, population % and their difference}}."""
+        projection = pd.read_csv(
+            get_absolute_datafile_path("state") + f"/pop_projection_{state.lower()}_{year}.csv"
+        )
+        pop = PopulationFactory.get_state_population(
+            year=year, personFilters=None, state=state, samplingRate=samplingRate
+        )
+        variables = Validation.stateProjectionVariables
+        # outer join, so a cell the population has but the projection lacks would show as an error
+        joint = pd.concat(
+            [
+                projection.groupby(variables)["n"].sum() * samplingRate,
+                Validation._state_cells(pop).groupby(variables).size(),
+            ],
+            axis=1,
+            keys=["expected", "population"],
+        ).fillna(0)
+        tvd = 0.5 * float(
+            (
+                joint["population"] / joint["population"].sum()
+                - joint["expected"] / joint["expected"].sum()
+            )
+            .abs()
+            .sum()
+        )
+        marginals = dict()
+        for variable in variables:
+            counts = joint.groupby(level=variable).sum()
+            marginal = pd.DataFrame(
+                {
+                    "projection": 100.0 * counts["expected"] / counts["expected"].sum(),
+                    "population": 100.0 * counts["population"] / counts["population"].sum(),
+                }
+            )
+            marginal["difference"] = marginal["population"] - marginal["projection"]
+            marginals[variable] = marginal
+        results = {
+            "state": state,
+            "year": year,
+            "samplingRate": samplingRate,
+            "expectedN": float(joint["expected"].sum()),
+            "n": int(joint["population"].sum()),
+            "tvd": tvd,
+            "maxCellError": float((joint["population"] - joint["expected"]).abs().max()),
+            "marginals": marginals,
+        }
+        if verbose:
+            print(f"\nVALIDATION OF THE {state.upper()} {year} POPULATION AGAINST ITS PROJECTION")
+            print(
+                f"samplingRate={samplingRate}: {results['n']} people built, "
+                f"{results['expectedN']:.1f} expected"
+            )
+            print(
+                f"all {len(joint)} cells jointly: total variation distance {tvd:.4f}, "
+                f"largest cell error {results['maxCellError']:.2f} people"
+            )
+            for variable, marginal in marginals.items():
+                Validation._print_side_by_side(
+                    f"{variable} (% of people)",
+                    ["population", "difference"],
+                    [
+                        (
+                            Validation._state_category_label(variable, code),
+                            row["projection"],
+                            [row["population"], row["difference"]],
+                        )
+                        for code, row in marginal.iterrows()
+                    ],
+                    fmt="{:.2f}",
+                    referenceHeader="projection",
+                )
+        return results
+
+    @staticmethod
+    def states_baseline_pop(year=2025, peoplePerState=20000, states=("VT", "KY", "CA")):
+        """Runs state_baseline_pop on several states and prints one row per state. Each state is
+        built at the rate that gives it about peoplePerState people, so every state is checked
+        with the same precision. The default states are the smallest (VT), the median (KY) and
+        the largest (CA) of the 2025 projections; states=None runs every projection of the year.
+        Returns {state: what state_baseline_pop returns}."""
+        dataDir = get_absolute_datafile_path("state")
+        if states is None:
+            states = sorted(
+                os.path.basename(f).split("_")[2].upper()
+                for f in glob.glob(dataDir + f"/pop_projection_*_{year}.csv")
+            )
+        print(f"\nVALIDATION OF {year} STATE POPULATIONS AGAINST THEIR PROJECTIONS")
+        print(f"each state built with about {peoplePerState} people")
+        print(
+            f"{'state':<7}{'rate':>10}{'expected':>12}{'built':>10}{'TVD':>10}"
+            f"{'largest marginal diff (pp)':>34}{'largest cell error':>20}"
+        )
+        results = dict()
+        for state in states:
+            total = pd.read_csv(dataDir + f"/pop_projection_{state.lower()}_{year}.csv")["n"].sum()
+            result = Validation.state_baseline_pop(
+                state=state,
+                year=year,
+                samplingRate=min(1.0, peoplePerState / total),
+                verbose=False,
+            )
+            worst = max(
+                result["marginals"],
+                key=lambda v: result["marginals"][v]["difference"].abs().max(),
+            )
+            worstDifference = (
+                f"{result['marginals'][worst]['difference'].abs().max():.3f} ({worst})"
+            )
+            print(
+                f"{state:<7}{result['samplingRate']:>10.5f}{result['expectedN']:>12.1f}"
+                f"{result['n']:>10}{result['tvd']:>10.4f}"
+                f"{worstDifference:>34}{result['maxCellError']:>20.2f}"
+            )
+            results[state] = result
+        return results

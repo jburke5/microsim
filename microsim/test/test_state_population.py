@@ -11,6 +11,7 @@ import pandas as pd
 
 from microsim.common.data_loader import get_absolute_datafile_path
 from microsim.population.population_factory import PopulationFactory
+from microsim.validation import Validation
 
 CELL = [
     "ageGroup",
@@ -47,6 +48,16 @@ class TestStatePopulationCounts(unittest.TestCase):
     def test_full_rate_keeps_the_whole_state(self):
         counts = self.counts_for_cell(1.0)
         self.assertLessEqual(abs(counts.sum() - self.nForCell.sum()), 1)
+
+    def test_built_population_matches_projection(self):
+        # the built Persons, not just the dataframe they are built from
+        results = Validation.state_baseline_pop("WY", samplingRate=0.005, verbose=False)
+        self.assertLessEqual(abs(results["n"] - results["expectedN"]), 1)
+        self.assertLessEqual(results["maxCellError"], 1)
+        # not bounded by the rounding like the cells: across 500 seeds at this size the worst
+        # was 0.46 pp (smokingStatus), under the ~0.7 pp sd of a simple random sample
+        for marginal in results["marginals"].values():
+            self.assertLess(marginal["difference"].abs().max(), 1.0)
 
 
 if __name__ == "__main__":
