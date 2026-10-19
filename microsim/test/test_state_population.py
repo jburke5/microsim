@@ -4,6 +4,8 @@ Rows hold fractional expected counts that are rounded once, together, by systema
 the total and every projection cell must come within 1 person of n*samplingRate. WY is the
 smallest-cell case the old per-row rounding failed on (4,784 people instead of 6,363 at 0.01)."""
 
+import contextlib
+import io
 import unittest
 
 import numpy as np
@@ -69,13 +71,26 @@ class TestStatePopulationCounts(unittest.TestCase):
 
     def test_built_population_matches_projection(self):
         # the built Persons, not just the dataframe they are built from
-        results = Validation.state_baseline_pop("WY", samplingRate=0.005, verbose=False)
+        results = Validation.state_baseline_pop("WY", samplingRate=0.005, verbose=0)
         self.assertLessEqual(abs(results["n"] - results["expectedN"]), 1)
         self.assertLessEqual(results["maxCellError"], 1)
         # not bounded by the rounding like the cells: across 500 seeds at this size the worst
         # was 0.46 pp (smokingStatus), under the ~0.7 pp sd of a simple random sample
         for marginal in results["marginals"].values():
             self.assertLess(marginal["difference"].abs().max(), 1.0)
+
+    def test_report_prints_at_every_verbosity(self):
+        results = {"WY": Validation.state_baseline_pop("WY", samplingRate=0.002, verbose=0)}
+        lengths = list()
+        for verbose in [0, 1, 2, 3]:
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                Validation.print_states_baseline_pop(results, verbose=verbose)
+            lengths.append(len(out.getvalue().splitlines()))
+        self.assertEqual(lengths[0], 0)
+        self.assertTrue(lengths[0] < lengths[1] < lengths[2] < lengths[3])
+        table = Validation.states_baseline_pop_table(results)
+        self.assertEqual(len(table), sum(len(m) for m in results["WY"]["marginals"].values()))
 
 
 if __name__ == "__main__":
