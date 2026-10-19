@@ -913,22 +913,28 @@ class Validation:
         print("=" * len(title))
         print("Each population at baseline vs its projection CSV.\n")
         print(
-            "  worst row       largest |built - target| over all rows of the state projection CSV"
+            "  worst row       largest |built - target| of any single row of the state "
+            "projection CSV"
         )
         print(
-            "                  (target is usually a float so ideally worst row should be less "
-            "than 1.)"
+            "                  (a row's target is usually a fraction, eg 12.3, so it gets 12 or "
+            "13 people;"
+        )
+        print("                  worst row is always below 1, and just below 1 is normal)")
+        print(
+            "  worst category  largest |population proportion - projection proportion| of any "
+            "single category"
         )
         print(
-            "  worst category  largest |population proportion - projection proportion| over all "
-            "categories"
+            "  difference      in the state tables below: population proportion - projection "
+            "proportion"
         )
         people = "(# of people)"
         header = [
             f"{'':<5}{'sampling':>12}{'target':>16}{'built':>16}{'worst row':>16}   "
             "worst category",
             f"{'state':<5}{'rate':>12}{people:>16}{people:>16}{people:>16}   "
-            "(greatest difference of proportions)",
+            "(largest difference of proportions)",
         ]
         rows = list()
         for state, result in results.items():
