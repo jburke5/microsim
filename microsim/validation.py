@@ -813,12 +813,12 @@ class Validation:
         """Builds the population of a state and compares its make-up at baseline with the
         projection CSV it was built from, over the variables the projection is broken down by.
         Each variable is compared on its own, as the proportion of people per category, and all of
-        them jointly, cell by cell: the total variation distance between the two cell
-        distributions and the largest difference between a cell's people and its n*samplingRate.
+        them jointly, cell by cell: the largest difference between a cell's people and its
+        n*samplingRate.
         verbose=True prints the comparison, see print_states_baseline_pop.
-        Returns {"state", "year", "samplingRate", "expectedN", "n", "nCells", "tvd",
-        "maxCellError", "marginals": {variable: DataFrame of the projection proportion, the
-        population proportion and their difference}}."""
+        Returns {"state", "year", "samplingRate", "expectedN", "n", "nCells", "maxCellError",
+        "marginals": {variable: DataFrame of the projection proportion, the population proportion
+        and their difference}}."""
         projection = pd.read_csv(
             get_absolute_datafile_path("state") + f"/pop_projection_{state.lower()}_{year}.csv"
         )
@@ -835,14 +835,6 @@ class Validation:
             axis=1,
             keys=["expected", "population"],
         ).fillna(0)
-        tvd = 0.5 * float(
-            (
-                joint["population"] / joint["population"].sum()
-                - joint["expected"] / joint["expected"].sum()
-            )
-            .abs()
-            .sum()
-        )
         marginals = dict()
         for variable in variables:
             counts = joint.groupby(level=variable).sum()
@@ -861,7 +853,6 @@ class Validation:
             "expectedN": float(joint["expected"].sum()),
             "n": int(joint["population"].sum()),
             "nCells": len(joint),
-            "tvd": tvd,
             "maxCellError": float((joint["population"] - joint["expected"]).abs().max()),
             "marginals": marginals,
         }
