@@ -2109,12 +2109,8 @@ class PopulationFactory:
             clipped += clippedForKey
         if clipped > 0:
             print(
-                f"Warning: {clipped} of {draws.shape[0]} people had a group mean too far from the "
-                "distribution "
-                "they were drawn from for the bounds of that distribution "
-                "to be met, and were clipped to "
-                "those bounds. Their group holds too few people for its "
-                "mean to be a reliable one."
+                f"Warning: {clipped} of {draws.shape[0]} people clipped to the bounds of their "
+                "distribution (group mean from too few people)."
             )
         return draws
 
