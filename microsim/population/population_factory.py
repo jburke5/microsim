@@ -152,6 +152,11 @@ class PopulationFactory:
     # left out of the denominators
     antiHypertensiveCounts = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0]
 
+    # age groups: 5-year groups 1-16 (0-4 to 75-79) and an open top group 17 (80+); the coding of
+    # the state projections, also used to group NHANES people for the draws and the treatment
+    # proportions. See get_ageGroup_from_age and get_age_range_from_ageGroup
+    topAgeGroup = 17
+
     # the order of the items in the two lists is critical because functions later on, eg draw from
     # the distributions, depend on the order
     kaiser_variable_types = {
@@ -1807,15 +1812,12 @@ class PopulationFactory:
         data[DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value] = data[
             DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value
         ].astype(bool)
-        ageList5Years = [x for x in range(0, 5)]
-        ageList10Years = [x for x in range(0, 10)]  # this is for the last age group, the oldest
-        data["age"] = data["ageGroup"].apply(
-            lambda i: (
-                [x + (i - 1) * len(ageList5Years) for x in ageList5Years]
-                if i != 17
-                else [x + (i - 1) * len(ageList5Years) for x in ageList10Years]
-            )
-        )  # not a typo
+        # the open top group is spread over 80-89, see get_nForAge_from_nForAgeGroup
+        ageRanges = data["ageGroup"].apply(PopulationFactory.get_age_range_from_ageGroup)
+        data["age"] = [
+            list(range(first, (first + 9 if last is None else last) + 1))
+            for first, last in ageRanges
+        ]
         data = data.explode("age")
         data["nForAge"] = data.apply(
             lambda x: PopulationFactory.get_nForAge_from_nForAgeGroup(x["age"], x["n"]), axis=1
@@ -1863,12 +1865,19 @@ class PopulationFactory:
     @staticmethod
     def get_ageGroup_from_age(age):
         """Returns age group given age.
-        Age groups include 5 ages until age 79, and anyone older than 79 belongs to age group
-        17."""
+        Age groups include 5 ages until age 79, and anyone older than 79 belongs to the top age
+        group, 17."""
         if age >= 80:
-            return 17
+            return PopulationFactory.topAgeGroup
         else:
             return age // 5 + 1
+
+    @staticmethod
+    def get_age_range_from_ageGroup(ageGroup):
+        """Returns (first age, last age) of an age group, the inverse of get_ageGroup_from_age.
+        The last age of the open top group (80+) is None."""
+        first = 5 * (ageGroup - 1)
+        return (first, None if ageGroup == PopulationFactory.topAgeGroup else first + 4)
 
     @staticmethod
     def get_nForDefaultTreatments(
@@ -1901,7 +1910,7 @@ class PopulationFactory:
         df["ageGroup"] = df["age"].apply(lambda x: PopulationFactory.get_ageGroup_from_age(x))
         df["age"] = df["age"].astype(int)
         for ageGroup, gender, raceEthnicity in product(
-            list(range(1, 18, 1)),
+            list(range(1, PopulationFactory.topAgeGroup + 1)),
             # set(data[StaticRiskFactorsType.GENDER.value].tolist()),
             [ge.value for ge in NHANESGender],
             # set(data[StaticRiskFactorsType.RACE_ETHNICITY.value].tolist())):

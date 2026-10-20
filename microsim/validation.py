@@ -780,7 +780,8 @@ class Validation:
     def _state_category_label(variable, code):
         """Returns a readable name for a category of a state projection variable."""
         if variable == "ageGroup":
-            return "80+" if code == 17 else f"{5 * (code - 1)}-{5 * code - 1}"
+            first, last = PopulationFactory.get_age_range_from_ageGroup(code)
+            return f"{first}+" if last is None else f"{first}-{last}"
         enums = {
             StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity,
             StaticRiskFactorsType.GENDER.value: NHANESGender,
@@ -811,7 +812,7 @@ class Validation:
         # outer join, so a cell the population has but the projection lacks would show as an error
         joint = pd.concat(
             [
-                projection.groupby(variables)["n"].sum() * samplingRate,
+                projection.set_index(variables)["n"] * samplingRate,
                 Validation._state_cells(pop).groupby(variables).size(),
             ],
             axis=1,
@@ -841,9 +842,7 @@ class Validation:
 
     @staticmethod
     def state_baseline_pop(state="OH", year=2025, samplingRate=0.01):
-        """Compares the population of a state at baseline with its projection CSV and prints the
-        comparison, see _state_baseline_results and print_states_baseline_pop.
-        Returns what _state_baseline_results returns."""
+        """Prints and returns how a state population at baseline compares with its projection."""
         results = Validation._state_baseline_results(state, year, samplingRate)
         Validation.print_states_baseline_pop({state: results})
         return results
@@ -862,9 +861,8 @@ class Validation:
                 os.path.basename(f).split("_")[2].upper()
                 for f in glob.glob(dataDir + f"/pop_projection_*_{year}.csv")
             )
-        populations = "population" if len(states) == 1 else "populations"
         print(
-            f"\nBuilding {len(states)} state {populations} of about {peoplePerState:,} people "
+            f"\nBuilding {len(states)} state population(s) of about {peoplePerState:,} people "
             "each..."
         )
         results = dict()

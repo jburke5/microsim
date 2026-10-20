@@ -51,6 +51,16 @@ class TestStatePopulationCounts(unittest.TestCase):
         counts = self.counts_for_cell(1.0)
         self.assertLessEqual(abs(counts.sum() - self.nForCell.sum()), 1)
 
+    def test_age_range_inverts_age_group(self):
+        for age in range(120):
+            first, last = PopulationFactory.get_age_range_from_ageGroup(
+                PopulationFactory.get_ageGroup_from_age(age)
+            )
+            self.assertLessEqual(first, age)
+            self.assertTrue(last is None or age <= last)
+        self.assertEqual(PopulationFactory.get_age_range_from_ageGroup(1), (0, 4))
+        self.assertEqual(PopulationFactory.get_age_range_from_ageGroup(17), (80, None))
+
     def test_every_gender_race_age_has_a_pooled_fit(self):
         keys = PopulationFactory.get_crude_distributions()["mean"].keys()
         for gender in [1, 2]:
