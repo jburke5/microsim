@@ -756,8 +756,10 @@ class Validation:
 
     @staticmethod
     def _state_cells(pop):
-        """Returns one row per person of a state population at baseline, with the variables its
-        projection is broken down by as ints and age as the projection's age group."""
+        """Describes each person of a state population in the same terms as its projection CSV,
+        so the two can be counted cell by cell: one row per person, one column per projection
+        variable, baseline age replaced by its 5-year age group, every value as the integer code
+        the CSV uses."""
         ages = pop.get_attr_baseline(DynamicRiskFactorsType.AGE.value)
         cells = pd.DataFrame(
             {"ageGroup": [PopulationFactory.get_ageGroup_from_age(age) for age in ages]}
