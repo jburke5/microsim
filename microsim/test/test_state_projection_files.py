@@ -1,5 +1,5 @@
 """Checks that every state projection CSV is well formed, so a malformed file is caught here and
-fixed rather than built into a population."""
+fixed rather than built into a population, and that a year or state without one is refused."""
 
 import glob
 import os
@@ -13,6 +13,7 @@ from microsim.risk_factors.education import Education
 from microsim.risk_factors.gender import NHANESGender
 from microsim.risk_factors.race_ethnicity import RaceEthnicity
 from microsim.risk_factors.smoking_status import SmokingStatus
+from microsim.validation import Validation
 
 CELL = [
     "ageGroup",
@@ -80,6 +81,35 @@ class TestStateProjectionFiles(unittest.TestCase):
             with self.subTest(file=name):
                 self.assertTrue(pd.api.types.is_integer_dtype(df["n"]))
                 self.assertGreaterEqual(df["n"].min(), 0)
+
+
+class TestStateProjectionLookup(unittest.TestCase):
+    def test_states_of_a_year(self):
+        states = PopulationFactory.get_state_projection_states(2025)
+        self.assertEqual(len(states), 51)
+        self.assertIn("DC", states)
+
+    def test_path_of_a_state_and_year(self):
+        path = PopulationFactory.get_state_projection_path(2040, "oh")
+        self.assertEqual(os.path.basename(path), "pop_projection_oh_2040.csv")
+        self.assertTrue(os.path.isfile(path))
+
+    def test_unknown_year_lists_the_years(self):
+        with self.assertRaisesRegex(ValueError, r"2045.*'2025', '2030', '2035', '2040'"):
+            PopulationFactory.get_state_projection_path(2045, "OH")
+
+    def test_unknown_state_lists_the_states(self):
+        with self.assertRaisesRegex(ValueError, r"ZZ.*'AK'"):
+            PopulationFactory.get_state_projection_path(2025, "ZZ")
+
+    def test_population_refuses_unknown_year(self):
+        with self.assertRaises(ValueError):
+            PopulationFactory.get_state_population(year=2045, state="OH")
+
+    def test_validation_refuses_unknown_year(self):
+        # states=None used to find no files, build nothing and die with a StopIteration
+        with self.assertRaises(ValueError):
+            Validation.states_baseline_pop(year=2045, states=None)
 
 
 if __name__ == "__main__":

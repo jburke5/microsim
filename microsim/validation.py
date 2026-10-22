@@ -1,10 +1,6 @@
-import glob
-import os
-
 import numpy as np
 import pandas as pd
 
-from microsim.common.data_loader import get_absolute_datafile_path
 from microsim.population.population_factory import PopulationFactory
 from microsim.person.person_filter_factory import PersonFilterFactory
 from microsim.risk_factors.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
@@ -802,9 +798,7 @@ class Validation:
         Returns {"state", "year", "samplingRate", "expectedN", "n", "nCells", "maxCellError",
         "marginals": {variable: DataFrame of the projection proportion, the population proportion
         and their difference}}."""
-        projection = pd.read_csv(
-            get_absolute_datafile_path("state") + f"/pop_projection_{state.lower()}_{year}.csv"
-        )
+        projection = pd.read_csv(PopulationFactory.get_state_projection_path(year, state))
         pop = PopulationFactory.get_state_population(
             year=year, personFilters=None, state=state, samplingRate=samplingRate
         )
@@ -855,19 +849,16 @@ class Validation:
         default states are the smallest (VT), the median (KY) and the largest (CA) of the 2025
         projections; states=None runs every projection of the year.
         Returns {state: what state_baseline_pop returns}."""
-        dataDir = get_absolute_datafile_path("state")
         if states is None:
-            states = sorted(
-                os.path.basename(f).split("_")[2].upper()
-                for f in glob.glob(dataDir + f"/pop_projection_*_{year}.csv")
-            )
+            states = PopulationFactory.get_state_projection_states(year)
         print(
             f"\nBuilding {len(states)} state population(s) of about {peoplePerState:,} people "
             "each..."
         )
         results = dict()
         for state in states:
-            total = pd.read_csv(dataDir + f"/pop_projection_{state.lower()}_{year}.csv")["n"].sum()
+            path = PopulationFactory.get_state_projection_path(year, state)
+            total = pd.read_csv(path)["n"].sum()
             results[state] = Validation._state_baseline_results(
                 state, year, min(1.0, peoplePerState / total)
             )

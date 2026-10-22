@@ -1,5 +1,7 @@
 import copy
+import glob
 import multiprocessing as mp
+import os
 
 import cloudpickle
 import pandas as pd
@@ -1780,12 +1782,34 @@ class PopulationFactory:
         return df
 
     @staticmethod
+    def get_state_projection_states(year):
+        """Returns the states with a projection CSV for year, failing with the years there are
+        projections for when there is none."""
+        statesForYear = dict()
+        for f in glob.glob(get_absolute_datafile_path("state") + "/pop_projection_*_*.csv"):
+            _, _, state, fileYear = os.path.basename(f).removesuffix(".csv").split("_")
+            statesForYear.setdefault(fileYear, []).append(state.upper())
+        if str(year) not in statesForYear:
+            raise ValueError(
+                f"There are no state projections for {year}, only for {sorted(statesForYear)}."
+            )
+        return sorted(statesForYear[str(year)])
+
+    @staticmethod
+    def get_state_projection_path(year, state):
+        """Returns the path of the projection CSV of a state and year, failing with the years or
+        states there are projections for when there is none."""
+        states = PopulationFactory.get_state_projection_states(year)
+        if state.upper() not in states:
+            raise ValueError(f"There is no {year} projection for {state}, only for {states}.")
+        return get_absolute_datafile_path("state") + f"/pop_projection_{state.lower()}_{year}.csv"
+
+    @staticmethod
     def get_stateDf(year=2025, state="OH"):
         """Reads the CSV file that includes some categorical variables for each state and year and
         performs a bit of initial processing. Returns a dataframe that includes a portion of the
         microsim categorical variables and the number of people in that state by age."""
-        dataDir = get_absolute_datafile_path("state")
-        data = pd.read_csv(dataDir + f"/pop_projection_{state.lower()}_{year}.csv")
+        data = pd.read_csv(PopulationFactory.get_state_projection_path(year, state))
         # the whole state pipeline is built on NHANES, so a race NHANES holds nobody of (eg ASIAN)
         # has neither treatment proportions nor risk-factor distributions; fail here with the codes
         # rather than with a KeyError deep in an apply
