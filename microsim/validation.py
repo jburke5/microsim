@@ -1,10 +1,6 @@
-import glob
-import os
-
 import numpy as np
 import pandas as pd
 
-from microsim.common.data_loader import get_absolute_datafile_path
 from microsim.population.population_factory import PopulationFactory
 from microsim.person.person_filter_factory import PersonFilterFactory
 from microsim.risk_factors.risk_factor import DynamicRiskFactorsType, StaticRiskFactorsType
@@ -756,8 +752,10 @@ class Validation:
 
     @staticmethod
     def _state_cells(pop):
-        """Returns one row per person of a state population at baseline, with the variables its
-        projection is broken down by as ints and age as the projection's age group."""
+        """Describes each person of a state population in the same terms as its projection CSV,
+        so the two can be counted cell by cell: one row per person, one column per projection
+        variable, baseline age replaced by its 5-year age group, every value as the integer code
+        the CSV uses."""
         ages = pop.get_attr_baseline(DynamicRiskFactorsType.AGE.value)
         cells = pd.DataFrame(
             {"ageGroup": [PopulationFactory.get_ageGroup_from_age(age) for age in ages]}
@@ -774,34 +772,16 @@ class Validation:
         )
         return cells.astype(int)
 
-    _stateVariableLabels = {
-        "ageGroup": "age group",
-        StaticRiskFactorsType.RACE_ETHNICITY.value: "race/ethnicity",
-        StaticRiskFactorsType.GENDER.value: "gender",
-        StaticRiskFactorsType.EDUCATION.value: "education",
-        StaticRiskFactorsType.SMOKING_STATUS.value: "smoking",
-        DynamicRiskFactorsType.ANY_PHYSICAL_ACTIVITY.value: "physical activity",
-    }
-
-    # the enum names of education do not read well, eg LESSTHANHIGHSCHOOL
-    _educationLabels = {
-        Education.LESSTHANHIGHSCHOOL: "less than high school",
-        Education.SOMEHIGHSCHOOL: "some high school",
-        Education.HIGHSCHOOLGRADUATE: "high school graduate",
-        Education.SOMECOLLEGE: "some college",
-        Education.COLLEGEGRADUATE: "college graduate",
-    }
-
     @staticmethod
     def _state_category_label(variable, code):
         """Returns a readable name for a category of a state projection variable."""
         if variable == "ageGroup":
-            return "80+" if code == 17 else f"{5 * (code - 1)}-{5 * code - 1}"
-        if variable == StaticRiskFactorsType.EDUCATION.value:
-            return Validation._educationLabels[Education(code)]
+            first, last = PopulationFactory.get_age_range_from_ageGroup(code)
+            return f"{first}+" if last is None else f"{first}-{last}"
         enums = {
             StaticRiskFactorsType.RACE_ETHNICITY.value: RaceEthnicity,
             StaticRiskFactorsType.GENDER.value: NHANESGender,
+            StaticRiskFactorsType.EDUCATION.value: Education,
             StaticRiskFactorsType.SMOKING_STATUS.value: SmokingStatus,
         }
         if variable in enums:
@@ -809,19 +789,16 @@ class Validation:
         return "yes" if code else "no"
 
     @staticmethod
-    def state_baseline_pop(state="OH", year=2025, samplingRate=0.01, verbose=True):
+    def _state_baseline_results(state, year, samplingRate):
         """Builds the population of a state and compares its make-up at baseline with the
         projection CSV it was built from, over the variables the projection is broken down by.
         Each variable is compared on its own, as the proportion of people per category, and all of
         them jointly, cell by cell: the largest difference between a cell's people and its
         n*samplingRate.
-        verbose=True prints the comparison, see print_states_baseline_pop.
         Returns {"state", "year", "samplingRate", "expectedN", "n", "nCells", "maxCellError",
         "marginals": {variable: DataFrame of the projection proportion, the population proportion
         and their difference}}."""
-        projection = pd.read_csv(
-            get_absolute_datafile_path("state") + f"/pop_projection_{state.lower()}_{year}.csv"
-        )
+        projection = pd.read_csv(PopulationFactory.get_state_projection_path(year, state))
         pop = PopulationFactory.get_state_population(
             year=year, personFilters=None, state=state, samplingRate=samplingRate
         )
@@ -829,7 +806,7 @@ class Validation:
         # outer join, so a cell the population has but the projection lacks would show as an error
         joint = pd.concat(
             [
-                projection.groupby(variables)["n"].sum() * samplingRate,
+                projection.set_index(variables)["n"] * samplingRate,
                 Validation._state_cells(pop).groupby(variables).size(),
             ],
             axis=1,
@@ -846,7 +823,7 @@ class Validation:
             )
             marginal["difference"] = marginal["population"] - marginal["projection"]
             marginals[variable] = marginal
-        results = {
+        return {
             "state": state,
             "year": year,
             "samplingRate": samplingRate,
@@ -856,43 +833,36 @@ class Validation:
             "maxCellError": float((joint["population"] - joint["expected"]).abs().max()),
             "marginals": marginals,
         }
-        if verbose:
-            Validation.print_states_baseline_pop({state: results})
+
+    @staticmethod
+    def state_baseline_pop(state="OH", year=2025, samplingRate=0.01):
+        """Prints and returns how a state population at baseline compares with its projection."""
+        results = Validation._state_baseline_results(state, year, samplingRate)
+        Validation.print_states_baseline_pop({state: results})
         return results
 
     @staticmethod
-    def states_baseline_pop(
-        year=2025, peoplePerState=20000, states=("VT", "KY", "CA"), verbose=True
-    ):
-        """Runs state_baseline_pop on several states. Each state is built at the rate that gives
-        it about peoplePerState people, so every state is checked with the same precision. The
+    def states_baseline_pop(year=2025, peoplePerState=20000, states=("VT", "KY", "CA")):
+        """Runs state_baseline_pop on several states, printing them in one report rather than one
+        per state, see print_states_baseline_pop. Each state is built at the rate that gives it
+        about peoplePerState people, so every state is checked with the same precision. The
         default states are the smallest (VT), the median (KY) and the largest (CA) of the 2025
         projections; states=None runs every projection of the year.
-        verbose=True prints the comparison, see print_states_baseline_pop.
         Returns {state: what state_baseline_pop returns}."""
-        dataDir = get_absolute_datafile_path("state")
         if states is None:
-            states = sorted(
-                os.path.basename(f).split("_")[2].upper()
-                for f in glob.glob(dataDir + f"/pop_projection_*_{year}.csv")
-            )
-        if verbose:
-            populations = "population" if len(states) == 1 else "populations"
-            print(
-                f"\nBuilding {len(states)} state {populations} of about {peoplePerState:,} people "
-                "each..."
-            )
+            states = PopulationFactory.get_state_projection_states(year)
+        print(
+            f"\nBuilding {len(states)} state population(s) of about {peoplePerState:,} people "
+            "each..."
+        )
         results = dict()
         for state in states:
-            total = pd.read_csv(dataDir + f"/pop_projection_{state.lower()}_{year}.csv")["n"].sum()
-            results[state] = Validation.state_baseline_pop(
-                state=state,
-                year=year,
-                samplingRate=min(1.0, peoplePerState / total),
-                verbose=False,
+            path = PopulationFactory.get_state_projection_path(year, state)
+            total = pd.read_csv(path)["n"].sum()
+            results[state] = Validation._state_baseline_results(
+                state, year, min(1.0, peoplePerState / total)
             )
-        if verbose:
-            Validation.print_states_baseline_pop(results)
+        Validation.print_states_baseline_pop(results)
         return results
 
     @staticmethod
@@ -945,7 +915,7 @@ class Validation:
             rows.append(
                 f"{state:<5}{result['expectedN']:>16,.0f}"
                 f"{result['n']:>16,}{result['maxCellError']:>16.2f}   {difference:.5f}  "
-                f"{Validation._stateVariableLabels[variable]}: "
+                f"{variable}: "
                 f"{Validation._state_category_label(variable, code)}"
             )
         print()
@@ -960,7 +930,7 @@ class Validation:
             print("-" * len(heading))
             print(f"  {'':<26}{'projection':>14}{'population':>14}{'difference':>14}")
             for variable, marginal in result["marginals"].items():
-                print(f"  {Validation._stateVariableLabels[variable]}")
+                print(f"  {variable}")
                 for code, row in marginal.iterrows():
                     print(
                         f"    {Validation._state_category_label(variable, code):<24}"

@@ -175,9 +175,11 @@ def get_state_population(
 
 Builds a representative sample of a state's projected population and advances it with the
 NHANES model repository. The projection CSV (`data/state/pop_projection_{state}_{year}.csv`,
-currently all 50 states + DC for 2025 and 2030 — `year` selects the filename only) supplies the
-categorical variables and a head count per demographic cell; everything the projection does not
-carry is filled in from NHANES:
+currently all 50 states + DC for 2025, 2030, 2035 and 2040 — `year` selects the filename only;
+a year or state without a file raises a `ValueError` listing those there are, read from
+`data/state/` by `get_state_projection_states` / `get_state_projection_path`) supplies the
+categorical variables and a head count per demographic cell; everything the projection does
+not carry is filled in from NHANES:
 
 - **Ages** are split out of the 5-year age groups uniformly; group 17 (80+) is split over
   80-89 by a decreasing taper (`10/55` down to `1/55`), so nobody is 90+ at baseline —

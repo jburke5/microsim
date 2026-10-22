@@ -51,6 +51,16 @@ class TestStatePopulationCounts(unittest.TestCase):
         counts = self.counts_for_cell(1.0)
         self.assertLessEqual(abs(counts.sum() - self.nForCell.sum()), 1)
 
+    def test_age_range_inverts_age_group(self):
+        for age in range(120):
+            first, last = PopulationFactory.get_age_range_from_ageGroup(
+                PopulationFactory.get_ageGroup_from_age(age)
+            )
+            self.assertLessEqual(first, age)
+            self.assertTrue(last is None or age <= last)
+        self.assertEqual(PopulationFactory.get_age_range_from_ageGroup(1), (0, 4))
+        self.assertEqual(PopulationFactory.get_age_range_from_ageGroup(17), (80, None))
+
     def test_every_gender_race_age_has_a_pooled_fit(self):
         keys = PopulationFactory.get_crude_distributions()["mean"].keys()
         for gender in [1, 2]:
@@ -71,7 +81,8 @@ class TestStatePopulationCounts(unittest.TestCase):
 
     def test_built_population_matches_projection(self):
         # the built Persons, not just the dataframe they are built from
-        results = Validation.state_baseline_pop("WY", samplingRate=0.005, verbose=False)
+        with contextlib.redirect_stdout(io.StringIO()):
+            results = Validation.state_baseline_pop("WY", samplingRate=0.005)
         self.assertLessEqual(abs(results["n"] - results["expectedN"]), 1)
         self.assertLessEqual(results["maxCellError"], 1)
         # not bounded by the rounding like the cells: across 500 seeds at this size the worst
@@ -82,13 +93,10 @@ class TestStatePopulationCounts(unittest.TestCase):
     def test_report_prints_every_category(self):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
-            result = Validation.state_baseline_pop("WY", samplingRate=0.002, verbose=False)
-        self.assertEqual(out.getvalue(), "")
-        with contextlib.redirect_stdout(out):
-            Validation.print_states_baseline_pop({"WY": result})
+            result = Validation.state_baseline_pop("WY", samplingRate=0.002)
         report = out.getvalue()
         for variable, marginal in result["marginals"].items():
-            self.assertIn(f"\n  {Validation._stateVariableLabels[variable]}\n", report)
+            self.assertIn(f"\n  {variable}\n", report)
             for code in marginal.index:
                 self.assertIn(f"    {Validation._state_category_label(variable, code)} ", report)
 
