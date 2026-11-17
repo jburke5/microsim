@@ -6,6 +6,15 @@ from microsim.risk_factors.smoking_status import SmokingStatus
 from microsim.outcomes.outcome import OutcomeType, Outcome
 from microsim.outcomes.outcome_prevalence_base import OutcomePrevalenceBase
 
+"""hazard ratios for LOE
+The adjusted HR for incident stroke (after LOE) was 1.66 (95% CI, 1.27-2.17). This HR was adjusted for cohort, age, sex, race/ethnicity, education, marital status, hypertension, diabetes, hyperlipidemia, and smoking.
+comes from the paper “individual and joint associations of LOE and vascular risks on incident stroke”
+
+The adjusted HR for incident MI (after LOE) was 1.60 (95% CI 1.17-2.19). This HR was adjusted for age, sex, race/ethnicity, education, marital status, hypertension, diabetes, hyperlipidemia, smoking, and BMI.
+comes from the paper “Bidirectional associations of LOE and MI or non-stroke vascular death”
+
+The adjusted HR for non-stroke vascular death (after LOE) was 2.43 (95% CI 2.02-2.91). This HR was adjusted for age, sex, race/ethnicity, education, marital status, hypertension, diabetes, hyperlipidemia, smoking, and BMI.
+"""
 
 class EpilepsyPrevalenceModel(OutcomePrevalenceBase):
     _outcomeType = OutcomeType.EPILEPSY

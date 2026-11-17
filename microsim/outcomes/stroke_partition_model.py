@@ -49,6 +49,8 @@ class StrokePartitionModel(LinearRiskFactorModel):
         # intercept = -2.66499999 #3
         # intercept = -2.764950   #4
         self.interceptChangeFor1bpMedsAdded = -0.1134942
+        self._loe_stroke_hazard_ratio = 1.66   #reference: epilepsy_model.py
+        self._loe_mi_hazard_ratio = 1.60   #reference: epilepsy_model.py
 
     def will_have_fatal_stroke(self, person):
         fatalStrokeProb = self._stroke_case_fatality
@@ -64,12 +66,15 @@ class StrokePartitionModel(LinearRiskFactorModel):
             interceptChange = 0
         return interceptChange
 
-    def get_next_stroke_probability(self, person):
-        # Q: I am not sure why it was set to 0 at the beginning
+    def get_next_stroke_probability(self, person, lateOnsetEpilepsyAdjusted=True):
         strokeProbability = 0
         strokeProbability = scipySpecial.expit(
             super().estimate_next_risk(person) + self.get_intercept_change(person)
         )
+        if lateOnsetEpilepsyAdjusted and person.has_late_onset_epilepsy():
+            strokeWeight = strokeProbability * self._loe_stroke_hazard_ratio
+            miWeight = (1 - strokeProbability) * self._loe_mi_hazard_ratio
+            strokeProbability = strokeWeight / (strokeWeight + miWeight)
         return strokeProbability
 
     def generate_next_outcome(self, person):

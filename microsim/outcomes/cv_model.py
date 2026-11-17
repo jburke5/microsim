@@ -2,6 +2,7 @@ from microsim.outcomes.ascvd_outcome_model import ASCVDOutcomeModel
 from microsim.regression_models.regression_model import RegressionModel
 from microsim.outcomes.outcome import Outcome, OutcomeType
 from microsim.outcomes.outcome_prevalence_base import OutcomePrevalenceBase
+from microsim.outcomes.stroke_partition_model import StrokePartitionModel
 from microsim.risk_factors.gender import NHANESGender
 from microsim.treatment_strategies.treatment_strategies import TreatmentStrategiesType
 
@@ -27,6 +28,9 @@ class CVModelBase(ASCVDOutcomeModel):
         self._stroke_case_fatality = 0.15
         self._secondary_stroke_case_fatality = 0.15
         self._statinAdded_relative_risk = 0.72  # doi:10.1001/jama.2022.12138
+        self._loe_stroke_hr = 1.66   #reference: epilepsy_model.py
+        self._loe_mi_hr = 1.60   #reference: epilepsy_model.py
+        self._strokePartitionModel = StrokePartitionModel()
         # This is the average change of the intercept, see the models for male and female below for
         # more details of the optimized intercepts I found from simulations (and then obtained this
         # average I use here)
@@ -54,6 +58,9 @@ class CVModelBase(ASCVDOutcomeModel):
 
         cvRisk = cvRisk * self._riskScaling
 
+        if person.has_late_onset_epilepsy():
+            cvRisk = cvRisk * self.get_late_onset_epilepsy_cv_multiplier(person)
+
         if (person._mi) | (person._stroke):
             cvRisk = cvRisk * self._secondary_prevention_multiplier
 
@@ -78,6 +85,12 @@ class CVModelBase(ASCVDOutcomeModel):
             cvRisk = cvRisk * 0.75 if wmd25MedsAdded > 0 else cvRisk
 
         return cvRisk
+
+    def get_late_onset_epilepsy_cv_multiplier(self, person):
+        p = self._strokePartitionModel.get_next_stroke_probability(
+            person, lateOnsetEpilepsyAdjusted=False
+        )
+        return p * self._loe_stroke_hr + (1 - p) * self._loe_mi_hr
 
     def generate_next_outcome(self, person):
         # for now assume it is not a fatal event, and update later at the stroke or mi outcomes

@@ -813,6 +813,17 @@ class Person:
     def has_epilepsy(self):
         return self.has_outcome(OutcomeType.EPILEPSY, inSim=False)
 
+    def has_late_onset_epilepsy(self, onsetAge=65):
+        epilepsyOutcomes = self._outcomes[OutcomeType.EPILEPSY]
+        if len(epilepsyOutcomes) == 0:
+            return False
+        firstAge, firstOutcome = epilepsyOutcomes[0]
+        return (not firstOutcome.priorToSim) and (firstAge >= onsetAge)
+
+    @property
+    def _late_onset_epilepsy(self):
+        return self.has_late_onset_epilepsy()
+
     def has_diabetes(self):
         """Sticky diagnosis: True if A1C ever reached 6.5, does not reverse if A1C later drops."""
         return max(self._a1c) >= 6.5

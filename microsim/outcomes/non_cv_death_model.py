@@ -18,6 +18,7 @@ class NonCVDeathModel(LogisticRiskFactorModel):
         super().__init__(RegressionModel(**modelSpec), False)
         self.wmhSpecific = wmhSpecific
         self._riskScaling = riskScaling
+        self._loe_death_hr = 2.43  # reference: epilepsy_model.py
 
     def estimate_next_risk(self, person):
         return super().estimate_next_risk(person) * self._riskScaling
@@ -80,4 +81,6 @@ class NonCVDeathModel(LogisticRiskFactorModel):
         lp = super().estimate_linear_predictor(person) + self.get_scd_term(
             person
         )  # nhanes model + adjustment for kaiser population
+        if person.has_late_onset_epilepsy():
+            lp += np.log(self._loe_death_hr)
         return lp
